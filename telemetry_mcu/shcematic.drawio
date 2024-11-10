@@ -1,0 +1,28 @@
+<mxfile host="65bd71144e">
+    <diagram id="HCOHrEzsTdFW14ZP3Av0" name="Page-1">
+        <mxGraphModel dx="1016" dy="891" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Telemetry MCU" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="100" width="620" height="580" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="&lt;h1&gt;MCU&lt;/h1&gt;&lt;p&gt;The telemetry mcu is a:&amp;nbsp;&lt;/p&gt;&lt;a target=&quot;_blank&quot; href=&quot;https://www.microchip.com/en-us/product/ATSAMC21E17A&quot;&gt;ATSAMC21E17A&lt;/a&gt;&lt;br&gt;&lt;br&gt;Here is the datasheet:&lt;br&gt;&lt;span data-teams=&quot;true&quot;&gt;&lt;span dir=&quot;ltr&quot; class=&quot;ui-provider iz aek pj ael aem aen aeo aep aeq aer aes aet aeu aev aew aex aey aez afa afb afc afd afe aff afg afh afi afj afk afl afm afn afo afp afq&quot;&gt;&lt;a title=&quot;https://ww1.microchip.com/downloads/aemdocuments/documents/mcu32/productdocuments/datasheets/sam-c20-c21-family-data-sheet-ds60001479.pdf&quot; class=&quot;fui-Link ___1q1shib f2hkw1w f3rmtva f1ewtqcl fyind8e f1k6fduh f1w7gpdv fk6fouc fjoy568 figsok6 f1s184ao f1mk8lai fnbmjn9 f1o700av f13mvf36 f1cmlufx f9n3di6 f1ids18y f1tx3yz7 f1deo86v f1eh06m1 f1iescvh fhgqx19 f1olyrje f1p93eir f1nev41a f1h8hb77 f1lqvz6u f10aw75t fsle3fq f17ae5zn&quot; target=&quot;_blank&quot; rel=&quot;noreferrer noopener&quot; href=&quot;https://ww1.microchip.com/downloads/aemDocuments/documents/MCU32/ProductDocuments/DataSheets/SAM-C20-C21-Family-Data-Sheet-DS60001479.pdf&quot; id=&quot;menur2t0&quot; aria-label=&quot;Link https://ww1.microchip.com/downloads/aemDocuments/documents/MCU32/ProductDocuments/DataSheets/SAM-C20-C21-Family-Data-Sheet-DS60001479.pdf&quot;&gt;https://ww1.microchip.com/downloads/aemDocuments/documents/MCU32/ProductDocuments/DataSheets/SAM-C20-C21-Family-Data-Sheet-DS60001479.pdf&lt;/a&gt;&lt;/span&gt;&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="2">
+                    <mxGeometry x="350" y="40" width="270" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Components" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+                    <mxGeometry x="20" y="40" width="310" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="I2C for communication with pressure and temperature sensor" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+                    <mxGeometry x="20" y="120" width="310" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="CANBUS/I2C for cross mcu communication&lt;br&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+                    <mxGeometry x="20" y="80" width="310" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="&amp;nbsp;UART for communication with IMU sensor&amp;nbsp;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="2">
+                    <mxGeometry y="160" width="280" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
