@@ -35,9 +35,9 @@ void TCC0_PWMInitialize(void) {
     TCC0_REGS->TCC_CC[1] = 9000;
     TCC0_REGS->TCC_CC[2] = 9000;
     TCC0_REGS->TCC_CC[3] = 9000;
-    TCC0_REGS->TCC_PER = 13799U;
+    TCC0_REGS->TCC_PER = 119999;
   
-    // Max duty cycle: 2300 micro seconds
+    // Max duty cycle: 2300 micro seconds = 13800
     // Idle duty cycle: 1500 micro seconds = 9000
     // Mni duty cycle: 700 micro seconds = 4200
 

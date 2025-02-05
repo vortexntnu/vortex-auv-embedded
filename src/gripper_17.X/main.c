@@ -30,9 +30,6 @@
 #define ENCODER3_ADDR 0x42
 #define ANGLE_REGISTER 0xFE
 
-// PWM
-#define PWM_PERIOD_MICROSECONDS 20000
-#define TCC_PERIOD 23999
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -67,7 +64,6 @@ volatile static STATES states = STATE_CAN_RECEIVE;
 static uint8_t encoderAngles[6];
 
 // Reads the encoder angle Register
-// and return a uint8 array
 // 2 bytes for each encoder
 // 2|2|2 SHOULDER, WRIST, GRIP
 uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
@@ -156,7 +152,9 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             if (dataIndex == 7 && ((SERCOM2_I2C_TransferDirGet() ==
                                     SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE))) {
                 
-                SetPWMDutyCycle(dataBuffer+1);
+                SetPWMDutyCycle(dataBuffer+1); // Because of start byte start indexing at +1
+
+                Encoder_Read(encoderAngles, ENCODER_ADDR,  ANGLE_REGISTER);
             }
             break;
         default:
