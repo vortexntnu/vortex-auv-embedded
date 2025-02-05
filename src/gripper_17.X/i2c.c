@@ -200,7 +200,6 @@ void SERCOM2_I2C_CommandSet(SERCOM_I2C_SLAVE_COMMAND command)
 void __attribute__((used)) SERCOM2_Handler(void)
 {
     uint32_t intFlags = SERCOM2_REGS->I2CS.SERCOM_INTFLAG;
-    printf("entering Interrupts\n");
 
     if(intFlags & SERCOM2_REGS->I2CS.SERCOM_INTENSET)
     {
@@ -260,7 +259,6 @@ void __attribute__((used)) SERCOM2_Handler(void)
 
             if (sercom2I2CSObj.callback != NULL)
             {
-                printf("I2C stop");
                 sercom2I2CSObj.callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED, sercom2I2CSObj.context);
             }
 
@@ -268,7 +266,6 @@ void __attribute__((used)) SERCOM2_Handler(void)
         }
         if (intFlags & SERCOM_I2CS_INTFLAG_ERROR_Msk)
         {
-            printf("I2C error");
             if (sercom2I2CSObj.callback != NULL)
             {
                 sercom2I2CSObj.callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT_ERROR, sercom2I2CSObj.context);

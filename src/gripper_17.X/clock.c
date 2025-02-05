@@ -89,14 +89,14 @@ void CLOCK_Initialize(void) {
 
     GCLK0_Initialize();
 
-    /* Selection of the Generator and write Lock for SERCOM4_CORE */
-    GCLK_REGS->GCLK_PCHCTRL[23] =
-        GCLK_PCHCTRL_GEN(0x0UL) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[23] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
+    // SERCOM4 USART DEBUGGING
+    // GCLK_REGS->GCLK_PCHCTRL[23] =
+    //     GCLK_PCHCTRL_GEN(0x0UL) | GCLK_PCHCTRL_CHEN_Msk;
+    //
+    // while ((GCLK_REGS->GCLK_PCHCTRL[23] & GCLK_PCHCTRL_CHEN_Msk) !=
+    //        GCLK_PCHCTRL_CHEN_Msk) {
+    //     /* Wait for synchronization */
+    // }
     // TCC0 and TCC1 clock
     GCLK_REGS->GCLK_PCHCTRL[28] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
@@ -113,7 +113,7 @@ void CLOCK_Initialize(void) {
         /* Wait for synchronization */
     }
     //
-    // i2c sercom2 host
+    // SECOM2 BACKUP SLAVE
     GCLK_REGS->GCLK_PCHCTRL[21] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
     while ((GCLK_REGS->GCLK_PCHCTRL[21] & GCLK_PCHCTRL_CHEN_Msk) !=
@@ -153,5 +153,5 @@ void CLOCK_Initialize(void) {
 
     MCLK_REGS->MCLK_AHBMASK |= (1 << 8);  // CAN0
     MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | (1 << 6) |
-                               (1 << 3) | (1 << 1) | (1 << 2) | (1 << 4);
+                               (1 << 3) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4);
 }

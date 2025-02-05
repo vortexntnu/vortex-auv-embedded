@@ -54,7 +54,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "samc21e17a.h"
+#include "samc21j18a.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus // Provide C++ Compatibility

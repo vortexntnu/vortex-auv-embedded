@@ -13,7 +13,7 @@
 #include "can1.h"
 #include "can_common.h"
 #include "clock.h"
-#include "i2c.h"
+#include "i2c.h"  // I2C client backup
 // #include "i2c_master.h" // not used
 #include "sam.h"
 #include "sercom0_i2c.h"
@@ -22,14 +22,13 @@
 #include "system_init.h"
 #include "tcc.h"
 #include "tcc0.h"
-#include "usart.h"
+// #include "usart.h"
 
 // Encoder
 #define ENCODER_ADDR 0x40
 #define ENCODER2_ADDR 0x41
 #define ENCODER3_ADDR 0x42
 #define ANGLE_REGISTER 0xFE
-
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -151,10 +150,11 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
             if (dataIndex == 7 && ((SERCOM2_I2C_TransferDirGet() ==
                                     SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE))) {
-                
-                SetPWMDutyCycle(dataBuffer+1); // Because of start byte start indexing at +1
+                SetPWMDutyCycle(
+                    dataBuffer +
+                    1);  // Because of start byte start indexing at +1
 
-                Encoder_Read(encoderAngles, ENCODER_ADDR,  ANGLE_REGISTER);
+                Encoder_Read(encoderAngles, ENCODER_ADDR, ANGLE_REGISTER);
             }
             break;
         default:
@@ -166,7 +166,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 
 void APP_CAN_Callback(uintptr_t context) {
     xferContext = context;
-    printf("Entering can callback\n");
 
     /* Check CAN Status */
     status = CAN0_ErrorGet();
@@ -195,10 +194,10 @@ int main(void) {
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
     CAN0_Initialize();
-    SERCOM0_I2C_Initialize();    // I2C 3
-    SERCOM1_I2C_Initialize();    // I2C 2
-    SERCOM3_I2C_Initialize();    // I2C 1
-    SERCOM4_USART_Initialize();  // USART for Debugging
+    SERCOM0_I2C_Initialize();  // I2C 3
+    SERCOM1_I2C_Initialize();  // I2C 2
+    SERCOM3_I2C_Initialize();  // I2C 1
+    // SERCOM4_USART_Initialize();  // USART for Debugging
 
     // SERCOM2_I2C_Initialize();  // CLient (backup)
     NVIC_Initialize();  // Enable interrupts
@@ -212,12 +211,9 @@ int main(void) {
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
-    printf("Initialize complete: Starting code");
-
     while (true) {
         switch (states) {
             case STATE_CAN_RECEIVE:
-                printf("Waiting for CAN message\n");
                 CAN0_RxCallbackRegister(APP_CAN_Callback,
                                         (uintptr_t)STATE_CAN_RECEIVE,
                                         CAN_MSG_ATTR_RX_FIFO0);
@@ -228,7 +224,6 @@ int main(void) {
                                         rx_message, &timestamp,
                                         CAN_MSG_ATTR_RX_FIFO0,
                                         &msgFrameAttr) == false) {
-                    printf("Message Reception Failed \r\n");
                 }
                 break;
 
@@ -239,7 +234,6 @@ int main(void) {
 
                 // Update and set the duty cycle for the channel
                 SetPWMDutyCycle(rx_message);
-                printf("Setting pwm\n");
 
                 // states = STATE_READ_ENCODER;
                 states = STATE_CAN_RECEIVE;
@@ -248,7 +242,6 @@ int main(void) {
             case STATE_READ_ENCODER:
                 if (!Encoder_Read(encoderAngles, ENCODER_ADDR,
                                   ANGLE_REGISTER)) {
-                    printf("Read from sensor failed");
                     states = STATE_CAN_RECEIVE;
                 } else {
                     states = STATE_CAN_TRANSMIT;
@@ -262,37 +255,20 @@ int main(void) {
                 if (CAN0_MessageTransmit(
                         messageID, 6, encoderAngles, CAN_MODE_FD_WITHOUT_BRS,
                         CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-                    printf(" Failed \r\n");
                 }
                 break;
 
             case STATE_CAN_XFER_ERROR:
                 if ((STATES)xferContext == STATE_CAN_RECEIVE) {
-                    printf(" Error in received message\r\n");
                 } else {
-                    printf(" Failed\r\n");
                 }
                 states = STATE_CAN_RECEIVE;
                 break;
 
             case STATE_CAN_XFER_SUCCESSFUL:
                 if ((STATES)xferContext == STATE_CAN_RECEIVE) {
-                    /* Print message to Console */
-                    printf(" New Message Received\r\n");
-                    uint8_t length = rx_messageLength;
-                    printf(
-                        " Message - Timestamp : 0x%x ID : 0x%x Length : 0x%x ",
-                        (unsigned int)timestamp, (unsigned int)rx_messageID,
-                        (unsigned int)rx_messageLength);
-                    printf("Message : ");
-                    while (length) {
-                        printf("0x%x ",
-                               rx_message[rx_messageLength - length--]);
-                    }
-                    printf("\r\n");
                     states = STATE_SET_PWM;
                 } else if ((STATES)xferContext == STATE_CAN_TRANSMIT) {
-                    printf(" Success\r\n");
                     states = STATE_CAN_RECEIVE;
                 }
                 break;
