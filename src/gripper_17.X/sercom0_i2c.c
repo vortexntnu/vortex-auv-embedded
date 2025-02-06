@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include "sercom0_i2c.h"
 #include "sam.h"
-#include "samc21j18a.h"
 
 #define SERCOM0_I2CM_BAUD_VALUE (0x34U)
 
@@ -280,7 +279,6 @@ void __attribute__((used)) SERCOM0_Handler(void) {
             /* Set Error status */
             sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
             sercom0I2CObj.error = SERCOM_I2C_ERROR_BUS;
-            printf("arbitration lost\n");
 
         }
         /* Check for Bus Error during transmission */
@@ -291,7 +289,6 @@ void __attribute__((used)) SERCOM0_Handler(void) {
             sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
             sercom0I2CObj.error = SERCOM_I2C_ERROR_BUS;
 
-            printf("Bus error\n");
         }
         /* Checks slave acknowledge for address or data */
         else if ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
@@ -299,7 +296,6 @@ void __attribute__((used)) SERCOM0_Handler(void) {
                  SERCOM_I2CM_STATUS_RXNACK_Msk) {
             sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
             sercom0I2CObj.error = SERCOM_I2C_ERROR_NAK;
-            printf("NACK\n");
         } else {
             switch (sercom0I2CObj.state) {
                 case SERCOM_I2C_REINITIATE_TRANSFER:
