@@ -40,10 +40,12 @@ The **state machine** for the **Gripper MCU** is visualized below:
   1. It reads the received **PWM signal** (in **microseconds**).
   2. Converts the **microsecond value** into a duty cycle using the formula:
 
+  
   $$
-  \text{Duty Cycle} = \frac{\text{DATA\_MICROSECONDS} \times (\text{TCC\_PERIOD} + 1)}
-  {\text{PWM\_PERIOD\_MICROSECONDS}}
+  Duty\_Cycle = \frac{DATA\_MICROSECONDS \times (TCC\_PERIOD + 1)}
+  {PWM\_PERIOD\_MICROSECONDS}
   $$
+
 
 
   - The **PWM signal range** is **700 microseconds to 2300 microseconds**.
@@ -74,14 +76,14 @@ To correctly configure **TCC (Timer/Counter for Control)** for PWM generation, w
 
 ### **Formula for TCC Period**
 $$
-TCC\_PERIOD = \frac{\text{Clock Frequency} / \text{Prescaler} \times \text{PWM Period (μs)}}{1,000,000} - 1
+\text{TCC\_{PERIOD}} = \frac{\text{Clock Frequency} / \text{Prescaler} \times \text{PWM Period (μs)}}{1,000,000} - 1
 $$
 
 ### **Example Calculation**
 For a **PWM period of 20 ms (50 Hz)**:
 
 $$
-TCC\_PERIOD = \frac{(48,000,000 / 8) \times 0.020}{1,000,000} - 1
+\text{TCC\_{PERIOD}} = \frac{(48,000,000 / 8) \times 0.020}{1,000,000} - 1
 $$
 $$
 = \frac{6,000,000 \times 0.020}{1,000,000} - 1
