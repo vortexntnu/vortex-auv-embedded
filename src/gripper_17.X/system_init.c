@@ -6,15 +6,15 @@
  */
 
 #include "sam.h"
-#include "samc21j18a.h"
+#include "samc21e17a.h"
 void PIN_Initialize(void) {
     // PORT_REGS->GROUP[0].PORT_DIRSET = (1 << 15);
 
     // SERCOM4 USART Pins
-    PORT_REGS->GROUP[1].PORT_PINCFG[10] = 0x1;
-    PORT_REGS->GROUP[1].PORT_PINCFG[11] = 0x1;
-
-    PORT_REGS->GROUP[1].PORT_PMUX[5] = 0x33;
+    // PORT_REGS->GROUP[1].PORT_PINCFG[10] = 0x1;
+    // PORT_REGS->GROUP[1].PORT_PINCFG[11] = 0x1;
+    //
+    // PORT_REGS->GROUP[1].PORT_PMUX[5] = 0x33;
 
     // PWM Pins
     PORT_REGS->GROUP[0].PORT_PINCFG[7] = 0x1;   // PWM3 TCC1[1]
@@ -46,10 +46,10 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PMUX[6] = 0x22;
 
     // SERCOM 5 I2C pins
-    PORT_REGS->GROUP[1].PORT_PINCFG[16] = 0x1;
-    PORT_REGS->GROUP[1].PORT_PINCFG[17] = 0x1;
-
-    PORT_REGS->GROUP[1].PORT_PMUX[8] = 0x22;
+    // PORT_REGS->GROUP[1].PORT_PINCFG[16] = 0x1;
+    // PORT_REGS->GROUP[1].PORT_PINCFG[17] = 0x1;
+    //
+    // PORT_REGS->GROUP[1].PORT_PMUX[8] = 0x22;
 
     // I2C SERCOM channels
     // SERCOM0 I2C 3
@@ -84,11 +84,21 @@ void NVIC_Initialize(void) {
     // NVIC_SetPriority(TCC0_IRQn, 3);
     // NVIC_EnableIRQ(TCC0_IRQn);
 
+
+    // I2C 3
+    NVIC_SetPriority(SERCOM0_IRQn, 3);
+    NVIC_SetPriority(SERCOM0_IRQn, 3);
+
+    // I2C 2
+    NVIC_EnableIRQ(SERCOM1_IRQn);
+    NVIC_EnableIRQ(SERCOM1_IRQn);
+
+    // I2C 3
+    NVIC_SetPriority(SERCOM3_IRQn, 3);
+    NVIC_EnableIRQ(SERCOM3_IRQn);
+
     NVIC_SetPriority(SERCOM2_IRQn, 3);
     NVIC_EnableIRQ(SERCOM2_IRQn);
-
-    NVIC_SetPriority(SERCOM5_IRQn, 3);
-    NVIC_EnableIRQ(SERCOM5_IRQn);
 
     NVIC_SetPriority(CAN0_IRQn, 3);
     NVIC_EnableIRQ(CAN0_IRQn);
