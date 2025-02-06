@@ -45,6 +45,7 @@ The **state machine** for the **Gripper MCU** is visualized below:
   {\text{PWM\_PERIOD\_MICROSECONDS}}
   $$
 
+
   - The **PWM signal range** is **700 microseconds to 2300 microseconds**.
   - The **PWM_PERIOD** is 2000 microseconds, and 119999 in **TCC_PERIOD**
 
@@ -78,6 +79,7 @@ $$
 
 ### **Example Calculation**
 For a **PWM period of 20 ms (50 Hz)**:
+
 $$
 TCC\_PERIOD = \frac{(48,000,000 / 8) \times 0.020}{1,000,000} - 1
 $$
@@ -90,6 +92,7 @@ $$
 $$
 = 119,999
 $$
+
 
 Thus, for **50 Hz PWM**, the **TCC period should be set to `119999`**.
 
