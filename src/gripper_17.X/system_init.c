@@ -7,6 +7,7 @@
 
 #include "sam.h"
 #include "samc21e17a.h"
+
 void PIN_Initialize(void) {
     // PORT_REGS->GROUP[0].PORT_DIRSET = (1 << 15);
 

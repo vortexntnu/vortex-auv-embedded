@@ -59,7 +59,7 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 /* Variable to save application state */
 volatile static STATES states = STATE_CAN_RECEIVE;
 
-static uint8_t encoderAngles[6];
+static uint8_t encoder_angles[6];
 
 // Reads the encoder angle Register
 // 2 bytes for each encoder
@@ -142,7 +142,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY: {
-            SERCOM2_I2C_WriteByte(encoderAngles[dataIndex++]);
+            SERCOM2_I2C_WriteByte(encoder_angles[dataIndex++]);
             break;
         }
 
@@ -153,7 +153,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                     dataBuffer +
                     1);  // Because of start byte start indexing at +1
 
-                Encoder_Read(encoderAngles, ENCODER_ADDR, ANGLE_REGISTER);
+                Encoder_Read(encoder_angles, ENCODER_ADDR, ANGLE_REGISTER);
             }
             break;
         default:
@@ -234,12 +234,12 @@ int main(void) {
                 // Update and set the duty cycle for the channel
                 SetPWMDutyCycle(rx_message);
 
-                // states = STATE_READ_ENCODER;
-                states = STATE_CAN_RECEIVE;
+                states = STATE_READ_ENCODER;
+                // states = STATE_CAN_RECEIVE;
                 break;
 
             case STATE_READ_ENCODER:
-                if (!Encoder_Read(encoderAngles, ENCODER_ADDR,
+                if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
                                   ANGLE_REGISTER)) {
                     states = STATE_CAN_RECEIVE;
                 } else {
@@ -252,7 +252,7 @@ int main(void) {
                                         (uintptr_t)STATE_CAN_TRANSMIT);
                 states = STATE_IDLE;
                 if (CAN0_MessageTransmit(
-                        messageID, 6, encoderAngles, CAN_MODE_FD_WITHOUT_BRS,
+                        messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
                         CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
                 }
                 break;
