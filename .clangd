@@ -1,0 +1,25 @@
+
+CompileFlags:
+  Add: 
+    - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAME54_DFP/3.8.234/include/
+    - -I/opt/microchip/mplabx/v6.20/packs/arm/CMSIS/5.4.0/CMSIS/Core/Include/
+    - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAME51_DFP/3.7.242/include/
+    - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAMC21_DFP/3.8.119/samc21/include/
+    - -Wall
+    - -Wextra
+
+Diagnostics:
+  ClangTidy:
+    Add: [readability-identifier-naming]
+    CheckOptions:
+      readability-identifier-naming.VariableCase: camelCase
+      readability-identifier-naming.GlobalVariableCase: snake_case
+      readability-identifier-naming.ConstantCase: UPPER_SNAKE_CASE
+      readability-identifier-naming.FunctionCase: camelCase
+      readability-identifier-naming.TypeCase: PascalCase
+      readability-identifier-naming.StructCase: PascalCase
+      readability-identifier-naming.EnumCase: PascalCase
+      readability-identifier-naming.EnumConstantCase: UPPER_SNAKE_CASE
+      readability-identifier-naming.MacroDefinitionCase: UPPER_SNAKE_CASE
+      readability-identifier-naming.ParameterCase: camelCase
+      readability-identifier-naming.MemberCase: camelCase
