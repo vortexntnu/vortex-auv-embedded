@@ -42,8 +42,8 @@ The **state machine** for the **Gripper MCU** is visualized below:
 
   
   $$
-  Duty\_Cycle = \frac{DATA\_MICROSECONDS \times (TCC\_PERIOD + 1)}
-  {PWM\_PERIOD\_MICROSECONDS}
+  \text{Duty Cycle} = \frac{\text{DATA MICROSECONDS} \times (\text{TCC PERIOD} + 1)}
+  {\text{PWM PERIOD MICROSECONDS}}
   $$
 
 
@@ -75,15 +75,16 @@ To correctly configure **TCC (Timer/Counter for Control)** for PWM generation, w
 - **Desired PWM Period** (in microseconds): `PWM_PERIOD_MICROSECONDS`
 
 ### **Formula for TCC Period**
+
 $$
-\text{TCC\_{PERIOD}} = \frac{\text{Clock Frequency} / \text{Prescaler} \times \text{PWM Period (μs)}}{1,000,000} - 1
+\text{TCC PERIOD} = \frac{(\text{Clock Frequency} / \text{Prescaler}) \times \text{PWM Period (μs)}}{1,000,000} - 1
 $$
 
 ### **Example Calculation**
 For a **PWM period of 20 ms (50 Hz)**:
 
 $$
-\text{TCC\_{PERIOD}} = \frac{(48,000,000 / 8) \times 0.020}{1,000,000} - 1
+\text{TCC PERIOD} = \frac{(48,000,000 / 8) \times 0.020}{1,000,000} - 1
 $$
 $$
 = \frac{6,000,000 \times 0.020}{1,000,000} - 1
@@ -94,7 +95,6 @@ $$
 $$
 = 119,999
 $$
-
 
 Thus, for **50 Hz PWM**, the **TCC period should be set to `119999`**.
 
