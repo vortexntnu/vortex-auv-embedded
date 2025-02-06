@@ -258,9 +258,9 @@ int main(void) {
                 break;
 
             case STATE_CAN_XFER_ERROR:
-                if ((STATES)xferContext == STATE_CAN_RECEIVE) {
-                } else {
-                }
+                // if ((STATES)xferContext == STATE_CAN_RECEIVE) {
+                // } else {
+                // }
                 states = STATE_CAN_RECEIVE;
                 break;
 
