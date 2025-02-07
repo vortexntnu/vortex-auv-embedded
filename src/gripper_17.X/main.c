@@ -57,7 +57,7 @@ static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 /* Variable to save application state */
-volatile static STATES states = STATE_CAN_RECEIVE;
+// volatile static STATES states = STATE_CAN_RECEIVE;
 
 static uint8_t encoder_angles[6];
 
@@ -119,7 +119,6 @@ void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
     TCC1_PWM24bitDutySet(1, tccValue);
 }
 
-//
 // I2C client backup code
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
@@ -205,7 +204,7 @@ void APP_CAN_Callback(uintptr_t context) {
                 break;
         }
     } else {
-        states = STATE_CAN_XFER_ERROR;
+        // states = STATE_CAN_XFER_ERROR;
     }
 }
 int main(void) {
@@ -224,15 +223,15 @@ int main(void) {
 
     // SERCOM2_I2C_Initialize();  // CLient (backup)
     NVIC_Initialize();  // Enable interrupts
-                        /* Register callback function for period event */
 
-    // Callback functions
-    // SERCOM2_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
     /* Start PWM*/
     TCC1_PWMStart();
     TCC0_PWMStart();
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // Callback functions
+    // SERCOM2_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
     CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_RECEIVE,
                             CAN_MSG_ATTR_RX_FIFO0);
@@ -285,7 +284,8 @@ int main(void) {
         //                                 (uintptr_t)STATE_CAN_TRANSMIT);
         //         states = STATE_IDLE;
         //         if (CAN0_MessageTransmit(
-        //                 messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
+        //                 messageID, 6, encoder_angles,
+        //                 CAN_MODE_FD_WITHOUT_BRS,
         //                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
         //         }
         //         break;
