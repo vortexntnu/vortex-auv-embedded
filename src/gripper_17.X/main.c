@@ -173,8 +173,32 @@ void APP_CAN_Callback(uintptr_t context) {
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         switch ((STATES)context) {
             case STATE_CAN_RECEIVE:
+
+                SetPWMDutyCycle(rx_message);
+
+                if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
+                                        rx_message, &timestamp,
+                                        CAN_MSG_ATTR_RX_FIFO0,
+                                        &msgFrameAttr) == false) {
+                }
+
+                if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
+                                  ANGLE_REGISTER)) {
+                    break;
+                }
+
+                if (CAN0_MessageTransmit(
+                        messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
+                        CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
+                }
+                break;
             case STATE_CAN_TRANSMIT: {
-                states = STATE_CAN_XFER_SUCCESSFUL;
+                if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
+                                        rx_message, &timestamp,
+                                        CAN_MSG_ATTR_RX_FIFO0,
+                                        &msgFrameAttr) == false) {
+                }
+                // states = STATE_CAN_XFER_SUCCESSFUL;
                 break;
             }
             default:
@@ -200,7 +224,7 @@ int main(void) {
 
     // SERCOM2_I2C_Initialize();  // CLient (backup)
     NVIC_Initialize();  // Enable interrupts
-    /* Register callback function for period event */
+                        /* Register callback function for period event */
 
     // Callback functions
     // SERCOM2_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
@@ -210,71 +234,80 @@ int main(void) {
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
+    CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_TRANSMIT);
+
+    if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                            &timestamp, CAN_MSG_ATTR_RX_FIFO0,
+                            &msgFrameAttr) == false) {
+    }
+
     while (true) {
-        switch (states) {
-            case STATE_CAN_RECEIVE:
-                CAN0_RxCallbackRegister(APP_CAN_Callback,
-                                        (uintptr_t)STATE_CAN_RECEIVE,
-                                        CAN_MSG_ATTR_RX_FIFO0);
-                states = STATE_IDLE;
-                memset(rx_message, 0x00, sizeof(rx_message));
-                /* Receive New Message */
-                if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-                                        rx_message, &timestamp,
-                                        CAN_MSG_ATTR_RX_FIFO0,
-                                        &msgFrameAttr) == false) {
-                }
-                break;
-
-            case STATE_IDLE:
-                // Waiting for CAN interrupt
-                break;
-            case STATE_SET_PWM:
-
-                // Update and set the duty cycle for the channel
-                SetPWMDutyCycle(rx_message);
-
-                states = STATE_READ_ENCODER;
-                // states = STATE_CAN_RECEIVE;
-                break;
-
-            case STATE_READ_ENCODER:
-                if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
-                                  ANGLE_REGISTER)) {
-                    states = STATE_CAN_RECEIVE;
-                } else {
-                    states = STATE_CAN_TRANSMIT;
-                }
-                break;
-            case STATE_CAN_TRANSMIT:
-                messageID = 0x469;
-                CAN0_TxCallbackRegister(APP_CAN_Callback,
-                                        (uintptr_t)STATE_CAN_TRANSMIT);
-                states = STATE_IDLE;
-                if (CAN0_MessageTransmit(
-                        messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
-                        CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-                }
-                break;
-
-            case STATE_CAN_XFER_ERROR:
-                // if ((STATES)xferContext == STATE_CAN_RECEIVE) {
-                // } else {
-                // }
-                states = STATE_CAN_RECEIVE;
-                break;
-
-            case STATE_CAN_XFER_SUCCESSFUL:
-                if ((STATES)xferContext == STATE_CAN_RECEIVE) {
-                    states = STATE_SET_PWM;
-                } else if ((STATES)xferContext == STATE_CAN_TRANSMIT) {
-                    states = STATE_CAN_RECEIVE;
-                }
-                break;
-
-            default:
-                break;
-        }
+        // switch (states) {
+        //     case STATE_CAN_RECEIVE:
+        //         CAN0_RxCallbackRegister(APP_CAN_Callback,
+        //                                 (uintptr_t)STATE_CAN_RECEIVE,
+        //                                 CAN_MSG_ATTR_RX_FIFO0);
+        //         states = STATE_IDLE;
+        //         memset(rx_message, 0x00, sizeof(rx_message));
+        //         /* Receive New Message */
+        //         if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
+        //                                 rx_message, &timestamp,
+        //                                 CAN_MSG_ATTR_RX_FIFO0,
+        //                                 &msgFrameAttr) == false) {
+        //         }
+        //         break;
+        //
+        //     case STATE_IDLE:
+        //         // Waiting for CAN interrupt
+        //         break;
+        //     case STATE_SET_PWM:
+        //
+        //         // Update and set the duty cycle for the channel
+        //         SetPWMDutyCycle(rx_message);
+        //
+        //         states = STATE_READ_ENCODER;
+        //         // states = STATE_CAN_RECEIVE;
+        //         break;
+        //
+        //     case STATE_READ_ENCODER:
+        //         if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
+        //                           ANGLE_REGISTER)) {
+        //             states = STATE_CAN_RECEIVE;
+        //         } else {
+        //             states = STATE_CAN_TRANSMIT;
+        //         }
+        //         break;
+        //     case STATE_CAN_TRANSMIT:
+        //         messageID = 0x469;
+        //         CAN0_TxCallbackRegister(APP_CAN_Callback,
+        //                                 (uintptr_t)STATE_CAN_TRANSMIT);
+        //         states = STATE_IDLE;
+        //         if (CAN0_MessageTransmit(
+        //                 messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
+        //                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
+        //         }
+        //         break;
+        //
+        //     case STATE_CAN_XFER_ERROR:
+        //         // if ((STATES)xferContext == STATE_CAN_RECEIVE) {
+        //         // } else {
+        //         // }
+        //         states = STATE_CAN_RECEIVE;
+        //         break;
+        //
+        //     case STATE_CAN_XFER_SUCCESSFUL:
+        //         if ((STATES)xferContext == STATE_CAN_RECEIVE) {
+        //             states = STATE_SET_PWM;
+        //         } else if ((STATES)xferContext == STATE_CAN_TRANSMIT) {
+        //             states = STATE_CAN_RECEIVE;
+        //         }
+        //         break;
+        //
+        //     default:
+        //         break;
+        // }
     }
 
     /* Execution should not come here during normal operation */
