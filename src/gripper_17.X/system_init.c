@@ -9,7 +9,6 @@
 #include "samc21e17a.h"
 
 void PIN_Initialize(void) {
-    // PORT_REGS->GROUP[0].PORT_DIRSET = (1 << 15);
 
     // SERCOM4 USART Pins
     // PORT_REGS->GROUP[1].PORT_PINCFG[10] = 0x1;
@@ -26,19 +25,6 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PMUX[5] = 0x40;
     PORT_REGS->GROUP[0].PORT_PMUX[9] = 0x5;
 
-    // TEST PWM PINS
-    // PORT_REGS->GROUP[1].PORT_PINCFG[30] = 0x1;
-    // PORT_REGS->GROUP[1].PORT_PINCFG[31] = 0x1;  // TCC0[1]
-    // PORT_REGS->GROUP[0].PORT_PINCFG[10] = 0x1;  // TCC1[0]
-    // PORT_REGS->GROUP[0].PORT_PINCFG[11] = 0x1;  // TCC1[1]
-    //
-    // PORT_REGS->GROUP[0].PORT_PMUX[15] = 0x44;
-    // PORT_REGS->GROUP[0].PORT_PMUX[5] = 0x44;
-    //
-    // PORT_REGS->GROUP[1].PORT_PINCFG[12] = 0x1;
-    // PORT_REGS->GROUP[1].PORT_PINCFG[13] = 0x1;
-    //
-    // PORT_REGS->GROUP[1].PORT_PMUX[6] = 0x55;
 
     // SERCOM 2 I2C pins
     PORT_REGS->GROUP[0].PORT_PINCFG[12] = 0x1;
@@ -46,11 +32,6 @@ void PIN_Initialize(void) {
 
     PORT_REGS->GROUP[0].PORT_PMUX[6] = 0x22;
 
-    // SERCOM 5 I2C pins
-    // PORT_REGS->GROUP[1].PORT_PINCFG[16] = 0x1;
-    // PORT_REGS->GROUP[1].PORT_PINCFG[17] = 0x1;
-    //
-    // PORT_REGS->GROUP[1].PORT_PMUX[8] = 0x22;
 
     // I2C SERCOM channels
     // SERCOM0 I2C 3

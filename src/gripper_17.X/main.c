@@ -162,6 +162,12 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
     return true;
 }
 
+// Callback function called during CAN interrupt.
+// When a recieve interrupt is triggered it will
+// set the PWM duty cycle with the data it has recieved 
+// it will then read the encoders and send the data
+// after a successfull transmit reviece interrupts will
+// be reenabled
 void APP_CAN_Callback(uintptr_t context) {
     xferContext = context;
 
@@ -175,11 +181,12 @@ void APP_CAN_Callback(uintptr_t context) {
 
                 SetPWMDutyCycle(rx_message);
 
-                if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-                                        rx_message, &timestamp,
-                                        CAN_MSG_ATTR_RX_FIFO0,
-                                        &msgFrameAttr) == false) {
-                }
+                // Only include this if testing without encoders
+                // if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
+                //                         rx_message, &timestamp,
+                //                         CAN_MSG_ATTR_RX_FIFO0,
+                //                         &msgFrameAttr) == false) {
+                // }
 
                 if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
                                   ANGLE_REGISTER)) {
