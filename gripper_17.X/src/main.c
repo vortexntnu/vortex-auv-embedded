@@ -71,20 +71,24 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
     if (!SERCOM0_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
         return 0;
     }
-    rawData[0] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+    while (SERCOM0_I2C_IsBusy());
+    rawData[0] = (dataBuffer[1] << 6) | (dataBuffer[0] & 0x3F);
     // WRIST
 
     if (!SERCOM1_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
         return 0;
     }
+    while (SERCOM1_I2C_IsBusy()); 
 
-    rawData[1] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+    rawData[1] = (dataBuffer[1] << 6) | (dataBuffer[0] & 0x3F);
     // GRIP
 
     if (!SERCOM3_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
         return 0;
     }
-    rawData[2] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+    
+    while (SERCOM3_I2C_IsBusy());
+    rawData[2] = (dataBuffer[1] << 6) | (dataBuffer[0] & 0x3F);
 
     data[0] = rawData[0] >> 8;
     data[1] = rawData[0] & 0xFF;

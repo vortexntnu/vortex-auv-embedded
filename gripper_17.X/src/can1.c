@@ -182,15 +182,7 @@ void CAN0_Initialize(void) {
 
     /* Enable CAN interrupts */
 
-    CAN1_REGS->CAN_IE = CAN_IE_BOE_Msk | CAN_IE_ARAE_Msk | CAN_IE_PEDE_Msk |
-                        CAN_IE_PEAE_Msk | CAN_IE_WDIE_Msk | CAN_IE_EWE_Msk |
-                        CAN_IE_EPE_Msk | CAN_IE_ELOE_Msk | CAN_IE_BEUE_Msk |
-                        CAN_IE_BECE_Msk | CAN_IE_TSWE_Msk | CAN_IE_TFEE_Msk |
-                        CAN_IE_TEFNE_Msk | CAN_IE_TEFLE_Msk | CAN_IE_TEFFE_Msk |
-                        CAN_IE_TCFE_Msk | CAN_IE_HPME_Msk | CAN_IE_RF0NE_Msk |
-                        CAN_IE_RF0LE_Msk | CAN_IE_RF0FE_Msk | CAN_IE_RF1NE_Msk |
-                        CAN_IE_RF1LE_Msk | CAN_IE_RF1FE_Msk | CAN_IE_DRXE_Msk |
-                        CAN_IE_MRAFE_Msk;
+    CAN0_REGS->CAN_IE = CAN_IE_BOE_Msk;
 
     // Initialize the CAN PLib Object
     can0Obj.txBufferIndex = 0;
