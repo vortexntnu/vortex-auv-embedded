@@ -59,7 +59,7 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 /* Variable to save application state */
 // volatile static STATES states = STATE_CAN_RECEIVE;
 
-static uint8_t encoder_angles[6];
+static uint8_t encoder_angles[6] = {0};
 
 // Reads the encoder angle Register
 // 2 bytes for each encoder
@@ -192,11 +192,11 @@ void APP_CAN_Callback(uintptr_t context) {
                 //                         &msgFrameAttr) == false) {
                 // }
 
-                if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
-                                  ANGLE_REGISTER)) {
-                    break;
-                }
-
+                // if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
+                //                   ANGLE_REGISTER)) {
+                //     break;
+                // }
+                //
                 if (CAN0_MessageTransmit(
                         messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
                         CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {

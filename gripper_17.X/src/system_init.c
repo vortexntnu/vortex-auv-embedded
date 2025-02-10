@@ -69,10 +69,10 @@ void NVIC_Initialize(void) {
 
     // I2C 3
     NVIC_SetPriority(SERCOM0_IRQn, 3);
-    NVIC_SetPriority(SERCOM0_IRQn, 3);
+    NVIC_EnableIRQ(SERCOM0_IRQn);
 
     // I2C 2
-    NVIC_EnableIRQ(SERCOM1_IRQn);
+    NVIC_SetPriority(SERCOM1_IRQn, 3);
     NVIC_EnableIRQ(SERCOM1_IRQn);
 
     // I2C 3

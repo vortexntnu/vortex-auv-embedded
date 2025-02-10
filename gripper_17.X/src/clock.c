@@ -105,14 +105,6 @@ void CLOCK_Initialize(void) {
         /* Wait for synchronization */
     }
 
-    // I2C SERCOM5 Client
-    GCLK_REGS->GCLK_PCHCTRL[25] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[25] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    //
     // SECOM2 BACKUP SLAVE
     GCLK_REGS->GCLK_PCHCTRL[21] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
