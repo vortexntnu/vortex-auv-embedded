@@ -1,4 +1,4 @@
-build/default/debug/main.o: main.c definitions.h \
+build/default/production/main.o: main.c definitions.h \
  peripheral/nvmctrl/plib_nvmctrl.h peripheral/nvmctrl/../../device.h \
  peripheral/nvmctrl/../../same51j20a.h \
  /Applications/microchip/mplabx/v6.20/packs/arm/CMSIS/5.4.0/CMSIS/Core/Include/core_cm4.h \

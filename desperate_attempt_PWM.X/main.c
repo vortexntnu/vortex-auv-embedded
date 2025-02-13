@@ -63,6 +63,9 @@ int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
+    LED_OutputEnable();
+    SWITCH_OutputEnable();
+    
 
     while ( true )
     {
