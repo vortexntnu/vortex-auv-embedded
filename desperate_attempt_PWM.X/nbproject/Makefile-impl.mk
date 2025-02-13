@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Desperate_attempt_PWM.X
+PROJECTNAME=desperate_attempt_PWM.X
 
 # Active Configuration
 DEFAULTCONF=default
