@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
-  <executable name="dist/default/production/Desperate_attempt_PWM.X.production.elf">
+  <executable name="dist/default/debug/desperate_attempt_PWM.X.debug.elf">
     <memory name="program">
       <units>bytes</units>
       <length>1048576</length>
-      <used>4602</used>
-      <free>1043974</free>
+      <used>4598</used>
+      <free>1043978</free>
     </memory>
     <memory name="data">
       <units>bytes</units>

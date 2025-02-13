@@ -61,18 +61,24 @@
 
 int main ( void )
 {
-    /* timer_init(); */
+    /* Initialize all modules */
+    SYS_Initialize ( NULL );
 
-    PORT_REGS->GROUP[0].PORT_DIRSET = (1 << 17);    
-
-    while(1) {
-        // Toggle the LED
-        PORT_REGS->GROUP[0].PORT_OUTTGL = (1 << 17);
-        
-        for(uint32_t i=0; i < 3000000; i++) {
-            __NOP();
+    while ( true )
+    {
+        if(SWITCH_Get() == SWITCH_PRESSED_STATE)
+        {
+            /* Turn ON LED */
+            LED_Clear();
+        }
+        else
+        {
+            /* Turn OFF LED */
+            LED_Set();
         }
     }
+
+    /* Execution should not come here during normal operation */
 
     return ( EXIT_FAILURE );
 }
