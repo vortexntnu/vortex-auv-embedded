@@ -417,3 +417,8 @@ int write(int handle, void* buffer, size_t count) {
     }
     return (int)count;
 }
+
+static int USART_printf(char c, FILE* stream) {
+    SERCOM0_USART_WriteByte(c);
+    return 0;
+}

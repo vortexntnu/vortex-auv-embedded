@@ -54,6 +54,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "samc21e17a.h"
 
 // DOM-IGNORE-BEGIN
@@ -425,6 +426,10 @@ int SERCOM0_USART_ReadByte(void);
 
 USART_ERROR SERCOM0_USART_ErrorGet(void);
 
+static int USART_printf(char c, FILE *stream);
+
+static FILE USART_stream() = FDEV_SETUP_STREAM(USART_printf, NULL, _FDEV_SETUP_WRITE);
+ 
 uint32_t SERCOM0_USART_FrequencyGet(void);
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
