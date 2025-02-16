@@ -1,6 +1,6 @@
 #include <same51j20a.h>
 #include "supc.h"
-#include "../port/port.h"
+#include "port.h"
 
 
 void SUPC_Initialize(void) {

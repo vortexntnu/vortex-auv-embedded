@@ -1,6 +1,6 @@
 #include <same51j20a.h>
 #include "interrupts.h"
-#include "../port/port.h"
+#include "port.h"
 
 
 void NVIC_Initialize(void) {

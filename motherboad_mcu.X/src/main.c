@@ -26,10 +26,10 @@
 #include <stdbool.h>
 #include <stdlib.h> 
 
-#include "clock/clock.h"
-#include "port/port.h"
-#include "interrupts/interrupts.h"
-#include "supc/supc.h"
+#include "clock.h"
+#include "port.h"
+#include "interrupts.h"
+#include "supc.h"
 
 
 int main(void) {

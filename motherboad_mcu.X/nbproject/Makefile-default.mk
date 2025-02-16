@@ -51,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=main.c clock/clock.c port/port.c interrupts/interrupts.c supc/supc.c
+SOURCEFILES_QUOTED_IF_SPACED=src/clock.c src/interrupts.c src/main.c src/port.c src/supc.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/clock/clock.o ${OBJECTDIR}/port/port.o ${OBJECTDIR}/interrupts/interrupts.o ${OBJECTDIR}/supc/supc.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/clock/clock.o.d ${OBJECTDIR}/port/port.o.d ${OBJECTDIR}/interrupts/interrupts.o.d ${OBJECTDIR}/supc/supc.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/interrupts.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/port.o ${OBJECTDIR}/src/supc.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/src/clock.o.d ${OBJECTDIR}/src/interrupts.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/port.o.d ${OBJECTDIR}/src/supc.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/clock/clock.o ${OBJECTDIR}/port/port.o ${OBJECTDIR}/interrupts/interrupts.o ${OBJECTDIR}/supc/supc.o
+OBJECTFILES=${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/interrupts.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/port.o ${OBJECTDIR}/src/supc.o
 
 # Source Files
-SOURCEFILES=main.c clock/clock.c port/port.c interrupts/interrupts.c supc/supc.c
+SOURCEFILES=src/clock.c src/interrupts.c src/main.c src/port.c src/supc.c
 
 # Pack Options 
 PACK_COMMON_OPTIONS=-I "${CMSIS_DIR}/CMSIS/Core/Include"
@@ -104,66 +104,66 @@ endif
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/main.o: main.c  .generated_files/flags/default/989618727029cfdff14a601117c5a3bb2b1065a3 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/main.o.d 
-	@${RM} ${OBJECTDIR}/main.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/clock.o: src/clock.c  .generated_files/flags/default/f44260ec4874d821eeadd8cf4927e71494b19f69 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/clock.o.d 
+	@${RM} ${OBJECTDIR}/src/clock.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/clock.o.d" -o ${OBJECTDIR}/src/clock.o src/clock.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/clock/clock.o: clock/clock.c  .generated_files/flags/default/57f55798c6f71a498d815ed60be226f254cb13b6 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/clock" 
-	@${RM} ${OBJECTDIR}/clock/clock.o.d 
-	@${RM} ${OBJECTDIR}/clock/clock.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/clock/clock.o.d" -o ${OBJECTDIR}/clock/clock.o clock/clock.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/interrupts.o: src/interrupts.c  .generated_files/flags/default/7f979d566004b187bd644446fa825a6063ec70b6 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/interrupts.o.d 
+	@${RM} ${OBJECTDIR}/src/interrupts.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/interrupts.o.d" -o ${OBJECTDIR}/src/interrupts.o src/interrupts.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/port/port.o: port/port.c  .generated_files/flags/default/310fee7a67e02c37d5d4841991876aa59a372162 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/port" 
-	@${RM} ${OBJECTDIR}/port/port.o.d 
-	@${RM} ${OBJECTDIR}/port/port.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/port/port.o.d" -o ${OBJECTDIR}/port/port.o port/port.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/main.o: src/main.c  .generated_files/flags/default/492a63ec804b83683051c97552600a2cb38355c9 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/main.o.d 
+	@${RM} ${OBJECTDIR}/src/main.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/main.o.d" -o ${OBJECTDIR}/src/main.o src/main.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/interrupts/interrupts.o: interrupts/interrupts.c  .generated_files/flags/default/e99194fbbb0be4d3f6ef9d70efc11b3f96e7dd4e .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/interrupts" 
-	@${RM} ${OBJECTDIR}/interrupts/interrupts.o.d 
-	@${RM} ${OBJECTDIR}/interrupts/interrupts.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/interrupts/interrupts.o.d" -o ${OBJECTDIR}/interrupts/interrupts.o interrupts/interrupts.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/port.o: src/port.c  .generated_files/flags/default/2bb2cc7a299ed1aa0d3cd49157f0e4cbdbe9c12b .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/port.o.d 
+	@${RM} ${OBJECTDIR}/src/port.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/port.o.d" -o ${OBJECTDIR}/src/port.o src/port.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/supc/supc.o: supc/supc.c  .generated_files/flags/default/800e9a13230031ddec1b37ec6f34aba57369b97c .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/supc" 
-	@${RM} ${OBJECTDIR}/supc/supc.o.d 
-	@${RM} ${OBJECTDIR}/supc/supc.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/supc/supc.o.d" -o ${OBJECTDIR}/supc/supc.o supc/supc.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/supc.o: src/supc.c  .generated_files/flags/default/a748b210929d622335bd7455ba8752abfbe517 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/supc.o.d 
+	@${RM} ${OBJECTDIR}/src/supc.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/supc.o.d" -o ${OBJECTDIR}/src/supc.o src/supc.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
 else
-${OBJECTDIR}/main.o: main.c  .generated_files/flags/default/b912a9d9c459cfc684eaa60686481e92e284cfa7 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/main.o.d 
-	@${RM} ${OBJECTDIR}/main.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/clock.o: src/clock.c  .generated_files/flags/default/b8859760c77ec475284c2d5e2946bbcd564f41c5 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/clock.o.d 
+	@${RM} ${OBJECTDIR}/src/clock.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/clock.o.d" -o ${OBJECTDIR}/src/clock.o src/clock.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/clock/clock.o: clock/clock.c  .generated_files/flags/default/bdcfaec16495a65e0afd3c8d33bbdbb2ae755dcb .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/clock" 
-	@${RM} ${OBJECTDIR}/clock/clock.o.d 
-	@${RM} ${OBJECTDIR}/clock/clock.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/clock/clock.o.d" -o ${OBJECTDIR}/clock/clock.o clock/clock.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/interrupts.o: src/interrupts.c  .generated_files/flags/default/af0027e1632eba02505795719c2b5094938bc632 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/interrupts.o.d 
+	@${RM} ${OBJECTDIR}/src/interrupts.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/interrupts.o.d" -o ${OBJECTDIR}/src/interrupts.o src/interrupts.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/port/port.o: port/port.c  .generated_files/flags/default/10ffcdb3d97f89afcb9b93d92d66b7f4e755fbec .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/port" 
-	@${RM} ${OBJECTDIR}/port/port.o.d 
-	@${RM} ${OBJECTDIR}/port/port.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/port/port.o.d" -o ${OBJECTDIR}/port/port.o port/port.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/main.o: src/main.c  .generated_files/flags/default/fb7b7a54a8fa1538b17a39291222964450c42f59 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/main.o.d 
+	@${RM} ${OBJECTDIR}/src/main.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/main.o.d" -o ${OBJECTDIR}/src/main.o src/main.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/interrupts/interrupts.o: interrupts/interrupts.c  .generated_files/flags/default/368761f507ea44ec49f0e2cad16e2f0dbd381b1e .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/interrupts" 
-	@${RM} ${OBJECTDIR}/interrupts/interrupts.o.d 
-	@${RM} ${OBJECTDIR}/interrupts/interrupts.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/interrupts/interrupts.o.d" -o ${OBJECTDIR}/interrupts/interrupts.o interrupts/interrupts.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/port.o: src/port.c  .generated_files/flags/default/318bf24ac576a1eb0de64545c9c761f999d4ea75 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/port.o.d 
+	@${RM} ${OBJECTDIR}/src/port.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/port.o.d" -o ${OBJECTDIR}/src/port.o src/port.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/supc/supc.o: supc/supc.c  .generated_files/flags/default/322737412ad7be0167a08829a2ceb9c27a9078b5 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/supc" 
-	@${RM} ${OBJECTDIR}/supc/supc.o.d 
-	@${RM} ${OBJECTDIR}/supc/supc.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -MP -MMD -MF "${OBJECTDIR}/supc/supc.o.d" -o ${OBJECTDIR}/supc/supc.o supc/supc.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
+${OBJECTDIR}/src/supc.o: src/supc.c  .generated_files/flags/default/db8b955f3b97703c10f1f719ffb95b71d4648e7a .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/supc.o.d 
+	@${RM} ${OBJECTDIR}/src/supc.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/supc.o.d" -o ${OBJECTDIR}/src/supc.o src/supc.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}" ${PACK_COMMON_OPTIONS} 
 	
 endif
 
