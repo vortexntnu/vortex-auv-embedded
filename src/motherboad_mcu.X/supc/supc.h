@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-
+void SUPC_Initialize(void);
 
 
 #ifdef	__cplusplus

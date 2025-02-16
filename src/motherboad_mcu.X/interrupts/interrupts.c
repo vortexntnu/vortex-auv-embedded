@@ -35,10 +35,11 @@ void NVIC_Initialize(void) {
 }
 
 void EIC_Initialize(void) {
-    // Enable falling edge detection on EXTINT[15] (for PB31) configure
+    // Enable falling edge detection on EXTINT[15] (for PA15) configure
     NVMCTRL_REGS->NVMCTRL_CTRLA = (uint16_t)NVMCTRL_CTRLA_RWS(5U) | NVMCTRL_CTRLA_AUTOWS_Msk;
     
-    EIC_REGS->EIC_CTRLA |= EIC_CTRLA_SWRST_Msk;
+    //EIC_REGS->EIC_CTRLA |= EIC_CTRLA_SWRST_Msk;
+    EIC_REGS->EIC_CTRLA |= EIC_CTRLA_CKSEL_CLK_ULP32K;
     while ((EIC_REGS->EIC_SYNCBUSY & EIC_SYNCBUSY_ENABLE_Msk) == EIC_SYNCBUSY_ENABLE_Msk){
         ;
     }
@@ -52,16 +53,18 @@ void EIC_Initialize(void) {
     while ((EIC_REGS->EIC_SYNCBUSY & EIC_SYNCBUSY_ENABLE_Msk) == EIC_SYNCBUSY_ENABLE_Msk){
         ;
     }
+    return;
 }
 
 void Interrupts_Initialize(void) {
     EIC_Initialize();
     NVIC_Initialize();
+    return;
 }
 
 // External Interrupt Handler for EXTINT15
 void __attribute__((used)) EIC_EXTINT_15_Handler(void){
-    EIC_REGS->EIC_INTFLAG = (1 << 15); 
     LED0_Toggle();
+    EIC_REGS->EIC_INTFLAG |= (1 << 15); 
     return;
 }
