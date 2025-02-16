@@ -33,6 +33,7 @@
 
 
 int main(void) {
+    SUPC_Initialize();
     PORT_Initialize(); 
     CLOCK_Initialize(); 
     Interrupts_Initialize();
