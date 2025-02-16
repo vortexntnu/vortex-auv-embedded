@@ -150,6 +150,12 @@ void CAN0_Initialize(void) {
     CAN0_REGS->CAN_NBTP = CAN_NBTP_NTSEG2(5) | CAN_NBTP_NTSEG1(16) |
                           CAN_NBTP_NBRP(3) | CAN_NBTP_NSJW(4);
 
+    // CAN0_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(5) | CAN_DBTP_DTSEG1(16) |
+    //                       CAN_DBTP_DBRP(0) | CAN_DBTP_DSJW(4);
+    //
+    // CAN0_REGS->CAN_NBTP = CAN_NBTP_NTSEG2(5) | CAN_NBTP_NTSEG1(16) |
+    //                       CAN_NBTP_NBRP(1) | CAN_NBTP_NSJW(4);
+
     /* Receive Buffer / FIFO Element Size Configuration Register */
     CAN0_REGS->CAN_RXESC =
         0 | CAN_RXESC_F0DS(7) | CAN_RXESC_F1DS(7) | CAN_RXESC_RBDS(7);
@@ -908,6 +914,7 @@ void __attribute__((used)) CAN0_Handler(void) {
     /* Check if error occurred */
     if (ir & CAN_IR_BO_Msk) {
         CAN0_REGS->CAN_IR = CAN_IR_BO_Msk;
+        printf("CAN ERROR\n");
     }
     /* New Message in Rx FIFO 0 */
     if (ir & CAN_IR_RF0N_Msk) {

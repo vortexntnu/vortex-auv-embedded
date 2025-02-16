@@ -40,7 +40,6 @@
  *******************************************************************************/
 
 #include "clock.h"
-#include <stdio.h>
 #include "samc21e17a.h"
 
 static void OSCCTRL_Initialize(void) {
@@ -49,7 +48,7 @@ static void OSCCTRL_Initialize(void) {
     OSCCTRL_REGS->OSCCTRL_CAL48M = calibValue;
 
     /* Selection of the Division Value */
-    OSCCTRL_REGS->OSCCTRL_OSC48MDIV = (uint8_t)OSCCTRL_OSC48MDIV_DIV(0UL);
+    OSCCTRL_REGS->OSCCTRL_OSC48MDIV = 0;
 
     while ((OSCCTRL_REGS->OSCCTRL_OSC48MSYNCBUSY &
             OSCCTRL_OSC48MSYNCBUSY_OSC48MDIV_Msk) ==
@@ -72,7 +71,7 @@ static void OSC32KCTRL_Initialize(void) {
 
 static void GCLK0_Initialize(void) {
     GCLK_REGS->GCLK_GENCTRL[0] =
-        GCLK_GENCTRL_DIV(1UL) | GCLK_GENCTRL_SRC(6UL) | GCLK_GENCTRL_GENEN_Msk;
+        GCLK_GENCTRL_DIV(0UL) | GCLK_GENCTRL_SRC(6UL) | GCLK_GENCTRL_GENEN_Msk;
 
     while ((GCLK_REGS->GCLK_SYNCBUSY & GCLK_SYNCBUSY_GENCTRL0_Msk) ==
            GCLK_SYNCBUSY_GENCTRL0_Msk) {
@@ -89,14 +88,6 @@ void CLOCK_Initialize(void) {
 
     GCLK0_Initialize();
 
-    // SERCOM4 USART DEBUGGING
-    // GCLK_REGS->GCLK_PCHCTRL[23] =
-    //     GCLK_PCHCTRL_GEN(0x0UL) | GCLK_PCHCTRL_CHEN_Msk;
-    //
-    // while ((GCLK_REGS->GCLK_PCHCTRL[23] & GCLK_PCHCTRL_CHEN_Msk) !=
-    //        GCLK_PCHCTRL_CHEN_Msk) {
-    //     /* Wait for synchronization */
-    // }
     // TCC0 and TCC1 clock
     GCLK_REGS->GCLK_PCHCTRL[28] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
@@ -119,7 +110,7 @@ void CLOCK_Initialize(void) {
            GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
-    // SERCOM0 I2C 3
+    // SERCOM0 I2C 3 OR USART DEBUGGING
     GCLK_REGS->GCLK_PCHCTRL[19] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
     while ((GCLK_REGS->GCLK_PCHCTRL[19] & GCLK_PCHCTRL_CHEN_Msk) !=
@@ -142,8 +133,9 @@ void CLOCK_Initialize(void) {
     }
 
     /* Configure the APBC Bridge Clocks */
-
+    // MCLK_REGS->MCLK_CPUDIV = 1;
     MCLK_REGS->MCLK_AHBMASK |= (1 << 8);  // CAN0
-    MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | (1 << 6) |
-                               (1 << 3) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4);
+    // MCLK_REGS->MCLK_APBCMASK = 0x61F;
+    MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | 
+                               (1 << 3) | (1 << 1) | (1 << 2) | (1 << 4);
 }

@@ -5,6 +5,7 @@ CompileFlags:
     - -I/opt/microchip/mplabx/v6.20/packs/arm/CMSIS/5.4.0/CMSIS/Core/Include/
     - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAME51_DFP/3.7.242/include/
     - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAMC21_DFP/3.8.119/samc21/include/
+    - -I/home/nathaniel/vortex-auv-embedded/gripper_17.X/include/
     - -Wall
     - -Wextra
 

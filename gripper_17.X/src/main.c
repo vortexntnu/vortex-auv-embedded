@@ -8,20 +8,21 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
+#include <stdio.h>
 #include "can1.h"
 #include "can_common.h"
 #include "clock.h"
 #include "i2c.h"  // I2C client backup
 // #include "i2c_master.h" // not used
 #include "sam.h"
+#include "samc21e17a.h"
 #include "sercom0_i2c.h"
 #include "sercom1_i2c.h"
 #include "sercom3_i2c.h"
 #include "system_init.h"
 #include "tcc.h"
 #include "tcc0.h"
-// #include "usart.h"
+#include "usart.h"
 
 // Encoder
 #define ENCODER_ADDR 0x40
@@ -71,14 +72,16 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
     if (!SERCOM0_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
         return 0;
     }
-    while (SERCOM0_I2C_IsBusy());
+    while (SERCOM0_I2C_IsBusy())
+        ;
     rawData[0] = (dataBuffer[1] << 6) | (dataBuffer[0] & 0x3F);
     // WRIST
 
     if (!SERCOM1_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
         return 0;
     }
-    while (SERCOM1_I2C_IsBusy()); 
+    while (SERCOM1_I2C_IsBusy())
+        ;
 
     rawData[1] = (dataBuffer[1] << 6) | (dataBuffer[0] & 0x3F);
     // GRIP
@@ -86,8 +89,9 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
     if (!SERCOM3_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
         return 0;
     }
-    
-    while (SERCOM3_I2C_IsBusy());
+
+    while (SERCOM3_I2C_IsBusy())
+        ;
     rawData[2] = (dataBuffer[1] << 6) | (dataBuffer[0] & 0x3F);
 
     data[0] = rawData[0] >> 8;
@@ -156,7 +160,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                     dataBuffer +
                     1);  // Because of start byte start indexing at +1
 
-                Encoder_Read(encoder_angles, ENCODER_ADDR, ANGLE_REGISTER);
+                // Encoder_Read(encoder_angles, ENCODER_ADDR, ANGLE_REGISTER);
             }
             break;
         default:
@@ -168,7 +172,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 
 // Callback function called during CAN interrupt.
 // When a recieve interrupt is triggered it will
-// set the PWM duty cycle with the data it has recieved 
+// set the PWM duty cycle with the data it has recieved
 // it will then read the encoders and send the data
 // after a successfull transmit reviece interrupts will
 // be reenabled
@@ -218,19 +222,24 @@ void APP_CAN_Callback(uintptr_t context) {
         // states = STATE_CAN_XFER_ERROR;
     }
 }
+
+// void TCC_PeriodEventHandler(uint32_t status, uintptr_t context)
+// {
+// }
+
 int main(void) {
     /* Initialize all modules */
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PIN_Initialize();
     CLOCK_Initialize();
     NVMCTRL_Initialize();
-    PIN_Initialize();
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
     CAN0_Initialize();
-    SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-    SERCOM3_I2C_Initialize();  // I2C 1
-    // SERCOM4_USART_Initialize();  // USART for Debugging
+    // SERCOM0_I2C_Initialize();  // I2C 3
+    SERCOM1_I2C_Initialize();    // I2C 2
+    SERCOM3_I2C_Initialize();    // I2C 1
+    SERCOM0_USART_Initialize();  // USART for Debugging
 
     // SERCOM2_I2C_Initialize();  // CLient (backup)
     NVIC_Initialize();  // Enable interrupts
@@ -244,6 +253,7 @@ int main(void) {
     // Callback functions
     // SERCOM2_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
     CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_RECEIVE,
                             CAN_MSG_ATTR_RX_FIFO0);
     CAN0_TxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_TRANSMIT);
@@ -252,6 +262,8 @@ int main(void) {
                             &timestamp, CAN_MSG_ATTR_RX_FIFO0,
                             &msgFrameAttr) == false) {
     }
+    //
+    printf("Initialize complete\n");
 
     while (true) {
         // switch (states) {

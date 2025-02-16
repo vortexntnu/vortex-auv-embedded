@@ -20,7 +20,7 @@ void TCC0_PWMInitialize(void) {
         /* Wait for sync */
     }
     /* Clock prescaler */
-    TCC0_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV8;
+    TCC0_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV4;
     TCC0_REGS->TCC_WEXCTRL = TCC_WEXCTRL_OTMX(1U);
     /* Dead time configurations */
     TCC0_REGS->TCC_WEXCTRL |= TCC_WEXCTRL_DTIEN0_Msk | TCC_WEXCTRL_DTIEN1_Msk |
@@ -28,6 +28,8 @@ void TCC0_PWMInitialize(void) {
                               TCC_WEXCTRL_DTLS(64U) | TCC_WEXCTRL_DTHS(64U);
 
     TCC0_REGS->TCC_WAVE = TCC_WAVE_WAVEGEN_DSTOP;
+
+    TCC0_REGS->TCC_DRVCTRL |= (1 << 19);
 
     /* Configure duty cycle values */  // All set to 1500 micro seconds duty
                                        // cycle
