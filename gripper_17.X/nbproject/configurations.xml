@@ -10,7 +10,6 @@
       <itemPath>include/i2c.h</itemPath>
       <itemPath>include/sercom0_i2c.h</itemPath>
       <itemPath>include/sercom1_i2c.h</itemPath>
-      <itemPath>include/sercom3_i2c.h</itemPath>
       <itemPath>include/sercom_i2c_common.h</itemPath>
       <itemPath>include/system_init.h</itemPath>
       <itemPath>include/tcc.h</itemPath>
@@ -37,7 +36,6 @@
       <itemPath>src/main.c</itemPath>
       <itemPath>src/sercom0_i2c.c</itemPath>
       <itemPath>src/sercom1_i2c.c</itemPath>
-      <itemPath>src/sercom3_i2c.c</itemPath>
       <itemPath>src/system_init.c</itemPath>
       <itemPath>src/tcc.c</itemPath>
       <itemPath>src/tcc0.c</itemPath>

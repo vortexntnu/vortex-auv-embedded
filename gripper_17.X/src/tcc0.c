@@ -43,7 +43,7 @@ void TCC0_PWMInitialize(void) {
     // Idle duty cycle: 1500 micro seconds = 9000
     // Mni duty cycle: 700 micro seconds = 4200
 
-    // TCC0_REGS->TCC_INTENSET = TCC_INTENSET_OVF_Msk;
+    TCC0_REGS->TCC_INTENSET = TCC_INTENSET_OVF_Msk;
 
     while (TCC0_REGS->TCC_SYNCBUSY) {
         /* Wait for sync */

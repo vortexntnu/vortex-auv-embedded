@@ -51,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/sercom3_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c
+SOURCEFILES_QUOTED_IF_SPACED=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/sercom3_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/src/can1.o.d ${OBJECTDIR}/src/clock.o.d ${OBJECTDIR}/src/i2c.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/sercom0_i2c.o.d ${OBJECTDIR}/src/sercom1_i2c.o.d ${OBJECTDIR}/src/sercom3_i2c.o.d ${OBJECTDIR}/src/system_init.o.d ${OBJECTDIR}/src/tcc.o.d ${OBJECTDIR}/src/tcc0.o.d ${OBJECTDIR}/src/usart.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/src/can1.o.d ${OBJECTDIR}/src/clock.o.d ${OBJECTDIR}/src/i2c.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/sercom0_i2c.o.d ${OBJECTDIR}/src/sercom1_i2c.o.d ${OBJECTDIR}/src/system_init.o.d ${OBJECTDIR}/src/tcc.o.d ${OBJECTDIR}/src/tcc0.o.d ${OBJECTDIR}/src/usart.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/sercom3_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o
+OBJECTFILES=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o
 
 # Source Files
-SOURCEFILES=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/sercom3_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c
+SOURCEFILES=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c
 
 # Pack Options 
 PACK_COMMON_OPTIONS=-I "${CMSIS_DIR}/CMSIS/Core/Include"
@@ -140,12 +140,6 @@ ${OBJECTDIR}/src/sercom1_i2c.o: src/sercom1_i2c.c  .generated_files/flags/defaul
 	@${RM} ${OBJECTDIR}/src/sercom1_i2c.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/sercom1_i2c.o.d" -o ${OBJECTDIR}/src/sercom1_i2c.o src/sercom1_i2c.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
 	
-${OBJECTDIR}/src/sercom3_i2c.o: src/sercom3_i2c.c  .generated_files/flags/default/568759f0e240d80c9aea203f631426d7d463bb78 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/src" 
-	@${RM} ${OBJECTDIR}/src/sercom3_i2c.o.d 
-	@${RM} ${OBJECTDIR}/src/sercom3_i2c.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/sercom3_i2c.o.d" -o ${OBJECTDIR}/src/sercom3_i2c.o src/sercom3_i2c.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
-	
 ${OBJECTDIR}/src/system_init.o: src/system_init.c  .generated_files/flags/default/d806c7c647755edc28386580f5b8edacf997ab67 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/src" 
 	@${RM} ${OBJECTDIR}/src/system_init.o.d 
@@ -206,12 +200,6 @@ ${OBJECTDIR}/src/sercom1_i2c.o: src/sercom1_i2c.c  .generated_files/flags/defaul
 	@${RM} ${OBJECTDIR}/src/sercom1_i2c.o.d 
 	@${RM} ${OBJECTDIR}/src/sercom1_i2c.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/sercom1_i2c.o.d" -o ${OBJECTDIR}/src/sercom1_i2c.o src/sercom1_i2c.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
-	
-${OBJECTDIR}/src/sercom3_i2c.o: src/sercom3_i2c.c  .generated_files/flags/default/89ba469f1820f85491f740110d3024cb4a58cafc .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/src" 
-	@${RM} ${OBJECTDIR}/src/sercom3_i2c.o.d 
-	@${RM} ${OBJECTDIR}/src/sercom3_i2c.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/sercom3_i2c.o.d" -o ${OBJECTDIR}/src/sercom3_i2c.o src/sercom3_i2c.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
 	
 ${OBJECTDIR}/src/system_init.o: src/system_init.c  .generated_files/flags/default/3030efe6028c5c148b66b7be7c0e5fce21b6bc67 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/src" 

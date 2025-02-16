@@ -24,10 +24,9 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PMUX[3] = 0x40;
     PORT_REGS->GROUP[0].PORT_PMUX[5] = 0x4;
     PORT_REGS->GROUP[0].PORT_PMUX[9] = 0x50;
+  
 
-
-
-
+    PORT_REGS->GROUP[0].PORT_DIR |= (1 << 27) | (1 << 28) | (1 << 0);
     // I2C SERCOM channels
     // SERCOM0 I2C 3
     PORT_REGS->GROUP[0].PORT_PINCFG[8] = 0x1;
@@ -62,11 +61,11 @@ void PIN_Initialize(void) {
 }
 
 void NVIC_Initialize(void) {
-    // NVIC_SetPriority(TCC1_IRQn, 3);
+   // NVIC_SetPriority(TCC1_IRQn, 3);
     // NVIC_EnableIRQ(TCC1_IRQn);
-    //
-    // NVIC_SetPriority(TCC0_IRQn, 3);
-    // NVIC_EnableIRQ(TCC0_IRQn);
+
+    NVIC_SetPriority(TCC0_IRQn, 3);
+    NVIC_EnableIRQ(TCC0_IRQn);
 
 
     // I2C 3

@@ -130,15 +130,15 @@ typedef struct
 } SERCOM_I2C_SLAVE_OBJ;
 
 
-void SERCOM2_I2C_Initialize(void);
-void SERCOM2_I2C_CallbackRegister(SERCOM_I2C_SLAVE_CALLBACK callback, uintptr_t contextHandle);
-bool SERCOM2_I2C_IsBusy(void);
-uint8_t SERCOM2_I2C_ReadByte(void);
-void SERCOM2_I2C_WriteByte(uint8_t wrByte);
-SERCOM_I2C_SLAVE_ERROR SERCOM2_I2C_ErrorGet(void);
-SERCOM_I2C_SLAVE_TRANSFER_DIR SERCOM2_I2C_TransferDirGet(void);
-SERCOM_I2C_SLAVE_ACK_STATUS SERCOM2_I2C_LastByteAckStatusGet(void);
-void SERCOM2_I2C_CommandSet(SERCOM_I2C_SLAVE_COMMAND command);
+void SERCOM3_SLAVE_I2C_Initialize(void);
+void SERCOM3_I2C_CallbackRegister(SERCOM_I2C_SLAVE_CALLBACK callback, uintptr_t contextHandle);
+bool SERCOM3_I2C_IsBusy(void);
+uint8_t SERCOM3_I2C_ReadByte(void);
+void SERCOM3_I2C_WriteByte(uint8_t wrByte);
+SERCOM_I2C_SLAVE_ERROR SERCOM3_SLAVE_I2C_ErrorGet(void);
+SERCOM_I2C_SLAVE_TRANSFER_DIR SERCOM3_I2C_TransferDirGet(void);
+SERCOM_I2C_SLAVE_ACK_STATUS SERCOM3_I2C_LastByteAckStatusGet(void);
+void SERCOM3_I2C_CommandSet(SERCOM_I2C_SLAVE_COMMAND command);
 
 #ifdef __cplusplus
 }
