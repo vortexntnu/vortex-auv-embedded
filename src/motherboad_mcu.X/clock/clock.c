@@ -9,8 +9,9 @@ static void OSCCTRL_Initialize(void)
 
 static void OSC32KCTRL_Initialize(void)
 {
-
-    OSC32KCTRL_REGS->OSC32KCTRL_RTCCTRL = OSC32KCTRL_RTCCTRL_RTCSEL(0U);
+    /* Enable 32KHz from internal ULP oscillator for BOD33 */
+    OSC32KCTRL_REGS->OSC32KCTRL_RTCCTRL = OSC32KCTRL_RTCCTRL_RTCSEL(0x1U);
+    OSC32KCTRL_REGS->OSC32KCTRL_OSCULP32K = OSC32KCTRL_OSCULP32K_EN32K_Msk;
 }
 
 static void FDPLL0_Initialize(void)
@@ -121,11 +122,11 @@ void CLOCK_Initialize (void)
     }
 
     /* Configure the AHB Bridge Clocks */
-    MCLK_REGS->MCLK_AHBMASK = 0xffffffU;
+    MCLK_REGS->MCLK_AHBMASK = SET_BITS_0_23;
 
     /* Configure the APBA Bridge Clocks */
-    MCLK_REGS->MCLK_APBAMASK = 0x7ffU;
-
-
+    MCLK_REGS->MCLK_APBAMASK = SET_BITS_0_10;
+    
+    return;
 }
 

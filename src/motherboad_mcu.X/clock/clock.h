@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+#define SET_BITS_0_10 0x7ffU
+#define SET_BITS_0_23 0xffffffU
 void CLOCK_Initialize(void);
 
 
