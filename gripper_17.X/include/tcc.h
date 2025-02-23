@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   tcc.h
  * Author: nathaniel
  *
@@ -6,12 +6,12 @@
  */
 
 #ifndef TCC_H
-#define	TCC_H
+#define TCC_H
 
 #include "stdbool.h"
 #include "stddef.h"
 #include "tcc_common.h"
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -27,7 +27,7 @@ extern "C" {
 */
 
 /* Total number of TCC channels in a module */
-#define TCC1_NUM_CHANNELS    (4U)
+#define TCC1_NUM_CHANNELS (4U)
 
 /* TCC Channel numbers
 
@@ -40,13 +40,12 @@ extern "C" {
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     TCC1_CHANNEL0,
     TCC1_CHANNEL1,
     TCC1_CHANNEL2,
     TCC1_CHANNEL3,
-}TCC1_CHANNEL_NUM;
+} TCC1_CHANNEL_NUM;
 
 // *****************************************************************************
 
@@ -56,13 +55,12 @@ typedef enum
     Identifies TCC PWM interrupt status flags
 
    Description:
-    This enumeration identifies TCC PWM interrupt status falgs
+    This enumeration identifies TCC PWM interrupt status flags
 
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     TCC1_PWM_STATUS_OVF = TCC_INTFLAG_OVF_Msk,
     TCC1_PWM_STATUS_FAULT_0 = TCC_INTFLAG_FAULT0_Msk,
     TCC1_PWM_STATUS_FAULT_1 = TCC_INTFLAG_FAULT1_Msk,
@@ -70,7 +68,7 @@ typedef enum
     TCC1_PWM_STATUS_MC_1 = TCC_INTFLAG_MC1_Msk,
     TCC1_PWM_STATUS_MC_2 = TCC_INTFLAG_MC2_Msk,
     TCC1_PWM_STATUS_MC_3 = TCC_INTFLAG_MC3_Msk,
-}TCC1_PWM_STATUS;
+} TCC1_PWM_STATUS;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -106,16 +104,13 @@ uint32_t TCC1_PWM24bitPeriodGet(void);
 
 void TCC1_PWM24bitCounterSet(uint32_t count);
 
-__STATIC_INLINE void TCC1_PWM24bitDutySet(TCC1_CHANNEL_NUM channel, uint32_t duty)
-{
+__STATIC_INLINE void TCC1_PWM24bitDutySet(TCC1_CHANNEL_NUM channel,
+                                          uint32_t duty) {
     TCC1_REGS->TCC_CCBUF[channel] = duty & 0xFFFFFF;
 }
 
-
-
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* TCC_H */
-
+#endif /* TCC_H */

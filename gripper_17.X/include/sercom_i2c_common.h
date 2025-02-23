@@ -1,5 +1,5 @@
 
-/* 
+/*
  * File:   i2c_master.h
  * Author: nathaniel
  *
@@ -7,17 +7,15 @@
  */
 
 #ifndef SERCOM_I2C_COMMON_H
-#define	SERCOM_I2C_COMMON_H
+#define SERCOM_I2C_COMMON_H
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include "samc21e17a.h"
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 // *****************************************************************************
 // *****************************************************************************
@@ -38,10 +36,9 @@ extern "C" {
     None.
 */
 
-enum
-{
+enum {
     I2C_TRANSFER_WRITE = 0,
-    I2C_TRANSFER_READ  = 1,
+    I2C_TRANSFER_READ = 1,
 };
 
 // *****************************************************************************
@@ -58,8 +55,7 @@ enum
     None.
 */
 
-typedef enum
-{
+typedef enum {
     /* No error has occurred. */
     SERCOM_I2C_ERROR_NONE,
 
@@ -84,8 +80,7 @@ typedef enum
     None.
 */
 
-typedef enum
-{
+typedef enum {
     /* SERCOM PLib Task Error State */
     SERCOM_I2C_STATE_ERROR = -1,
 
@@ -123,8 +118,7 @@ typedef enum
     None.
 */
 
-typedef void (*SERCOM_I2C_CALLBACK)
-(
+typedef void (*SERCOM_I2C_CALLBACK)(
     /*Transfer context*/
     uintptr_t contextHandle
 
@@ -143,38 +137,37 @@ typedef void (*SERCOM_I2C_CALLBACK)
     None.
 */
 
-typedef struct
-{
-    bool                        isHighSpeed;
+typedef struct {
+    bool isHighSpeed;
 
-    bool                        txMasterCode;
+    bool txMasterCode;
 
-    bool                        transferDir;
+    bool transferDir;
 
-    uint16_t                    address;
+    uint16_t address;
 
-    uint8_t                     masterCode;
+    uint8_t masterCode;
 
-    uint8_t*                    writeBuffer;
+    uint8_t* writeBuffer;
 
-    uint8_t*                    readBuffer;
+    uint8_t* readBuffer;
 
-    size_t                      writeSize;
+    size_t writeSize;
 
-    size_t                      readSize;
+    size_t readSize;
 
-    size_t                      writeCount;
+    size_t writeCount;
 
-    size_t                      readCount;
+    size_t readCount;
 
     /* State */
-    volatile SERCOM_I2C_STATE   state;
+    volatile SERCOM_I2C_STATE state;
 
     /* Transfer status */
-    volatile SERCOM_I2C_ERROR   error;
+    volatile SERCOM_I2C_ERROR error;
 
     /* Transfer Event Callback */
-    SERCOM_I2C_CALLBACK         callback;
+    SERCOM_I2C_CALLBACK callback;
 
     /* Transfer context */
     uintptr_t context;
@@ -194,17 +187,14 @@ typedef struct
     None.
 */
 
-typedef struct
-{
+typedef struct {
     /* SERCOM I2C Clock Speed */
     uint32_t clkSpeed;
 
 } SERCOM_I2C_TRANSFER_SETUP;
 
-
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* SERCOM_I2C_COMMON_H */
-
+#endif /* SERCOM_I2C_COMMON_H */

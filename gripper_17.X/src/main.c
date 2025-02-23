@@ -204,7 +204,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                 SetPWMDutyCycle(
                     dataBuffer +
                     1);  // Because of start byte start indexing at +1
-                // printf("MEssage recieved\n");
+                // printf("MEssage received\n");
                 // for (int i = 0; i < 7; i++) {
                 //     printf("%x\n", dataBuffer[i]);
                 // }
@@ -218,11 +218,11 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 }
 
 // Callback function called during CAN interrupt.
-// When a recieve interrupt is triggered it will
-// set the PWM duty cycle with the data it has recieved
+// When a receive interrupt is triggered it will
+// set the PWM duty cycle with the data it has received
 // it will then read the encoders and send the data
-// after a successfull transmit reviece interrupts will
-// be reenabled
+// after a successful transmit reviece interrupts will
+// be re-enabled
 void APP_CAN_Callback(uintptr_t context) {
     xferContext = context;
 

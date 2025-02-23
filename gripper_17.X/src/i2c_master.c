@@ -62,7 +62,7 @@ static bool SERCOM2_I2C_CalculateBaudValue(uint32_t srcClkFreq,
                                            uint32_t* baudVal) {
     uint32_t baudValue;
 
-    /* Reference clock frequency must be atleast two times the baud rate */
+    /* Reference clock frequency must be at least two times the baud rate */
     if (srcClkFreq < (2 * i2cClkSpeed)) {
         return false;
     }

@@ -1,6 +1,6 @@
 
 /*******************************************************************************
-  SERCOM Universal Synchronous/Asynchrnous Receiver/Transmitter PLIB
+  SERCOM Universal Synchronous/Asynchronous Receiver/Transmitter PLIB
 
   Company
     Microchip Technology Inc.

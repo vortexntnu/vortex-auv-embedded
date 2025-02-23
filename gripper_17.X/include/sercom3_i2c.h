@@ -1,7 +1,5 @@
 
 
-
-
 /*
  * File:   i2c_master.h
  * Author: nathaniel

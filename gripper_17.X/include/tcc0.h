@@ -1,5 +1,5 @@
 
-/* 
+/*
  * File:   tcc.h
  * Author: nathaniel
  *
@@ -7,16 +7,15 @@
  */
 
 #ifndef TCC0_H
-#define	TCC0_H
+#define TCC0_H
 
 #include "samc21e17a.h"
 #include "stdbool.h"
 #include "stddef.h"
 #include "tcc_common.h"
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
-
 
 // DOM-IGNORE-END
 
@@ -30,7 +29,7 @@ extern "C" {
 */
 
 /* Total number of TCC channels in a module */
-#define TCC0_NUM_CHANNELS    (4U)
+#define TCC0_NUM_CHANNELS (4U)
 
 /* TCC Channel numbers
 
@@ -43,13 +42,12 @@ extern "C" {
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     TCC0_CHANNEL0,
     TCC0_CHANNEL1,
     TCC0_CHANNEL2,
     TCC0_CHANNEL3,
-}TCC0_CHANNEL_NUM;
+} TCC0_CHANNEL_NUM;
 
 // *****************************************************************************
 
@@ -59,13 +57,12 @@ typedef enum
     Identifies TCC PWM interrupt status flags
 
    Description:
-    This enumeration identifies TCC PWM interrupt status falgs
+    This enumeration identifies TCC PWM interrupt status flags
 
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     TCC0_PWM_STATUS_OVF = TCC_INTFLAG_OVF_Msk,
     TCC0_PWM_STATUS_FAULT_0 = TCC_INTFLAG_FAULT0_Msk,
     TCC0_PWM_STATUS_FAULT_1 = TCC_INTFLAG_FAULT1_Msk,
@@ -73,7 +70,7 @@ typedef enum
     TCC0_PWM_STATUS_MC_1 = TCC_INTFLAG_MC1_Msk,
     TCC0_PWM_STATUS_MC_2 = TCC_INTFLAG_MC2_Msk,
     TCC0_PWM_STATUS_MC_3 = TCC_INTFLAG_MC3_Msk,
-}TCC0_PWM_STATUS;
+} TCC0_PWM_STATUS;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -109,16 +106,13 @@ uint32_t TCC0_PWM24bitPeriodGet(void);
 
 void TCC0_PWM24bitCounterSet(uint32_t count);
 
-__STATIC_INLINE void TCC0_PWM24bitDutySet(TCC0_CHANNEL_NUM channel, uint32_t duty)
-{
+__STATIC_INLINE void TCC0_PWM24bitDutySet(TCC0_CHANNEL_NUM channel,
+                                          uint32_t duty) {
     TCC0_REGS->TCC_CCBUF[channel] = duty & 0xFFFFFF;
 }
 
-
-
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* TCC_H */
-
+#endif /* TCC_H */

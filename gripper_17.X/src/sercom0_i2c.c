@@ -6,8 +6,8 @@
  * Created on January 19, 2025, 4:21 PM
  */
 
-#include <stdio.h>
 #include "sercom0_i2c.h"
+#include <stdio.h>
 #include "sam.h"
 
 #define SERCOM0_I2CM_BAUD_VALUE (0x34U)
@@ -63,7 +63,7 @@ static bool SERCOM0_I2C_CalculateBaudValue(uint32_t srcClkFreq,
                                            uint32_t* baudVal) {
     uint32_t baudValue;
 
-    /* Reference clock frequency must be atleast two times the baud rate */
+    /* Reference clock frequency must be at least two times the baud rate */
     if (srcClkFreq < (2 * i2cClkSpeed)) {
         return false;
     }

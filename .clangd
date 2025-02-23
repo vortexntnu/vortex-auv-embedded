@@ -1,6 +1,6 @@
 
 CompileFlags:
-  Add: 
+  Add:
     - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAME54_DFP/3.8.234/include/
     - -I/opt/microchip/mplabx/v6.20/packs/arm/CMSIS/5.4.0/CMSIS/Core/Include/
     - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAME51_DFP/3.7.242/include/

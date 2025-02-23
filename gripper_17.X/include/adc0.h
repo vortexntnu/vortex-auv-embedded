@@ -23,30 +23,30 @@
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
-*
-* Subject to your compliance with these terms, you may use Microchip software
-* and any derivatives exclusively with Microchip products. It is your
-* responsibility to comply with third party license terms applicable to your
-* use of third party software (including open source software) that may
-* accompany Microchip software.
-*
-* THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER
-* EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED
-* WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A
-* PARTICULAR PURPOSE.
-*
-* IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE,
-* INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND
-* WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS
-* BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE
-* FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
-* ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
-* THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
-*******************************************************************************/
+ * Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
+ *
+ * Subject to your compliance with these terms, you may use Microchip software
+ * and any derivatives exclusively with Microchip products. It is your
+ * responsibility to comply with third party license terms applicable to your
+ * use of third party software (including open source software) that may
+ * accompany Microchip software.
+ *
+ * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER
+ * EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED
+ * WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A
+ * PARTICULAR PURPOSE.
+ *
+ * IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE,
+ * INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND
+ * WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS
+ * BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE
+ * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
+ * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
+ * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ *******************************************************************************/
 // DOM-IGNORE-END
 
-#ifndef ADC0_H      // Guards against multiple inclusion
+#ifndef ADC0_H  // Guards against multiple inclusion
 #define ADC0_H
 
 // *****************************************************************************
@@ -55,12 +55,12 @@
 // *****************************************************************************
 // *****************************************************************************
 /* This section lists the other files that are included in this file.
-*/
+ */
 #include "adc_common.h"
 // DOM-IGNORE-BEGIN
-#ifdef __cplusplus // Provide C Compatibility
+#ifdef __cplusplus  // Provide C Compatibility
 
-    extern "C" {
+extern "C" {
 
 #endif
 // DOM-IGNORE-END
@@ -76,7 +76,6 @@
 
 // *****************************************************************************
 
-
 // *****************************************************************************
 // *****************************************************************************
 // Section: Interface Routines
@@ -86,17 +85,17 @@
     this interface.
 */
 
-void ADC0_Initialize( void );
+void ADC0_Initialize(void);
 
-void ADC0_Enable( void );
+void ADC0_Enable(void);
 
-void ADC0_Disable( void );
+void ADC0_Disable(void);
 
-void ADC0_ChannelSelect( ADC_POSINPUT positiveInput, ADC_NEGINPUT negativeInput );
+void ADC0_ChannelSelect(ADC_POSINPUT positiveInput, ADC_NEGINPUT negativeInput);
 
-void ADC0_ConversionStart( void );
+void ADC0_ConversionStart(void);
 
-uint16_t ADC0_ConversionResultGet( void );
+uint16_t ADC0_ConversionResultGet(void);
 
 void ADC0_ComparisonWindowSet(uint16_t low_threshold, uint16_t high_threshold);
 
@@ -104,14 +103,11 @@ void ADC0_WindowModeSet(ADC_WINMODE mode);
 
 bool ADC0_ConversionSequenceIsFinished(void);
 
-
-bool ADC0_ConversionStatusGet( void );
-
+bool ADC0_ConversionStatusGet(void);
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
-
-    }
+}
 
 #endif
 // DOM-IGNORE-END

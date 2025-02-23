@@ -22,41 +22,41 @@
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
-*
-* Subject to your compliance with these terms, you may use Microchip software
-* and any derivatives exclusively with Microchip products. It is your
-* responsibility to comply with third party license terms applicable to your
-* use of third party software (including open source software) that may
-* accompany Microchip software.
-*
-* THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER
-* EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED
-* WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A
-* PARTICULAR PURPOSE.
-*
-* IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE,
-* INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND
-* WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS
-* BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE
-* FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
-* ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
-* THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
-*******************************************************************************/
+ * Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+ *
+ * Subject to your compliance with these terms, you may use Microchip software
+ * and any derivatives exclusively with Microchip products. It is your
+ * responsibility to comply with third party license terms applicable to your
+ * use of third party software (including open source software) that may
+ * accompany Microchip software.
+ *
+ * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER
+ * EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED
+ * WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A
+ * PARTICULAR PURPOSE.
+ *
+ * IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE,
+ * INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND
+ * WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS
+ * BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE
+ * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
+ * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
+ * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ *******************************************************************************/
 // DOM-IGNORE-END
 
 #ifndef CAN_COMMON_H
 #define CAN_COMMON_H
 
-#include "stdint.h"
-#include "stddef.h"
-#include "stdbool.h"
 #include "samc21e17a.h"
+#include "stdbool.h"
+#include "stddef.h"
+#include "stdint.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
 
-    extern "C" {
+extern "C" {
 
 #endif
 // DOM-IGNORE-END
@@ -74,14 +74,13 @@
     CAN Mode for Classic CAN and CAN FD.
 
    Description:
-    This data type defines CAN mode Classic CAN, CAN FD without BRS(Bit rate switching)
-    and CAN FD with BRS.
+    This data type defines CAN mode Classic CAN, CAN FD without BRS(Bit rate
+   switching) and CAN FD with BRS.
 
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     CAN_MODE_NORMAL = 0,
     CAN_MODE_FD_WITHOUT_BRS,
     CAN_MODE_FD_WITH_BRS
@@ -95,13 +94,13 @@ typedef enum
 
    Description:
     This data type defines CAN Tx Message Attribute. Only One attribute
-    need to be passed as parameter value while invoking message transmit function.
+    need to be passed as parameter value while invoking message transmit
+   function.
 
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     CAN_MSG_ATTR_TX_FIFO_DATA_FRAME = 0,
     CAN_MSG_ATTR_TX_FIFO_RTR_FRAME,
     CAN_MSG_ATTR_TX_BUFFER_DATA_FRAME,
@@ -116,13 +115,13 @@ typedef enum
 
    Description:
     This data type defines CAN Rx Message Attribute. Only One attribute
-    need to be passed as parameter value while invoking message receive function.
+    need to be passed as parameter value while invoking message receive
+   function.
 
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     CAN_MSG_ATTR_RX_FIFO0 = 0,
     CAN_MSG_ATTR_RX_FIFO1,
     CAN_MSG_ATTR_RX_BUFFER
@@ -135,13 +134,13 @@ typedef enum
     CAN Message RX Frame Attribute for Data Frame and Remote Frame.
 
    Description:
-    This data type defines CAN Message RX Frame Attribute for Data Frame and Remote Frame.
+    This data type defines CAN Message RX Frame Attribute for Data Frame and
+   Remote Frame.
 
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     CAN_MSG_RX_DATA_FRAME = 0,
     CAN_MSG_RX_REMOTE_FRAME
 } CAN_MSG_RX_FRAME_ATTRIBUTE;
@@ -158,8 +157,7 @@ typedef enum
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     CAN_ERROR_NONE = 0x0,
     CAN_ERROR_LEC_STUFF = 0x1,
     CAN_ERROR_LEC_FORM = 0x2,
@@ -195,8 +193,7 @@ typedef enum
    Remarks:
     None.
 */
-typedef enum
-{
+typedef enum {
     CAN_INTERRUPT_RF0N_MASK = (1U << 0U),
     CAN_INTERRUPT_RF0W_MASK = (1U << 1U),
     CAN_INTERRUPT_RF0F_MASK = (1U << 2U),
@@ -225,7 +222,7 @@ typedef enum
     CAN_INTERRUPT_PEA_MASK = (1U << 27U),
     CAN_INTERRUPT_PED_MASK = (1U << 28U),
     CAN_INTERRUPT_ARA_MASK = (1U << 29U)
-}CAN_INTERRUPT_MASK;
+} CAN_INTERRUPT_MASK;
 
 // *****************************************************************************
 /* CAN Callback
@@ -239,7 +236,7 @@ typedef enum
    Remarks:
     None.
 */
-typedef void (*CAN_CALLBACK) (uintptr_t contextHandle);
+typedef void (*CAN_CALLBACK)(uintptr_t contextHandle);
 
 // *****************************************************************************
 /* CAN Message RAM Configuration
@@ -249,34 +246,33 @@ typedef void (*CAN_CALLBACK) (uintptr_t contextHandle);
 
    Description:
     This data structure defines the CAN Message RAM Base address for Rx FIFO0,
-    Rx FIFO1, Rx Buffers, Tx Buffers/FIFO, Tx Event FIFO, Standard Message ID Filter and
-    Extended Message ID Filter configuration.
+    Rx FIFO1, Rx Buffers, Tx Buffers/FIFO, Tx Event FIFO, Standard Message ID
+   Filter and Extended Message ID Filter configuration.
 
    Remarks:
     None.
 */
-typedef struct
-{
+typedef struct {
     /* Rx FIFO0 base address */
-    can_rxf0e_registers_t *rxFIFO0Address;
+    can_rxf0e_registers_t* rxFIFO0Address;
 
     /* Rx FIFO1 base address */
-    can_rxf1e_registers_t *rxFIFO1Address;
+    can_rxf1e_registers_t* rxFIFO1Address;
 
     /* Rx Buffer base address */
-    can_rxbe_registers_t *rxBuffersAddress;
+    can_rxbe_registers_t* rxBuffersAddress;
 
     /* Tx Buffers/FIFO base address */
-    can_txbe_registers_t *txBuffersAddress;
+    can_txbe_registers_t* txBuffersAddress;
 
     /* Tx Event FIFO base address */
-    can_txefe_registers_t *txEventFIFOAddress;
+    can_txefe_registers_t* txEventFIFOAddress;
 
     /* Standard Message ID Filter base address */
-    can_sidfe_registers_t *stdMsgIDFilterAddress;
+    can_sidfe_registers_t* stdMsgIDFilterAddress;
 
     /* Extended Message ID Filter base address */
-    can_xidfe_registers_t *extMsgIDFilterAddress;
+    can_xidfe_registers_t* extMsgIDFilterAddress;
 } CAN_MSG_RAM_CONFIG;
 
 // *****************************************************************************
@@ -291,18 +287,17 @@ typedef struct
    Remarks:
     None.
 */
-typedef struct
-{
+typedef struct {
     /* Rx Message ID */
-    uint32_t *rxId;
+    uint32_t* rxId;
     /* Rx Message buffer */
-    uint8_t *rxBuffer;
+    uint8_t* rxBuffer;
     /* Rx Message size */
-    uint8_t *rxsize;
+    uint8_t* rxsize;
     /* Rx Message timestamp */
-    uint16_t *timestamp;
+    uint16_t* timestamp;
     /* Rx Message frame attribute */
-    CAN_MSG_RX_FRAME_ATTRIBUTE *msgFrameAttr;
+    CAN_MSG_RX_FRAME_ATTRIBUTE* msgFrameAttr;
 } CAN_RX_MSG;
 
 // *****************************************************************************
@@ -317,8 +312,7 @@ typedef struct
    Remarks:
     None.
 */
-typedef struct
-{
+typedef struct {
     /* Transfer Event Callback */
     CAN_CALLBACK callback;
 
@@ -338,8 +332,7 @@ typedef struct
    Remarks:
     None.
 */
-typedef struct
-{
+typedef struct {
     /* Tx Buffer Index */
     uint32_t txBufferIndex;
     /* Rx Buffer Index */
@@ -357,7 +350,7 @@ typedef struct
 #endif
 // DOM-IGNORE-END
 
-#endif //CAN1_COMMON_H
+#endif  // CAN1_COMMON_H
 /*******************************************************************************
  End of File
 */

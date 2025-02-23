@@ -40,7 +40,7 @@ The **state machine** for the **Gripper MCU** is visualized below:
   1. It reads the received **PWM signal** (in **microseconds**).
   2. Converts the **microsecond value** into a duty cycle using the formula:
 
-  
+
   $$
   \text{Duty Cycle} = \frac{\text{DATA MICROSECONDS} \times (\text{TCC PERIOD} + 1)}
   {\text{PWM PERIOD MICROSECONDS}}
@@ -111,4 +111,3 @@ Thus, for **50 Hz PWM**, the **TCC period should be set to `119999`**.
 - The **duty cycle computation** ensures that the received PWM signal is **converted accurately** for motor control.
 - **Encoder data handling** is optimized to ensure **precise angular position measurements** before transmission.
 - Implementing **DMA & interrupt-based** processing will further **reduce MCU workload and improve real-time performance**.
-
