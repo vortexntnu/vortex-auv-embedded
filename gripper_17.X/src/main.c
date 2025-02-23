@@ -339,27 +339,26 @@ void ADC_Read() {
             break;
         }
     }
-    // When reading the voltage
     switch (servo_status) {
         case SERVO_1:
             if (overCurrent) {
-                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 28);
+                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 27);
             }
-            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN2;
+            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
             servo_status = SERVO_2;
             break;
         case SERVO_2:
             if (overCurrent) {
-                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 0);
+                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 28);
             }
-            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN2;
+            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN4;
             servo_status = SERVO_3;
             break;
         case SERVO_3:
             if (overCurrent) {
-                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 27);
+                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 0);
             }
-            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN3;
+            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
             servo_status = SERVO_1;
             break;
         default:

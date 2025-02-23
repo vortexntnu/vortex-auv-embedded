@@ -102,7 +102,7 @@ void ADC0_Initialize( void )
     /* Averaging 16 samples*/
     ADC0_REGS->ADC_AVGCTRL = ADC_AVGCTRL_SAMPLENUM_16 | ADC_AVGCTRL_ADJRES(4);
     /* Input pin */
-    ADC0_REGS->ADC_INPUTCTRL = (uint16_t) ADC_POSINPUT_AIN2;
+    ADC0_REGS->ADC_INPUTCTRL = (uint16_t) ADC_POSINPUT_AIN0;
 
     /* Resolution & Operation Mode */
     // ADC0_REGS->ADC_CTRLC = ADC_CTRLC_RESSEL_12BIT | ADC_CTRLC_WINMODE(0) ;
