@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+/* Enables BOD33 interrupts */
 void SUPC_Initialize(void);
 
 
