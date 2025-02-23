@@ -38,6 +38,11 @@ int main(void) {
     CLOCK_Initialize(); 
     Interrupts_Initialize();
     
-    while (1) {} 
+    while (1) {
+        if (bod33_crossed == 1) {
+            LED0_Toggle();
+            bod33_crossed = 0;
+        }
+    } 
     return 0;
 }

@@ -1,6 +1,46 @@
 #include <same51j20a.h>
 #include "supc.h"
 #include "port.h"
+#include <stdint.h>
+
+/* TODO
+ * When bod crosses below the threshold value the variable is toggled.
+ * A possible sequence of this is then:
+ *      bod33_crossed is 0 ->
+ *      VDD goes below threshold value ->
+ *      BOD33 interrupt is generated ->
+ *      bod33_crossed is 1 -> We believe that VDD is below threshold.
+ * 
+ *      VDD goes above threshold ->
+ *      bod33_crossed is 1 -> We believe that VDD is below threshold.
+ *      VDD goes below threshold ->
+ *      bod33_crossed is 0 -> We believe that VDD is above threshold.
+ * 
+ *      
+ *   
+ * 
+ * Possible solutions:
+ *      in the main function we can regulary set the bod33_crossed value to 0
+ *      each time we check its value. This way we exit the interrupt, and are
+ *      able to check the value when it has in fact crossed. 
+ *      basically:
+ *          if (bod33_crossed == 1){
+ *              send_over_CAN;
+ *              bod33_crossed = 0;
+ *          }
+ *          Problem with this soluion:
+ *              requires the main function to do these checks, I do not know how 
+ *              we actually are implementing this.
+ * 
+ *      Send the CAN signal inside the interrupt. need to make sure to exit the 
+ *      interrupt as early as possible. Do not want to be stuck in the interrupt
+ *      for too long.
+ * 
+ *      Two variables:
+ *      previous state, last state
+ *        
+ */
+volatile int8_t bod33_crossed = 0;
 
 void SUPC_Initialize(void) {
     SUPC_REGS->SUPC_INTENSET = SUPC_INTENSET_BOD33DET_Msk;
@@ -13,7 +53,7 @@ void SUPC_Initialize(void) {
  */
 void __attribute__((used)) SUPC_BODDET_Handler(void) {
     if ((SUPC_REGS->SUPC_STATUS & SUPC_STATUS_BOD33DET_Msk) != SUPC_STATUS_BOD33DET_Msk) {
-        LED0_Toggle();
+        bod33_crossed = 1;
         SUPC_REGS->SUPC_INTFLAG = SUPC_INTFLAG_BOD33DET_Msk;
     }
 }
