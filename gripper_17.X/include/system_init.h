@@ -19,6 +19,7 @@ void NVMCTRL_Initialize(void);
 
 void PIN_Initialize(void);
 
+void EVSYS_Initialize(void);
 
 
 #ifdef	__cplusplus

@@ -96,3 +96,14 @@ void NVMCTRL_Initialize(void) {
                                   NVMCTRL_CTRLB_SLEEPPRM_WAKEONACCESS |
                                   NVMCTRL_CTRLB_RWS(2) | NVMCTRL_CTRLB_MANW_Msk;
 }
+
+
+void EVSYS_Initialize( void )
+{    /*Event Channel User Configuration*/
+    EVSYS_REGS->EVSYS_USER[28] = EVSYS_USER_CHANNEL(0x1);
+
+    /* Event Channel 0 Configuration */
+    EVSYS_REGS->EVSYS_CHANNEL[0] = EVSYS_CHANNEL_EVGEN(3) | EVSYS_CHANNEL_PATH(2) | EVSYS_CHANNEL_EDGSEL(0) \
+                                    | EVSYS_CHANNEL_RUNSTDBY_Msk ;
+
+}

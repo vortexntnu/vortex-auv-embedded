@@ -14,6 +14,9 @@
 #include "clock.h"
 #include "i2c.h"  // I2C client backup
 // #include "i2c_master.h" // not used
+#include "adc0.h"
+#include "dma.h"
+#include "rtc.h"
 #include "sam.h"
 #include "samc21e17a.h"
 #include "sercom0_i2c.h"
@@ -30,6 +33,11 @@
 #define ENCODER2_ADDR 0x41
 #define ENCODER3_ADDR 0x42
 #define ANGLE_REGISTER 0xFE
+
+#define TRANSFER_SIZE 16
+#define ADC_VREF 3.3f
+#define ADC_THRESHOLD 1.8f
+#define RTC_COMPARE_VAL 100
 
 #define TEST_4000 (4000 * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS
 #define TEST_6000 (6000 * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS
@@ -48,6 +56,12 @@ typedef enum {
     STATE_IDLE,
 } STATES;
 
+typedef enum {
+    SERVO_1,
+    SERVO_2,
+    SERVO_3,
+} SERVO_ADC_PINS;
+
 /* Variable to save Tx/Rx transfer status and context */
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
@@ -60,6 +74,13 @@ static uint8_t rx_message[64] = {0};
 static uint8_t rx_messageLength = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
+
+// ADC Variables
+volatile bool dma_ch0Done = false;
+volatile SERVO_ADC_PINS servo_status;
+uint32_t myAppObj = 0;
+uint16_t adc_result_array[TRANSFER_SIZE];
+float input_voltage;
 
 /* Variable to save application state */
 // volatile static STATES states = STATE_CAN_RECEIVE;
@@ -267,7 +288,8 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     // static uint32_t duty1 = PWM_MAX;
     // static uint32_t duty1 = 0;
     // static uint32_t duty2 = 0;
-    // static uint32_t duty2 =(2500 * (TCC_PERIOD + 1) / PWM_PERIOD_MICROSECONDS);
+    // static uint32_t duty2 =(2500 * (TCC_PERIOD + 1) /
+    // PWM_PERIOD_MICROSECONDS);
     static uint32_t duty3 = 0U;
 
     // TCC0_PWM24bitDutySet(3, duty1);
@@ -275,8 +297,8 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     // TCC1_PWM24bitDutySet(1, duty3);
     // TCC1_PWM24bitDutySet(3, duty1);
     // TCC0_PWM24bitDutySet(0, duty2);
-    TCC1_PWM24bitDutySet(0,(10000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
-    TCC1_PWM24bitDutySet(1,(15000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
+    TCC1_PWM24bitDutySet(0, (10000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
+    TCC1_PWM24bitDutySet(1, (15000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
     TCC0_PWM24bitDutySet(3, (4000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
 
     /* Increment duty cycle values */
@@ -308,6 +330,55 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
+void ADC_Read() {
+    bool overCurrent = false;
+    for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
+        input_voltage = (float)adc_result_array[sample] * ADC_VREF / 4095U;
+        if (input_voltage > ADC_THRESHOLD) {
+            overCurrent = true;
+            break;
+        }
+    }
+    // When reading the voltage
+    switch (servo_status) {
+        case SERVO_1:
+            if (overCurrent) {
+                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 28);
+            }
+            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN2;
+            servo_status = SERVO_2;
+            break;
+        case SERVO_2:
+            if (overCurrent) {
+                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 0);
+            }
+            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN2;
+            servo_status = SERVO_3;
+            break;
+        case SERVO_3:
+            if (overCurrent) {
+                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 27);
+            }
+            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN3;
+            servo_status = SERVO_1;
+            break;
+        default:
+            break;
+    }
+
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
+}
+
+void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
+    if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
+        dma_ch0Done = true;
+        ADC_Read();
+    } else if (DMAC_TRANSFER_EVENT_ERROR == returned_evnt) {
+    }
+}
+
 int main(void) {
     /* Initialize all modules */
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
@@ -324,10 +395,18 @@ int main(void) {
     //
     // SERCOM3_I2C_Initialize();  // CLient (backup)
     SERCOM3_SLAVE_I2C_Initialize();
+
+    EVSYS_Initialize();
+    ADC0_Initialize();
+    DMAC_Initialize();
+    RTC_Initialize();
+
     NVIC_Initialize();  // Enable interrupts
     /* Start PWM*/
     TCC1_PWMStart();
     TCC0_PWMStart();
+    RTC_Timer32Start();
+    RTC_Timer32CompareSet(RTC_COMPARE_VAL);
 
     // CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
@@ -335,6 +414,9 @@ int main(void) {
     SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
     TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, DmacCh0Cb,
+                                 (uintptr_t)&myAppObj);
     // CAN0_RxCallbackRegister(APP_CAN_Callback,
     // (uintptr_t)STATE_CAN_RECEIVE,
     //                         CAN_MSG_ATTR_RX_FIFO0);
@@ -350,6 +432,9 @@ int main(void) {
 
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
     // printf("Initialize complete\n");
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
 
     while (true) {
         // switch (states) {
