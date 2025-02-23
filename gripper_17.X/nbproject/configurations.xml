@@ -40,10 +40,14 @@
       <itemPath>src/tcc.c</itemPath>
       <itemPath>src/tcc0.c</itemPath>
       <itemPath>src/usart.c</itemPath>
+      <itemPath>src/rtc.c</itemPath>
+      <itemPath>src/adc0.c</itemPath>
+      <itemPath>src/dmac.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
     <Elem>include</Elem>
+    <Elem>src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

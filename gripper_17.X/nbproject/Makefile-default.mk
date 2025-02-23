@@ -51,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c
+SOURCEFILES_QUOTED_IF_SPACED=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c src/rtc.c src/adc0.c src/dmac.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/src/can1.o.d ${OBJECTDIR}/src/clock.o.d ${OBJECTDIR}/src/i2c.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/sercom0_i2c.o.d ${OBJECTDIR}/src/sercom1_i2c.o.d ${OBJECTDIR}/src/system_init.o.d ${OBJECTDIR}/src/tcc.o.d ${OBJECTDIR}/src/tcc0.o.d ${OBJECTDIR}/src/usart.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o ${OBJECTDIR}/src/rtc.o ${OBJECTDIR}/src/adc0.o ${OBJECTDIR}/src/dmac.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/src/can1.o.d ${OBJECTDIR}/src/clock.o.d ${OBJECTDIR}/src/i2c.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/sercom0_i2c.o.d ${OBJECTDIR}/src/sercom1_i2c.o.d ${OBJECTDIR}/src/system_init.o.d ${OBJECTDIR}/src/tcc.o.d ${OBJECTDIR}/src/tcc0.o.d ${OBJECTDIR}/src/usart.o.d ${OBJECTDIR}/src/rtc.o.d ${OBJECTDIR}/src/adc0.o.d ${OBJECTDIR}/src/dmac.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o
+OBJECTFILES=${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/sercom0_i2c.o ${OBJECTDIR}/src/sercom1_i2c.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o ${OBJECTDIR}/src/rtc.o ${OBJECTDIR}/src/adc0.o ${OBJECTDIR}/src/dmac.o
 
 # Source Files
-SOURCEFILES=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c
+SOURCEFILES=src/can1.c src/clock.c src/i2c.c src/main.c src/sercom0_i2c.c src/sercom1_i2c.c src/system_init.c src/tcc.c src/tcc0.c src/usart.c src/rtc.c src/adc0.c src/dmac.c
 
 # Pack Options 
 PACK_COMMON_OPTIONS=-I "${CMSIS_DIR}/CMSIS/Core/Include"
@@ -164,6 +164,24 @@ ${OBJECTDIR}/src/usart.o: src/usart.c  .generated_files/flags/default/4f0b7fc56f
 	@${RM} ${OBJECTDIR}/src/usart.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/usart.o.d" -o ${OBJECTDIR}/src/usart.o src/usart.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
 	
+${OBJECTDIR}/src/rtc.o: src/rtc.c  .generated_files/flags/default/d46ef55e1b76628c33df48ae877b4f9d70929686 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/rtc.o.d 
+	@${RM} ${OBJECTDIR}/src/rtc.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/rtc.o.d" -o ${OBJECTDIR}/src/rtc.o src/rtc.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
+${OBJECTDIR}/src/adc0.o: src/adc0.c  .generated_files/flags/default/a80832d1ab7e3582368d31953ae8c62605931292 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/adc0.o.d 
+	@${RM} ${OBJECTDIR}/src/adc0.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/adc0.o.d" -o ${OBJECTDIR}/src/adc0.o src/adc0.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
+${OBJECTDIR}/src/dmac.o: src/dmac.c  .generated_files/flags/default/e41366999ebee2ec57f483cd88002f7a8f6c5423 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/dmac.o.d 
+	@${RM} ${OBJECTDIR}/src/dmac.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/dmac.o.d" -o ${OBJECTDIR}/src/dmac.o src/dmac.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
 else
 ${OBJECTDIR}/src/can1.o: src/can1.c  .generated_files/flags/default/e2a369faef2dd8ae20878667aefb39ebc84677f1 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/src" 
@@ -224,6 +242,24 @@ ${OBJECTDIR}/src/usart.o: src/usart.c  .generated_files/flags/default/2eff13aa68
 	@${RM} ${OBJECTDIR}/src/usart.o.d 
 	@${RM} ${OBJECTDIR}/src/usart.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/usart.o.d" -o ${OBJECTDIR}/src/usart.o src/usart.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
+${OBJECTDIR}/src/rtc.o: src/rtc.c  .generated_files/flags/default/f0e63c981dc01628d60b9ca89b67a4d4db0b7bbe .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/rtc.o.d 
+	@${RM} ${OBJECTDIR}/src/rtc.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/rtc.o.d" -o ${OBJECTDIR}/src/rtc.o src/rtc.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
+${OBJECTDIR}/src/adc0.o: src/adc0.c  .generated_files/flags/default/44c0461f1015faa5b5fd84e74c5fd6b4131e044d .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/adc0.o.d 
+	@${RM} ${OBJECTDIR}/src/adc0.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/adc0.o.d" -o ${OBJECTDIR}/src/adc0.o src/adc0.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
+${OBJECTDIR}/src/dmac.o: src/dmac.c  .generated_files/flags/default/19b07e48f54a5ed71d9f8cc91f1ad72311663ab3 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/dmac.o.d 
+	@${RM} ${OBJECTDIR}/src/dmac.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -ffunction-sections -fdata-sections -O1 -fno-common -I"include" -Werror -Wall -MP -MMD -MF "${OBJECTDIR}/src/dmac.o.d" -o ${OBJECTDIR}/src/dmac.o src/dmac.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
 	
 endif
 

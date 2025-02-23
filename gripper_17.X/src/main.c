@@ -27,6 +27,7 @@
 #include "tcc0.h"
 #include "tcc_common.h"
 #include "usart.h"
+#include "wdt.h"
 
 // Encoder
 #define ENCODER_ADDR 0x40
@@ -35,12 +36,9 @@
 #define ANGLE_REGISTER 0xFE
 
 #define TRANSFER_SIZE 16
-#define ADC_VREF 3.3f
-#define ADC_THRESHOLD 1.8f
-#define RTC_COMPARE_VAL 100
-
-#define TEST_4000 (4000 * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS
-#define TEST_6000 (6000 * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS
+#define ADC_VREF 5.0f
+#define ADC_THRESHOLD 4.0f
+#define RTC_COMPARE_VAL 100  // should probably be set lower
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -76,8 +74,7 @@ static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 // ADC Variables
-volatile bool dma_ch0Done = false;
-volatile SERVO_ADC_PINS servo_status;
+volatile SERVO_ADC_PINS servo_status = SERVO_1;
 uint32_t myAppObj = 0;
 uint16_t adc_result_array[TRANSFER_SIZE];
 float input_voltage;
@@ -142,11 +139,11 @@ void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
         (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
 
     if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(3, PWM_MAX);
+        TCC0_PWM24bitDutySet(1, PWM_MAX);
     } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(3, PWM_MIN);
+        TCC0_PWM24bitDutySet(1, PWM_MIN);
     } else {
-        TCC0_PWM24bitDutySet(3, tccValue);
+        TCC0_PWM24bitDutySet(1, tccValue);
     }
 
     // WRIST
@@ -254,12 +251,17 @@ void APP_CAN_Callback(uintptr_t context) {
                 //                         CAN_MSG_ATTR_RX_FIFO0,
                 //                         &msgFrameAttr) == false) {
                 // }
-
+                // WDT_Enable();
                 // if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
                 //                   ANGLE_REGISTER)) {
+                //     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
+                //                         rx_message, &timestamp,
+                //                         CAN_MSG_ATTR_RX_FIFO0,
+                //                         &msgFrameAttr);
+                //
                 //     break;
                 // }
-                //
+                // WDT_Disable();
                 if (CAN0_MessageTransmit(
                         messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
                         CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
@@ -271,6 +273,7 @@ void APP_CAN_Callback(uintptr_t context) {
                                         CAN_MSG_ATTR_RX_FIFO0,
                                         &msgFrameAttr) == false) {
                 }
+                printf("sending\n");
                 // states = STATE_CAN_XFER_SUCCESSFUL;
                 break;
             }
@@ -285,95 +288,93 @@ void APP_CAN_Callback(uintptr_t context) {
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     /* duty cycle values */
     static int8_t increment1 = 10;
-    // static uint32_t duty1 = PWM_MAX;
-    // static uint32_t duty1 = 0;
-    // static uint32_t duty2 = 0;
-    // static uint32_t duty2 =(2500 * (TCC_PERIOD + 1) /
-    // PWM_PERIOD_MICROSECONDS);
+    static uint32_t duty1 = 0;
+    static uint32_t duty2 = 0;
     static uint32_t duty3 = 0U;
 
-    // TCC0_PWM24bitDutySet(3, duty1);
-    // TCC1_PWM24bitDutySet(0, duty2);
-    // TCC1_PWM24bitDutySet(1, duty3);
+    TCC0_PWM24bitDutySet(1, duty1);
+    TCC1_PWM24bitDutySet(0, duty2);
+    TCC1_PWM24bitDutySet(1, duty3);
     // TCC1_PWM24bitDutySet(3, duty1);
     // TCC0_PWM24bitDutySet(0, duty2);
-    TCC1_PWM24bitDutySet(0, (10000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
-    TCC1_PWM24bitDutySet(1, (15000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
-    TCC0_PWM24bitDutySet(3, (4000 * (TCC_PERIOD / PWM_PERIOD_MICROSECONDS)));
 
     /* Increment duty cycle values */
-    // duty1 += increment1;
-    // duty2 += increment1;
+    duty1 += increment1;
+    duty2 += increment1;
     duty3 += increment1;
 
-    // if (duty1 > PWM_MAX) {
-    //     duty1 = PWM_MAX;
-    //     increment1 *= -1;
-    // } else if (duty2 < PWM_MIN) {
-    //     duty1 = PWM_MIN;
-    //     increment1 *= -1;
-    // }
-    // if (duty2 > PWM_MAX) {
-    //     duty2 = PWM_MAX;
-    //     increment1 *= -1;
-    // } else if (duty2 < PWM_MIN) {
-    //     duty2 = PWM_MIN;
-    //     increment1 *= -1;
-    // }
-
-    if (duty3 > TEST_6000) {
-        duty3 = TEST_6000;
+    if (duty1 > PWM_MAX) {
+        duty1 = PWM_MAX;
         increment1 *= -1;
-    } else if (duty3 < TEST_4000) {
-        duty3 = TEST_4000;
+    } else if (duty2 < PWM_MIN) {
+        duty1 = PWM_MIN;
         increment1 *= -1;
     }
-}
-
-void ADC_Read() {
-    bool overCurrent = false;
-    for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
-        input_voltage = (float)adc_result_array[sample] * ADC_VREF / 4095U;
-        if (input_voltage > ADC_THRESHOLD) {
-            overCurrent = true;
-            break;
-        }
-    }
-    switch (servo_status) {
-        case SERVO_1:
-            if (overCurrent) {
-                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 27);
-            }
-            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
-            servo_status = SERVO_2;
-            break;
-        case SERVO_2:
-            if (overCurrent) {
-                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 28);
-            }
-            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN4;
-            servo_status = SERVO_3;
-            break;
-        case SERVO_3:
-            if (overCurrent) {
-                PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 0);
-            }
-            ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
-            servo_status = SERVO_1;
-            break;
-        default:
-            break;
+    if (duty2 > PWM_MAX) {
+        duty2 = PWM_MAX;
+        increment1 *= -1;
+    } else if (duty2 < PWM_MIN) {
+        duty2 = PWM_MIN;
+        increment1 *= -1;
     }
 
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_result_array,
-                         sizeof(adc_result_array));
+    if (duty3 > PWM_MAX) {
+        duty3 = PWM_MAX;
+        increment1 *= -1;
+    } else if (duty3 < PWM_MIN) {
+        duty3 = PWM_MIN;
+        increment1 *= -1;
+    }
 }
 
 void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
-        dma_ch0Done = true;
-        ADC_Read();
+        bool overCurrent = false;
+        for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
+            input_voltage = (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5)/0.4;
+
+            printf(
+                "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "
+                "\n\r",
+                adc_result_array[sample], (int)input_voltage,
+                (int)((input_voltage - (int)input_voltage) * 100.0));
+            if (input_voltage > ADC_THRESHOLD) {
+                overCurrent = true;
+                break;
+            }
+        }
+        switch (servo_status) {
+            case SERVO_1:
+                if (overCurrent) {
+                    PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 27);
+                }
+                ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
+                // servo_status = SERVO_2;
+                printf("SERVO1\n");
+                break;
+            case SERVO_2:
+                if (overCurrent) {
+                    PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 28);
+                }
+                ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN4;
+                servo_status = SERVO_3;
+                printf("SERVO3\n");
+                break;
+            case SERVO_3:
+                if (overCurrent) {
+                    PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 0);
+                }
+                ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN0;
+                servo_status = SERVO_1;
+                printf("SERVO1\n");
+                break;
+            default:
+                break;
+        }
+
+        DMAC_ChannelTransfer(
+            DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+            (const void*)adc_result_array, sizeof(adc_result_array));
     } else if (DMAC_TRANSFER_EVENT_ERROR == returned_evnt) {
     }
 }
@@ -390,10 +391,10 @@ int main(void) {
     // SERCOM0_I2C_Initialize();  // I2C 3
     // SERCOM1_I2C_Initialize();  // I2C 2
     // SERCOM3_I2C_Initialize();    // I2C 1
-    // SERCOM0_USART_Initialize();  // USART for Debugging
+    SERCOM0_USART_Initialize();  // USART for Debugging
     //
     // SERCOM3_I2C_Initialize();  // CLient (backup)
-    SERCOM3_SLAVE_I2C_Initialize();
+    // SERCOM3_SLAVE_I2C_Initialize();
 
     EVSYS_Initialize();
     ADC0_Initialize();
@@ -404,33 +405,40 @@ int main(void) {
     /* Start PWM*/
     TCC1_PWMStart();
     TCC0_PWMStart();
+
+
+    ADC0_Enable();
     RTC_Timer32Start();
     RTC_Timer32CompareSet(RTC_COMPARE_VAL);
 
     // CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
     // Callback functions
-    SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
     TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
 
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, DmacCh0Cb,
                                  (uintptr_t)&myAppObj);
-    // CAN0_RxCallbackRegister(APP_CAN_Callback,
-    // (uintptr_t)STATE_CAN_RECEIVE,
+    // CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_RECEIVE,
     //                         CAN_MSG_ATTR_RX_FIFO0);
-    // CAN0_TxCallbackRegister(APP_CAN_Callback,
-    // (uintptr_t)STATE_CAN_TRANSMIT);
+    // CAN0_TxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_TRANSMIT);
     //
-    // if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-    // rx_message,
+    // if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
     //                         &timestamp, CAN_MSG_ATTR_RX_FIFO0,
     //                         &msgFrameAttr) == false) {
     // }
+    // printf("Before transmit\n");
     //
+    // if (CAN0_MessageTransmit(messageID, 6, encoder_angles,
+    //                          CAN_MODE_FD_WITHOUT_BRS,
+    //                          CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
+    // }
 
+    // Servo Enable
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
-    // printf("Initialize complete\n");
+
+    printf("Initialize complete\n");
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));

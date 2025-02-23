@@ -131,6 +131,7 @@ void CLOCK_Initialize(void) {
            GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
+    // EVSYS
     GCLK_REGS->GCLK_PCHCTRL[6] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
     while ((GCLK_REGS->GCLK_PCHCTRL[6] & GCLK_PCHCTRL_CHEN_Msk) !=
@@ -149,6 +150,9 @@ void CLOCK_Initialize(void) {
     // MCLK_REGS->MCLK_CPUDIV = 1;
     MCLK_REGS->MCLK_AHBMASK |= (1 << 8);  // CAN0
     // MCLK_REGS->MCLK_APBCMASK = 0x61F;
-    MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | (1 << 3) |
-                               (1 << 1) | (1 << 2) | (1 << 4);
+    // MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | (1 << 3) |
+    //                            (1 << 1) | (1 << 2) | (1 << 4);
+
+    MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 17) | (1 << 10) | (1 << 9) | (1 << 6) |
+                               (1 << 3) | (1 << 1) | (1 << 2) | (1 << 4) | (1 << 0);
 }
