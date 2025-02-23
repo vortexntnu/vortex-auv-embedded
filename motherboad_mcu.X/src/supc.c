@@ -1,5 +1,4 @@
 #include <same51j20a.h>
-//#include <stdint.h>
 #include "supc.h"
 #include "port.h"
 
