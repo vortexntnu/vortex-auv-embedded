@@ -2,6 +2,16 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group/>
+        <group>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/include/interrupts.h</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/include/clock.h</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/include/port.h</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/src/main.c</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/src/port.c</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/src/clock.c</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/src/interrupts.c</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/include/supc.h</file>
+            <file>file:/home/heik/Vortex/vortex-auv-embedded/motherboad_mcu.X/src/supc.c</file>
+        </group>
     </open-files>
 </project-private>
