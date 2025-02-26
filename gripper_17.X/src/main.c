@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include "can1.h"
 #include "can_common.h"
 #include "clock.h"
@@ -16,6 +17,7 @@
 // #include "i2c_master.h" // not used
 #include "adc0.h"
 #include "dma.h"
+#include "pm.h"
 #include "rtc.h"
 #include "sam.h"
 #include "samc21e17a.h"
@@ -55,6 +57,14 @@ typedef enum {
 } STATES;
 
 typedef enum {
+    STOP_GRIPPER = 0x469,
+    START_GRIPPER,
+    SET_PWM,
+    RESET_MCU,
+} CAN_RECEIVE_ID;
+
+/* Servo pins enum for ADC reading */
+typedef enum {
     SERVO_1,
     SERVO_2,
     SERVO_3,
@@ -64,8 +74,8 @@ typedef enum {
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
 /* Variable to save Tx/Rx message */
-static uint32_t messageID = 0;
-static uint32_t rx_messageID = 0;
+static uint32_t messageID = 0x469;
+static uint32_t rx_messageID = 0x469;
 // static uint8_t message[64] = {0};
 static uint8_t rx_message[64] = {0};
 // static uint8_t messageLength = 0;
@@ -87,28 +97,43 @@ static uint8_t encoder_angles[6] = {0};
 // Reads the encoder angle Register
 // 2 bytes for each encoder
 // 2|2|2 SHOULDER, WRIST, GRIP
+// Watchdog timer will cause reset
+// if stuck in while loop
 uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
     uint16_t rawData[3] = {0};
     uint8_t dataBuffer[2] = {0};
+
+    // Starting Watchdog timer
+    WDT_Enable();
     // SHOULDER
     if (!SERCOM0_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
+        WDT_Disable();
         return 0;
     }
     while (SERCOM0_I2C_IsBusy())
         ;
     rawData[0] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+
+    // Clearing watchdog timer
+    WDT_Clear();
     // WRIST
 
     if (!SERCOM1_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
+        WDT_Disable();
         return 0;
     }
     while (SERCOM1_I2C_IsBusy())
         ;
 
     rawData[1] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+
+    // Clearing watchdog timer
+    WDT_Clear();
+
     // GRIP
 
     if (!SERCOM0_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
+        WDT_Disable();
         return 0;
     }
 
@@ -122,6 +147,9 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
     data[3] = rawData[1] & 0xFF;
     data[4] = rawData[2] >> 8;
     data[5] = rawData[2] & 0xFF;
+
+    // Stopping watchdog timer
+    WDT_Disable();
     return 1;
 }
 
@@ -168,6 +196,7 @@ void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
 }
 
 // I2C client backup code
+//
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[7];  // Buffer to store {channel, high
@@ -220,68 +249,89 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 // it will then read the encoders and send the data
 // after a successfull transmit reviece interrupts will
 // be reenabled
-void APP_CAN_Callback(uintptr_t context) {
+void Can_Recieve_Callback(uintptr_t context) {
     xferContext = context;
 
+    /* Check CAN Status */
+    status = CAN0_ErrorGet();
+    printf("Entering callback\n");
+
+    if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
+        ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
+        switch (rx_messageID) {
+            case STOP_GRIPPER:
+                PORT_REGS->GROUP[0].PORT_OUTCLR =
+                    (1 << 0) | (1 << 27) | (1 << 28);
+                TCC0_PWMStop();
+                TCC1_PWMStop();
+                ADC0_Disable();
+                PM_IdleModeEnter();
+                break;
+            case START_GRIPPER:
+                PORT_REGS->GROUP[0].PORT_OUTSET =
+                    (1 << 0) | (1 << 27) | (1 << 28);
+                TCC0_PWMStart();
+                TCC1_PWMStart();
+                ADC0_Enable();
+                RTC_Timer32Start();
+                break;
+            case SET_PWM:
+                SetPWMDutyCycle(rx_message);
+                break;
+            case RESET_MCU:
+                WDT_Enable();
+                while (1)
+                    ;
+                break;
+            default:
+                break;
+        }
+
+        printf(" New Message Received\r\n");
+        uint8_t length = rx_messageLength;
+        printf(
+            " Message - Timestamp : 0x%x ID : 0x%x Length "
+            ":0x%x",
+            (unsigned int)timestamp, (unsigned int)rx_messageID,
+            (unsigned int)rx_messageLength);
+        printf("Message : ");
+        while (length) {
+            printf("0x%x ", rx_message[rx_messageLength - length--]);
+        }
+        // Only include this if testing without encoders
+        // if (CAN0_MessageReceive(&rx_messageID,
+        // &rx_messageLength,
+        //                         rx_message, &timestamp,
+        //                         CAN_MSG_ATTR_RX_FIFO0,
+        //                         &msgFrameAttr) == false) {
+        // }
+        // if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
+        //                   ANGLE_REGISTER)) {
+        //     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
+        //                         rx_message, &timestamp,
+        //                         CAN_MSG_ATTR_RX_FIFO0,
+        //                         &msgFrameAttr);
+        //
+        //     break;
+        // }
+        if (CAN0_MessageTransmit(messageID, 6, encoder_angles,
+                                 CAN_MODE_FD_WITHOUT_BRS,
+                                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
+        }
+    }
+}
+
+void Can_Transmit_Callback(uintptr_t context) {
     /* Check CAN Status */
     status = CAN0_ErrorGet();
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        switch ((STATES)context) {
-            case STATE_CAN_RECEIVE:
-
-                SetPWMDutyCycle(rx_message);
-
-                printf(" New Message Received\r\n");
-                uint8_t length = rx_messageLength;
-                printf(
-                    " Message - Timestamp : 0x%x ID : 0x%x Length "
-                    ":0x%x",
-                    (unsigned int)timestamp, (unsigned int)rx_messageID,
-                    (unsigned int)rx_messageLength);
-                printf("Message : ");
-                while (length) {
-                    printf("0x%x ", rx_message[rx_messageLength - length--]);
-                }
-                // Only include this if testing without encoders
-                // if (CAN0_MessageReceive(&rx_messageID,
-                // &rx_messageLength,
-                //                         rx_message, &timestamp,
-                //                         CAN_MSG_ATTR_RX_FIFO0,
-                //                         &msgFrameAttr) == false) {
-                // }
-                // WDT_Enable();
-                // if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
-                //                   ANGLE_REGISTER)) {
-                //     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-                //                         rx_message, &timestamp,
-                //                         CAN_MSG_ATTR_RX_FIFO0,
-                //                         &msgFrameAttr);
-                //
-                //     break;
-                // }
-                // WDT_Disable();
-                if (CAN0_MessageTransmit(
-                        messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
-                        CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-                }
-                break;
-            case STATE_CAN_TRANSMIT: {
-                if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-                                        rx_message, &timestamp,
-                                        CAN_MSG_ATTR_RX_FIFO0,
-                                        &msgFrameAttr) == false) {
-                }
-                printf("sending\n");
-                // states = STATE_CAN_XFER_SUCCESSFUL;
-                break;
-            }
-            default:
-                break;
+        if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                                &timestamp, CAN_MSG_ATTR_RX_FIFO0,
+                                &msgFrameAttr) == false) {
         }
-    } else {
-        // states = STATE_CAN_XFER_ERROR;
+        printf("sending\n");
     }
 }
 
@@ -331,7 +381,9 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
         bool overCurrent = false;
         for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
-            input_voltage = (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5)/0.4;
+            input_voltage =
+                (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5) /
+                0.4;
 
             printf(
                 "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "
@@ -382,12 +434,13 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
 int main(void) {
     /* Initialize all modules */
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
     PIN_Initialize();
     CLOCK_Initialize();
     NVMCTRL_Initialize();
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
-    // CAN0_Initialize();
+    CAN0_Initialize();
     // SERCOM0_I2C_Initialize();  // I2C 3
     // SERCOM1_I2C_Initialize();  // I2C 2
     // SERCOM3_I2C_Initialize();    // I2C 1
@@ -396,121 +449,55 @@ int main(void) {
     // SERCOM3_I2C_Initialize();  // CLient (backup)
     // SERCOM3_SLAVE_I2C_Initialize();
 
-    EVSYS_Initialize();
-    ADC0_Initialize();
-    DMAC_Initialize();
-    RTC_Initialize();
+    // EVSYS_Initialize();
+    // ADC0_Initialize();
+    // DMAC_Initialize();
+    // RTC_Initialize();
 
     NVIC_Initialize();  // Enable interrupts
     /* Start PWM*/
     TCC1_PWMStart();
     TCC0_PWMStart();
 
-
-    ADC0_Enable();
-    RTC_Timer32Start();
-    RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-
-    // CAN0_MessageRAMConfigSet(Can0MessageRAM);
+    // ADC0_Enable();
+    // RTC_Timer32Start();
+    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+    //
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
     // Callback functions
     // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
-    TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+    //
+    // DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, DmacCh0Cb,
+    //                              (uintptr_t)&myAppObj);
+    CAN0_RxCallbackRegister(Can_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(Can_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
 
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, DmacCh0Cb,
-                                 (uintptr_t)&myAppObj);
-    // CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-    //                         CAN_MSG_ATTR_RX_FIFO0);
-    // CAN0_TxCallbackRegister(APP_CAN_Callback, (uintptr_t)STATE_CAN_TRANSMIT);
-    //
-    // if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-    //                         &timestamp, CAN_MSG_ATTR_RX_FIFO0,
-    //                         &msgFrameAttr) == false) {
-    // }
-    // printf("Before transmit\n");
-    //
-    // if (CAN0_MessageTransmit(messageID, 6, encoder_angles,
-    //                          CAN_MODE_FD_WITHOUT_BRS,
-    //                          CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-    // }
+    memset(rx_message, 0x00, sizeof(rx_message));
+    if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                            &timestamp, CAN_MSG_ATTR_RX_FIFO0,
+                            &msgFrameAttr) == false) {
+    }
+    printf("Before transmit\n");
+
+    if (CAN0_MessageTransmit(messageID, 6, encoder_angles,
+                             CAN_MODE_FD_WITHOUT_BRS,
+                             CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
+    }
 
     // Servo Enable
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 
     printf("Initialize complete\n");
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_result_array,
-                         sizeof(adc_result_array));
-
+    // DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+    //                      (const void*)adc_result_array,
+    //                      sizeof(adc_result_array));
+    PM_IdleModeEnter();
     while (true) {
-        // switch (states) {
-        //     case STATE_CAN_RECEIVE:
-        //         CAN0_RxCallbackRegister(APP_CAN_Callback,
-        //                                 (uintptr_t)STATE_CAN_RECEIVE,
-        //                                 CAN_MSG_ATTR_RX_FIFO0);
-        //         states = STATE_IDLE;
-        //         memset(rx_message, 0x00, sizeof(rx_message));
-        //         /* Receive New Message */
-        //         if (CAN0_MessageReceive(&rx_messageID,
-        //         &rx_messageLength,
-        //                                 rx_message, &timestamp,
-        //                                 CAN_MSG_ATTR_RX_FIFO0,
-        //                                 &msgFrameAttr) == false) {
-        //         }
-        //         break;
-        //
-        //     case STATE_IDLE:
-        //         // Waiting for CAN interrupt
-        //         break;
-        //     case STATE_SET_PWM:
-        //
-        //         // Update and set the duty cycle for the channel
-        //         SetPWMDutyCycle(rx_message);
-        //
-        //         states = STATE_READ_ENCODER;
-        //         // states = STATE_CAN_RECEIVE;
-        //         break;
-        //
-        //     case STATE_READ_ENCODER:
-        //         if (!Encoder_Read(encoder_angles, ENCODER_ADDR,
-        //                           ANGLE_REGISTER)) {
-        //             states = STATE_CAN_RECEIVE;
-        //         } else {
-        //             states = STATE_CAN_TRANSMIT;
-        //         }
-        //         break;
-        //     case STATE_CAN_TRANSMIT:
-        //         messageID = 0x469;
-        //         CAN0_TxCallbackRegister(APP_CAN_Callback,
-        //                                 (uintptr_t)STATE_CAN_TRANSMIT);
-        //         states = STATE_IDLE;
-        //         if (CAN0_MessageTransmit(
-        //                 messageID, 6, encoder_angles,
-        //                 CAN_MODE_FD_WITHOUT_BRS,
-        //                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-        //         }
-        //         break;
-        //
-        //     case STATE_CAN_XFER_ERROR:
-        //         // if ((STATES)xferContext == STATE_CAN_RECEIVE) {
-        //         // } else {
-        //         // }
-        //         states = STATE_CAN_RECEIVE;
-        //         break;
-        //
-        //     case STATE_CAN_XFER_SUCCESSFUL:
-        //         if ((STATES)xferContext == STATE_CAN_RECEIVE) {
-        //             states = STATE_SET_PWM;
-        //         } else if ((STATES)xferContext == STATE_CAN_TRANSMIT)
-        //         {
-        //             states = STATE_CAN_RECEIVE;
-        //         }
-        //         break;
-        //
-        //     default:
-        //         break;
-        // }
     }
 
     /* Execution should not come here during normal operation */
