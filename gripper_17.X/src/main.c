@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
 #include "can1.h"
 #include "can_common.h"
 #include "clock.h"
@@ -39,7 +38,7 @@
 
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f
-#define ADC_THRESHOLD 4.0f
+#define CURRENT_TRESHOLD 1.0f // 1 A
 #define RTC_COMPARE_VAL 100  // should probably be set lower
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -70,6 +69,13 @@ typedef enum {
     SERVO_3,
 } SERVO_ADC_PINS;
 
+typedef enum {
+    I2C_SET_PWM,
+    I2C_STOP_GRIPPER,
+    I2C_START_GRIPPER,
+    I2C_RESET_MCU,
+} I2C_STARTBYTE_ID;
+
 /* Variable to save Tx/Rx transfer status and context */
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
@@ -85,7 +91,7 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 // ADC Variables
 volatile SERVO_ADC_PINS servo_status = SERVO_1;
-uint32_t myAppObj = 0;
+// uint32_t myAppObj = 0;
 uint16_t adc_result_array[TRANSFER_SIZE];
 float input_voltage;
 
@@ -199,8 +205,11 @@ void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
 //
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
-    static uint8_t dataBuffer[7];  // Buffer to store {channel, high
-                                   // byte, low byte}
+    static uint8_t dataBuffer[7];
+    // Data sent recieved i2c will have this format
+    // Startbyte|PWM_DATA|
+    // Startbyte indiciate what information is being sent
+
     static uint8_t dataIndex = 0;
 
     switch (event) {
@@ -225,11 +234,40 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
         }
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
-            if (dataIndex == 7 && ((SERCOM3_I2C_TransferDirGet() ==
-                                    SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE))) {
-                SetPWMDutyCycle(
-                    dataBuffer +
-                    1);  // Because of start byte start indexing at +1
+            if (SERCOM3_I2C_TransferDirGet() ==
+                SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE) {
+                // First byte indicating what the MCU should do
+                switch (dataBuffer[0]) {
+                    case I2C_SET_PWM:
+                        // Start indexing at the second element
+                        SetPWMDutyCycle(dataBuffer + 1);
+                        break;
+                    case I2C_STOP_GRIPPER:
+                        // Turn off sevo enable pin
+                        PORT_REGS->GROUP[0].PORT_OUTCLR =
+                            (1 << 0) | (1 << 27) | (1 << 28);
+                        TCC0_PWMStop();
+                        TCC1_PWMStop();
+                        ADC0_Disable();
+                        PM_IdleModeEnter();
+                        break;
+                    case I2C_START_GRIPPER:
+                        TCC0_PWMStart();
+                        TCC1_PWMStart();
+                        ADC0_Enable();
+                        RTC_Timer32Start();
+                        // Turn on servo enable pin
+                        PORT_REGS->GROUP[0].PORT_OUTSET =
+                            (1 << 0) | (1 << 27) | (1 << 28);
+                        break;
+                    case I2C_RESET_MCU:
+                        // Trigger reset probably smarter way to do this
+                        WDT_Enable();
+                        while (1)
+                            ;
+                    default:
+                        break;
+                }
                 // printf("MEssage recieved\n");
                 // for (int i = 0; i < 7; i++) {
                 //     printf("%x\n", dataBuffer[i]);
@@ -249,7 +287,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 // it will then read the encoders and send the data
 // after a successfull transmit reviece interrupts will
 // be reenabled
-void Can_Recieve_Callback(uintptr_t context) {
+void CAN_Recieve_Callback(uintptr_t context) {
     xferContext = context;
 
     /* Check CAN Status */
@@ -260,6 +298,7 @@ void Can_Recieve_Callback(uintptr_t context) {
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         switch (rx_messageID) {
             case STOP_GRIPPER:
+                // Turn off servo enable pins
                 PORT_REGS->GROUP[0].PORT_OUTCLR =
                     (1 << 0) | (1 << 27) | (1 << 28);
                 TCC0_PWMStop();
@@ -268,12 +307,13 @@ void Can_Recieve_Callback(uintptr_t context) {
                 PM_IdleModeEnter();
                 break;
             case START_GRIPPER:
-                PORT_REGS->GROUP[0].PORT_OUTSET =
-                    (1 << 0) | (1 << 27) | (1 << 28);
                 TCC0_PWMStart();
                 TCC1_PWMStart();
                 ADC0_Enable();
                 RTC_Timer32Start();
+                // Turn on servo enable pins
+                PORT_REGS->GROUP[0].PORT_OUTSET =
+                    (1 << 0) | (1 << 27) | (1 << 28);
                 break;
             case SET_PWM:
                 SetPWMDutyCycle(rx_message);
@@ -321,7 +361,7 @@ void Can_Recieve_Callback(uintptr_t context) {
     }
 }
 
-void Can_Transmit_Callback(uintptr_t context) {
+void CAN_Transmit_Callback(uintptr_t context) {
     /* Check CAN Status */
     status = CAN0_ErrorGet();
 
@@ -335,6 +375,7 @@ void Can_Transmit_Callback(uintptr_t context) {
     }
 }
 
+// Only used for testing SERVOS
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     /* duty cycle values */
     static int8_t increment1 = 10;
@@ -345,8 +386,6 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     TCC0_PWM24bitDutySet(1, duty1);
     TCC1_PWM24bitDutySet(0, duty2);
     TCC1_PWM24bitDutySet(1, duty3);
-    // TCC1_PWM24bitDutySet(3, duty1);
-    // TCC0_PWM24bitDutySet(0, duty2);
 
     /* Increment duty cycle values */
     duty1 += increment1;
@@ -367,7 +406,6 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
         duty2 = PWM_MIN;
         increment1 *= -1;
     }
-
     if (duty3 > PWM_MAX) {
         duty3 = PWM_MAX;
         increment1 *= -1;
@@ -377,10 +415,13 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
+
+// Will turn off servo enable pin if current is to high
 void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
         bool overCurrent = false;
         for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
+            // 2.5 V means 0 Amps
             input_voltage =
                 (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5) /
                 0.4;
@@ -390,7 +431,8 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
                 "\n\r",
                 adc_result_array[sample], (int)input_voltage,
                 (int)((input_voltage - (int)input_voltage) * 100.0));
-            if (input_voltage > ADC_THRESHOLD) {
+            
+            if (input_voltage > CURRENT_TRESHOLD) {
                 overCurrent = true;
                 break;
             }
@@ -433,7 +475,7 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
 
 int main(void) {
     /* Initialize all modules */
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3); 
     PM_Initialize();
     PIN_Initialize();
     CLOCK_Initialize();
@@ -456,6 +498,9 @@ int main(void) {
 
     NVIC_Initialize();  // Enable interrupts
     /* Start PWM*/
+
+    // Peripherals should be disabled by default and will be Enable
+    // by a CAN or I2C message
     TCC1_PWMStart();
     TCC0_PWMStart();
 
@@ -472,9 +517,9 @@ int main(void) {
     //
     // DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, DmacCh0Cb,
     //                              (uintptr_t)&myAppObj);
-    CAN0_RxCallbackRegister(Can_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
                             CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(Can_Transmit_Callback,
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
                             (uintptr_t)STATE_CAN_TRANSMIT);
 
     memset(rx_message, 0x00, sizeof(rx_message));
