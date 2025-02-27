@@ -38,8 +38,8 @@
 
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f
-#define CURRENT_TRESHOLD 1.0f // 1 A
-#define RTC_COMPARE_VAL 100  // should probably be set lower
+#define CURRENT_TRESHOLD 1.0f  // 1 A
+#define RTC_COMPARE_VAL 100    // should probably be set lower
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -55,26 +55,26 @@ typedef enum {
     STATE_IDLE,
 } STATES;
 
+// CAN FD RECIEVE ID table
 typedef enum {
     STOP_GRIPPER = 0x469,
     START_GRIPPER,
     SET_PWM,
     RESET_MCU,
 } CAN_RECEIVE_ID;
-
-/* Servo pins enum for ADC reading */
-typedef enum {
-    SERVO_1,
-    SERVO_2,
-    SERVO_3,
-} SERVO_ADC_PINS;
-
+// I2C RECIEVE START BYTE table
 typedef enum {
     I2C_SET_PWM,
     I2C_STOP_GRIPPER,
     I2C_START_GRIPPER,
     I2C_RESET_MCU,
 } I2C_STARTBYTE_ID;
+/* Servo pins enum for ADC reading */
+typedef enum {
+    SERVO_1,
+    SERVO_2,
+    SERVO_3,
+} SERVO_ADC_PINS;
 
 /* Variable to save Tx/Rx transfer status and context */
 static uint32_t status = 0;
@@ -105,18 +105,18 @@ static uint8_t encoder_angles[6] = {0};
 // 2|2|2 SHOULDER, WRIST, GRIP
 // Watchdog timer will cause reset
 // if stuck in while loop
-uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
+uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     uint16_t rawData[3] = {0};
     uint8_t dataBuffer[2] = {0};
 
     // Starting Watchdog timer
     WDT_Enable();
     // SHOULDER
-    if (!SERCOM0_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
+    if (!SERCOM1_I2C_WriteRead(ENCODER_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
         return 0;
     }
-    while (SERCOM0_I2C_IsBusy())
+    while (SERCOM1_I2C_IsBusy())
         ;
     rawData[0] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
 
@@ -124,7 +124,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
     WDT_Clear();
     // WRIST
 
-    if (!SERCOM1_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
+    if (!SERCOM1_I2C_WriteRead(ENCODER2_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
         return 0;
     }
@@ -138,12 +138,12 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t address, uint8_t reg) {
 
     // GRIP
 
-    if (!SERCOM0_I2C_WriteRead(address, &reg, 1, dataBuffer, 2)) {
+    if (!SERCOM1_I2C_WriteRead(ENCODER3_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
         return 0;
     }
 
-    while (SERCOM0_I2C_IsBusy())
+    while (SERCOM1_I2C_IsBusy())
         ;
     rawData[2] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
 
@@ -261,10 +261,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                             (1 << 0) | (1 << 27) | (1 << 28);
                         break;
                     case I2C_RESET_MCU:
-                        // Trigger reset probably smarter way to do this
-                        WDT_Enable();
-                        while (1)
-                            ;
+                        WDT_REGS->WDT_CLEAR = 0x0;
                     default:
                         break;
                 }
@@ -319,9 +316,8 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 SetPWMDutyCycle(rx_message);
                 break;
             case RESET_MCU:
-                WDT_Enable();
-                while (1)
-                    ;
+                // This will cause an immediate system reset
+                WDT_REGS->WDT_CLEAR = 0x0;
                 break;
             default:
                 break;
@@ -415,7 +411,6 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
-
 // Will turn off servo enable pin if current is to high
 void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
@@ -431,7 +426,7 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
                 "\n\r",
                 adc_result_array[sample], (int)input_voltage,
                 (int)((input_voltage - (int)input_voltage) * 100.0));
-            
+
             if (input_voltage > CURRENT_TRESHOLD) {
                 overCurrent = true;
                 break;
@@ -475,7 +470,7 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
 
 int main(void) {
     /* Initialize all modules */
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3); 
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
     PM_Initialize();
     PIN_Initialize();
     CLOCK_Initialize();
@@ -488,7 +483,6 @@ int main(void) {
     // SERCOM3_I2C_Initialize();    // I2C 1
     SERCOM0_USART_Initialize();  // USART for Debugging
     //
-    // SERCOM3_I2C_Initialize();  // CLient (backup)
     // SERCOM3_SLAVE_I2C_Initialize();
 
     // EVSYS_Initialize();

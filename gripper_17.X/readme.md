@@ -1,6 +1,12 @@
 
 # **Gripper MCU Documentation**
 
+## **How to use**
+Download MPLAB and import the gripper_17.x project.
+Connect the SAMC21E17A to the computer with a compatible 
+programmer.
+
+
 ## **Peripheral Overview**
 The **Gripper MCU** utilizes the following peripherals:
 
@@ -11,10 +17,16 @@ The **Gripper MCU** utilizes the following peripherals:
   - `SERCOM0` → I²C 3
   - `SERCOM1` → I²C 2
   - `SERCOM3` → I²C 1
+- **Analog Digital Converter**
+  - `ADC0` 
+- **Direct Memory Access Controller (DMAC)**
+- **Real Time Counter (RTC)**
 - **Backup Communication (Client Mode)**
   - `SERCOM2`
+- **Power Manager (PM)**
 - **Communication Interfaces**
   - **CAN FD** (Controller Area Network) for real-time data exchange
+- **Watchdog Timer (WDT)**
 
 ---
 
@@ -31,8 +43,10 @@ The **state machine** for the **Gripper MCU** is visualized below:
 
 ### **1️⃣ CAN_RECEIVE State**
 - In this state, the **CAN receive interrupt** is enabled.
+- In the idle state, the MCU willl be set to idle0 sleep mode
 - The MCU remains **idle**, waiting for a CAN message.
 - The MCU **only exits this state through a CAN interrupt**.
+- CAN interrupt will wake the MCU from idle0 sleep mode
 - CAN interrupts are deactivated after an interrupt has been triggered
 
 ### **2️⃣ PROCESS_PWM State**
@@ -53,6 +67,8 @@ The **state machine** for the **Gripper MCU** is visualized below:
 
 ### **3️⃣ READ_ENCODER State**
 - The MCU reads **all connected encoders**.
+- This is done in **Encoder_Read** function
+- A Watchdog Timer Reset will be triggered if MCU is stuck in while loop
 - The **angle register** for each encoder is:
   - **0xFE** (MSB - Most Significant Byte)
   - **0xFF** (LSB - Least Significant Byte, with 2 unused bits)
@@ -65,6 +81,36 @@ The **state machine** for the **Gripper MCU** is visualized below:
 - The processed encoder data (`uint8_t` array) is **sent over CAN**.
 
 ---
+
+
+## **CAN ID Table**
+CAN FD in FIFO0 is set to only accept ID in the range 0x469 to 0x479.
+Each ID has its own purpose. Below is a table showing what each ID used for. 
+
+| ID | Message |
+| -------------- | --------------- |
+| 0x469 | STOP_GRIPPER |
+| 0x46A | START_GRIPPER |
+| 0x46B | SET_PWM |
+| 0x46C | RESET_MCU |
+
+## **I2C STARTBYTE Table**
+To distinguish different types of I2C messages a start byte is used.
+Below is a table showing what each start byte means.
+
+
+| STARTBYTE   | Message   |
+|--------------- | --------------- |
+| 0x0   | SEND_PWM   |
+| 0x1   | STOP_GRIPPER   |
+| 0x2   | START_GRIPPER   |
+| 0x3   | RESET_MCU   |
+
+## **Current Sense explanation**
+ADC is used to read the voltage over the SERVO lines. RTC is used to periodically trigger ADC sampling which
+trigger a DMA interrupt after 16 samples. Each sample is 16 samples averaged. If one of the samples
+give a current over the current threshold, the corresponding Servo Enable pin be disabled
+
 
 ## **TCC Period Calculation**
 To correctly configure **TCC (Timer/Counter for Control)** for PWM generation, we calculate the **TCC period** using the given clock and prescaler.
@@ -101,7 +147,6 @@ Thus, for **50 Hz PWM**, the **TCC period should be set to `119999`**.
 ---
 
 ## **Future Improvements**
-- 🔹 **Fully interrupt-based** operation (reducing CPU load).
 - 🔹 **Direct Memory Access (DMA)** for efficient data handling.
 - 🔹 **Sleep Mode Implementation** for power efficiency.
 
