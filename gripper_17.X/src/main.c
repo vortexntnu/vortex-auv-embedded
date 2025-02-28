@@ -31,9 +31,9 @@
 #include "wdt.h"
 
 // Encoder
-#define ENCODER_ADDR 0x40
-#define ENCODER2_ADDR 0x41
-#define ENCODER3_ADDR 0x42
+#define SHOULDER_ADDR 0x40
+#define WRIST_ADDR 0x41
+#define GRIP_ADDR 0x42
 #define ANGLE_REGISTER 0xFE
 
 #define TRANSFER_SIZE 16
@@ -98,6 +98,8 @@ float input_voltage;
 /* Variable to save application state */
 // volatile static STATES states = STATE_CAN_RECEIVE;
 
+
+
 static uint8_t encoder_angles[6] = {0};
 
 // Reads the encoder angle Register
@@ -112,7 +114,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     // Starting Watchdog timer
     WDT_Enable();
     // SHOULDER
-    if (!SERCOM1_I2C_WriteRead(ENCODER_ADDR, &reg, 1, dataBuffer, 2)) {
+    if (!SERCOM1_I2C_WriteRead(SHOULDER_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
         return 0;
     }
@@ -124,7 +126,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     WDT_Clear();
     // WRIST
 
-    if (!SERCOM1_I2C_WriteRead(ENCODER2_ADDR, &reg, 1, dataBuffer, 2)) {
+    if (!SERCOM1_I2C_WriteRead(WRIST_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
         return 0;
     }
@@ -138,7 +140,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     // GRIP
 
-    if (!SERCOM1_I2C_WriteRead(ENCODER3_ADDR, &reg, 1, dataBuffer, 2)) {
+    if (!SERCOM1_I2C_WriteRead(GRIP_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
         return 0;
     }

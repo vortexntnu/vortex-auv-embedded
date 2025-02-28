@@ -20,6 +20,8 @@
    - Click **Make and Program Device** (`F5`) to compile and flash the firmware.  
    - Verify the output in the MPLAB X console to ensure successful programming.
 ---
+
+
 ## **Peripheral Overview**
 The **Gripper MCU** utilizes the following peripherals:
 
@@ -137,7 +139,7 @@ To correctly configure **TCC (Timer/Counter for Control)** for PWM generation, w
 ### **Formula for TCC Period**
 
 $$
-\text{TCC PERIOD} = \frac{(\text{Clock Frequency} / \text{Prescaler}) \times \text{PWM Period (μs)}}{1,000,000} - 1
+\text{TCC PERIOD} = \frac{(\text{Clock Frequency} / \text{Prescaler}) \times \text{PWM Period (μs)}}{2} - 1
 $$
 
 ### **Example Calculation**
