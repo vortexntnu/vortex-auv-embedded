@@ -201,8 +201,8 @@ void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
     }
 }
 
-// I2C client backup code
-//
+// I2C slave backup code
+// Used instead of CAN
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[7];
@@ -481,8 +481,9 @@ int main(void) {
     // SERCOM0_I2C_Initialize();  // I2C 3
     // SERCOM1_I2C_Initialize();  // I2C 2
     // SERCOM3_I2C_Initialize();    // I2C 1
+    // Uncomment below to enable USART
     SERCOM0_USART_Initialize();  // USART for Debugging
-    //
+ 
     // SERCOM3_SLAVE_I2C_Initialize();
 
     // EVSYS_Initialize();
@@ -493,7 +494,7 @@ int main(void) {
     NVIC_Initialize();  // Enable interrupts
     /* Start PWM*/
 
-    // Peripherals should be disabled by default and will be Enable
+    // Peripherals should be disabled by default and will be enabled
     // by a CAN or I2C message
     TCC1_PWMStart();
     TCC0_PWMStart();

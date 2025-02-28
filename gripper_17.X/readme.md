@@ -1,12 +1,25 @@
 
 # **Gripper MCU Documentation**
 
-## **How to use**
-Download MPLAB and import the gripper_17.x project.
-Connect the SAMC21E17A to the computer with a compatible 
-programmer.
 
+## **How to Use**
 
+1. **Download and Install MPLAB X IDE**  
+   - Ensure you have the latest version of **MPLAB X IDE** installed.  
+   - If you haven’t installed it yet, download it from the [Microchip website](https://www.microchip.com/mplab/mplab-x-ide).
+
+2. **Import the `gripper_17.x` Project**  
+   - Open **MPLAB X IDE**.
+   - Go to **File > Open Project** and select the `gripper_17.x` project.
+
+3. **Connect the SAMC21E17A to Your Computer**  
+   - Use a **compatible programmer/debugger** (e.g., **PICkit 4, Atmel-ICE, or MPLAB SNAP**).  
+   - Ensure the **SWD interface** is properly connected.  
+
+4. **Build and Program the Device**  
+   - Click **Make and Program Device** (`F5`) to compile and flash the firmware.  
+   - Verify the output in the MPLAB X console to ensure successful programming.
+---
 ## **Peripheral Overview**
 The **Gripper MCU** utilizes the following peripherals:
 
@@ -14,7 +27,7 @@ The **Gripper MCU** utilizes the following peripherals:
   - `TCC0`
   - `TCC1`
 - **I²C Interfaces (SERCOM - Serial Communication)**
-  - `SERCOM0` → I²C 3
+  - `SERCOM0` → I²C 3 (USART for debugging)
   - `SERCOM1` → I²C 2
   - `SERCOM3` → I²C 1
 - **Analog Digital Converter**
@@ -22,11 +35,12 @@ The **Gripper MCU** utilizes the following peripherals:
 - **Direct Memory Access Controller (DMAC)**
 - **Real Time Counter (RTC)**
 - **Backup Communication (Client Mode)**
-  - `SERCOM2`
+  - `SERCOM3`
 - **Power Manager (PM)**
 - **Communication Interfaces**
   - **CAN FD** (Controller Area Network) for real-time data exchange
 - **Watchdog Timer (WDT)**
+- **Event Systems (EVSYS)**
 
 ---
 
@@ -78,7 +92,7 @@ The **state machine** for the **Gripper MCU** is visualized below:
   3. **Converted** into a `uint8_t` array for CAN transmission.
 
 ### **4️⃣ CAN_TRANSMIT State**
-- The processed encoder data (`uint8_t` array) is **sent over CAN**.
+- The processed encoder data (`uint8_t` array) is **sent over CAN** with the ID 0x469.
 
 ---
 
@@ -117,7 +131,7 @@ To correctly configure **TCC (Timer/Counter for Control)** for PWM generation, w
 
 ### **Given Parameters**
 - **Clock Frequency**: `48 MHz`
-- **Prescaler**: `8`
+- **Prescaler**: `4`
 - **Desired PWM Period** (in microseconds): `PWM_PERIOD_MICROSECONDS`
 
 ### **Formula for TCC Period**
@@ -130,13 +144,13 @@ $$
 For a **PWM period of 20 ms (50 Hz)**:
 
 $$
-\text{TCC PERIOD} = \frac{(48,000,000 / 8) \times 0.020}{1,000,000} - 1
+\text{TCC PERIOD} = \frac{(48,000,000 / 4) \times 0.020}{2} - 1
 $$
 $$
-= \frac{6,000,000 \times 0.020}{1,000,000} - 1
+= \frac{12,000,000 \times 0.020}{2} - 1
 $$
 $$
-= \frac{120,000}{1,000,000} - 1
+= {120,000} - 1
 $$
 $$
 = 119,999
