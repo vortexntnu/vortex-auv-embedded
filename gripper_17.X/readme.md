@@ -36,7 +36,7 @@ The **Gripper MCU** utilizes the following peripherals:
   - `ADC0` 
 - **Direct Memory Access Controller (DMAC)**
 - **Real Time Counter (RTC)**
-- **Backup Communication (Client Mode)**
+- **Backup I2C Communication**
   - `SERCOM3`
 - **Power Manager (PM)**
 - **Communication Interfaces**

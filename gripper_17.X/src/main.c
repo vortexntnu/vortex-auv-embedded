@@ -98,8 +98,6 @@ float input_voltage;
 /* Variable to save application state */
 // volatile static STATES states = STATE_CAN_RECEIVE;
 
-
-
 static uint8_t encoder_angles[6] = {0};
 
 // Reads the encoder angle Register
@@ -316,9 +314,25 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 break;
             case SET_PWM:
                 SetPWMDutyCycle(rx_message);
+                // Reading encoders
+                if (!Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                    // Returning to CAN recieve state if read failed
+                    CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
+                                        rx_message, &timestamp,
+                                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                    break;
+                }
+                // Sending ENCODER data over CAN
+                if (CAN0_MessageTransmit(
+                        messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
+                        CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
+                }
+
                 break;
             case RESET_MCU:
                 // This will cause an immediate system reset
+                // Writing any other than 0xA5 to WDT_CLEAR will
+                // reset the device
                 WDT_REGS->WDT_CLEAR = 0x0;
                 break;
             default:
@@ -365,11 +379,11 @@ void CAN_Transmit_Callback(uintptr_t context) {
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
+        // Sending encoder data
         if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                                 &timestamp, CAN_MSG_ATTR_RX_FIFO0,
                                 &msgFrameAttr) == false) {
         }
-        printf("sending\n");
     }
 }
 
@@ -485,7 +499,7 @@ int main(void) {
     // SERCOM3_I2C_Initialize();    // I2C 1
     // Uncomment below to enable USART
     SERCOM0_USART_Initialize();  // USART for Debugging
- 
+
     // SERCOM3_SLAVE_I2C_Initialize();
 
     // EVSYS_Initialize();
@@ -535,7 +549,8 @@ int main(void) {
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 
     printf("Initialize complete\n");
-    // DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+    // DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const
+    // void*)&ADC0_REGS->ADC_RESULT,
     //                      (const void*)adc_result_array,
     //                      sizeof(adc_result_array));
     PM_IdleModeEnter();
