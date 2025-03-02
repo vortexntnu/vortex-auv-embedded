@@ -9,11 +9,9 @@
 #include "samc21e17a.h"
 
 void PIN_Initialize(void) {
-    
-    
-    // 16MHz clock 
-    PORT_REGS->GROUP[0].PORT_PINCFG[14] = 0x1; // XIN 
-    PORT_REGS->GROUP[0].PORT_PINCFG[15] = 0x1; // XOUT
+    // 16MHz clock
+    PORT_REGS->GROUP[0].PORT_PINCFG[14] = 0x1;  // XIN
+    PORT_REGS->GROUP[0].PORT_PINCFG[15] = 0x1;  // XOUT
 
     PORT_REGS->GROUP[0].PORT_PMUX[7] = 0x77;
 
@@ -74,15 +72,18 @@ void NVIC_Initialize(void) {
     // NVIC_SetPriority(TCC1_IRQn, 3);
     // NVIC_EnableIRQ(TCC1_IRQn);
 
-    NVIC_SetPriority(TCC0_IRQn, 3);
-    NVIC_EnableIRQ(TCC0_IRQn);
+    // NVIC_SetPriority(TCC0_IRQn, 3);
+    // NVIC_EnableIRQ(TCC0_IRQn);
 
     // I2C 3
     NVIC_SetPriority(SERCOM0_IRQn, 3);
     NVIC_EnableIRQ(SERCOM0_IRQn);
 
     // I2C 2
-    NVIC_SetPriority(SERCOM1_IRQn, 3);
+    /* For nested I2C interrupts inside CAN Callback to work
+     * priority must be set higher than CAN interrupt
+     * */
+    NVIC_SetPriority(SERCOM1_IRQn, 2);
     NVIC_EnableIRQ(SERCOM1_IRQn);
 
     // I2C 3

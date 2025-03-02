@@ -16,6 +16,8 @@
       <itemPath>include/tcc0.h</itemPath>
       <itemPath>include/tcc_common.h</itemPath>
       <itemPath>include/usart.h</itemPath>
+      <itemPath>include/wdt.h</itemPath>
+      <itemPath>include/pm.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -43,6 +45,8 @@
       <itemPath>src/rtc.c</itemPath>
       <itemPath>src/adc0.c</itemPath>
       <itemPath>src/dmac.c</itemPath>
+      <itemPath>src/pm.c</itemPath>
+      <itemPath>src/wdt.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

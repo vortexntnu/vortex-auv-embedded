@@ -903,7 +903,6 @@ void CAN0_RxCallbackRegister(CAN_CALLBACK callback,
     enabled user need to call it from the main while loop of the application.
 */
 void __attribute__((used)) CAN0_Handler(void) {
-    printf("Entering interrupt\n");
     uint8_t length = 0;
     uint8_t rxgi = 0;
     uint8_t bufferIndex = 0;
