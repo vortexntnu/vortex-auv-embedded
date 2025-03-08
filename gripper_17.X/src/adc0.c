@@ -55,6 +55,7 @@
 */
 
 #include "adc0.h"
+#include "component/adc.h"
 // *****************************************************************************
 // *****************************************************************************
 // Section: Global Data
@@ -100,17 +101,12 @@ void ADC0_Initialize( void )
     ADC0_REGS->ADC_CTRLC = ADC_CTRLC_RESSEL_16BIT | ADC_CTRLC_WINMODE(0);
 
     /* Averaging 16 samples*/
-    ADC0_REGS->ADC_AVGCTRL = ADC_AVGCTRL_SAMPLENUM_16 | ADC_AVGCTRL_ADJRES(4);
+    ADC0_REGS->ADC_AVGCTRL = ADC_AVGCTRL_SAMPLENUM_1024 | ADC_AVGCTRL_ADJRES(6);
     /* Input pin */
     ADC0_REGS->ADC_INPUTCTRL = (uint16_t) ADC_POSINPUT_AIN0;
 
     /* Resolution & Operation Mode */
     // ADC0_REGS->ADC_CTRLC = ADC_CTRLC_RESSEL_12BIT | ADC_CTRLC_WINMODE(0) ;
-
-    ADC0_REGS->ADC_CTRLC = ADC_CTRLC_RESSEL_16BIT | ADC_CTRLC_WINMODE(0);
-
-    /* Averaging 16 samples*/
-    ADC0_REGS->ADC_AVGCTRL = ADC_AVGCTRL_SAMPLENUM_16 | ADC_AVGCTRL_ADJRES(4);
 
     /* Clear all interrupt flags */
     ADC0_REGS->ADC_INTFLAG = ADC_INTFLAG_Msk;

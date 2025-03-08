@@ -38,22 +38,23 @@
 
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f
-#define CURRENT_TRESHOLD 1.0f  // 1 A
-#define RTC_COMPARE_VAL 100    // should probably be set lower
+#define CURRENT_TRESHOLD 2.7f  // 1 A
+#define VOLTAGE_THRESHOLD 2048
+#define RTC_COMPARE_VAL 50  // should probably be set lower
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
 /* Application's state machine enum */
 typedef enum {
-    STATE_CAN_RECEIVE,
-    STATE_SET_PWM,
-    STATE_READ_ENCODER,
-    STATE_CAN_TRANSMIT,
-    STATE_CAN_XFER_SUCCESSFUL,
-    STATE_CAN_XFER_ERROR,
     STATE_IDLE,
+    STATE_GRIPPER_ACTIVE,
 } STATES;
+
+typedef enum {
+    STATE_CAN_RECEIVE,
+    STATE_CAN_TRANSMIT,
+} CAN_STATES;
 
 // CAN FD RECIEVE ID table
 typedef enum {
@@ -62,6 +63,7 @@ typedef enum {
     SET_PWM,
     RESET_MCU,
 } CAN_RECEIVE_ID;
+
 // I2C RECIEVE START BYTE table
 typedef enum {
     I2C_SET_PWM,
@@ -81,7 +83,7 @@ static uint32_t status = 0;
 static uint32_t xferContext = 0;
 /* Variable to save Tx/Rx message */
 static uint32_t messageID = 0x469;
-static uint32_t rx_messageID = 0x469;
+static uint32_t rx_messageID = 0;
 // static uint8_t message[64] = {0};
 static uint8_t rx_message[64] = {0};
 // static uint8_t messageLength = 0;
@@ -96,7 +98,7 @@ uint16_t adc_result_array[TRANSFER_SIZE];
 float input_voltage;
 
 /* Variable to save application state */
-// volatile static STATES states = STATE_CAN_RECEIVE;
+volatile static STATES gripper_state = STATE_IDLE;
 
 static uint8_t encoder_angles[6] = {0};
 
@@ -119,7 +121,6 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     while (SERCOM1_I2C_IsBusy())
         ;
     rawData[0] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
-    printf("%d\n", rawData[0]);
 
     // Clearing watchdog timer
     // WDT_Clear();
@@ -203,7 +204,6 @@ void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
 }
 
 // I2C slave backup code
-// Used instead of CAN
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[7];
@@ -222,7 +222,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             /* Read the data sent by I2C Host */
 
             // Encoder_Read(encoder_angles, ENCODER_ADDR,
-            // ANGLE_REGISTER);
+            // ANGLE_REGISTER);u
             if (dataIndex < sizeof(dataBuffer)) {
                 dataBuffer[dataIndex++] = SERCOM3_I2C_ReadByte();
             }
@@ -230,6 +230,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY: {
+            // Sending encoder angles to master
             SERCOM3_I2C_WriteByte(encoder_angles[dataIndex++]);
             break;
         }
@@ -238,7 +239,8 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             if (SERCOM3_I2C_TransferDirGet() ==
                 SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE) {
                 // First byte indicating what the MCU should do
-                switch (dataBuffer[0]) {
+                uint8_t start_byte = dataBuffer[0];
+                switch (start_byte) {
                     case I2C_SET_PWM:
                         // Start indexing at the second element
                         SetPWMDutyCycle(dataBuffer + 1);
@@ -250,7 +252,8 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         TCC0_PWMStop();
                         TCC1_PWMStop();
                         ADC0_Disable();
-                        PM_IdleModeEnter();
+                        gripper_state = STATE_IDLE;
+                        /*PM_IdleModeEnter();*/
                         break;
                     case I2C_START_GRIPPER:
                         TCC0_PWMStart();
@@ -261,8 +264,11 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         // Turn on servo enable pin
                         PORT_REGS->GROUP[0].PORT_OUTSET =
                             (1 << 0) | (1 << 27) | (1 << 28);
+                        gripper_state = STATE_GRIPPER_ACTIVE;
                         break;
                     case I2C_RESET_MCU:
+                        // Writing WDT_CLEAR anything other than 0xA5 will reset
+                        // the mcu
                         WDT_REGS->WDT_CLEAR = 0x0;
                     default:
                         break;
@@ -291,7 +297,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
 
     /* Check CAN Status */
     status = CAN0_ErrorGet();
-    printf("Entering callback\n");
+    /*printf("Entering callback\n");*/
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
@@ -306,8 +312,9 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-                printf("STOP_GRIPPER\n");
+                /*printf("STOP_GRIPPER\n");*/
                 // PM_IdleModeEnter();
+                gripper_state = STATE_IDLE;
                 break;
             case START_GRIPPER:
                 TCC0_PWMStart();
@@ -318,11 +325,12 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 // Turn on servo enable pins
                 PORT_REGS->GROUP[0].PORT_OUTSET =
                     (1 << 0) | (1 << 27) | (1 << 28);
-                printf("START_GRIPPER\n");
+                /*printf("START_GRIPPER\n");*/
                 memset(rx_message, 0x00, sizeof(rx_message));
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                gripper_state = STATE_GRIPPER_ACTIVE;
                 break;
             case SET_PWM:
                 SetPWMDutyCycle(rx_message);
@@ -340,31 +348,31 @@ void CAN_Recieve_Callback(uintptr_t context) {
                         messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
                         CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
                 }
-                printf("SET_PWM");
+                /*printf("SET_PWM");*/
 
                 break;
             case RESET_MCU:
                 // This will cause an immediate system reset
                 // Writing anything other than 0xA5 to WDT_CLEAR will
                 // reset the device
-                printf("RESET_MCU\n");
+                /*printf("RESET_MCU\n");*/
                 WDT_REGS->WDT_CLEAR = 0x0;
                 break;
             default:
                 break;
         }
 
-        printf(" New Message Received\r\n");
-        uint8_t length = rx_messageLength;
-        printf(
-            " Message - Timestamp : 0x%x ID : 0x%x Length "
-            ":0x%x",
-            (unsigned int)timestamp, (unsigned int)rx_messageID,
-            (unsigned int)rx_messageLength);
-        printf("Message : ");
-        while (length) {
-            printf("0x%x ", rx_message[rx_messageLength - length--]);
-        }
+        /*printf(" New Message Received\r\n");*/
+        /*uint8_t length = rx_messageLength;*/
+        /*printf(*/
+        /*    " Message - Timestamp : 0x%x ID : 0x%x Length "*/
+        /*    ":0x%x",*/
+        /*    (unsigned int)timestamp, (unsigned int)rx_messageID,*/
+        /*    (unsigned int)rx_messageLength);*/
+        /*printf("Message : ");*/
+        /*while (length) {*/
+        /*    printf("0x%x ", rx_message[rx_messageLength - length--]);*/
+        /*}*/
         // Only include this if testing without encoders
         // if (CAN0_MessageReceive(&rx_messageID,
         // &rx_messageLength,
@@ -444,27 +452,36 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
 }
 
 // Will turn off servo enable pin if current is to high
+// Averages 16 samples which each is 1024 averaged samples
+// should cover a timepsan of roughly 100ms
 void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
         bool overCurrent = false;
+        uint16_t input_voltage = 0;
         for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
+            input_voltage += adc_result_array[sample];
+            // Dividing by two
+            input_voltage = input_voltage >> 1;
             // 2.5 V means 0 Amps
             // TODO: Convert this to average value instead of calculating on
             // runtime
-            input_voltage =
-                (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5) /
-                0.4;
+            // The calculation below converts the input voltage to current
+            // Instead of doing this in runtime, we instead calculate the
+            // equivalent value in voltage and convert that to the digial format
 
-            printf(
-                "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "
-                "\n\r",
-                adc_result_array[sample], (int)input_voltage,
-                (int)((input_voltage - (int)input_voltage) * 100.0));
+            /*input_voltage =*/
+            /*    (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5) /*/
+            /*    0.4;*/
 
-            if (input_voltage > CURRENT_TRESHOLD) {
-                overCurrent = true;
-                break;
-            }
+            /*printf(*/
+            /*    "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "*/
+            /*    "\n\r",*/
+            /*    adc_result_array[sample], (int)input_voltage,*/
+            /*    (int)((input_voltage - (int)input_voltage) * 100.0));*/
+        }
+        
+        if (input_voltage > VOLTAGE_THRESHOLD) {
+            overCurrent = true;
         }
         switch (servo_status) {
             case SERVO_1:
@@ -473,7 +490,7 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
                 servo_status = SERVO_2;
-                printf("SERVO2\n");
+                /*printf("SERVO2\n");*/
                 break;
             case SERVO_2:
                 if (overCurrent) {
@@ -481,7 +498,7 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN4;
                 servo_status = SERVO_3;
-                printf("SERVO3\n");
+                /*printf("SERVO3\n");*/
                 break;
             case SERVO_3:
                 if (overCurrent) {
@@ -489,7 +506,7 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN0;
                 servo_status = SERVO_1;
-                printf("SERVO1\n");
+                /*printf("SERVO1\n");*/
                 break;
             default:
                 break;
@@ -525,18 +542,16 @@ int main(void) {
     DMAC_Initialize();
     RTC_Initialize();
 
-    NVIC_Initialize();  // Enable interrupts
-    /* Start PWM*/
+    NVIC_Initialize();
 
     // Peripherals should be disabled by default and will be enabled
-    // by a CAN or I2C message
+    // by a CAN or I2C start_gripper message
     // Enable if testing without CAN or I2C
     // TCC1_PWMStart();
     // TCC0_PWMStart();
     // ADC0_Enable();
     // RTC_Timer32Start();
     // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-    //
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
@@ -545,7 +560,7 @@ int main(void) {
     // I2C backup callback function
     // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
-    // Callback function used for TCC interrupts when testing
+    // Callback function used for TCC interrupts when testing servos
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
 
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, DmacCh0Cb,
@@ -556,26 +571,27 @@ int main(void) {
                             (uintptr_t)STATE_CAN_TRANSMIT);
 
     memset(rx_message, 0x00, sizeof(rx_message));
-    if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                            &timestamp, CAN_MSG_ATTR_RX_FIFO0,
-                            &msgFrameAttr) == false) {
-    }
-    printf("Before transmit\n");
-
-    if (CAN0_MessageTransmit(messageID, 6, encoder_angles,
-                             CAN_MODE_FD_WITHOUT_BRS,
-                             CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-    }
+    // Enabling CAN recieve interrupt for fifo0
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
 
     // Servo Enable
-    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
+    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
 
-    printf("Initialize complete\n");
+    /*printf("Initialize complete\n");*/
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
-    PM_IdleModeEnter();
     while (true) {
+        // This switch case is used to set idle mode outside interrupt
+        // MCU will be stuck if idle mode is set while insdie interrupt
+        switch (gripper_state) {
+            case STATE_IDLE:
+                PM_IdleModeEnter();
+                break;
+            case STATE_GRIPPER_ACTIVE:
+                break;
+        }
     }
 
     /* Execution should not come here during normal operation */
