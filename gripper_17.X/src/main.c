@@ -40,7 +40,7 @@
 #define ADC_VREF 5.0f
 #define CURRENT_TRESHOLD 2.7f  // 1 A
 #define VOLTAGE_THRESHOLD 2048
-#define RTC_COMPARE_VAL 50  // should probably be set lower
+#define RTC_COMPARE_VAL 50
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -95,7 +95,7 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 volatile SERVO_ADC_PINS servo_status = SERVO_1;
 uint32_t myAppObj = 0;
 uint16_t adc_result_array[TRANSFER_SIZE];
-float input_voltage;
+/*float input_voltage;*/
 
 /* Variable to save application state */
 volatile static STATES gripper_state = STATE_IDLE;
@@ -123,32 +123,32 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     rawData[0] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
 
     // Clearing watchdog timer
-    // WDT_Clear();
-    // // WRIST
-    //
-    // if (!SERCOM1_I2C_WriteRead(WRIST_ADDR, &reg, 1, dataBuffer, 2)) {
-    //     WDT_Disable();
-    //     return 0;
-    // }
-    // while (SERCOM1_I2C_IsBusy())
-    //     ;
-    //
-    // rawData[1] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
-    //
-    // // Clearing watchdog timer
-    // WDT_Clear();
-    //
-    // // GRIP
-    //
-    // if (!SERCOM1_I2C_WriteRead(GRIP_ADDR, &reg, 1, dataBuffer, 2)) {
-    //     WDT_Disable();
-    //     return 0;
-    // }
-    //
-    // while (SERCOM1_I2C_IsBusy())
-    //     ;
-    // rawData[2] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
-    //
+    WDT_Clear();
+    // WRIST
+
+    if (!SERCOM1_I2C_WriteRead(WRIST_ADDR, &reg, 1, dataBuffer, 2)) {
+        WDT_Disable();
+        return 0;
+    }
+    while (SERCOM1_I2C_IsBusy())
+        ;
+
+    rawData[1] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+
+    // Clearing watchdog timer
+    WDT_Clear();
+
+    // GRIP
+
+    if (!SERCOM1_I2C_WriteRead(GRIP_ADDR, &reg, 1, dataBuffer, 2)) {
+        WDT_Disable();
+        return 0;
+    }
+
+    while (SERCOM1_I2C_IsBusy())
+        ;
+    rawData[2] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+
     data[0] = rawData[0] >> 8;
     data[1] = rawData[0] & 0xFF;
     data[2] = rawData[1] >> 8;
@@ -222,7 +222,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             /* Read the data sent by I2C Host */
 
             // Encoder_Read(encoder_angles, ENCODER_ADDR,
-            // ANGLE_REGISTER);u
+            // ANGLE_REGISTER);
             if (dataIndex < sizeof(dataBuffer)) {
                 dataBuffer[dataIndex++] = SERCOM3_I2C_ReadByte();
             }
@@ -244,6 +244,8 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                     case I2C_SET_PWM:
                         // Start indexing at the second element
                         SetPWMDutyCycle(dataBuffer + 1);
+                        if (!Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                        }
                         break;
                     case I2C_STOP_GRIPPER:
                         // Turn off sevo enable pin
@@ -454,21 +456,16 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
 // Will turn off servo enable pin if current is to high
 // Averages 16 samples which each is 1024 averaged samples
 // should cover a timepsan of roughly 100ms
-void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
+void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
+                            uintptr_t MyDmacContext) {
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
         bool overCurrent = false;
         uint16_t input_voltage = 0;
         for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
             input_voltage += adc_result_array[sample];
-            // Dividing by two
-            input_voltage = input_voltage >> 1;
-            // 2.5 V means 0 Amps
-            // TODO: Convert this to average value instead of calculating on
-            // runtime
-            // The calculation below converts the input voltage to current
-            // Instead of doing this in runtime, we instead calculate the
-            // equivalent value in voltage and convert that to the digial format
+            input_voltage = input_voltage >> 1;  // Dividing by two
 
+            // 2.5 V == 0 A
             /*input_voltage =*/
             /*    (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5) /*/
             /*    0.4;*/
@@ -479,7 +476,7 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
             /*    adc_result_array[sample], (int)input_voltage,*/
             /*    (int)((input_voltage - (int)input_voltage) * 100.0));*/
         }
-        
+
         if (input_voltage > VOLTAGE_THRESHOLD) {
             overCurrent = true;
         }
@@ -516,6 +513,9 @@ void DmacCh0Cb(DMAC_TRANSFER_EVENT returned_evnt, uintptr_t MyDmacContext) {
             DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
             (const void*)adc_result_array, sizeof(adc_result_array));
     } else if (DMAC_TRANSFER_EVENT_ERROR == returned_evnt) {
+        DMAC_ChannelTransfer(
+            DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+            (const void*)adc_result_array, sizeof(adc_result_array));
     }
 }
 
@@ -563,7 +563,7 @@ int main(void) {
     // Callback function used for TCC interrupts when testing servos
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
 
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, DmacCh0Cb,
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback,
                                  (uintptr_t)&myAppObj);
     CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
                             CAN_MSG_ATTR_RX_FIFO0);
@@ -583,13 +583,15 @@ int main(void) {
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
     while (true) {
-        // This switch case is used to set idle mode outside interrupt
-        // MCU will be stuck if idle mode is set while insdie interrupt
+        /*This switch case is used to set idle mode outside interrupt*/
+        /*MCU will be stuck if idle mode is set inside interrupt*/
         switch (gripper_state) {
             case STATE_IDLE:
                 PM_IdleModeEnter();
                 break;
             case STATE_GRIPPER_ACTIVE:
+                break;
+            default:
                 break;
         }
     }

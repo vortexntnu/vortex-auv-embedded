@@ -122,10 +122,32 @@ Below is a table showing what each start byte means.
 | 0x2   | START_GRIPPER   |
 | 0x3   | RESET_MCU   |
 
-## **Current Sense explanation**
-ADC is used to read the voltage over the SERVO lines. RTC is used to periodically trigger ADC sampling which
-trigger a DMA interrupt after 16 samples. Each sample is 16 samples averaged. If one of the samples
-give a current over the current threshold, the corresponding Servo Enable pin be disabled
+###  Current Sensing and Overcurrent Protection
+
+This system monitors the **current consumption** of **servo motors** using an **ADC (Analog-to-Digital Converter)**, **RTC (Real-Time Counter)**, and **DMA (Direct Memory Access)** to ensure efficient sampling and protection against overcurrent conditions.
+
+###  How It Works
+1. **ADC Sampling (Triggered by RTC):**  
+   - The **ADC measures the voltage** across the servo power lines.  
+   - **DMA transfers 16 ADC samples** (each an average of 1024 readings) to reduce noise.  
+
+2. **Overcurrent Detection:**  
+   - The **averaged ADC value** is compared to a **threshold (`VOLTAGE_THRESHOLD`)**.  
+   - If **any sample exceeds the limit**, the **corresponding servo enable pin is disabled**.
+
+3. **Servo Cycling:**  
+   - The system monitors **three servos (`SERVO_1`, `SERVO_2`, `SERVO_3`)** in a loop.  
+   - If an overcurrent condition is detected, the **servo is turned off**.  
+   - The **ADC input is switched to the next servo** for continuous monitoring.  
+
+4. **DMA Restart:**  
+   - After processing, the **DMA transfer restarts**, ensuring **continuous current monitoring** with minimal CPU usage.
+
+###  Key Features
+✅ **RTC + DMA ensures efficient ADC sampling** without CPU blocking.  
+✅ **16-sample averaging (each 1024 ADC readings)** minimizes noise.  
+✅ **Automatic servo disable on overcurrent** prevents damage.  
+✅ **Cyclic servo monitoring** ensures all servos are checked.
 
 
 ## **TCC Period Calculation**
