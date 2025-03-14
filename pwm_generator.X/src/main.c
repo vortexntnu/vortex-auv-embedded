@@ -28,8 +28,6 @@
 #include "usart.h"
 /*#include "wdt.h"*/
 
-
-
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
@@ -55,16 +53,10 @@ typedef enum {
 // I2C RECIEVE START BYTE table
 typedef enum {
     I2C_SET_PWM,
-    I2C_STOP_GRIPPER,
-    I2C_START_GRIPPER,
+    I2C_STOP_GENERATOR,
+    I2C_START_GENERATOR,
     I2C_RESET_MCU,
 } I2C_STARTBYTE_ID;
-/* Servo pins enum for ADC reading */
-typedef enum {
-    SERVO_1,
-    SERVO_2,
-    SERVO_3,
-} SERVO_ADC_PINS;
 
 /* Variable to save Tx/Rx transfer status and context */
 static uint32_t status = 0;
@@ -79,50 +71,22 @@ static uint8_t rx_messageLength = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
-
 /* Variable to save application state */
 volatile static STATES pwm_generator_state = STATE_IDLE;
 
-
 // Function to set the TCC duty cycle for a specific channel
 void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
-    uint16_t shoulderDuty =
-        (dutyCycleMicroSeconds[0] << 8) | dutyCycleMicroSeconds[1];
-    uint16_t wristDuty =
-        (dutyCycleMicroSeconds[2] << 8) | dutyCycleMicroSeconds[3];
-    uint16_t gripDuty =
-        (dutyCycleMicroSeconds[4] << 8) | dutyCycleMicroSeconds[5];
-
-    // SHOULDER
-    uint32_t tccValue =
-        (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-
-    if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(1, PWM_MAX);
-    } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(1, PWM_MIN);
-    } else {
-        TCC0_PWM24bitDutySet(1, tccValue);
-    }
-
-    // WRIST
-    tccValue = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(0, PWM_MAX);
-    } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(0, PWM_MIN);
-    } else {
-        TCC0_PWM24bitDutySet(0, tccValue);
-    }
-
-    // GRIP
-    tccValue = (gripDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    if (tccValue > PWM_MAX) {
-        TCC1_PWM24bitDutySet(1, PWM_MAX);
-    } else if (tccValue < PWM_MIN) {
-        TCC1_PWM24bitDutySet(1, PWM_MIN);
-    } else {
-        TCC1_PWM24bitDutySet(1, tccValue);
+    uint16_t dutyCycle;
+    uint32_t tccValue;
+    for (int i = 0; i < 15; i += 2) {
+        dutyCycle =
+            (dutyCycleMicroSeconds[i] << 8) | dutyCycleMicroSeconds[i + 1];
+        tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+        if (i < 8) {
+            TCC0_PWM24bitDutySet(i / 2, dutyCycle);
+        } else {
+            TCC1_PWM24bitDutySet(i / 2 - 4, dutyCycle);
+        }
     }
 }
 
@@ -167,14 +131,14 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         // Start indexing at the second element
                         SetThrusterPWM(dataBuffer + 1);
                         break;
-                    case I2C_STOP_GRIPPER:
+                    case I2C_STOP_GENERATOR:
                         // Turn off sevo enable pin
                         TCC0_PWMStop();
                         TCC1_PWMStop();
                         pwm_generator_state = STATE_IDLE;
                         /*PM_IdleModeEnter();*/
                         break;
-                    case I2C_START_GRIPPER:
+                    case I2C_START_GENERATOR:
                         TCC0_PWMStart();
                         TCC1_PWMStart();
                         pwm_generator_state = STATE_GENERATOR_ACTIVE;
@@ -343,7 +307,6 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
-
 int main(void) {
     /* Initialize all modules */
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
@@ -361,7 +324,6 @@ int main(void) {
     SERCOM0_USART_Initialize();  // USART for Debugging
 
     // SERCOM3_SLAVE_I2C_Initialize();
-
 
     NVIC_Initialize();
 
