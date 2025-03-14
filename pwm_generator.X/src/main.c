@@ -62,7 +62,7 @@ typedef enum {
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
 /* Variable to save Tx/Rx message */
-static uint32_t messageID = 0x469;
+static uint32_t messageID = 0x169;
 static uint32_t rx_messageID = 0;
 // static uint8_t message[64] = {0};
 static uint8_t rx_message[64] = {0};
@@ -82,6 +82,7 @@ void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
         dutyCycle =
             (dutyCycleMicroSeconds[i] << 8) | dutyCycleMicroSeconds[i + 1];
         tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+        // This needs to be adjusted based upon the pinout
         if (i < 8) {
             TCC0_PWM24bitDutySet(i / 2, dutyCycle);
         } else {
@@ -94,9 +95,6 @@ void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[17];
-    // Data sent recieved i2c will have this format
-    // Startbyte|PWM_DATA|
-    // Startbyte indiciate what information is being sent
 
     static uint8_t dataIndex = 0;
 
@@ -145,7 +143,8 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                     default:
                         break;
                 }
-                // printf("MEssage recieved\n");
+                /* Only used for debugging */
+                // printf("Message recieved\n");
                 // for (int i = 0; i < 7; i++) {
                 //     printf("%x\n", dataBuffer[i]);
                 // }
@@ -194,7 +193,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 // Reading encoders
                 // Sending ENCODER data over CAN
                 /*printf("SET_PWM");*/
-
                 break;
             case RESET_MCU:
                 // This will cause an immediate system reset
@@ -206,7 +204,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
             default:
                 break;
         }
-
+        /* Only used for debugging */
         /*printf(" New Message Received\r\n");*/
         /*uint8_t length = rx_messageLength;*/
         /*printf(*/
@@ -321,8 +319,6 @@ int main(void) {
     CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                         &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
 
-    // Servo Enable
-    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
 
     /*printf("Initialize complete\n");*/
     while (true) {
