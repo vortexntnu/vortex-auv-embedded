@@ -6,6 +6,7 @@ CompileFlags:
     - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAME51_DFP/3.7.242/include/
     - -I/opt/microchip/mplabx/v6.20/packs/Microchip/SAMC21_DFP/3.8.119/samc21/include/
     - -I/home/nathaniel/vortex-auv-embedded/gripper_17.X/include/
+    - -I/home/nathaniel/vortex-auv-embedded/pwm_generator.X/include/
     - -Wall
     - -Wextra
 
