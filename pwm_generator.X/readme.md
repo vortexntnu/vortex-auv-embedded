@@ -1,120 +1,129 @@
 
+
 # **PWM Generator MCU Documentation**
 
+## **Overview**
+The **PWM Generator MCU** is responsible for generating precise PWM signals to control **thrusters**. The MCU receives **duty cycle commands** (in microseconds) from the **Jetson Orin** over **I²C** and converts them into appropriate PWM signals.
+
+This document provides details on **setup, peripherals, communication protocols, CAN IDs, I²C messages, and timer calculations**.
+
+---
 
 ## **How to Use**
 
-1. **Download and Install MPLAB X IDE**  
-   - Ensure you have the latest version of **MPLAB X IDE** installed.  
-   - If you haven’t installed it yet, download it from the [Microchip website](https://www.microchip.com/mplab/mplab-x-ide).
+### **1. Download and Install MPLAB X IDE**
+- Ensure you have the latest version of **MPLAB X IDE** installed.
+- Download it from the [Microchip website](https://www.microchip.com/mplab/mplab-x-ide).
 
-2. **Import the `pwm_generator.x` Project**  
-   - Open **MPLAB X IDE**.
-   - Go to **File > Open Project** and select the `pwm_generator.x` project.
+### **2. Import the `pwm_generator.x` Project**
+- Open **MPLAB X IDE**.
+- Go to **File > Open Project** and select `pwm_generator.x`.
 
-3. **Connect the SAMC21E17A to Your Computer**  
-   - Use a **compatible programmer/debugger** (e.g., **PICkit 4, Atmel-ICE, or MPLAB SNAP**).  
-   - Ensure the **SWD interface** is properly connected.  
+### **3. Connect the SAMC21E17A to Your Computer**
+- Use a **compatible programmer/debugger**:
+  - **PICkit 4**
+  - **Atmel-ICE**
+  - **MPLAB SNAP**
+- Ensure the **SWD interface** is properly connected.
 
-4. **Build and Program the Device**  
-   - Click **Make and Program Device** (`F5`) to compile and flash the firmware.  
-   - Verify the output in the MPLAB X console to ensure successful programming.
+### **4. Build and Program the Device**
+- Click **Make and Program Device** (`F5`) to compile and flash the firmware.
+- Verify the output in the **MPLAB X console** to ensure successful programming.
+
 ---
-
 
 ## **Peripheral Overview**
-The **Gripper MCU** utilizes the following peripherals:
+The **PWM Generator MCU** utilizes the following peripherals:
 
-- **Timers (TCC - Timer/Counter for Control)**
-  - `TCC0`
-  - `TCC1`
-- **I²C Interfaces (SERCOM - Serial Communication)**
-  - `SERCOM0` → I²C 3 (USART for debugging)
-  - `SERCOM1` → I²C 2
-  - `SERCOM3` → I²C 1
-- **Backup I2C Communication**
-  - `SERCOM3`
+### **Timers (TCC - Timer/Counter for Control)**
+- `TCC0` → **Primary PWM Generator**
+- `TCC1` → **Backup/Additional PWM Channels**
+
+### **I²C Interfaces (SERCOM - Serial Communication)**
+- `SERCOM0` → **I²C 3 (USART for debugging)**
+- `SERCOM1` → **I²C 2**
+- `SERCOM3` → **I²C 1**
+
+### **Backup I²C Communication**
+- `SERCOM3` (Fallback communication channel)
+
+### **Communication Interfaces**
+- **CAN FD (Controller Area Network)**
+  - Supports real-time data exchange.
+
+### **Other Peripherals**
 - **Power Manager (PM)**
-- **Communication Interfaces**
-  - **CAN FD** (Controller Area Network) for real-time data exchange
-- **Watchdog Timer (WDT)**
-
----
-## **MCU explanation**
-
-This MCU is used to generate PWM signals for the thrusters. There is a total of eight truster.
-The MCU recieves duty cycle in microseconds from the Jetson Orin and converts it into the actual duty cycle.
-
+- **Watchdog Timer (WDT)** for system reliability.
 
 ---
 
+## **MCU Functionality**
+- The **MCU generates PWM signals** to control **eight thrusters**.
+- It **receives duty cycle data** (in microseconds) from the **Jetson Orin** via **I²C**.
+- The received duty cycle is **converted into an actual PWM duty cycle** and applied to the thrusters.
 
-## **CAN ID Table**
-CAN FD in FIFO0 is set to only accept ID in the range 0x469 to 0x479.
-Each ID has its own purpose. Below is a table showing what each ID used for. 
+---
 
-| ID | Message |
-| -------------- | --------------- |
-| 0x369 | STOP_GRIPPER |
-| 0x36A | START_GRIPPER |
-| 0x36B | SET_PWM |
-| 0x36C | RESET_MCU |
+## **Communication Protocols**
 
-## **I2C STARTBYTE Table**
-To distinguish different types of I2C messages a start byte is used.
-Below is a table showing what each start byte means.
+### **CAN ID Table**
+The **CAN FD** interface is configured with **FIFO0** to accept **IDs from `0x469` to `0x479`**.
 
-The MCU will have an address of 0x21 (can be configured)
+| **CAN ID** | **Message Description** |
+|------------|-------------------------|
+| `0x369` | **STOP_GRIPPER** |
+| `0x36A` | **START_GRIPPER** |
+| `0x36B` | **SET_PWM** |
+| `0x36C` | **RESET_MCU** |
 
+---
 
-| STARTBYTE   | Message   |
-|--------------- | --------------- |
-| 0x0   | SEND_PWM   |
-| 0x1   | STOP_GRIPPER   |
-| 0x2   | START_GRIPPER   |
-| 0x3   | RESET_MCU   |
+### **I²C Communication**
 
-## **TCC Period Calculation**
-To correctly configure **TCC (Timer/Counter for Control)** for PWM generation, we calculate the **TCC period** using the given clock and prescaler.
+#### **I²C Device Address**
+- The MCU has an I²C **address of `0x21`** (configurable).
 
-### **Given Parameters**
-- **Clock Frequency**: `48 MHz`
-- **Prescaler**: `4`
-- **Desired PWM Period** (in microseconds): `PWM_PERIOD_MICROSECONDS`
+#### **I²C Start Byte Table**
+To **distinguish different message types**, a **start byte** is used.
 
-### **Formula for TCC Period**
-
-$$
-\text{TCC PERIOD} = \frac{(\text{Clock Frequency} / \text{Prescaler}) \times \text{PWM Period (μs)}}{2} - 1
-$$
-
-### **Example Calculation**
-For a **PWM period of 20 ms (50 Hz)**:
-
-$$
-\text{TCC PERIOD} = \frac{(48,000,000 / 4) \times 0.020}{2} - 1
-$$
-$$
-= \frac{12,000,000 \times 0.020}{2} - 1
-$$
-$$
-= {120,000} - 1
-$$
-$$
-= 119,999
-$$
-
-Thus, for **50 Hz PWM**, the **TCC period should be set to `119999`**.
+| **START BYTE** | **Message Description** |
+|--------------|----------------------|
+| `0x0` | **SEND_PWM** (Set PWM duty cycle) |
+| `0x1` | **STOP_GRIPPER** |
+| `0x2` | **START_GRIPPER** |
+| `0x3` | **RESET_MCU** |
 
 ---
 
 ## **Future Improvements**
-- 🔹 **Direct Memory Access (DMA)** for efficient data handling.
-- 🔹 **Sleep Mode Implementation** for power efficiency.
+🔹 **Direct Memory Access (DMA)** → Reducing CPU workload during data transfers.  
+🔹 **Interrupt-Based I²C Handling** → Enhancing real-time communication efficiency.  
+🔹 **Low Power Mode Implementation** → Optimizing power consumption for extended operation.  
+🔹 **Enhanced Error Handling** → Improving CAN FD message filtering & I²C communication reliability.  
 
 ---
 
 ## **Additional Notes**
-- The **duty cycle computation** ensures that the received PWM signal is **converted accurately** for motor control.
-- Implementing **DMA & interrupt-based** processing will further **reduce MCU workload and improve real-time performance**.
+- The MCU ensures **accurate PWM generation** to maintain **precise thruster control**.
+- **DMA and interrupt-based processing** will be added in future firmware updates to **enhance real-time performance**.
+
+---
+
+## **Changelog**
+| **Version** | **Changes** |
+|------------|------------|
+| `1.0` | Initial documentation release |
+| `1.1` | Added CAN & I²C protocol tables |
+| `1.2` | Expanded TCC period calculation |
+
+---
+
+## **References**
+- **Microchip MPLAB X IDE**: [Microchip MPLAB Website](https://www.microchip.com/mplab/mplab-x-ide)
+- **SAMC21 Datasheet**: [SAMC21 Microchip Documentation](https://www.microchip.com/wwwproducts/en/SAMC21)
+- **CAN FD Protocol Specification**: [CAN FD ISO 11898-1](https://www.iso.org/standard/66047.html)
+
+---
+
+
 
