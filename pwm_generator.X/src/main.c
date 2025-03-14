@@ -14,7 +14,7 @@
 #include "clock.h"
 #include "i2c.h"  // I2C client backup
 // #include "i2c_master.h" // not used
-#include "dma.h"
+/*#include "dma.h"*/
 #include "pm.h"
 #include "sam.h"
 #include "samc21e17a.h"
@@ -26,7 +26,7 @@
 #include "tcc0.h"
 #include "tcc_common.h"
 #include "usart.h"
-/*#include "wdt.h"*/
+#include "wdt.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -93,7 +93,7 @@ void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
 // I2C slave backup code
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
-    static uint8_t dataBuffer[7];
+    static uint8_t dataBuffer[17];
     // Data sent recieved i2c will have this format
     // Startbyte|PWM_DATA|
     // Startbyte indiciate what information is being sent
@@ -108,16 +108,12 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
             /* Read the data sent by I2C Host */
 
-            // Encoder_Read(encoder_angles, ENCODER_ADDR,
-            // ANGLE_REGISTER);
             if (dataIndex < sizeof(dataBuffer)) {
                 dataBuffer[dataIndex++] = SERCOM3_I2C_ReadByte();
             }
-
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY: {
-            // Sending encoder angles to master
             break;
         }
 
@@ -136,7 +132,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         TCC0_PWMStop();
                         TCC1_PWMStop();
                         pwm_generator_state = STATE_IDLE;
-                        /*PM_IdleModeEnter();*/
                         break;
                     case I2C_START_GENERATOR:
                         TCC0_PWMStart();
@@ -163,12 +158,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
     return true;
 }
 
-// Callback function called during CAN interrupt.
-// When a recieve interrupt is triggered it will
-// set the PWM duty cycle with the data it has recieved
-// it will then read the encoders and send the data
-// after a successfull transmit reviece interrupts will
-// be reenabled
 void CAN_Recieve_Callback(uintptr_t context) {
     xferContext = context;
 
@@ -229,26 +218,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
         /*while (length) {*/
         /*    printf("0x%x ", rx_message[rx_messageLength - length--]);*/
         /*}*/
-        // Only include this if testing without encoders
-        // if (CAN0_MessageReceive(&rx_messageID,
-        // &rx_messageLength,
-        //                         rx_message, &timestamp,
-        //                         CAN_MSG_ATTR_RX_FIFO0,
-        //                         &msgFrameAttr) == false) {
-        // }
-        // if (!Encoder_Read(encoder_angles,
-        //                   ANGLE_REGISTER)) {
-        //     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-        //                         rx_message, &timestamp,
-        //                         CAN_MSG_ATTR_RX_FIFO0,
-        //                         &msgFrameAttr);
-        //
-        //     break;
-        // }
-        // if (CAN0_MessageTransmit(messageID, 6, encoder_angles,
-        //                          CAN_MODE_FD_WITHOUT_BRS,
-        //                          CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-        // }
     }
 }
 
@@ -267,7 +236,6 @@ void CAN_Transmit_Callback(uintptr_t context) {
     }
 }
 
-// Only used for testing SERVOS
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     /* duty cycle values */
     static int8_t increment1 = 10;
