@@ -120,7 +120,7 @@ To **distinguish different message types**, a **start byte** is used.
 
 ## **References**
 - **Microchip MPLAB X IDE**: [Microchip MPLAB Website](https://www.microchip.com/mplab/mplab-x-ide)
-- **SAMC21 Datasheet**: [SAMC21 Microchip Documentation](https://www.microchip.com/wwwproducts/en/SAMC21)
+- **SAMC21 Datasheet**: [SAMC21 Microchip Documentation](https://ww1.microchip.com/downloads/en/DeviceDoc/SAMC20_C21_Family_Data_Sheet_DS60001479D.pdf)
 - **CAN FD Protocol Specification**: [CAN FD ISO 11898-1](https://www.iso.org/standard/66047.html)
 
 ---
