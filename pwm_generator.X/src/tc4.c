@@ -42,7 +42,7 @@ void TC4_TimerInitialize( void )
 
     TC4_CallbackObject.callback = NULL;
     /* Enable interrupt*/
-    TC4_REGS->COUNT16.TC_INTENSET = (uint8_t)(TC_INTENSET_OVF_Msk);
+    /*TC4_REGS->COUNT16.TC_INTENSET = (uint8_t)(TC_INTENSET_OVF_Msk);*/
 
 
     while((TC4_REGS->COUNT16.TC_SYNCBUSY) != 0U)
@@ -143,7 +143,7 @@ void TC4_TimerCallbackRegister( TC_TIMER_CALLBACK callback, uintptr_t context )
 }
 
 /* Timer Interrupt handler */
-void __attribute__((used)) TC4_TimerInterruptHandler( void )
+void __attribute__((used)) TC4_Handler( void )
 {
     if (TC4_REGS->COUNT16.TC_INTENSET != 0U)
     {
