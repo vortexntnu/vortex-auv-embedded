@@ -78,7 +78,7 @@ volatile static STATES pwm_generator_state = STATE_IDLE;
 
 /* Function declarations */
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds);
-static void SetLEDPWM(uint8_t* dutyCycle);
+static void SetLEDPWM(uint8_t* dutyCycleMicroSeconds);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
 void CAN_Recieve_Callback(uintptr_t context);
@@ -125,9 +125,7 @@ int main(void) {
                             CAN_MSG_ATTR_RX_FIFO0);
     CAN0_TxCallbackRegister(CAN_Transmit_Callback,
                             (uintptr_t)STATE_CAN_TRANSMIT);
-
     memset(rx_message, 0x00, sizeof(rx_message));
-    // Enabling CAN recieve interrupt for fifo0
     CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                         &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
 
@@ -173,7 +171,7 @@ static void SetLEDPWM(uint8_t* dutyCycleMicroSeconds) {
     uint32_t tccValue =
         (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     // Have to be adjusted to correct pin
-    TCC1_PWM24bitDutySet(4,  tccValue);
+    TCC1_PWM24bitDutySet(4, tccValue);
 }
 
 // I2C slave backup code
@@ -222,6 +220,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         pwm_generator_state = STATE_GENERATOR_ACTIVE;
                         break;
                     case I2C_LED:
+                        SetLEDPWM(dataBuffer + 1);
                         break;
                     case I2C_RESET_MCU:
                         // Writing WDT_CLEAR anything other than 0xA5 will reset
@@ -282,6 +281,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 /*printf("SET_PWM");*/
                 break;
             case LED:
+                SetLEDPWM(rx_message);
                 break;
             case RESET_MCU:
                 // This will cause an immediate system reset

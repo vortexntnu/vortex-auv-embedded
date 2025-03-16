@@ -15,13 +15,6 @@ void PIN_Initialize(void) {
 
     PORT_REGS->GROUP[0].PORT_PMUX[7] = 0x77;
 
-    // ADC Pins
-    PORT_REGS->GROUP[0].PORT_PINCFG[2] = 0x1;  // CS1
-    PORT_REGS->GROUP[0].PORT_PINCFG[3] = 0x1;  // CS2
-    PORT_REGS->GROUP[0].PORT_PINCFG[4] = 0x1;  // CS3
-
-    PORT_REGS->GROUP[0].PORT_PMUX[1] = 0x11;
-    PORT_REGS->GROUP[0].PORT_PMUX[2] = 0x01;
 
     // PWM Pins
     PORT_REGS->GROUP[0].PORT_PINCFG[7] = 0x1;   // PWM3 TCC1[1]
@@ -31,9 +24,6 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PMUX[3] = 0x40;
     PORT_REGS->GROUP[0].PORT_PMUX[5] = 0x4;
     PORT_REGS->GROUP[0].PORT_PMUX[9] = 0x50;
-
-    // SERVO Enable pins
-    PORT_REGS->GROUP[0].PORT_DIR |= (1 << 27) | (1 << 28) | (1 << 0);
 
     // I2C SERCOM channels
     // SERCOM0 I2C 3
