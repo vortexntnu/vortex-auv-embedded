@@ -5,18 +5,13 @@
                    displayName="Header Files"
                    projectFiles="true">
       <logicalFolder name="include" displayName="include" projectFiles="true">
-        <itemPath>include/adc0.h</itemPath>
-        <itemPath>include/adc_common.h</itemPath>
         <itemPath>include/can1.h</itemPath>
         <itemPath>include/can_common.h</itemPath>
         <itemPath>include/clock.h</itemPath>
         <itemPath>include/dma.h</itemPath>
         <itemPath>include/i2c.h</itemPath>
-        <itemPath>include/i2c_master.h</itemPath>
         <itemPath>include/pm.h</itemPath>
         <itemPath>include/rtc.h</itemPath>
-        <itemPath>include/sercom0_i2c.h</itemPath>
-        <itemPath>include/sercom1_i2c.h</itemPath>
         <itemPath>include/sercom_i2c_common.h</itemPath>
         <itemPath>include/system_init.h</itemPath>
         <itemPath>include/tcc.h</itemPath>
@@ -39,14 +34,10 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="src" displayName="src" projectFiles="true">
-        <itemPath>src/adc0.c</itemPath>
         <itemPath>src/dmac.c</itemPath>
         <itemPath>src/i2c.c</itemPath>
-        <itemPath>src/i2c_master.c</itemPath>
         <itemPath>src/pm.c</itemPath>
         <itemPath>src/rtc.c</itemPath>
-        <itemPath>src/sercom0_i2c.c</itemPath>
-        <itemPath>src/sercom1_i2c.c</itemPath>
         <itemPath>src/tcc.c</itemPath>
         <itemPath>src/tcc0.c</itemPath>
         <itemPath>src/usart.c</itemPath>
