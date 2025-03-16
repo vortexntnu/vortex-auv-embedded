@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "can1.h"
-#include "can_common.h"
 #include "clock.h"
 #include "i2c.h"  // I2C client backup
 // #include "i2c_master.h" // not used
@@ -75,8 +74,85 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 /* Variable to save application state */
 volatile static STATES pwm_generator_state = STATE_IDLE;
 
+
+/* Function declarations */
+static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds);
+bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event, uintptr_t contextHandle);
+void CAN_Recieve_Callback(uintptr_t context);
+void CAN_Transmit_Callback(uintptr_t context);
+void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
+
+
+
+int main(void) {
+    /* Initialize all modules */
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
+    PIN_Initialize();
+    CLOCK_Initialize();
+    NVMCTRL_Initialize();
+    TCC1_PWMInitialize();
+    TCC0_PWMInitialize();
+    CAN0_Initialize();
+    // SERCOM0_I2C_Initialize();  // I2C 3
+    SERCOM1_I2C_Initialize();  // I2C 2
+    // SERCOM3_I2C_Initialize();    // I2C 1
+
+    SERCOM0_USART_Initialize();  // USART for Debugging
+
+    // SERCOM3_SLAVE_I2C_Initialize();
+
+    NVIC_Initialize();
+
+    // Peripherals should be disabled by default and will be enabled
+    // by a CAN or I2C start_gripper message
+    // Enable if testing without CAN or I2C
+    // TCC1_PWMStart();
+    // TCC0_PWMStart();
+
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // Callback functions
+
+    // I2C backup callback function
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+
+    // Callback function used for TCC interrupts when testing servos
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
+
+    memset(rx_message, 0x00, sizeof(rx_message));
+    // Enabling CAN recieve interrupt for fifo0
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+
+
+    /*printf("Initialize complete\n");*/
+    while (true) {
+        /*This switch case is used to set idle mode outside interrupt*/
+        /*MCU will be stuck if idle mode is set inside interrupt*/
+        switch (pwm_generator_state) {
+            case STATE_IDLE:
+                PM_IdleModeEnter();
+                break;
+            case STATE_GENERATOR_ACTIVE:
+                break;
+            default:
+                break;
+        }
+    }
+
+    /* Execution should not come here during normal operation */
+    return EXIT_FAILURE;
+}
+
+
 // Function to set the TCC duty cycle for a specific channel
-void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
+static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     uint16_t dutyCycle;
     uint32_t tccValue;
     for (int i = 0; i < 15; i += 2) {
@@ -274,68 +350,4 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
-int main(void) {
-    /* Initialize all modules */
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
-    PM_Initialize();
-    PIN_Initialize();
-    CLOCK_Initialize();
-    NVMCTRL_Initialize();
-    TCC1_PWMInitialize();
-    TCC0_PWMInitialize();
-    CAN0_Initialize();
-    // SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-    // SERCOM3_I2C_Initialize();    // I2C 1
 
-    SERCOM0_USART_Initialize();  // USART for Debugging
-
-    // SERCOM3_SLAVE_I2C_Initialize();
-
-    NVIC_Initialize();
-
-    // Peripherals should be disabled by default and will be enabled
-    // by a CAN or I2C start_gripper message
-    // Enable if testing without CAN or I2C
-    // TCC1_PWMStart();
-    // TCC0_PWMStart();
-
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // Callback functions
-
-    // I2C backup callback function
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // Callback function used for TCC interrupts when testing servos
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
-
-    memset(rx_message, 0x00, sizeof(rx_message));
-    // Enabling CAN recieve interrupt for fifo0
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-
-
-    /*printf("Initialize complete\n");*/
-    while (true) {
-        /*This switch case is used to set idle mode outside interrupt*/
-        /*MCU will be stuck if idle mode is set inside interrupt*/
-        switch (pwm_generator_state) {
-            case STATE_IDLE:
-                PM_IdleModeEnter();
-                break;
-            case STATE_GENERATOR_ACTIVE:
-                break;
-            default:
-                break;
-        }
-    }
-
-    /* Execution should not come here during normal operation */
-    return EXIT_FAILURE;
-}

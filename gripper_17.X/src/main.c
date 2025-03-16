@@ -103,12 +103,106 @@ volatile static STATES gripper_state = STATE_IDLE;
 
 static uint8_t encoder_angles[6] = {0};
 
+/*Function declarations*/
+static uint8_t Encoder_Read(uint8_t* data, uint8_t reg);
+static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds);
+bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
+                         uintptr_t contextHandle);
+void CAN_Recieve_Callback(uintptr_t context);
+void CAN_Transmit_Callback(uintptr_t context);
+void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
+void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
+                            uintptr_t MyDmacContext);
+
+
+int main(void) {
+    /* Initialize all modules */
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
+    PIN_Initialize();
+    CLOCK_Initialize();
+    NVMCTRL_Initialize();
+    TCC1_PWMInitialize();
+    TCC0_PWMInitialize();
+    CAN0_Initialize();
+    // SERCOM0_I2C_Initialize();  // I2C 3
+    SERCOM1_I2C_Initialize();  // I2C 2
+    // SERCOM3_I2C_Initialize();    // I2C 1
+
+    SERCOM0_USART_Initialize();  // USART for Debugging
+
+    // SERCOM3_SLAVE_I2C_Initialize();
+
+    EVSYS_Initialize();
+    ADC0_Initialize();
+    DMAC_Initialize();
+    RTC_Initialize();
+
+    NVIC_Initialize();
+
+    // Peripherals should be disabled by default and will be enabled
+    // by a CAN or I2C start_gripper message
+    // Enable if testing without CAN or I2C
+    // TCC1_PWMStart();
+    // TCC0_PWMStart();
+    // ADC0_Enable();
+    // RTC_Timer32Start();
+    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // Callback functions
+
+    // I2C backup callback function
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+
+    // Callback function used for TCC interrupts when testing servos
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback,
+                                 (uintptr_t)&myAppObj);
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
+
+    memset(rx_message, 0x00, sizeof(rx_message));
+    // Enabling CAN recieve interrupt for fifo0
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+
+    // Servo Enable
+    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
+
+    /*printf("Initialize complete\n");*/
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
+    while (true) {
+        /*This switch case is used to set idle mode outside interrupt*/
+        /*MCU will be stuck if idle mode is set inside interrupt*/
+        switch (gripper_state) {
+            case STATE_IDLE:
+                PM_IdleModeEnter();
+                break;
+            case STATE_GRIPPER_ACTIVE:
+                break;
+            default:
+                break;
+        }
+    }
+
+    /* Execution should not come here during normal operation */
+    return EXIT_FAILURE;
+}
+
+
 // Reads the encoder angle Register
 // 2 bytes for each encoder
 // 2|2|2 SHOULDER, WRIST, GRIP
 // Watchdog timer will cause reset
 // if stuck in while loop
-uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
+static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     uint16_t rawData[3] = {0};
     uint8_t dataBuffer[2] = {0};
 
@@ -163,7 +257,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 }
 
 // Function to set the TCC duty cycle for a specific channel
-void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
+static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
     uint16_t shoulderDuty =
         (dutyCycleMicroSeconds[0] << 8) | dutyCycleMicroSeconds[1];
     uint16_t wristDuty =
@@ -520,83 +614,4 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
     }
 }
 
-int main(void) {
-    /* Initialize all modules */
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
-    PM_Initialize();
-    PIN_Initialize();
-    CLOCK_Initialize();
-    NVMCTRL_Initialize();
-    TCC1_PWMInitialize();
-    TCC0_PWMInitialize();
-    CAN0_Initialize();
-    // SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-    // SERCOM3_I2C_Initialize();    // I2C 1
 
-    SERCOM0_USART_Initialize();  // USART for Debugging
-
-    // SERCOM3_SLAVE_I2C_Initialize();
-
-    EVSYS_Initialize();
-    ADC0_Initialize();
-    DMAC_Initialize();
-    RTC_Initialize();
-
-    NVIC_Initialize();
-
-    // Peripherals should be disabled by default and will be enabled
-    // by a CAN or I2C start_gripper message
-    // Enable if testing without CAN or I2C
-    // TCC1_PWMStart();
-    // TCC0_PWMStart();
-    // ADC0_Enable();
-    // RTC_Timer32Start();
-    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // Callback functions
-
-    // I2C backup callback function
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // Callback function used for TCC interrupts when testing servos
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback,
-                                 (uintptr_t)&myAppObj);
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
-
-    memset(rx_message, 0x00, sizeof(rx_message));
-    // Enabling CAN recieve interrupt for fifo0
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-
-    // Servo Enable
-    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
-
-    /*printf("Initialize complete\n");*/
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_result_array,
-                         sizeof(adc_result_array));
-    while (true) {
-        /*This switch case is used to set idle mode outside interrupt*/
-        /*MCU will be stuck if idle mode is set inside interrupt*/
-        switch (gripper_state) {
-            case STATE_IDLE:
-                PM_IdleModeEnter();
-                break;
-            case STATE_GRIPPER_ACTIVE:
-                break;
-            default:
-                break;
-        }
-    }
-
-    /* Execution should not come here during normal operation */
-    return EXIT_FAILURE;
-}
