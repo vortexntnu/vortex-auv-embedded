@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include "can1.h"
 #include "can_common.h"
@@ -336,5 +337,5 @@ int main(void) {
     }
 
     /* Execution should not come here during normal operation */
-    return 0;
+    return EXIT_FAILURE;
 }

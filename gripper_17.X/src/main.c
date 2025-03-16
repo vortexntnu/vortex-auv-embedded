@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "can1.h"
 #include "can_common.h"
 #include "clock.h"
@@ -116,7 +117,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     // SHOULDER
     if (!SERCOM1_I2C_WriteRead(SHOULDER_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
-        return 0;
+        return 1;
     }
     while (SERCOM1_I2C_IsBusy())
         ;
@@ -128,7 +129,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     if (!SERCOM1_I2C_WriteRead(WRIST_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
-        return 0;
+        return 1;
     }
     while (SERCOM1_I2C_IsBusy())
         ;
@@ -142,7 +143,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     if (!SERCOM1_I2C_WriteRead(GRIP_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
-        return 0;
+        return 1;
     }
 
     while (SERCOM1_I2C_IsBusy())
@@ -158,7 +159,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     // Stopping watchdog timer
     WDT_Disable();
-    return 1;
+    return 0;
 }
 
 // Function to set the TCC duty cycle for a specific channel
@@ -244,7 +245,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                     case I2C_SET_PWM:
                         // Start indexing at the second element
                         SetPWMDutyCycle(dataBuffer + 1);
-                        if (!Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                        if (Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
                         }
                         break;
                     case I2C_STOP_GRIPPER:
@@ -337,7 +338,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
             case SET_PWM:
                 SetPWMDutyCycle(rx_message);
                 // Reading encoders
-                if (!Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                if (Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
                     // Returning to CAN recieve state if read failed
                     memset(rx_message, 0x00, sizeof(rx_message));
                     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
@@ -597,5 +598,5 @@ int main(void) {
     }
 
     /* Execution should not come here during normal operation */
-    return 0;
+    return EXIT_FAILURE;
 }
