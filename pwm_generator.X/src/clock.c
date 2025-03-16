@@ -131,20 +131,6 @@ void CLOCK_Initialize(void) {
            GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
-    // EVSYS
-    GCLK_REGS->GCLK_PCHCTRL[6] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[6] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    /* Selection of the Generator and write Lock for ADC0 */
-    GCLK_REGS->GCLK_PCHCTRL[33] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[33] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
 
     /* Configure the APBC Bridge Clocks */
     // MCLK_REGS->MCLK_CPUDIV = 1;
