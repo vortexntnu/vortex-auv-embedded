@@ -393,44 +393,44 @@ typedef struct {
 
 } SERCOM_USART_RING_BUFFER_OBJECT;
 
-void SERCOM0_USART_Initialize(void);
+void SERCOM3_USART_Initialize(void);
 
-bool SERCOM0_USART_SerialSetup(USART_SERIAL_SETUP* serialSetup,
+bool SERCOM3_USART_SerialSetup(USART_SERIAL_SETUP* serialSetup,
                                uint32_t clkFrequency);
 
-void SERCOM0_USART_Enable(void);
+void SERCOM3_USART_Enable(void);
 
-void SERCOM0_USART_Disable(void);
+void SERCOM3_USART_Disable(void);
 
-void SERCOM0_USART_TransmitterEnable(void);
+void SERCOM3_USART_TransmitterEnable(void);
 
-void SERCOM0_USART_TransmitterDisable(void);
+void SERCOM3_USART_TransmitterDisable(void);
 
-bool SERCOM0_USART_Write(void* buffer, const size_t size);
+bool SERCOM3_USART_Write(void* buffer, const size_t size);
 
-bool SERCOM0_USART_TransmitComplete(void);
+bool SERCOM3_USART_TransmitComplete(void);
 
-bool SERCOM0_USART_TransmitterIsReady(void);
+bool SERCOM3_USART_TransmitterIsReady(void);
 
-void SERCOM0_USART_WriteByte(int data);
+void SERCOM3_USART_WriteByte(int data);
 
-void SERCOM0_USART_ReceiverEnable(void);
+void SERCOM3_USART_ReceiverEnable(void);
 
-void SERCOM0_USART_ReceiverDisable(void);
+void SERCOM3_USART_ReceiverDisable(void);
 
-bool SERCOM0_USART_Read(void* buffer, const size_t size);
+bool SERCOM3_USART_Read(void* buffer, const size_t size);
 
-bool SERCOM0_USART_ReceiverIsReady(void);
+bool SERCOM3_USART_ReceiverIsReady(void);
 
-int SERCOM0_USART_ReadByte(void);
+int SERCOM3_USART_ReadByte(void);
 
-USART_ERROR SERCOM0_USART_ErrorGet(void);
+USART_ERROR SERCOM3_USART_ErrorGet(void);
 
 // static int USART_printf(char c, FILE *stream);
 //
 // static FILE USART_stream() = FDEV_SETUP_STREAM(USART_printf, NULL, _FDEV_SETUP_WRITE);
  
-uint32_t SERCOM0_USART_FrequencyGet(void);
+uint32_t SERCOM3_USART_FrequencyGet(void);
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
 }

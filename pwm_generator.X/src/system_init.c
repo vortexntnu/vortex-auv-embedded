@@ -15,41 +15,42 @@ void PIN_Initialize(void) {
 
     PORT_REGS->GROUP[0].PORT_PMUX[7] = 0x77;
 
+    /* LED Pins */
+    // PA2: Led_enable
+    // PA17: LED Red
+    // PA18: LED Yellow
+    // PA19: LED Green
+    PORT_REGS->GROUP[0].PORT_DIR |=
+        (1 << 2) | (1 << 17) | (1 << 18) | (1 << 19);
 
     // PWM Pins
-    PORT_REGS->GROUP[0].PORT_PINCFG[7] = 0x1;   // PWM3 TCC1[1]
-    PORT_REGS->GROUP[0].PORT_PINCFG[10] = 0x1;  // PWM2 TCC1[0]
-    PORT_REGS->GROUP[0].PORT_PINCFG[19] = 0x1;  // PWM1 TCC0[3]
 
-    PORT_REGS->GROUP[0].PORT_PMUX[3] = 0x40;
+    PORT_REGS->GROUP[0].PORT_PINCFG[4] = 0x1; // TCC0/C0
+    PORT_REGS->GROUP[0].PORT_PINCFG[5] = 0x1; // TCC0/C1
+    PORT_REGS->GROUP[0].PORT_PMUX[2] = 0x4;
+
+    PORT_REGS->GROUP[0].PORT_PINCFG[6] = 0x1; //TCC1/C0
+    PORT_REGS->GROUP[0].PORT_PINCFG[7] = 0x1; //TCC1/C1
+    PORT_REGS->GROUP[0].PORT_PMUX[3] = 0x4;
+
+    PORT_REGS->GROUP[0].PORT_PINCFG[8] = 0x1; //TCC1/C2
+    PORT_REGS->GROUP[0].PORT_PINCFG[9] = 0x1; //TCC1/C3
+    PORT_REGS->GROUP[0].PORT_PMUX[4] = 0x4;
+
+    // I am not sure this works
+    PORT_REGS->GROUP[0].PORT_PINCFG[10] = 0x1; //TCC0/C4
+    PORT_REGS->GROUP[0].PORT_PINCFG[11] = 0x1; //TCC0/C5
     PORT_REGS->GROUP[0].PORT_PMUX[5] = 0x4;
-    PORT_REGS->GROUP[0].PORT_PMUX[9] = 0x50;
+  
 
     // I2C SERCOM channels
-    // SERCOM0 I2C 3
-    PORT_REGS->GROUP[0].PORT_PINCFG[8] = 0x1;
-    PORT_REGS->GROUP[0].PORT_PINCFG[9] = 0x1;
-
-    PORT_REGS->GROUP[0].PORT_PMUX[4] = 0x22;  // SERCOM0 (encoder) OR USART
-    // PORT_REGS->GROUP[0].PORT_PMUX[4] = 0x33; // SERCOM2 (backup i2c)
-
-    // SERCOM1 I2C 2
-    PORT_REGS->GROUP[0].PORT_PINCFG[16] = 0x1;
-    PORT_REGS->GROUP[0].PORT_PINCFG[17] = 0x1;
-
-    PORT_REGS->GROUP[0].PORT_PMUX[8] = 0x22;
-
-    // SERCOM 2 I2C pins
-    PORT_REGS->GROUP[0].PORT_PINCFG[12] = 0x1;
-    PORT_REGS->GROUP[0].PORT_PINCFG[13] = 0x1;
-
-    PORT_REGS->GROUP[0].PORT_PMUX[6] = 0x22;
 
     // SERCOM3 I2C 1
     PORT_REGS->GROUP[0].PORT_PINCFG[22] = 0x1;
     PORT_REGS->GROUP[0].PORT_PINCFG[23] = 0x1;
 
     PORT_REGS->GROUP[0].PORT_PMUX[11] = 0x22;
+    
 
     // CAN0
     PORT_REGS->GROUP[0].PORT_PINCFG[24] = 0x1;
@@ -99,4 +100,3 @@ void NVMCTRL_Initialize(void) {
                                   NVMCTRL_CTRLB_SLEEPPRM_WAKEONACCESS |
                                   NVMCTRL_CTRLB_RWS(2) | NVMCTRL_CTRLB_MANW_Msk;
 }
-
