@@ -19,8 +19,8 @@
 #include "sam.h"
 #include "samc21e17a.h"
 #include "system_init.h"
-#include "tcc.h"
 #include "tc4.h"
+#include "tcc.h"
 #include "tcc0.h"
 #include "tcc_common.h"
 #include "usart.h"
@@ -92,6 +92,7 @@ int main(void) {
     NVMCTRL_Initialize();
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
+    TC4_TimerInitialize();
     CAN0_Initialize();
 
     SERCOM3_USART_Initialize();  // USART for Debugging
@@ -105,7 +106,7 @@ int main(void) {
     // Enable if testing without CAN or I2C
     // TCC1_PWMStart();
     // TCC0_PWMStart();
-
+    TC4_TimerStart();
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
     // Callback functions
@@ -161,8 +162,7 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
 }
 
 static void SetLEDPWM(uint8_t* dutyCycle) {
-    uint16_t tcValue =
-        dutyCycle[0] << 8 | dutyCycle[1];
+    uint16_t tcValue = dutyCycle[0] << 8 | dutyCycle[1];
     // Have to be adjusted to correct pin
     TC4_Timer16bitCounterSet(tcValue);
 }
