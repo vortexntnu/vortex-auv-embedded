@@ -100,7 +100,7 @@ int main(void) {
     NVIC_Initialize();
 
     // Peripherals should be disabled by default and will be enabled
-    // by a CAN or I2C start_gripper message
+    // by a CAN or I2C START_GENERATOR message
     // Enable if testing without CAN or I2C
     // TCC1_PWMStart();
     // TCC0_PWMStart();
