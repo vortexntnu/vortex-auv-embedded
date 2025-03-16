@@ -9,11 +9,6 @@
 #include "samc21e17a.h"
 
 void PIN_Initialize(void) {
-    // 16MHz clock
-    PORT_REGS->GROUP[0].PORT_PINCFG[14] = 0x1;  // XIN
-    PORT_REGS->GROUP[0].PORT_PINCFG[15] = 0x1;  // XOUT
-
-    PORT_REGS->GROUP[0].PORT_PMUX[7] = 0x77;
 
     // ADC Pins
     PORT_REGS->GROUP[0].PORT_PINCFG[2] = 0x1;  // CS1
