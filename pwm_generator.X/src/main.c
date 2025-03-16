@@ -20,6 +20,7 @@
 #include "samc21e17a.h"
 #include "system_init.h"
 #include "tcc.h"
+#include "tc4.h"
 #include "tcc0.h"
 #include "tcc_common.h"
 #include "usart.h"
@@ -159,13 +160,11 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     }
 }
 
-static void SetLEDPWM(uint8_t* dutyCycleMicroSeconds) {
-    uint16_t dutyCycle =
-        dutyCycleMicroSeconds[0] << 8 | dutyCycleMicroSeconds[1];
-    uint32_t tccValue =
-        (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+static void SetLEDPWM(uint8_t* dutyCycle) {
+    uint16_t tcValue =
+        dutyCycle[0] << 8 | dutyCycle[1];
     // Have to be adjusted to correct pin
-    TCC1_PWM24bitDutySet(4, tccValue);
+    TC4_Timer16bitCounterSet(tcValue);
 }
 
 // I2C slave backup code

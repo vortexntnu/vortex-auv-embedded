@@ -19,6 +19,8 @@
         <itemPath>include/tcc_common.h</itemPath>
         <itemPath>include/usart.h</itemPath>
         <itemPath>include/wdt.h</itemPath>
+        <itemPath>include/tc4.h</itemPath>
+        <itemPath>include/tc_common.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -46,6 +48,7 @@
         <itemPath>src/clock.c</itemPath>
         <itemPath>src/main.c</itemPath>
         <itemPath>src/system_init.c</itemPath>
+        <itemPath>src/tc4.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
