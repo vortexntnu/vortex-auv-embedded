@@ -148,15 +148,16 @@ int main(void) {
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     uint16_t dutyCycle;
     uint32_t tccValue;
-    for (int i = 0; i < 15; i += 2) {
-        dutyCycle =
-            (dutyCycleMicroSeconds[i] << 8) | dutyCycleMicroSeconds[i + 1];
+    for (int i = 0; i < 8; i++) {
+        dutyCycle = (dutyCycleMicroSeconds[i * 2] << 8) |
+                    dutyCycleMicroSeconds[i * 2 + 1];
+
         tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-        // This needs to be adjusted based upon the pinout
-        if (i < 8) {
-            TCC0_PWM24bitDutySet(i / 2, tccValue);
+
+        if (i < 4) {
+            TCC0_PWM24bitDutySet(i, tccValue);  // TCC0 Channels 0-3
         } else {
-            TCC1_PWM24bitDutySet(i / 2 - 4, tccValue);
+            TCC1_PWM24bitDutySet(i - 4, tccValue);  // TCC1 Channels 0-3
         }
     }
 }
