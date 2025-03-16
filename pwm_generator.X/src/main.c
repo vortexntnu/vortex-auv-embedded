@@ -8,8 +8,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "can1.h"
 #include "clock.h"
 #include "i2c.h"  // I2C client backup
@@ -47,6 +47,7 @@ typedef enum {
     STOP_GENERATOR = 0x369,
     START_GENERATOR,
     SET_PWM,
+    LED,
     RESET_MCU,
 } CAN_RECEIVE_ID;
 
@@ -55,6 +56,7 @@ typedef enum {
     I2C_SET_PWM,
     I2C_STOP_GENERATOR,
     I2C_START_GENERATOR,
+    I2C_LED,
     I2C_RESET_MCU,
 } I2C_STARTBYTE_ID;
 
@@ -74,15 +76,14 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 /* Variable to save application state */
 volatile static STATES pwm_generator_state = STATE_IDLE;
 
-
 /* Function declarations */
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds);
-bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event, uintptr_t contextHandle);
+static void SetLEDPWM(uint8_t* dutyCycle);
+bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
+                         uintptr_t contextHandle);
 void CAN_Recieve_Callback(uintptr_t context);
 void CAN_Transmit_Callback(uintptr_t context);
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
-
-
 
 int main(void) {
     /* Initialize all modules */
@@ -130,14 +131,13 @@ int main(void) {
     CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                         &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
 
-
     /*printf("Initialize complete\n");*/
     while (true) {
         /*This switch case is used to set idle mode outside interrupt*/
         /*MCU will be stuck if idle mode is set inside interrupt*/
         switch (pwm_generator_state) {
             case STATE_IDLE:
-               PM_IdleModeEnter();
+                PM_IdleModeEnter();
                 break;
             case STATE_GENERATOR_ACTIVE:
                 break;
@@ -149,7 +149,6 @@ int main(void) {
     /* Execution should not come here during normal operation */
     return EXIT_FAILURE;
 }
-
 
 // Function to set the TCC duty cycle for a specific channel
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
@@ -166,6 +165,15 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
             TCC1_PWM24bitDutySet(i / 2 - 4, tccValue);
         }
     }
+}
+
+static void SetLEDPWM(uint8_t* dutyCycleMicroSeconds) {
+    uint16_t dutyCycle =
+        dutyCycleMicroSeconds[0] << 8 | dutyCycleMicroSeconds[1];
+    uint32_t tccValue =
+        (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    // Have to be adjusted to correct pin
+    TCC1_PWM24bitDutySet(4,  tccValue);
 }
 
 // I2C slave backup code
@@ -212,6 +220,8 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         TCC0_PWMStart();
                         TCC1_PWMStart();
                         pwm_generator_state = STATE_GENERATOR_ACTIVE;
+                        break;
+                    case I2C_LED:
                         break;
                     case I2C_RESET_MCU:
                         // Writing WDT_CLEAR anything other than 0xA5 will reset
@@ -270,6 +280,8 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 // Reading encoders
                 // Sending ENCODER data over CAN
                 /*printf("SET_PWM");*/
+                break;
+            case LED:
                 break;
             case RESET_MCU:
                 // This will cause an immediate system reset
@@ -349,5 +361,3 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
         increment1 *= -1;
     }
 }
-
-
