@@ -92,11 +92,8 @@ int main(void) {
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
     CAN0_Initialize();
-    // SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-    // SERCOM3_I2C_Initialize();    // I2C 1
 
-    SERCOM0_USART_Initialize();  // USART for Debugging
+    SERCOM3_USART_Initialize();  // USART for Debugging
 
     // SERCOM3_SLAVE_I2C_Initialize();
 
