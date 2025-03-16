@@ -137,7 +137,7 @@ int main(void) {
         /*MCU will be stuck if idle mode is set inside interrupt*/
         switch (pwm_generator_state) {
             case STATE_IDLE:
-                PM_IdleModeEnter();
+               PM_IdleModeEnter();
                 break;
             case STATE_GENERATOR_ACTIVE:
                 break;
@@ -161,9 +161,9 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
         tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
         // This needs to be adjusted based upon the pinout
         if (i < 8) {
-            TCC0_PWM24bitDutySet(i / 2, dutyCycle);
+            TCC0_PWM24bitDutySet(i / 2, tccValue);
         } else {
-            TCC1_PWM24bitDutySet(i / 2 - 4, dutyCycle);
+            TCC1_PWM24bitDutySet(i / 2 - 4, tccValue);
         }
     }
 }
