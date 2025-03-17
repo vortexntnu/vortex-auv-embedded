@@ -3,7 +3,7 @@
 # **PWM Generator MCU Documentation**
 
 ## **Overview**
-The **PWM Generator MCU** is responsible for generating precise PWM signals to control **thrusters**. The MCU receives **duty cycle commands** (in microseconds) from the **Jetson Orin** over **I²C** and converts them into appropriate PWM signals.
+The **PWM Generator MCU** is responsible for generating precise PWM signals to control **thrusters**. The MCU receives **duty cycle commands** (in microseconds) from the **Jetson Orin** over **CAN** and converts them into appropriate PWM signals.
 
 This document provides details on **setup, peripherals, communication protocols, CAN IDs, I²C messages, and timer calculations**.
 
@@ -71,10 +71,11 @@ The **CAN FD** interface is configured with **FIFO0** to accept **IDs from `0x46
 
 | **CAN ID** | **Message Description** |
 |------------|-------------------------|
-| `0x369` | **STOP_GRIPPER** |
-| `0x36A` | **START_GRIPPER** |
+| `0x369` | **STOP_GENERATOR** |
+| `0x36A` | **START_GENERATOR** |
 | `0x36B` | **SET_PWM** |
-| `0x36C` | **RESET_MCU** |
+| `0x36C` | **LED** |
+| `0x36D` | **RESET_MCU** |
 
 ---
 
@@ -91,13 +92,13 @@ To **distinguish different message types**, a **start byte** is used.
 | `0x0` | **SEND_PWM** (Set PWM duty cycle) |
 | `0x1` | **STOP_GRIPPER** |
 | `0x2` | **START_GRIPPER** |
-| `0x3` | **RESET_MCU** |
+| `0x3` | **LED** |
+| `0x4` | **RESET_MCU** |
 
 ---
 
 ## **Future Improvements**
 🔹 **Direct Memory Access (DMA)** → Reducing CPU workload during data transfers.  
-🔹 **Interrupt-Based I²C Handling** → Enhancing real-time communication efficiency.  
 🔹 **Low Power Mode Implementation** → Optimizing power consumption for extended operation.  
 🔹 **Enhanced Error Handling** → Improving CAN FD message filtering & I²C communication reliability.  
 
@@ -106,15 +107,6 @@ To **distinguish different message types**, a **start byte** is used.
 ## **Additional Notes**
 - The MCU ensures **accurate PWM generation** to maintain **precise thruster control**.
 - **DMA and interrupt-based processing** will be added in future firmware updates to **enhance real-time performance**.
-
----
-
-## **Changelog**
-| **Version** | **Changes** |
-|------------|------------|
-| `1.0` | Initial documentation release |
-| `1.1` | Added CAN & I²C protocol tables |
-| `1.2` | Expanded TCC period calculation |
 
 ---
 

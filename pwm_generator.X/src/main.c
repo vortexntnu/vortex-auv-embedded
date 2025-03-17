@@ -129,7 +129,8 @@ int main(void) {
     while (true) {
         /*This switch case is used to set idle mode outside interrupt*/
         /*MCU will be stuck if idle mode is set inside interrupt*/
-        /*However since this code will run all the time, the stop becomes redudant */
+        /*However since this code will run all the time, atleast compared to the grpper*/
+        /* The stop will not really be used, therefore */
         /*switch (pwm_generator_state) {*/
         /*    case STATE_IDLE:*/
         /*        PM_IdleModeEnter();*/
