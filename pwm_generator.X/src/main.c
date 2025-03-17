@@ -72,7 +72,7 @@ static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 /* Variable to save application state */
-volatile static STATES pwm_generator_state = STATE_IDLE;
+/*volatile static STATES pwm_generator_state = STATE_IDLE;*/
 
 /* Function declarations */
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds);
@@ -129,15 +129,16 @@ int main(void) {
     while (true) {
         /*This switch case is used to set idle mode outside interrupt*/
         /*MCU will be stuck if idle mode is set inside interrupt*/
-        switch (pwm_generator_state) {
-            case STATE_IDLE:
-                PM_IdleModeEnter();
-                break;
-            case STATE_GENERATOR_ACTIVE:
-                break;
-            default:
-                break;
-        }
+        /*However since this code will run all the time, the stop becomes redudant */
+        /*switch (pwm_generator_state) {*/
+        /*    case STATE_IDLE:*/
+        /*        PM_IdleModeEnter();*/
+        /*        break;*/
+        /*    case STATE_GENERATOR_ACTIVE:*/
+        /*        break;*/
+        /*    default:*/
+        /*        break;*/
+        /*}*/
     }
 
     /* Execution should not come here during normal operation */
@@ -206,12 +207,12 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         // Turn off sevo enable pin
                         TCC0_PWMStop();
                         TCC1_PWMStop();
-                        pwm_generator_state = STATE_IDLE;
+                        /*pwm_generator_state = STATE_IDLE;*/
                         break;
                     case I2C_START_GENERATOR:
                         TCC0_PWMStart();
                         TCC1_PWMStart();
-                        pwm_generator_state = STATE_GENERATOR_ACTIVE;
+                        /*pwm_generator_state = STATE_GENERATOR_ACTIVE;*/
                         break;
                     case I2C_LED:
                         SetLEDPWM(dataBuffer + 1);
@@ -255,7 +256,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
                 /*printf("STOP_GRIPPER\n");*/
                 // PM_IdleModeEnter();
-                pwm_generator_state = STATE_IDLE;
+                /*pwm_generator_state = STATE_IDLE;*/
                 break;
             case START_GENERATOR:
                 TCC0_PWMStart();
@@ -266,7 +267,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-                pwm_generator_state = STATE_GENERATOR_ACTIVE;
+                /*pwm_generator_state = STATE_GENERATOR_ACTIVE;*/
                 break;
             case SET_PWM:
                 SetThrusterPWM(rx_message);
