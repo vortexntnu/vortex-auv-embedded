@@ -104,8 +104,8 @@ int main(void) {
     // Peripherals should be disabled by default and will be enabled
     // by a CAN or I2C START_GENERATOR message
     // Enable if testing without CAN or I2C
-    // TCC1_PWMStart();
-    // TCC0_PWMStart();
+    TCC1_PWMStart();
+    TCC0_PWMStart();
     TC4_TimerStart();
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
@@ -129,7 +129,8 @@ int main(void) {
     while (true) {
         /*This switch case is used to set idle mode outside interrupt*/
         /*MCU will be stuck if idle mode is set inside interrupt*/
-        /*However since this code will run all the time, atleast compared to the grpper*/
+        /*However since this code will run all the time, atleast compared to the
+         * grpper*/
         /* The stop will not really be used, therefore */
         /*switch (pwm_generator_state) {*/
         /*    case STATE_IDLE:*/
