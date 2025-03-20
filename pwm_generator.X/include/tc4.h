@@ -62,31 +62,31 @@
 
 // *****************************************************************************
 
-void TC4_TimerInitialize( void );
+void TC4_CompareInitialize( void );
 
-void TC4_TimerStart( void );
+void TC4_CompareStart( void );
 
-void TC4_TimerStop( void );
+void TC4_CompareStop( void );
 
-uint32_t TC4_TimerFrequencyGet( void );
+uint32_t TC4_CompareFrequencyGet( void );
 
+bool TC4_Compare16bitPeriodSet( uint16_t period );
 
-void TC4_Timer16bitPeriodSet( uint16_t period );
+uint16_t TC4_Compare16bitPeriodGet( void );
 
-uint16_t TC4_Timer16bitPeriodGet( void );
+uint16_t TC4_Compare16bitCounterGet( void );
 
-uint16_t TC4_Timer16bitCounterGet( void );
+void TC4_Compare16bitCounterSet( uint16_t count );
 
-void TC4_Timer16bitCounterSet( uint16_t count );
+bool TC4_Compare16bitMatch0Set( uint16_t compareValue );
 
-
-
-
-void TC4_TimerCallbackRegister( TC_TIMER_CALLBACK callback, uintptr_t context );
+bool TC4_Compare16bitMatch1Set( uint16_t compareValue );
 
 
-void TC4_TimerCommandSet(TC_COMMAND command);
 
+TC_COMPARE_STATUS TC4_CompareStatusGet( void );
+
+void TC4_CompareCommandSet(TC_COMMAND command);
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility

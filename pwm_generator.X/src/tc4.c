@@ -2,13 +2,69 @@
 
 #include "tc4.h"
 
+
+/*******************************************************************************
+  Timer/Counter(TC4) PLIB
+
+  Company
+    Microchip Technology Inc.
+
+  File Name
+    plib_tc4.c
+
+  Summary
+    TC4 PLIB Implementation File.
+
+  Description
+    This file defines the interface to the TC peripheral library. This
+    library provides access to and control of the associated peripheral
+    instance.
+
+  Remarks:
+    None.
+
+*******************************************************************************/
+
+// DOM-IGNORE-BEGIN
+/*******************************************************************************
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+*
+* Subject to your compliance with these terms, you may use Microchip software
+* and any derivatives exclusively with Microchip products. It is your
+* responsibility to comply with third party license terms applicable to your
+* use of third party software (including open source software) that may
+* accompany Microchip software.
+*
+* THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER
+* EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED
+* WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A
+* PARTICULAR PURPOSE.
+*
+* IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE,
+* INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND
+* WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS
+* BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE
+* FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
+* ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
+* THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+*******************************************************************************/
+// DOM-IGNORE-END
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: Included Files
+// *****************************************************************************
+// *****************************************************************************
+/* This section lists the other files that are included in this file.
+*/
+
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Global Data
 // *****************************************************************************
 // *****************************************************************************
 
-volatile static TC_TIMER_CALLBACK_OBJ TC4_CallbackObject;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -16,9 +72,8 @@ volatile static TC_TIMER_CALLBACK_OBJ TC4_CallbackObject;
 // *****************************************************************************
 // *****************************************************************************
 
-// *****************************************************************************
-/* Initialize the TC module in Timer mode */
-void TC4_TimerInitialize( void )
+/* Initialize TC module in Compare Mode */
+void TC4_CompareInitialize( void )
 {
     /* Reset TC */
     TC4_REGS->COUNT16.TC_CTRLA = TC_CTRLA_SWRST_Msk;
@@ -29,20 +84,16 @@ void TC4_TimerInitialize( void )
     }
 
     /* Configure counter mode & prescaler */
-    TC4_REGS->COUNT16.TC_CTRLA = TC_CTRLA_MODE_COUNT16 | TC_CTRLA_PRESCALER_DIV1024 | TC_CTRLA_PRESCSYNC_PRESC ;
+    TC4_REGS->COUNT16.TC_CTRLA = TC_CTRLA_MODE_COUNT16 | TC_CTRLA_PRESCALER_DIV16| TC_CTRLA_PRESCSYNC_PRESC ;
 
-    /* Configure in Match Frequency Mode */
-    TC4_REGS->COUNT16.TC_WAVE = (uint8_t)TC_WAVE_WAVEGEN_NPWM;
+    /* Configure waveform generation mode */
+    TC4_REGS->COUNT16.TC_WAVE = (uint8_t)TC_WAVE_WAVEGEN_MPWM;
 
-    /* Configure timer period */
-    TC4_REGS->COUNT16.TC_CC[0U] = 46874U;
+    TC4_REGS->COUNT16.TC_CC[0] = 0xEB80;
+    TC4_REGS->COUNT16.TC_CC[1] = 0x1888;
 
     /* Clear all interrupt flags */
     TC4_REGS->COUNT16.TC_INTFLAG = (uint8_t)TC_INTFLAG_Msk;
-
-    TC4_CallbackObject.callback = NULL;
-    /* Enable interrupt*/
-    /*TC4_REGS->COUNT16.TC_INTENSET = (uint8_t)(TC_INTENSET_OVF_Msk);*/
 
 
     while((TC4_REGS->COUNT16.TC_SYNCBUSY) != 0U)
@@ -51,8 +102,9 @@ void TC4_TimerInitialize( void )
     }
 }
 
-/* Enable the TC counter */
-void TC4_TimerStart( void )
+
+/* Enable the counter */
+void TC4_CompareStart( void )
 {
     TC4_REGS->COUNT16.TC_CTRLA |= TC_CTRLA_ENABLE_Msk;
     while((TC4_REGS->COUNT16.TC_SYNCBUSY & TC_SYNCBUSY_ENABLE_Msk) == TC_SYNCBUSY_ENABLE_Msk)
@@ -61,8 +113,8 @@ void TC4_TimerStart( void )
     }
 }
 
-/* Disable the TC counter */
-void TC4_TimerStop( void )
+/* Disable the counter */
+void TC4_CompareStop( void )
 {
     TC4_REGS->COUNT16.TC_CTRLA &= ~TC_CTRLA_ENABLE_Msk;
     while((TC4_REGS->COUNT16.TC_SYNCBUSY & TC_SYNCBUSY_ENABLE_Msk) == TC_SYNCBUSY_ENABLE_Msk)
@@ -71,12 +123,12 @@ void TC4_TimerStop( void )
     }
 }
 
-uint32_t TC4_TimerFrequencyGet( void )
+uint32_t TC4_CompareFrequencyGet( void )
 {
-    return (uint32_t)(46875U);
+    return (uint32_t)(750000UL);
 }
 
-void TC4_TimerCommandSet(TC_COMMAND command)
+void TC4_CompareCommandSet(TC_COMMAND command)
 {
     TC4_REGS->COUNT16.TC_CTRLBSET = (uint8_t)((uint32_t)command << TC_CTRLBSET_CMD_Pos);
     while((TC4_REGS->COUNT16.TC_SYNCBUSY) != 0U)
@@ -85,8 +137,8 @@ void TC4_TimerCommandSet(TC_COMMAND command)
     }
 }
 
-/* Get the current timer counter value */
-uint16_t TC4_Timer16bitCounterGet( void )
+/* Get the current counter value */
+uint16_t TC4_Compare16bitCounterGet( void )
 {
     /* Write command to force COUNT register read synchronization */
     TC4_REGS->COUNT16.TC_CTRLBSET |= (uint8_t)TC_CTRLBSET_CMD_READSYNC;
@@ -105,8 +157,8 @@ uint16_t TC4_Timer16bitCounterGet( void )
     return (uint16_t)TC4_REGS->COUNT16.TC_COUNT;
 }
 
-/* Configure timer counter value */
-void TC4_Timer16bitCounterSet( uint16_t count )
+/* Configure counter value */
+void TC4_Compare16bitCounterSet( uint16_t count )
 {
     TC4_REGS->COUNT16.TC_COUNT = count;
 
@@ -116,46 +168,62 @@ void TC4_Timer16bitCounterSet( uint16_t count )
     }
 }
 
-/* Configure timer period */
-void TC4_Timer16bitPeriodSet( uint16_t period )
+/* Configure period value */
+bool TC4_Compare16bitPeriodSet( uint16_t period )
 {
-    TC4_REGS->COUNT16.TC_CC[0] = period;
-    while((TC4_REGS->COUNT16.TC_SYNCBUSY & TC_SYNCBUSY_CC0_Msk) == TC_SYNCBUSY_CC0_Msk)
+    bool status = false;
+    if((TC4_REGS->COUNT16.TC_STATUS & TC_STATUS_CCBUFV0_Msk) == 0U)
     {
-        /* Wait for Write Synchronization */
+        /* Configure period value */
+        TC4_REGS->COUNT16.TC_CCBUF[0] = period;
+        status = true;
     }
+    return status;
 }
 
-/* Read the timer period value */
-uint16_t TC4_Timer16bitPeriodGet( void )
+/* Read period value */
+uint16_t TC4_Compare16bitPeriodGet( void )
 {
+    /* Get period value */
     return (uint16_t)TC4_REGS->COUNT16.TC_CC[0];
 }
 
-
-
-/* Register callback function */
-void TC4_TimerCallbackRegister( TC_TIMER_CALLBACK callback, uintptr_t context )
+/* Configure duty cycle value */
+bool TC4_Compare16bitMatch0Set( uint16_t compareValue )
 {
-    TC4_CallbackObject.callback = callback;
-
-    TC4_CallbackObject.context = context;
-}
-
-/* Timer Interrupt handler */
-void __attribute__((used)) TC4_Handler( void )
-{
-    if (TC4_REGS->COUNT16.TC_INTENSET != 0U)
+    bool status = false;
+    if((TC4_REGS->COUNT16.TC_STATUS & TC_STATUS_CCBUFV0_Msk) == 0U)
     {
-        TC_TIMER_STATUS status;
-        status = (TC_TIMER_STATUS) TC4_REGS->COUNT16.TC_INTFLAG;
-        /* Clear interrupt flags */
-        TC4_REGS->COUNT16.TC_INTFLAG = (uint8_t)TC_INTFLAG_Msk;
-        if((TC4_CallbackObject.callback != NULL) && (status != TC_TIMER_STATUS_NONE))
-        {
-            uintptr_t context = TC4_CallbackObject.context;
-            TC4_CallbackObject.callback(status, context);
-        }
+        /* Set new compare value for compare channel 0 */
+        TC4_REGS->COUNT16.TC_CCBUF[0] = compareValue;
+        status = true;
     }
+    return status;
 }
 
+/* Configure duty cycle value */
+bool TC4_Compare16bitMatch1Set( uint16_t compareValue )
+{
+    bool status = false;
+    if((TC4_REGS->COUNT16.TC_STATUS & TC_STATUS_CCBUFV1_Msk) == 0U)
+    {
+        /* Set new compare value for compare channel 1 */
+        TC4_REGS->COUNT16.TC_CCBUF[1] = compareValue;
+        status = true;
+    }
+    return status;
+}
+
+
+
+
+
+/* Check if period interrupt flag is set */
+TC_COMPARE_STATUS TC4_CompareStatusGet( void )
+{
+    TC_COMPARE_STATUS compare_status;
+    compare_status = ((TC_COMPARE_STATUS)(TC4_REGS->COUNT16.TC_INTFLAG));
+    /* Clear interrupt */
+    TC4_REGS->COUNT16.TC_INTFLAG = (uint8_t)compare_status;
+    return compare_status;
+}
