@@ -270,21 +270,21 @@ static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
         (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
 
     if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(1, PWM_MAX);
+        TCC0_PWM24bitDutySet(3, PWM_MAX);
     } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(1, PWM_MIN);
+        TCC0_PWM24bitDutySet(3, PWM_MIN);
     } else {
-        TCC0_PWM24bitDutySet(1, tccValue);
+        TCC0_PWM24bitDutySet(3, tccValue);
     }
 
     // WRIST
     tccValue = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(0, PWM_MAX);
+        TCC1_PWM24bitDutySet(0, PWM_MAX);
     } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(0, PWM_MIN);
+        TCC1_PWM24bitDutySet(0, PWM_MIN);
     } else {
-        TCC0_PWM24bitDutySet(0, tccValue);
+        TCC1_PWM24bitDutySet(0, tccValue);
     }
 
     // GRIP
