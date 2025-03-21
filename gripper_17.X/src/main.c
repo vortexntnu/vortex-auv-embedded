@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "can1.h"
 #include "can_common.h"
 #include "clock.h"
@@ -20,8 +21,8 @@
 #include "rtc.h"
 #include "sam.h"
 #include "samc21e17a.h"
-#include "sercom0_i2c.h"
-#include "sercom1_i2c.h"
+/*#include "sercom0_i2c.h"*/
+#include "sercom1_i2c.h" // Encoder i2c
 // #include "sercom3_i2c.h"
 #include "system_init.h"
 #include "tcc.h"
@@ -102,12 +103,107 @@ volatile static STATES gripper_state = STATE_IDLE;
 
 static uint8_t encoder_angles[6] = {0};
 
+/*Function declarations*/
+static uint8_t Encoder_Read(uint8_t* data, uint8_t reg);
+static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds);
+bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
+                         uintptr_t contextHandle);
+void CAN_Recieve_Callback(uintptr_t context);
+void CAN_Transmit_Callback(uintptr_t context);
+void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
+void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
+                            uintptr_t MyDmacContext);
+
+
+int main(void) {
+    /* Initialize all modules */
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
+    PIN_Initialize();
+    CLOCK_Initialize();
+    NVMCTRL_Initialize();
+    TCC1_PWMInitialize();
+    TCC0_PWMInitialize();
+    CAN0_Initialize();
+    // SERCOM0_I2C_Initialize();  // I2C 3
+    SERCOM1_I2C_Initialize();  // I2C 2
+    // SERCOM3_I2C_Initialize();    // I2C 1
+
+    SERCOM0_USART_Initialize();  // USART for Debugging
+
+    // SERCOM3_SLAVE_I2C_Initialize();
+
+    EVSYS_Initialize();
+    ADC0_Initialize();
+    DMAC_Initialize();
+    RTC_Initialize();
+
+    NVIC_Initialize();
+
+    // Peripherals should be disabled by default and will be enabled
+    // by a CAN or I2C start_gripper message
+    // Enable if testing without CAN or I2C
+    // TCC1_PWMStart();
+    // TCC0_PWMStart();
+    // ADC0_Enable();
+    // RTC_Timer32Start();
+    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // Callback functions
+
+    // I2C backup callback function
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+
+    // Callback function used for TCC interrupts when testing servos
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback,
+                                 (uintptr_t)&myAppObj);
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
+
+    memset(rx_message, 0x00, sizeof(rx_message));
+    // Enabling CAN recieve interrupt for fifo0
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+
+    // Servo Enable
+    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
+
+    /*printf("Initialize complete\n");*/
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
+    // Entering idle0 
+    while (true) {
+        /*This switch case is used to set idle mode outside interrupt*/
+        /*MCU will be stuck if idle mode is set inside interrupt*/
+        switch (gripper_state) {
+            case STATE_IDLE:
+                PM_IdleModeEnter();
+                break;
+            case STATE_GRIPPER_ACTIVE:
+                break;
+            default:
+                break;
+        }
+    }
+
+    /* Execution should not come here during normal operation */
+    return EXIT_FAILURE;
+}
+
+
 // Reads the encoder angle Register
 // 2 bytes for each encoder
 // 2|2|2 SHOULDER, WRIST, GRIP
 // Watchdog timer will cause reset
 // if stuck in while loop
-uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
+static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     uint16_t rawData[3] = {0};
     uint8_t dataBuffer[2] = {0};
 
@@ -116,7 +212,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     // SHOULDER
     if (!SERCOM1_I2C_WriteRead(SHOULDER_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
-        return 0;
+        return 1;
     }
     while (SERCOM1_I2C_IsBusy())
         ;
@@ -128,7 +224,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     if (!SERCOM1_I2C_WriteRead(WRIST_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
-        return 0;
+        return 1;
     }
     while (SERCOM1_I2C_IsBusy())
         ;
@@ -142,7 +238,7 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     if (!SERCOM1_I2C_WriteRead(GRIP_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
-        return 0;
+        return 1;
     }
 
     while (SERCOM1_I2C_IsBusy())
@@ -158,11 +254,11 @@ uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     // Stopping watchdog timer
     WDT_Disable();
-    return 1;
+    return 0;
 }
 
 // Function to set the TCC duty cycle for a specific channel
-void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
+static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
     uint16_t shoulderDuty =
         (dutyCycleMicroSeconds[0] << 8) | dutyCycleMicroSeconds[1];
     uint16_t wristDuty =
@@ -175,21 +271,21 @@ void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
         (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
 
     if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(1, PWM_MAX);
+        TCC0_PWM24bitDutySet(3, PWM_MAX);
     } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(1, PWM_MIN);
+        TCC0_PWM24bitDutySet(3, PWM_MIN);
     } else {
-        TCC0_PWM24bitDutySet(1, tccValue);
+        TCC0_PWM24bitDutySet(3, tccValue);
     }
 
     // WRIST
     tccValue = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(0, PWM_MAX);
+        TCC1_PWM24bitDutySet(0, PWM_MAX);
     } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(0, PWM_MIN);
+        TCC1_PWM24bitDutySet(0, PWM_MIN);
     } else {
-        TCC0_PWM24bitDutySet(0, tccValue);
+        TCC1_PWM24bitDutySet(0, tccValue);
     }
 
     // GRIP
@@ -244,7 +340,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                     case I2C_SET_PWM:
                         // Start indexing at the second element
                         SetPWMDutyCycle(dataBuffer + 1);
-                        if (!Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                        if (Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
                         }
                         break;
                     case I2C_STOP_GRIPPER:
@@ -337,7 +433,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
             case SET_PWM:
                 SetPWMDutyCycle(rx_message);
                 // Reading encoders
-                if (!Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                if (Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
                     // Returning to CAN recieve state if read failed
                     memset(rx_message, 0x00, sizeof(rx_message));
                     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
@@ -519,83 +615,4 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
     }
 }
 
-int main(void) {
-    /* Initialize all modules */
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
-    PM_Initialize();
-    PIN_Initialize();
-    CLOCK_Initialize();
-    NVMCTRL_Initialize();
-    TCC1_PWMInitialize();
-    TCC0_PWMInitialize();
-    CAN0_Initialize();
-    // SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-    // SERCOM3_I2C_Initialize();    // I2C 1
 
-    SERCOM0_USART_Initialize();  // USART for Debugging
-
-    // SERCOM3_SLAVE_I2C_Initialize();
-
-    EVSYS_Initialize();
-    ADC0_Initialize();
-    DMAC_Initialize();
-    RTC_Initialize();
-
-    NVIC_Initialize();
-
-    // Peripherals should be disabled by default and will be enabled
-    // by a CAN or I2C start_gripper message
-    // Enable if testing without CAN or I2C
-    // TCC1_PWMStart();
-    // TCC0_PWMStart();
-    // ADC0_Enable();
-    // RTC_Timer32Start();
-    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // Callback functions
-
-    // I2C backup callback function
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // Callback function used for TCC interrupts when testing servos
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback,
-                                 (uintptr_t)&myAppObj);
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
-
-    memset(rx_message, 0x00, sizeof(rx_message));
-    // Enabling CAN recieve interrupt for fifo0
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-
-    // Servo Enable
-    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
-
-    /*printf("Initialize complete\n");*/
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_result_array,
-                         sizeof(adc_result_array));
-    while (true) {
-        /*This switch case is used to set idle mode outside interrupt*/
-        /*MCU will be stuck if idle mode is set inside interrupt*/
-        switch (gripper_state) {
-            case STATE_IDLE:
-                PM_IdleModeEnter();
-                break;
-            case STATE_GRIPPER_ACTIVE:
-                break;
-            default:
-                break;
-        }
-    }
-
-    /* Execution should not come here during normal operation */
-    return 0;
-}

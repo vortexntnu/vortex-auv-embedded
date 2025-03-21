@@ -96,31 +96,10 @@ void CLOCK_Initialize(void) {
         /* Wait for synchronization */
     }
 
-    // SECOM2 BACKUP SLAVE
-    GCLK_REGS->GCLK_PCHCTRL[21] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[21] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
     // CAN0
     GCLK_REGS->GCLK_PCHCTRL[26] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
     while ((GCLK_REGS->GCLK_PCHCTRL[26] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    // SERCOM0 I2C 3 OR USART DEBUGGING
-    GCLK_REGS->GCLK_PCHCTRL[19] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[19] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    // SERCOM1 I2C 2
-    GCLK_REGS->GCLK_PCHCTRL[20] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[20] & GCLK_PCHCTRL_CHEN_Msk) !=
            GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
@@ -131,28 +110,17 @@ void CLOCK_Initialize(void) {
            GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
-    // EVSYS
-    GCLK_REGS->GCLK_PCHCTRL[6] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
 
-    while ((GCLK_REGS->GCLK_PCHCTRL[6] & GCLK_PCHCTRL_CHEN_Msk) !=
+    // TC4
+    GCLK_REGS->GCLK_PCHCTRL[32] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
+
+    while ((GCLK_REGS->GCLK_PCHCTRL[32] & GCLK_PCHCTRL_CHEN_Msk) !=
            GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
-    /* Selection of the Generator and write Lock for ADC0 */
-    GCLK_REGS->GCLK_PCHCTRL[33] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[33] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-
     /* Configure the APBC Bridge Clocks */
-    // MCLK_REGS->MCLK_CPUDIV = 1;
     MCLK_REGS->MCLK_AHBMASK |= (1 << 8);  // CAN0
-    // MCLK_REGS->MCLK_APBCMASK = 0x61F;
-    // MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | (1 << 3) |
-    //                            (1 << 1) | (1 << 2) | (1 << 4);
 
-    MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 16) | (1 << 10) | (1 << 9) | (1 << 6) |
-                               (1 << 3) | (1 << 1) | (1 << 2) | (1 << 4) | (1 << 0);
+    MCLK_REGS->MCLK_APBCMASK =
+        0x40029U | (1 << 16) | (1 << 10) | (1 << 9) | (1 << 6) | (1 << 4);
 }
