@@ -51,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=src/dmac.c src/i2c.c src/pm.c src/rtc.c src/tcc.c src/tcc0.c src/usart.c src/wdt.c src/can1.c src/clock.c src/main.c src/system_init.c src/tc4.c
+SOURCEFILES_QUOTED_IF_SPACED=src/dmac.c src/i2c.c src/pm.c src/rtc.c src/tcc.c src/tcc0.c src/usart.c src/wdt.c src/can1.c src/clock.c src/main.c src/system_init.c src/tc4.c src/tcc2.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/dmac.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/pm.o ${OBJECTDIR}/src/rtc.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o ${OBJECTDIR}/src/wdt.o ${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tc4.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/src/dmac.o.d ${OBJECTDIR}/src/i2c.o.d ${OBJECTDIR}/src/pm.o.d ${OBJECTDIR}/src/rtc.o.d ${OBJECTDIR}/src/tcc.o.d ${OBJECTDIR}/src/tcc0.o.d ${OBJECTDIR}/src/usart.o.d ${OBJECTDIR}/src/wdt.o.d ${OBJECTDIR}/src/can1.o.d ${OBJECTDIR}/src/clock.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/system_init.o.d ${OBJECTDIR}/src/tc4.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/dmac.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/pm.o ${OBJECTDIR}/src/rtc.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o ${OBJECTDIR}/src/wdt.o ${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tc4.o ${OBJECTDIR}/src/tcc2.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/src/dmac.o.d ${OBJECTDIR}/src/i2c.o.d ${OBJECTDIR}/src/pm.o.d ${OBJECTDIR}/src/rtc.o.d ${OBJECTDIR}/src/tcc.o.d ${OBJECTDIR}/src/tcc0.o.d ${OBJECTDIR}/src/usart.o.d ${OBJECTDIR}/src/wdt.o.d ${OBJECTDIR}/src/can1.o.d ${OBJECTDIR}/src/clock.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/system_init.o.d ${OBJECTDIR}/src/tc4.o.d ${OBJECTDIR}/src/tcc2.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/src/dmac.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/pm.o ${OBJECTDIR}/src/rtc.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o ${OBJECTDIR}/src/wdt.o ${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tc4.o
+OBJECTFILES=${OBJECTDIR}/src/dmac.o ${OBJECTDIR}/src/i2c.o ${OBJECTDIR}/src/pm.o ${OBJECTDIR}/src/rtc.o ${OBJECTDIR}/src/tcc.o ${OBJECTDIR}/src/tcc0.o ${OBJECTDIR}/src/usart.o ${OBJECTDIR}/src/wdt.o ${OBJECTDIR}/src/can1.o ${OBJECTDIR}/src/clock.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/system_init.o ${OBJECTDIR}/src/tc4.o ${OBJECTDIR}/src/tcc2.o
 
 # Source Files
-SOURCEFILES=src/dmac.c src/i2c.c src/pm.c src/rtc.c src/tcc.c src/tcc0.c src/usart.c src/wdt.c src/can1.c src/clock.c src/main.c src/system_init.c src/tc4.c
+SOURCEFILES=src/dmac.c src/i2c.c src/pm.c src/rtc.c src/tcc.c src/tcc0.c src/usart.c src/wdt.c src/can1.c src/clock.c src/main.c src/system_init.c src/tc4.c src/tcc2.c
 
 # Pack Options 
 PACK_COMMON_OPTIONS=-I "${CMSIS_DIR}/CMSIS/Core/Include"
@@ -182,6 +182,12 @@ ${OBJECTDIR}/src/tc4.o: src/tc4.c  .generated_files/flags/default/6d479e8e758f30
 	@${RM} ${OBJECTDIR}/src/tc4.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/tc4.o.d" -o ${OBJECTDIR}/src/tc4.o src/tc4.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
 	
+${OBJECTDIR}/src/tcc2.o: src/tcc2.c  .generated_files/flags/default/4bb1ae507e62df602f6bba62b471a934d9b36bb9 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/tcc2.o.d 
+	@${RM} ${OBJECTDIR}/src/tcc2.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/tcc2.o.d" -o ${OBJECTDIR}/src/tcc2.o src/tcc2.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
 else
 ${OBJECTDIR}/src/dmac.o: src/dmac.c  .generated_files/flags/default/6eaa01eb30b37f294a33297bc2d0f9db9a84261 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/src" 
@@ -260,6 +266,12 @@ ${OBJECTDIR}/src/tc4.o: src/tc4.c  .generated_files/flags/default/e9274ceb6866fc
 	@${RM} ${OBJECTDIR}/src/tc4.o.d 
 	@${RM} ${OBJECTDIR}/src/tc4.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/tc4.o.d" -o ${OBJECTDIR}/src/tc4.o src/tc4.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
+	
+${OBJECTDIR}/src/tcc2.o: src/tcc2.c  .generated_files/flags/default/8294effe30c4a12a802a13c901b8337b2fce56fa .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/src" 
+	@${RM} ${OBJECTDIR}/src/tcc2.o.d 
+	@${RM} ${OBJECTDIR}/src/tcc2.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -fno-common -I"include" -MP -MMD -MF "${OBJECTDIR}/src/tcc2.o.d" -o ${OBJECTDIR}/src/tcc2.o src/tcc2.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}/samc21" ${PACK_COMMON_OPTIONS} 
 	
 endif
 

@@ -21,6 +21,7 @@
         <itemPath>include/wdt.h</itemPath>
         <itemPath>include/tc4.h</itemPath>
         <itemPath>include/tc_common.h</itemPath>
+        <itemPath>include/tcc2.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -49,6 +50,7 @@
         <itemPath>src/main.c</itemPath>
         <itemPath>src/system_init.c</itemPath>
         <itemPath>src/tc4.c</itemPath>
+        <itemPath>src/tcc2.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>

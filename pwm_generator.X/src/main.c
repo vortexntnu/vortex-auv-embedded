@@ -92,7 +92,7 @@ int main(void) {
     NVMCTRL_Initialize();
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
-    TC4_TimerInitialize();
+    TC4_CompareInitialize();
     CAN0_Initialize();
 
     SERCOM3_USART_Initialize();  // USART for Debugging
@@ -106,7 +106,7 @@ int main(void) {
     // Enable if testing without CAN or I2C
     TCC1_PWMStart();
     TCC0_PWMStart();
-    TC4_TimerStart();
+    TC4_CompareStart();
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
     // Callback functions
@@ -168,9 +168,9 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
 static void SetLEDPWM(uint8_t* dutyCycle) {
     uint16_t tcValue = dutyCycle[0] << 8 | dutyCycle[1];
     // Have to be adjusted to correct pin
-    TC4_Timer16bitCounterSet(tcValue);
+    TCC1_PWM24bitDutySet(1, tcValue);
 }
-
+  
 // I2C slave backup code
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
