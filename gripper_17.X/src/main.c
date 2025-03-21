@@ -21,8 +21,8 @@
 #include "rtc.h"
 #include "sam.h"
 #include "samc21e17a.h"
-#include "sercom0_i2c.h"
-#include "sercom1_i2c.h"
+/*#include "sercom0_i2c.h"*/
+#include "sercom1_i2c.h" // Encoder i2c
 // #include "sercom3_i2c.h"
 #include "system_init.h"
 #include "tcc.h"
@@ -178,6 +178,7 @@ int main(void) {
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
+    // Entering idle0 
     while (true) {
         /*This switch case is used to set idle mode outside interrupt*/
         /*MCU will be stuck if idle mode is set inside interrupt*/
