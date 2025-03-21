@@ -27,7 +27,11 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PINCFG[6] = 0x1;  // TCC1/C0
     PORT_REGS->GROUP[0].PORT_PINCFG[7] = 0x1;  // TCC1/C1
     PORT_REGS->GROUP[0].PORT_PMUX[3] = 0x44;
+  
 
+    /*Since we want independent duty cycle on each thruster
+     * we cannot use TCC1 channel 1 and 2
+     */
     PORT_REGS->GROUP[0].PORT_PINCFG[8] = 0x1;  // TCC1/C2
     PORT_REGS->GROUP[0].PORT_PINCFG[9] = 0x1;  // TCC1/C3
     PORT_REGS->GROUP[0].PORT_PMUX[4] = 0x55;
