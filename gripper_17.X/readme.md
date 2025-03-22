@@ -37,7 +37,7 @@ The **Gripper MCU** utilizes the following peripherals:
 - **Direct Memory Access Controller (DMAC)**
 - **Real Time Counter (RTC)**
 - **Backup I2C Communication**
-  - `SERCOM3`
+  - `SERCOM3` Adress = 0x31
 - **Power Manager (PM)**
 - **Communication Interfaces**
   - **CAN FD** (Controller Area Network) for real-time data exchange

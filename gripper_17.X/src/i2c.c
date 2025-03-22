@@ -109,7 +109,7 @@ void SERCOM3_SLAVE_I2C_Initialize(void) {
         ;
 
     /* Set the slave address */
-    SERCOM3_REGS->I2CS.SERCOM_ADDR = SERCOM_I2CS_ADDR_ADDR(0x21);
+    SERCOM3_REGS->I2CS.SERCOM_ADDR = SERCOM_I2CS_ADDR_ADDR(0x31);
 
     /* Enable all I2C slave Interrupts */
     SERCOM3_REGS->I2CS.SERCOM_INTENSET = SERCOM_I2CS_INTENSET_Msk;
