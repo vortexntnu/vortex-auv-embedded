@@ -28,7 +28,7 @@ extern "C" {
 */
 
 /* Total number of TCC channels in a module */
-#define TCC2_NUM_CHANNELS    (4U)
+#define TCC2_NUM_CHANNELS    (2U)
 
 /* TCC Channel numbers
 
