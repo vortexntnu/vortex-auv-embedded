@@ -90,8 +90,8 @@ To **distinguish different message types**, a **start byte** is used.
 | **START BYTE** | **Message Description** |
 |--------------|----------------------|
 | `0x0` | **SEND_PWM** (Set PWM duty cycle) |
-| `0x1` | **STOP_GRIPPER** |
-| `0x2` | **START_GRIPPER** |
+| `0x1` | **STOP_GENERATOR** |
+| `0x2` | **START_GENERATOR** |
 | `0x3` | **LED** |
 | `0x4` | **RESET_MCU** |
 
