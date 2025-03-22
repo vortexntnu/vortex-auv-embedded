@@ -127,11 +127,6 @@ int main(void) {
 
     /*printf("Initialize complete\n");*/
     while (true) {
-        /*This switch case is used to set idle mode outside interrupt*/
-        /*MCU will be stuck if idle mode is set inside interrupt*/
-        /*However since this code will run all the time, atleast compared to the
-         * grpper*/
-        /* The stop will not really be used, therefore */
         /*switch (pwm_generator_state) {*/
         /*    case STATE_IDLE:*/
         /*        PM_IdleModeEnter();*/
@@ -167,7 +162,6 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
 
 static void SetLEDPWM(uint8_t* dutyCycle) {
     uint16_t tcValue = dutyCycle[0] << 8 | dutyCycle[1];
-    // Have to be adjusted to correct pin
     TCC1_PWM24bitDutySet(1, tcValue);
 }
   
