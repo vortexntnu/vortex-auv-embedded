@@ -46,6 +46,7 @@ The **PWM Generator MCU** utilizes the following peripherals:
 
 ### **Backup I²C Communication**
 - `SERCOM3` (Fallback communication channel)
+- Uses **0x21** as i2c address
 
 ### **Communication Interfaces**
 - **CAN FD (Controller Area Network)**
