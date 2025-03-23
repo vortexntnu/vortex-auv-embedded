@@ -40,7 +40,7 @@
  *******************************************************************************/
 
 #include "clock.h"
-#include "samc21e17a.h"
+#include <samc21j18a.h>
 
 static void OSCCTRL_Initialize(void) {
     uint32_t calibValue =
@@ -64,8 +64,17 @@ static void OSCCTRL_Initialize(void) {
 }
 
 static void OSC32KCTRL_Initialize(void) {
-    OSC32KCTRL_REGS->OSC32KCTRL_OSC32K = 0x0UL;
-    OSC32KCTRL_REGS->OSC32KCTRL_RTCCTRL = OSC32KCTRL_RTCCTRL_RTCSEL(0UL);
+    OSC32KCTRL_REGS->OSC32KCTRL_OSC32K |= OSC32KCTRL_OSC32K_EN32K_Msk | OSC32KCTRL_OSC32K_ENABLE_Msk;
+    OSC32KCTRL_REGS->OSC32KCTRL_RTCCTRL |= OSC32KCTRL_RTCCTRL_RTCSEL(0X1); // select ULP32K for RTC clock source
+    
+    
+   
+    while ((OSC32KCTRL_REGS->OSC32KCTRL_STATUS & OSC32KCTRL_STATUS_OSC32KRDY_Msk) !=
+           OSC32KCTRL_STATUS_OSC32KRDY_Msk) {
+
+    }
+    
+    OSC32KCTRL_REGS->OSC32KCTRL_OSC32K |= OSC32KCTRL_OSC32K_ONDEMAND(0);
 }
 
 static void GCLK0_Initialize(void) {
@@ -85,70 +94,9 @@ void CLOCK_Initialize(void) {
     /* Function to Initialize the 32KHz Oscillators */
     OSC32KCTRL_Initialize();
 
-    GCLK0_Initialize();
-
-    // TCC0 and TCC1 clock
-    GCLK_REGS->GCLK_PCHCTRL[28] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[28] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-
-    // SECOM2 BACKUP SLAVE
-    GCLK_REGS->GCLK_PCHCTRL[21] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[21] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    // CAN0
-    GCLK_REGS->GCLK_PCHCTRL[26] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[26] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    // SERCOM0 I2C 3 OR USART DEBUGGING
-    GCLK_REGS->GCLK_PCHCTRL[19] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[19] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    // SERCOM1 I2C 2
-    GCLK_REGS->GCLK_PCHCTRL[20] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[20] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    // SERCOM3 I2C 1
-    GCLK_REGS->GCLK_PCHCTRL[22] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[22] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    GCLK_REGS->GCLK_PCHCTRL[6] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[6] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-    /* Selection of the Generator and write Lock for ADC0 */
-    GCLK_REGS->GCLK_PCHCTRL[33] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[33] & GCLK_PCHCTRL_CHEN_Msk) !=
-           GCLK_PCHCTRL_CHEN_Msk) {
-        /* Wait for synchronization */
-    }
-
-    /* Configure the APBC Bridge Clocks */
-    // MCLK_REGS->MCLK_CPUDIV = 1;
-    MCLK_REGS->MCLK_AHBMASK |= (1 << 8);  // CAN0
+ 
     // MCLK_REGS->MCLK_APBCMASK = 0x61F;
-    MCLK_REGS->MCLK_APBAMASK |= MCLK_APBAMASK_SUPC_Msk;
+    MCLK_REGS->MCLK_APBAMASK |= MCLK_APBAMASK_SUPC_Msk | MCLK_APBAMASK_OSC32KCTRL_Msk;
     MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | (1 << 3) |
                                (1 << 1) | (1 << 2) | (1 << 4);
 }

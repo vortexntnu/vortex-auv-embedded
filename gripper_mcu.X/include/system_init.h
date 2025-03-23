@@ -8,10 +8,12 @@
 #ifndef SYSTEM_INIT_H
 #define	SYSTEM_INIT_H
 
+#define LED0_Toggle() (PORT_REGS->GROUP[0].PORT_OUTTGL = PORT_PA15)
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
+    
 void NVIC_Initialize(void); 
 
 

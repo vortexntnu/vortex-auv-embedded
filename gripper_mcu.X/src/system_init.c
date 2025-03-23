@@ -6,15 +6,17 @@
  */
 
 #include "sam.h"
-#include "samc21e17a.h"
+#include <samc21j18a.h>
 
 void PIN_Initialize(void) {
     
     
     // 16MHz clock 
-    PORT_REGS->GROUP[0].PORT_PINCFG[14] = 0x1; // XIN 
-    PORT_REGS->GROUP[0].PORT_PINCFG[15] = 0x1; // XOUT
-
+   //PORT_REGS->GROUP[0].PORT_PINCFG[14] = 0x1; // XIN 
+    PORT_REGS->GROUP[0].PORT_DIR |= PORT_PA15;     // LED0 output
+    PORT_REGS->GROUP[0].PORT_PINCFG[15] = 0x0; // XOUT
+        
+    /*
     PORT_REGS->GROUP[0].PORT_PMUX[7] = 0x77;
 
     // ADC Pins
@@ -68,12 +70,14 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PINCFG[25] = 0x1;
 
     PORT_REGS->GROUP[0].PORT_PMUX[12] = 0x66;
+    */
 }
 
 void NVIC_Initialize(void) {
     // NVIC_SetPriority(TCC1_IRQn, 3);
     // NVIC_EnableIRQ(TCC1_IRQn);
 
+    /*
     NVIC_SetPriority(TCC0_IRQn, 3);
     NVIC_EnableIRQ(TCC0_IRQn);
 
@@ -94,10 +98,25 @@ void NVIC_Initialize(void) {
 
     NVIC_SetPriority(CAN0_IRQn, 3);
     NVIC_EnableIRQ(CAN0_IRQn);
-    
+    */
     NVIC_SetPriority(SUPC_IRQn, 3);
     NVIC_EnableIRQ(SUPC_IRQn);
-
+    
+    NVIC_SetPriority(MCLK_IRQn, 3);
+    NVIC_EnableIRQ(MCLK_IRQn);
+    
+    NVIC_SetPriority(OSCCTRL_IRQn, 3);
+    NVIC_EnableIRQ(OSCCTRL_IRQn);
+    
+    NVIC_SetPriority(OSCCTRL_IRQn, 3);
+    NVIC_EnableIRQ(OSCCTRL_IRQn);    
+    
+    NVIC_SetPriority(OSC32KCTRL_IRQn, 3);
+    NVIC_EnableIRQ(OSC32KCTRL_IRQn);
+    
+    NVIC_SetPriority(PAC_IRQn, 3);
+    NVIC_EnableIRQ(PAC_IRQn);
+    
     /* Enable NVIC Controller */
     __DMB();
     __enable_irq();
