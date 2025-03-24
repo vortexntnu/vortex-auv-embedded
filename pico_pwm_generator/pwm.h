@@ -21,20 +21,16 @@
 #define ARMING_PWM      1500
 #define STARTUP_DELAY   1500
 
+#define MAX_PWM         1800
+#define MIN_PWM         1200
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // PWM function prototypes
-void wrap_cb(void);
-void esc_set_bounds(uint a, uint b);
-int esc_init(void);
-int esc_clock_auto(void);
-int esc_clock_source(uint src);
-int esc_clock_manual(uint freq);
-int esc_attach(uint pin);
-int esc_set_speed(uint pin, uint angle);
-int esc_us(uint pin, uint us);
+int esc_set_pwm(const uint pin, uint16_t esc_pwm);
+int esc_attach(const uint pin);
 
 #ifdef __cplusplus
 }

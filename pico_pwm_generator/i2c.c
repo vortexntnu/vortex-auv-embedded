@@ -14,7 +14,6 @@ void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
             if (i2c_data.mem_address < sizeof(i2c_data.mem))
                 i2c_data.mem[i2c_data.mem_address++] = byte;
             // Indicate that a new I2C message is being received.
-            i2c_data.i2c_state = 2;
             break;
         }
         case I2C_SLAVE_REQUEST: {
@@ -31,24 +30,24 @@ void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
                     uint16_t pwm_val = ((uint16_t)i2c_data.mem[1 + i * 2] << 8) |
                                         i2c_data.mem[1 + i * 2 + 1];
                     switch(i) {
-                        case 0: esc_us(ESC1, pwm_val); break;
-                        case 1: esc_us(ESC2, pwm_val); break;
-                        case 2: esc_us(ESC3, pwm_val); break;
-                        case 3: esc_us(ESC4, pwm_val); break;
-                        case 4: esc_us(ESC5, pwm_val); break;
-                        case 5: esc_us(ESC6, pwm_val); break;
-                        case 6: esc_us(ESC7, pwm_val); break;
-                        case 7: esc_us(ESC8, pwm_val); break;
+                        case 0: esc_set_pwm(ESC1, pwm_val); break;
+                        case 1: esc_set_pwm(ESC2, pwm_val); break;
+                        case 2: esc_set_pwm(ESC3, pwm_val); break;
+                        case 3: esc_set_pwm(ESC4, pwm_val); break;
+                        case 4: esc_set_pwm(ESC5, pwm_val); break;
+                        case 5: esc_set_pwm(ESC6, pwm_val); break;
+                        case 6: esc_set_pwm(ESC7, pwm_val); break;
+                        case 7: esc_set_pwm(ESC8, pwm_val); break;
                     }
                 }
             }
             // Reset the message buffer and state.
             i2c_data.mem_address = 0;
-            i2c_data.i2c_state = 1;
+            i2c_data.i2c_state = 2;
             break;
         }
         default: {
-            i2c_data.i2c_state = 1;
+            i2c_data.i2c_state = 3;
             break;
         }
     }

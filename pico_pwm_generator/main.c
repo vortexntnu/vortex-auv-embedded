@@ -24,12 +24,6 @@ int main() {
     i2c_data.i2c_state = 0;
     led_sequence();
     
-    // Initialize PWM for ESC control.
-    esc_init();
-    if (esc_clock_auto() < 0) {
-        return -1;
-    }
-    
     // Attach all ESC channels and send the arming signal.
     setup_ESCs();
     arm_thrusters();
@@ -55,27 +49,38 @@ void led_sequence() {
             for(uint8_t i = 0; i < 20; i++) {
                 gpio_put(PICO_DEFAULT_LED_PIN, LED_STATE);
                 LED_STATE = !LED_STATE;
-                sleep_ms(100);
+                sleep_ms(80);
             }
             i2c_data.i2c_state = 1;
             break;
         }
-        // Idle state: slow blinking (toggle every 500 ms)
+        // Idle state: led constantly on
         case 1: {
-            gpio_put(PICO_DEFAULT_LED_PIN, LED_STATE);
-            LED_STATE = !LED_STATE;
-            sleep_ms(500);
+            gpio_put(PICO_DEFAULT_LED_PIN, true);
+            sleep_ms(100);
             break;
         }
         // I2C message received: rapid blink sequence
         case 2: {
-            for(uint8_t i = 0; i < 5; i++) {
+            for(uint8_t i = 0; i < 10; i++) {
                 LED_STATE = !LED_STATE;
                 gpio_put(PICO_DEFAULT_LED_PIN, LED_STATE);
-                sleep_ms(20);
+                sleep_ms(30);
             }
             i2c_data.i2c_state = 1;
             break;
+        }
+        // I2C handler triggered but it went to default state
+        case 3: {
+            for(uint8_t i = 0; i < 10; i++) {
+                LED_STATE = !LED_STATE;
+                gpio_put(PICO_DEFAULT_LED_PIN, LED_STATE);
+                sleep_ms(60);
+                LED_STATE = !LED_STATE;
+                gpio_put(PICO_DEFAULT_LED_PIN, LED_STATE);
+                sleep_ms(30);
+            }
+            i2c_data.i2c_state = 1;
         }
         default: {
             i2c_data.i2c_state = 1;
@@ -98,12 +103,12 @@ void setup_ESCs() {
 
 // Arm thrusters by sending the ARMING_PWM signal to each ESC.
 void arm_thrusters() {
-    esc_us(ESC1, ARMING_PWM);
-    esc_us(ESC2, ARMING_PWM);
-    esc_us(ESC3, ARMING_PWM);
-    esc_us(ESC4, ARMING_PWM);
-    esc_us(ESC5, ARMING_PWM);
-    esc_us(ESC6, ARMING_PWM);
-    esc_us(ESC7, ARMING_PWM);
-    esc_us(ESC8, ARMING_PWM);
+    esc_set_pwm(ESC1, ARMING_PWM);
+    esc_set_pwm(ESC2, ARMING_PWM);
+    esc_set_pwm(ESC3, ARMING_PWM);
+    esc_set_pwm(ESC4, ARMING_PWM);
+    esc_set_pwm(ESC5, ARMING_PWM);
+    esc_set_pwm(ESC6, ARMING_PWM);
+    esc_set_pwm(ESC7, ARMING_PWM);
+    esc_set_pwm(ESC8, ARMING_PWM);
 }
