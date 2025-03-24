@@ -1,3 +1,8 @@
+#if !defined(PULLUP_ENABLE) && !defined(PULLUP_DISABLE)
+    #define PULLUP_ENABLE
+    //#define (PULLUP_DISABLE)
+#endif // PULLUP_ENABLE
+
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "i2c.h"
@@ -50,12 +55,12 @@ void led_sequence() {
             for(uint8_t i = 0; i < 20; i++) {
                 gpio_put(PICO_DEFAULT_LED_PIN, LED_STATE);
                 LED_STATE = !LED_STATE;
-                sleep_ms(200);
+                sleep_ms(100);
             }
             i2c_data.i2c_state = 1;
             break;
         }
-        // Idle state: slow blinking (toggle every 100 ms)
+        // Idle state: slow blinking (toggle every 500 ms)
         case 1: {
             gpio_put(PICO_DEFAULT_LED_PIN, LED_STATE);
             LED_STATE = !LED_STATE;
