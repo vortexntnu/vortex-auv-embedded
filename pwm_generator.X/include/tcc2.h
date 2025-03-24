@@ -6,8 +6,8 @@
  * Created on January 19, 2025, 6:34 PM
  */
 
-#ifndef TCC_H
-#define	TCC_H
+#ifndef TCC2_H
+#define	TCC2_H
 
 #include "stdbool.h"
 #include "stddef.h"

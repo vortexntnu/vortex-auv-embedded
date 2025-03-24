@@ -13,7 +13,6 @@
 #include "can1.h"
 #include "clock.h"
 #include "i2c.h"  // I2C client backup
-// #include "i2c_master.h" // not used
 /*#include "dma.h"*/
 #include "pm.h"
 #include "sam.h"
@@ -22,6 +21,7 @@
 #include "tc4.h"
 #include "tcc.h"
 #include "tcc0.h"
+#include "tcc2.h"
 #include "tcc_common.h"
 #include "usart.h"
 #include "wdt.h"
@@ -74,8 +74,6 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 /* Variable to save application state */
 /*volatile static STATES pwm_generator_state = STATE_IDLE;*/
 
-/* Function declarations */
-static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds);
 static void SetLEDPWM(uint8_t* dutyCycleMicroSeconds);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
@@ -84,14 +82,14 @@ void CAN_Transmit_Callback(uintptr_t context);
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 
 int main(void) {
-    /* Initialize all modules */
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
     PM_Initialize();
     PIN_Initialize();
     CLOCK_Initialize();
     NVMCTRL_Initialize();
-    TCC1_PWMInitialize();
     TCC0_PWMInitialize();
+    TCC1_PWMInitialize();
+    TCC2_PWMInitialize();
     TC4_CompareInitialize();
     CAN0_Initialize();
 
@@ -101,20 +99,13 @@ int main(void) {
 
     NVIC_Initialize();
 
-    // Peripherals should be disabled by default and will be enabled
-    // by a CAN or I2C START_GENERATOR message
-    // Enable if testing without CAN or I2C
     TCC1_PWMStart();
     TCC0_PWMStart();
     TC4_CompareStart();
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
-    // Callback functions
-
-    // I2C backup callback function
     // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
-    // Callback function used for TCC interrupts when testing servos
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
 
     CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
@@ -142,7 +133,6 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-// Function to set the TCC duty cycle for a specific channel
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     uint16_t dutyCycle;
     uint32_t tccValue;
@@ -160,11 +150,7 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     }
 }
 
-static void SetLEDPWM(uint8_t* dutyCycle) {
-    uint16_t tcValue = dutyCycle[0] << 8 | dutyCycle[1];
-    TCC1_PWM24bitDutySet(1, tcValue);
-}
-  
+
 // I2C slave backup code
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
@@ -196,11 +182,9 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                 uint8_t start_byte = dataBuffer[0];
                 switch (start_byte) {
                     case I2C_SET_PWM:
-                        // Start indexing at the second element
                         SetThrusterPWM(dataBuffer + 1);
                         break;
                     case I2C_STOP_GENERATOR:
-                        // Turn off sevo enable pin
                         TCC0_PWMStop();
                         TCC1_PWMStop();
                         /*pwm_generator_state = STATE_IDLE;*/
@@ -211,11 +195,10 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         /*pwm_generator_state = STATE_GENERATOR_ACTIVE;*/
                         break;
                     case I2C_LED:
-                        SetLEDPWM(dataBuffer + 1);
+                        TC4_Compare16bitCounterSet(
+                            (uint16_t)((dataBuffer[1] << 8) | dataBuffer[2]));
                         break;
                     case I2C_RESET_MCU:
-                        // Writing WDT_CLEAR anything other than 0xA5 will reset
-                        // the mcu
                         WDT_REGS->WDT_CLEAR = 0x0;
                     default:
                         break;
@@ -272,7 +255,8 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 /*printf("SET_PWM");*/
                 break;
             case LED:
-                SetLEDPWM(rx_message);
+                TC4_Compare16bitCounterSet(
+                    (uint16_t)((rx_message[0] << 8) | rx_message[1]));
                 break;
             case RESET_MCU:
                 // This will cause an immediate system reset
