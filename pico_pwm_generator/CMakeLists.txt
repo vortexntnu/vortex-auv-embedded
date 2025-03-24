@@ -35,13 +35,13 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(pico_pwm_generator pico_pwm_generator.c )
+add_executable(pico_pwm_generator main.c i2c.c pwm.c)
 
 pico_set_program_name(pico_pwm_generator "pico_pwm_generator")
 pico_set_program_version(pico_pwm_generator "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(pico_pwm_generator 1)
+pico_enable_stdio_uart(pico_pwm_generator 0)
 pico_enable_stdio_usb(pico_pwm_generator 0)
 
 # Add the standard library to the build
@@ -49,8 +49,9 @@ target_link_libraries(pico_pwm_generator
     pico_stdlib
     hardware_i2c
     pico_i2c_slave
-    fixmath
     hardware_pwm
+    hardware_clocks
+    hardware_irq
 )
 
 # Add the standard include files to the build
