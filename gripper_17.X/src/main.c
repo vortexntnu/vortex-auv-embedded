@@ -14,7 +14,6 @@
 #include "can_common.h"
 #include "clock.h"
 #include "i2c.h"  // I2C client backup
-// #include "i2c_master.h" // not used
 #include "adc0.h"
 #include "dma.h"
 #include "pm.h"
@@ -22,8 +21,7 @@
 #include "sam.h"
 #include "samc21e17a.h"
 /*#include "sercom0_i2c.h"*/
-#include "sercom1_i2c.h" // Encoder i2c
-// #include "sercom3_i2c.h"
+#include "sercom1_i2c.h"  // Encoder i2c
 #include "system_init.h"
 #include "tcc.h"
 #include "tcc0.h"
@@ -72,6 +70,7 @@ typedef enum {
     I2C_START_GRIPPER,
     I2C_RESET_MCU,
 } I2C_STARTBYTE_ID;
+
 /* Servo pins enum for ADC reading */
 typedef enum {
     SERVO_1,
@@ -79,7 +78,7 @@ typedef enum {
     SERVO_3,
 } SERVO_ADC_PINS;
 
-/* Variable to save Tx/Rx transfer status and context */
+/*CAN*/
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
 /* Variable to save Tx/Rx message */
@@ -98,12 +97,10 @@ uint32_t myAppObj = 0;
 uint16_t adc_result_array[TRANSFER_SIZE];
 /*float input_voltage;*/
 
-/* Variable to save application state */
 volatile static STATES gripper_state = STATE_IDLE;
 
 static uint8_t encoder_angles[6] = {0};
 
-/*Function declarations*/
 static uint8_t Encoder_Read(uint8_t* data, uint8_t reg);
 static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
@@ -114,9 +111,7 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 
-
 int main(void) {
-    /* Initialize all modules */
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
     PM_Initialize();
     PIN_Initialize();
@@ -126,12 +121,11 @@ int main(void) {
     TCC0_PWMInitialize();
     CAN0_Initialize();
     // SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-    // SERCOM3_I2C_Initialize();    // I2C 1
+    SERCOM1_I2C_Initialize();  // I2C 2 
 
     SERCOM0_USART_Initialize();  // USART for Debugging
 
-    // SERCOM3_SLAVE_I2C_Initialize();
+    /*SERCOM3_SLAVE_I2C_Initialize();*/
 
     EVSYS_Initialize();
     ADC0_Initialize();
@@ -140,9 +134,8 @@ int main(void) {
 
     NVIC_Initialize();
 
-    // Peripherals should be disabled by default and will be enabled
-    // by a CAN or I2C start_gripper message
-    // Enable if testing without CAN or I2C
+    /* Peripherals should be disabled by default and will be enabled
+     Enable if testing without CAN or I2C */
     // TCC1_PWMStart();
     // TCC0_PWMStart();
     // ADC0_Enable();
@@ -151,12 +144,8 @@ int main(void) {
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
-    // Callback functions
-
-    // I2C backup callback function
     // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
 
-    // Callback function used for TCC interrupts when testing servos
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
 
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback,
@@ -178,10 +167,10 @@ int main(void) {
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
-    // Entering idle0 
+    // Entering idle0
     while (true) {
-        /*This switch case is used to set idle mode outside interrupt*/
-        /*MCU will be stuck if idle mode is set inside interrupt*/
+        /*This switch case is used to set idle mode outside interrupt
+        MCU will be stuck if idle mode is set inside interrupt*/
         switch (gripper_state) {
             case STATE_IDLE:
                 PM_IdleModeEnter();
@@ -197,17 +186,10 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-
-// Reads the encoder angle Register
-// 2 bytes for each encoder
-// 2|2|2 SHOULDER, WRIST, GRIP
-// Watchdog timer will cause reset
-// if stuck in while loop
 static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     uint16_t rawData[3] = {0};
     uint8_t dataBuffer[2] = {0};
 
-    // Starting Watchdog timer
     WDT_Enable();
     // SHOULDER
     if (!SERCOM1_I2C_WriteRead(SHOULDER_ADDR, &reg, 1, dataBuffer, 2)) {
@@ -218,7 +200,6 @@ static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
         ;
     rawData[0] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
 
-    // Clearing watchdog timer
     WDT_Clear();
     // WRIST
 
@@ -231,11 +212,9 @@ static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
 
     rawData[1] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
 
-    // Clearing watchdog timer
     WDT_Clear();
 
     // GRIP
-
     if (!SERCOM1_I2C_WriteRead(GRIP_ADDR, &reg, 1, dataBuffer, 2)) {
         WDT_Disable();
         return 1;
@@ -252,12 +231,10 @@ static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     data[4] = rawData[2] >> 8;
     data[5] = rawData[2] & 0xFF;
 
-    // Stopping watchdog timer
     WDT_Disable();
     return 0;
 }
 
-// Function to set the TCC duty cycle for a specific channel
 static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
     uint16_t shoulderDuty =
         (dutyCycleMicroSeconds[0] << 8) | dutyCycleMicroSeconds[1];
@@ -299,14 +276,9 @@ static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
     }
 }
 
-// I2C slave backup code
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[7];
-    // Data sent recieved i2c will have this format
-    // Startbyte|PWM_DATA|
-    // Startbyte indiciate what information is being sent
-
     static uint8_t dataIndex = 0;
 
     switch (event) {
@@ -315,7 +287,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
-            /* Read the data sent by I2C Host */
 
             // Encoder_Read(encoder_angles, ENCODER_ADDR,
             // ANGLE_REGISTER);
@@ -365,8 +336,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         gripper_state = STATE_GRIPPER_ACTIVE;
                         break;
                     case I2C_RESET_MCU:
-                        // Writing WDT_CLEAR anything other than 0xA5 will reset
-                        // the mcu
                         WDT_REGS->WDT_CLEAR = 0x0;
                     default:
                         break;
@@ -384,18 +353,10 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
     return true;
 }
 
-// Callback function called during CAN interrupt.
-// When a recieve interrupt is triggered it will
-// set the PWM duty cycle with the data it has recieved
-// it will then read the encoders and send the data
-// after a successfull transmit reviece interrupts will
-// be reenabled
 void CAN_Recieve_Callback(uintptr_t context) {
     xferContext = context;
 
-    /* Check CAN Status */
     status = CAN0_ErrorGet();
-    /*printf("Entering callback\n");*/
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
@@ -423,7 +384,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 // Turn on servo enable pins
                 PORT_REGS->GROUP[0].PORT_OUTSET =
                     (1 << 0) | (1 << 27) | (1 << 28);
-                /*printf("START_GRIPPER\n");*/
                 memset(rx_message, 0x00, sizeof(rx_message));
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
@@ -432,16 +392,13 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 break;
             case SET_PWM:
                 SetPWMDutyCycle(rx_message);
-                // Reading encoders
                 if (Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
-                    // Returning to CAN recieve state if read failed
                     memset(rx_message, 0x00, sizeof(rx_message));
                     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                         rx_message, &timestamp,
                                         CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
                     break;
                 }
-                // Sending ENCODER data over CAN
                 if (CAN0_MessageTransmit(
                         messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
                         CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
@@ -450,10 +407,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
 
                 break;
             case RESET_MCU:
-                // This will cause an immediate system reset
-                // Writing anything other than 0xA5 to WDT_CLEAR will
-                // reset the device
-                /*printf("RESET_MCU\n");*/
                 WDT_REGS->WDT_CLEAR = 0x0;
                 break;
             default:
@@ -495,12 +448,10 @@ void CAN_Recieve_Callback(uintptr_t context) {
 }
 
 void CAN_Transmit_Callback(uintptr_t context) {
-    /* Check CAN Status */
     status = CAN0_ErrorGet();
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        // Sending encoder data
         memset(rx_message, 0x00, sizeof(rx_message));
         if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                                 &timestamp, CAN_MSG_ATTR_RX_FIFO0,
@@ -521,7 +472,6 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     TCC1_PWM24bitDutySet(0, duty2);
     TCC1_PWM24bitDutySet(1, duty3);
 
-    /* Increment duty cycle values */
     duty1 += increment1;
     duty2 += increment1;
     duty3 += increment1;
@@ -549,9 +499,6 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
-// Will turn off servo enable pin if current is to high
-// Averages 16 samples which each is 1024 averaged samples
-// should cover a timepsan of roughly 100ms
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
@@ -614,5 +561,3 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
             (const void*)adc_result_array, sizeof(adc_result_array));
     }
 }
-
-
