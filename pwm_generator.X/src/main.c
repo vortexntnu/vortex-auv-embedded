@@ -99,9 +99,12 @@ int main(void) {
 
     NVIC_Initialize();
 
-    TCC1_PWMStart();
     TCC0_PWMStart();
+    TCC1_PWMStart();
+    TCC2_PWMStart();
+
     TC4_CompareStart();
+
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
     // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
@@ -133,25 +136,27 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
+static  void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     uint16_t dutyCycle;
     uint32_t tccValue;
-    for (int i = 0; i < 8; i++) {
-        dutyCycle = (dutyCycleMicroSeconds[i * 2] << 8) |
-                    dutyCycleMicroSeconds[i * 2 + 1];
+
+    for (int thruster = 0; thruster < 8; thruster++) {
+        int offset = thruster * 2;
+        dutyCycle = (dutyCycleMicroSeconds[offset] << 8) |
+                    dutyCycleMicroSeconds[offset + 1];
 
         tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
 
-        if (i < 4) {
-            TCC0_PWM24bitDutySet(i, tccValue);  // TCC0 Channels 0-3
-        } else {
-            TCC1_PWM24bitDutySet(i - 4, tccValue);  // TCC1 Channels 0-3
+        if (thruster < 4) {
+            TCC0_PWM24bitDutySet(thruster, tccValue);
+        } else if (thruster < 6) {
+            TCC1_PWM24bitDutySet(thruster - 4, tccValue);
+        } else {  
+            TCC2_PWM24bitDutySet(thruster - 6, tccValue);
         }
     }
 }
 
-
-// I2C slave backup code
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[17];
