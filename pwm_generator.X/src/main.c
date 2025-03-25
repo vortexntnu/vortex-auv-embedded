@@ -136,9 +136,11 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static  void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
-    uint16_t dutyCycle;
-    uint32_t tccValue;
+static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
+    uint16_t dutyCycle =
+        dutyCycleMicroSeconds[0] << 8 | dutyCycleMicroSeconds[1];
+    uint32_t tccValue =
+        (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
 
     for (int thruster = 0; thruster < 8; thruster++) {
         int offset = thruster * 2;
@@ -151,8 +153,8 @@ static  void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
             TCC0_PWM24bitDutySet(thruster, tccValue);
         } else if (thruster < 6) {
             TCC1_PWM24bitDutySet(thruster - 4, tccValue);
-        } else {  
-            TCC2_PWM24bitDutySet(thruster - 6, tccValue);
+        } else {
+            TCC2_PWM16bitDutySet(thruster - 6, tccValue);
         }
     }
 }

@@ -22,6 +22,7 @@ extern "C" {
 #define PWM_MAX  13800
 #define PWM_PERIOD_MICROSECONDS 20000
 #define TCC_PERIOD 119999
+#define TCC2_PERIOD 60250
 
 typedef void (*TCC_CALLBACK)( uint32_t status, uintptr_t context );
 // *****************************************************************************

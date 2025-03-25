@@ -20,7 +20,7 @@ void TCC2_PWMInitialize(void) {
         /* Wait for sync */
     }
     /* Clock prescaler */
-    TCC2_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV4;
+    TCC2_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV8;
     TCC2_REGS->TCC_WEXCTRL = TCC_WEXCTRL_OTMX(1U);
     /* Dead time configurations */
     TCC2_REGS->TCC_WEXCTRL |= TCC_WEXCTRL_DTIEN0_Msk | TCC_WEXCTRL_DTIEN1_Msk |
@@ -32,11 +32,9 @@ void TCC2_PWMInitialize(void) {
 
     /* Configure duty cycle values */  // All set to 1500 micro seconds duty
                                        // cycle
-    TCC2_REGS->TCC_CC[0] = 9000;
-    TCC2_REGS->TCC_CC[1] = 9000;
-    TCC2_REGS->TCC_CC[2] = 9000;
-    TCC2_REGS->TCC_CC[3] = 9000;
-    TCC2_REGS->TCC_PER = 119999;
+    TCC2_REGS->TCC_CC[0] = 4500;
+    TCC2_REGS->TCC_CC[1] = 4500;
+    TCC2_REGS->TCC_PER = 60250;
 
     // Max duty cycle: 2300 micro seconds
     // Idle duty cycle: 1500 micro seconds = 9000
@@ -66,7 +64,7 @@ void TCC2_PWMStop(void) {
 }
 
 /* Configure PWM period */
-void TCC2_PWM24bitPeriodSet(uint32_t period) {
+void TCC2_PWM16bitPeriodSet(uint32_t period) {
     TCC2_REGS->TCC_PERBUF = period & 0xFFFFFF;
     while ((TCC2_REGS->TCC_SYNCBUSY & (TCC_SYNCBUSY_PER_Msk)) ==
            TCC_SYNCBUSY_PER_Msk) {
@@ -75,7 +73,7 @@ void TCC2_PWM24bitPeriodSet(uint32_t period) {
 }
 
 /* Read TCC period */
-uint32_t TCC2_PWM24bitPeriodGet(void) {
+uint32_t TCC2_PWM16bitPeriodGet(void) {
     while (TCC2_REGS->TCC_SYNCBUSY & (TCC_SYNCBUSY_PER_Msk)) {
         /* Wait for sync */
     }
@@ -98,7 +96,7 @@ void TCC2_PWMPatternSet(uint8_t pattern_enable, uint8_t pattern_output) {
 }
 
 /* Set the counter*/
-void TCC2_PWM24bitCounterSet(uint32_t count_value) {
+void TCC2_PWM16bitCounterSet(uint32_t count_value) {
     TCC2_REGS->TCC_COUNT = count_value & 0xFFFFFF;
     while (TCC2_REGS->TCC_SYNCBUSY & (TCC_SYNCBUSY_COUNT_Msk)) {
         /* Wait for sync */

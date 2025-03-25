@@ -101,13 +101,13 @@ void TCC2_PWMPeriodInterruptDisable(void);
 
 void TCC2_PWMCallbackRegister(TCC_CALLBACK callback, uintptr_t context);
 
-void TCC2_PWM24bitPeriodSet(uint32_t period);
+void TCC2_PWM16bitPeriodSet(uint32_t period);
 
-uint32_t TCC2_PWM24bitPeriodGet(void);
+uint32_t TCC2_PWM16bitPeriodGet(void);
 
-void TCC2_PWM24bitCounterSet(uint32_t count);
+void TCC2_PWM16bitCounterSet(uint32_t count);
 
-__STATIC_INLINE void TCC2_PWM24bitDutySet(TCC2_CHANNEL_NUM channel, uint32_t duty)
+__STATIC_INLINE void TCC2_PWM16bitDutySet(TCC2_CHANNEL_NUM channel, uint32_t duty)
 {
     TCC2_REGS->TCC_CCBUF[channel] = duty & 0xFFFFFF;
 }
