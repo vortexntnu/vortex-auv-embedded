@@ -118,9 +118,17 @@ void CLOCK_Initialize(void) {
            GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
+
+    // TCC2
+    GCLK_REGS->GCLK_PCHCTRL[29] = GCLK_PCHCTRL_GEN(0x0) | GCLK_PCHCTRL_CHEN_Msk;
+
+    while ((GCLK_REGS->GCLK_PCHCTRL[32] & GCLK_PCHCTRL_CHEN_Msk) !=
+           GCLK_PCHCTRL_CHEN_Msk) {
+        /* Wait for synchronization */
+    }
     /* Configure the APBC Bridge Clocks */
     MCLK_REGS->MCLK_AHBMASK |= (1 << 8);  // CAN0
 
     MCLK_REGS->MCLK_APBCMASK =
-        0x40029U | (1 << 16) | (1 << 10) | (1 << 9) | (1 << 6) | (1 << 4);
+        0x40029U | (1 << 16) | (1 << 10) | (1 << 9) | (1 << 6) | (1 << 4) | (1 << 11);
 }
