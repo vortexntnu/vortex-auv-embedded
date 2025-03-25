@@ -109,6 +109,9 @@ To **distinguish different message types**, a **start byte** is used.
 - The MCU ensures **accurate PWM generation** to maintain **precise thruster control**.
 - **DMA and interrupt-based processing** will be added in future firmware updates to **enhance real-time performance**.
 
+The reason the SetPWMThruster function does not use a for loop is to avoid if-statements or multiple for-loops, but 
+mostly to accomodate electrical and auto in the order which the pwm values are set
+
 ---
 
 ## **References**
