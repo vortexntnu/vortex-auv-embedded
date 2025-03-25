@@ -13,13 +13,13 @@ void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
             uint8_t byte = i2c_read_byte_raw(i2c);
             if (i2c_data.mem_address < sizeof(i2c_data.mem))
                 i2c_data.mem[i2c_data.mem_address++] = byte;
-            // Indicate that a new I2C message is being received.
             break;
         }
         case I2C_SLAVE_REQUEST: {
             // When a master requests a read, send a default response.
             uint8_t response = (i2c_data.mem_address > 0) ? i2c_data.mem[0] : 0;
             i2c_write_byte_raw(i2c, response);
+            i2c_data.i2c_state = 5;
             break;
         }
         case I2C_SLAVE_FINISH: {
@@ -40,6 +40,10 @@ void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
                         case 7: esc_set_pwm(ESC8, pwm_val); break;
                     }
                 }
+            } else {
+                i2c_data.mem_address = 0;
+                i2c_data.i2c_state = 4;
+                break;
             }
             // Reset the message buffer and state.
             i2c_data.mem_address = 0;
@@ -54,8 +58,6 @@ void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
 }
 
 void i2c_setup(void) {
-    // Initialize I2C interface at 100kHz. Needed for some reason even for slaves...
-    //i2c_init(I2C_PORT, 100 * 1000);
     gpio_init(I2C_SDA);
     gpio_init(I2C_SCL);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
