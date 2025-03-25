@@ -16,7 +16,7 @@ void PIN_Initialize(void) {
     // PA18: LED Yellow
     // PA19: LED Green
     PORT_REGS->GROUP[0].PORT_DIR |=
-        (1 << 2) | (1 << 17) | (1 << 18) | (1 << 19);
+        (1 << 2) | (1 << 19);
 
     // PWM Pins
 
@@ -39,6 +39,13 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PINCFG[10] = 0x1;  // TCC0/C2
     PORT_REGS->GROUP[0].PORT_PINCFG[11] = 0x1;  // TCC0/C3
     PORT_REGS->GROUP[0].PORT_PMUX[5] = 0x55;
+
+    // TCC2
+    PORT_REGS->GROUP[0].PORT_PINCFG[16] = 0x1;
+    PORT_REGS->GROUP[0].PORT_PINCFG[17] = 0x1;
+    PORT_REGS->GROUP[0].PORT_PMUX[8] = 0x44;
+    
+
 
     // TCC can only have 4 compare values
     // Therefore we use TC4 for led PWM
