@@ -136,27 +136,45 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
+
+/* The reason for not using a for loop is having the more control
+over which order we set the PWM values and avoid many if statements. 
+This also gives flexibility to accomodate for electrical and auto*/
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     uint16_t dutyCycle =
         dutyCycleMicroSeconds[0] << 8 | dutyCycleMicroSeconds[1];
     uint32_t tccValue =
         (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC0_PWM24bitDutySet(0, tccValue);
 
-    for (int thruster = 0; thruster < 8; thruster++) {
-        int offset = thruster * 2;
-        dutyCycle = (dutyCycleMicroSeconds[offset] << 8) |
-                    dutyCycleMicroSeconds[offset + 1];
+    dutyCycle = dutyCycleMicroSeconds[2] << 8 | dutyCycleMicroSeconds[3];
+    tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC0_PWM24bitDutySet(1, tccValue);
 
-        tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    dutyCycle = dutyCycleMicroSeconds[4] << 8 | dutyCycleMicroSeconds[5];
+    tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC0_PWM24bitDutySet(2, tccValue);
 
-        if (thruster < 4) {
-            TCC0_PWM24bitDutySet(thruster, tccValue);
-        } else if (thruster < 6) {
-            TCC1_PWM24bitDutySet(thruster - 4, tccValue);
-        } else {
-            TCC2_PWM16bitDutySet(thruster - 6, tccValue);
-        }
-    }
+    dutyCycle = dutyCycleMicroSeconds[6] << 8 | dutyCycleMicroSeconds[7];
+    tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC0_PWM24bitDutySet(3, tccValue);
+
+    dutyCycle = dutyCycleMicroSeconds[8] << 8 | dutyCycleMicroSeconds[9];
+    tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC1_PWM24bitDutySet(0, tccValue);
+
+    dutyCycle = dutyCycleMicroSeconds[9] << 8 | dutyCycleMicroSeconds[10];
+    tccValue = (dutyCycle * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC1_PWM24bitDutySet(1, tccValue);
+
+    dutyCycle = dutyCycleMicroSeconds[11] << 8 | dutyCycleMicroSeconds[12];
+    tccValue = (dutyCycle * (TCC2_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC2_PWM16bitDutySet(0, (uint16_t) tccValue);
+
+    dutyCycle = dutyCycleMicroSeconds[13] << 8 | dutyCycleMicroSeconds[14];
+    tccValue = (dutyCycle * (TCC2_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC2_PWM16bitDutySet(1, (uint16_t) tccValue);
+    
 }
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
