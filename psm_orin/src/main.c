@@ -26,6 +26,7 @@
 
 int i2c_fd;
 
+int i2c_psm_init();
 int i2c_write_register(uint8_t reg, uint16_t value);
 uint16_t i2c_read_register(uint8_t reg);
 void config_ads();
@@ -55,6 +56,19 @@ int main(int argc , char** argv) {
         sleep(1);
     }
     close(i2c_fd);
+    return 0;
+}
+
+int i2c_psm_init(){
+    char *i2c_device = "/dev/i2c-7";
+    if((i2c_fd = open(i2c_device, O_RDWR)) < 0) {
+        perror("Failed to open I2C device!");
+        return 1;
+    }
+    if (ioctl(i2c_fd, I2C_SLAVE, PSM_ADDRESS) < 0) {
+        perror("Failed to select I2C device");
+        return 1;
+    }
     return 0;
 }
 
