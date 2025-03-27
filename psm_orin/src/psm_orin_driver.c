@@ -1,24 +1,6 @@
-#include "psm_orin_driver.h"
-
-
-
-#define PSM_ADDRESS 0x48
-#define REG_CONV    0x00
-#define REG_CFG     0x01
-
-#define CFG_OS_SINGLE       0x8000
-#define CFG_MUX_DIFF_0_1    0x0000
-#define CFG_MUX_DIFF_2_3    0x3000
-#define CFG_PGA_6_144V      0x0000
-#define CFG_MODE_SINGLE     0x0100
-#define CFG_DR_128SPS       0x0080
-#define CFG_COMP_MODE       0x0010
-#define CFG_COMP_POL        0x0008
-#define CFG_COMP_LAT        0x0004
-#define CFG_COMP_QUE_DIS    0x0003
+#include "../include/psm_orin_driver.h"
 
 static int i2c_fd;
-
 
 int i2c_psm_init(){
     char *i2c_device = "/dev/i2c-7";
@@ -31,6 +13,13 @@ int i2c_psm_init(){
         return 1;
     }
     return 0;
+}
+
+void config_ads() {
+    uint16_t config = CFG_OS_SINGLE | CFG_MUX_DIFF_0_1 | CFG_PGA_6_144V
+                    | CFG_MODE_SINGLE | CFG_DR_128SPS | CFG_COMP_MODE
+                    | CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
+    i2c_write_register(REG_CFG, config);
 }
 
 int i2c_write_register(uint8_t reg, uint16_t value) {
@@ -49,21 +38,14 @@ int i2c_write_register(uint8_t reg, uint16_t value) {
 uint16_t i2c_read_register(uint8_t reg) {
     uint8_t buf[2];
     if(write(i2c_fd, &reg, 1) != 1) {
-        perror("\r\nFailed to write register address\r\n");
+        perror("\r\nFailed to write register address\r\n"), printf("%x\r\n", reg);
         return -1;
     }
     if(read(i2c_fd, buf, 2) != 2) {
-        perror("Failed to read from register");
+        perror("Failed to read from register"), printf("%x\r\n", reg);
         return -1;
     }
     return(buf[0] << 8) | buf[1];
-}
-
-void config_ads() {
-    uint16_t config = CFG_OS_SINGLE | CFG_MUX_DIFF_0_1 | CFG_PGA_6_144V
-                    | CFG_MODE_SINGLE | CFG_DR_128SPS | CFG_COMP_MODE
-                    | CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
-    i2c_write_register(REG_CFG, config);
 }
 
 void set_mux_diff(int pair) {
@@ -77,22 +59,14 @@ void set_mux_diff(int pair) {
     i2c_write_register(REG_CFG, config);
 }
 
-int16_t read_adc() {
-    config_ads();
-    usleep(100000);
-    uint16_t result = i2c_read_register(REG_CONV);
-    return (result > 32767) ? result - 65536 : result;
-}
-
-double read_voltage() {
-    int16_t raw = read_adc();
-    return(raw * 6.144) / 32768.0;
-}
-
-void read_scaled_measurements(double *voltage, double *current) {
+ void read_measurements(double *voltage, double *current) {
     set_mux_diff(0);
-    *voltage = read_voltage() * 11.236;
+    uint16_t result = i2c_read_register(REG_CONV);
+    if(result > 32767) {
+        result -= 65536;
+    }
+    *voltage = ((result * 6.144) / 32768.0) * 11.236;
     set_mux_diff(1);
-    *current = (0.595 - read_voltage()) / 0.0255;
+    *current = (0.595 - ((result * 6.144) / 32768.0)) / 0.0255;
  }
 
