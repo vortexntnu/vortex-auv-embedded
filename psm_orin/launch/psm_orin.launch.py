@@ -9,8 +9,8 @@ def generate_launch_description() -> LaunchDescription:
 
     thruster_interface_auv_node = Node(
         package="psm_orin",
-        executable="psm_orin.o",
-        name="thruster_interface_auv_node",
+        executable="psm_orin_node",
+        name="psm_orin_node",
         namespace="orca",
         output="screen",
     )

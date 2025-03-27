@@ -11,9 +11,6 @@
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
-  <depend>vortex_msgs</depend>
-  <depend>chrono</depend>
-
 
   <export>
     <build_type>ament_cmake</build_type>

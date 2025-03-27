@@ -34,8 +34,16 @@ void PSMOrinNode::publish_current() {
 }
 
 void PSMOrinNode::read_ads_callback() {
-    read_scaled_measurements(&voltage, &current);
+    read_measurements(&voltage, &current);
 
     publish_current();
     publish_voltage();
+}
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Hello ros world!");
+    rclcpp::spin(std::make_shared<PSMOrinNode>());
+    rclcpp::shutdown();
+    return 0;
 }
