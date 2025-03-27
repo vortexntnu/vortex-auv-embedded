@@ -1,5 +1,5 @@
-#ifndef PSM_ORIN_NODE_HPP
-#define PSM_ORIN_NODE_HPP
+#ifndef PSM_ORIN_ROS_HPP
+#define PSM_ORIN_ROS_HPP
 
 #include <chrono>
 #include <rclcpp/rclcpp.hpp>
@@ -24,4 +24,4 @@ class PSMOrinNode : public rclcpp::Node {
     double current = 0.0;
 };
 
-#endif  // PSM_ORIN_NODE_HPP
+#endif  // PSM_ORIN_ROS_HPP

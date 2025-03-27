@@ -10,23 +10,26 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(vortex_msgs REQUIRED)
+find_package(chrono REQUIRED)
 
 set(LIB_NAME "${PROJECT_NAME}_component")
 
 add_library(${LIB_NAME} SHARED
-  src/main.c
+  src/psm_orin_node.cpp
+  src/psm_orin_driver.c
   )
 
 ament_target_dependencies(${LIB_NAME} PUBLIC
   rclcpp
   rclcpp_components
   std_msgs
+  chrono
   vortex_msgs
 )
 
 rclcpp_components_register_node(
   ${LIB_NAME}
-  PLUGIN "ThrusterInterfaceAUVNode"
+  #PLUGIN "ThrusterInterfaceAUVNode"
   EXECUTABLE ${PROJECT_NAME}_node
 )
 

@@ -1,5 +1,5 @@
 
-#include "psm_orin_node.hpp"
+#include "psm_orin_ros.hpp"
 #include "psm_orin_driver.h"
 
 PSMOrinNode::PSMOrinNode() : Node("psm_orin_node") {
