@@ -1,4 +1,8 @@
 
+#ifndef PSM_ORIN_DRIVER_H
+#define PSM_ORIN_DRIVER_H
+#endif // !PSM_ORIN_DRIVER_H
+
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/i2c-dev.h>
