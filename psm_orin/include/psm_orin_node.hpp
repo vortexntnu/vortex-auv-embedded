@@ -1,27 +1,27 @@
 #ifndef PSM_ORIN_NODE_HPP
 #define PSM_ORIN_NODE_HPP
 
-#endif  // !PSM_ORIN_NODE_HPP
-
 #include <chrono>
+#include <std_msgs/msg/float64.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <vortex_msgs/msg/thruster_forces.hpp>
+
 class PSMOrinNode : public rclcpp::Node {
-   public:
-    explicit PSMOrinNode();
+public:
+  explicit PSMOrinNode();
 
-   private:
-    void set_subscribers_and_publishers();
+private:
+  void set_subscribers_and_publishers();
+  void publish_voltage();
+  void publish_current();
+  void read_ads_callback();
 
-    void publish_voltage();
-    void publish_current();
+  rclcpp::TimerBase::SharedPtr watchdog_timer_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr voltage_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr current_pub_;
+  rclcpp::Time last_msg_time_;
 
-    void read_ads_callback(
-        const vortex_msgs::msg::ThrusterForces::SharedPtr msg);
-
-    rclcpp::TimerBase::SharedPtr watchdog_timer_;
-    rclcpp::Time last_msg_time_;
-
-    double voltage = 0;
-    double current = 0;
+  double voltage = 0.0;
+  double current = 0.0;
 };
+
+#endif  // PSM_ORIN_NODE_HPP
