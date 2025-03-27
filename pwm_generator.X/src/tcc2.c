@@ -64,8 +64,8 @@ void TCC2_PWMStop(void) {
 }
 
 /* Configure PWM period */
-void TCC2_PWM16bitPeriodSet(uint32_t period) {
-    TCC2_REGS->TCC_PERBUF = period & 0xFFFFFF;
+void TCC2_PWM16bitPeriodSet(uint16_t period) {
+    TCC2_REGS->TCC_PERBUF = period & 0xFFFF;
     while ((TCC2_REGS->TCC_SYNCBUSY & (TCC_SYNCBUSY_PER_Msk)) ==
            TCC_SYNCBUSY_PER_Msk) {
         /* Wait for sync */
@@ -73,11 +73,11 @@ void TCC2_PWM16bitPeriodSet(uint32_t period) {
 }
 
 /* Read TCC period */
-uint32_t TCC2_PWM16bitPeriodGet(void) {
+uint16_t TCC2_PWM16bitPeriodGet(void) {
     while (TCC2_REGS->TCC_SYNCBUSY & (TCC_SYNCBUSY_PER_Msk)) {
         /* Wait for sync */
     }
-    return (TCC2_REGS->TCC_PER & 0xFFFFFF);
+    return (TCC2_REGS->TCC_PER & 0xFFFF);
 }
 
 /* Configure dead time */
@@ -96,8 +96,8 @@ void TCC2_PWMPatternSet(uint8_t pattern_enable, uint8_t pattern_output) {
 }
 
 /* Set the counter*/
-void TCC2_PWM16bitCounterSet(uint32_t count_value) {
-    TCC2_REGS->TCC_COUNT = count_value & 0xFFFFFF;
+void TCC2_PWM16bitCounterSet(uint16_t count_value) {
+    TCC2_REGS->TCC_COUNT = count_value & 0xFFFF;
     while (TCC2_REGS->TCC_SYNCBUSY & (TCC_SYNCBUSY_COUNT_Msk)) {
         /* Wait for sync */
     }
