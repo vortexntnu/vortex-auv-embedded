@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <rclcpp/rclcpp.hpp>
+#include <vortex_msgs/msg/thruster_forces.hpp>
 class PSMOrinNode : public rclcpp::Node {
    public:
     explicit PSMOrinNode();
@@ -14,4 +15,13 @@ class PSMOrinNode : public rclcpp::Node {
 
     void publish_voltage();
     void publish_current();
+
+    void read_ads_callback(
+        const vortex_msgs::msg::ThrusterForces::SharedPtr msg);
+
+    rclcpp::TimerBase::SharedPtr watchdog_timer_;
+    rclcpp::Time last_msg_time_;
+
+    double voltage = 0;
+    double current = 0;
 };
