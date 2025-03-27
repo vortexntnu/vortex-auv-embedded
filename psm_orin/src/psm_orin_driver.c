@@ -1,14 +1,6 @@
+#include "psm_orin_driver.h"
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stddef.h> 
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <linux/i2c-dev.h>
-#include <stdlib.h>
-#include <errno.h> 
+
 
 #define PSM_ADDRESS 0x48
 #define REG_CONV    0x00
@@ -25,16 +17,7 @@
 #define CFG_COMP_LAT        0x0004
 #define CFG_COMP_QUE_DIS    0x0003
 
-int i2c_fd;
-
-int i2c_psm_init();
-int i2c_write_register(uint8_t reg, uint16_t value);
-uint16_t i2c_read_register(uint8_t reg);
-void config_ads();
-void set_mux_diff(int pair);
-int16_t read_adc();
-double read_voltage();
-void read_scaled_measurements(double *voltage, double *current);
+static int i2c_fd;
 
 
 int i2c_psm_init(){
