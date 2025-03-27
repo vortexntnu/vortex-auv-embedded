@@ -5,6 +5,7 @@ nbproject/configurations.xml
 nbproject/output/
 nbbuild/
 build/
+_build/
 dist/
 *.swp
 
@@ -22,6 +23,7 @@ dist/
 *.lst
 *.d
 *.o
+*.out
 *.a
 *.s
 *.dylib
