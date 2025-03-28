@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     auto file_logger = spdlog::basic_logger_mt("file_logger", "psm_data.log");
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
     rclcpp::init(argc, argv);
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Hello ros world!");
+    spdlog::info("Hello ros world!");
     rclcpp::spin(std::make_shared<PSMOrinNode>());
     rclcpp::shutdown();
     return 0;

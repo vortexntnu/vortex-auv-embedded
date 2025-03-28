@@ -8,6 +8,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
 
 include_directories(include)
 
@@ -19,7 +21,12 @@ add_executable(psm_orin_node
 ament_target_dependencies(psm_orin_node
   rclcpp
   std_msgs
+  spdlog
+  fmt
 )
+
+
+target_link_libraries(psm_orin_node fmt::fmt)
 
 install(TARGETS
 psm_orin_node
