@@ -27,6 +27,11 @@
 #define CFG_COMP_LAT 0x0004
 #define CFG_COMP_QUE_DIS 0x0003
 
+#define VOLTAGE_SCALE 11.236
+#define VOLTAGE_RANGE 6.144
+#define CURRENT_OFFSET 0.595
+#define CURRENT_SENSITIVITY 0.0255
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
