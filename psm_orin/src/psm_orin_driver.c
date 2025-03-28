@@ -4,6 +4,11 @@
 
 static int i2c_fd;
 
+#define VOLTAGE_SCALE 11.236
+#define VOLTAGE_RANGE 6.144
+#define CURRENT_OFFSET 0.595
+#define CURRENT_SENSITIVITY 0.0255
+
 int i2c_psm_init(){
     char *i2c_device = "/dev/i2c-7";
     if((i2c_fd = open(i2c_device, O_RDWR)) < 0) {
@@ -50,16 +55,6 @@ void config_ads() {
                     | CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
     i2c_write_register(REG_CFG, config);
 }
-static void set_mux_diff(int pair) {
-    uint16_t config = i2c_read_register(REG_CFG);
-    config &= ~0x7000;
-    if(pair == 0) {
-        config |= CFG_MUX_DIFF_0_1;
-    } else {
-        config |= CFG_MUX_DIFF_2_3;
-    }
-    i2c_write_register(REG_CFG, config);
-}
 
 static void start_conversion(uint16_t config) {
     config |= CFG_OS_SINGLE;
@@ -79,13 +74,13 @@ void read_measurements(double *voltage, double *current) {
     config |= CFG_MUX_DIFF_0_1; 
     start_conversion(config);  
     int16_t raw_voltage = (int16_t) read_conversion();
-    *voltage = ((raw_voltage * 6.144) / 32768.0) * 11.236;
+    *voltage = ((raw_voltage * VOLTAGE_RANGE) / 32768.0) * VOLTAGE_SCALE;
 
     config = i2c_read_register(REG_CFG);
     config &= ~0x7000;        
     config |= CFG_MUX_DIFF_2_3;
     start_conversion(config); 
     int16_t raw_current = (int16_t) read_conversion();
-    *current = (0.595 - ((raw_current * 6.144) / 32768.0)) / 0.0255;
+    *current = (CURRENT_OFFSET - ((raw_current * VOLTAGE_RANGE) / 32768.0)) / CURRENT_SENSITIVITY;
 }
 
