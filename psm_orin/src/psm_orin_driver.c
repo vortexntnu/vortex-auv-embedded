@@ -1,4 +1,6 @@
 #include "../include/psm_orin_driver.h"
+#include <stdint.h>
+#include <unistd.h>
 
 static int i2c_fd;
 
@@ -59,14 +61,31 @@ void set_mux_diff(int pair) {
     i2c_write_register(REG_CFG, config);
 }
 
- void read_measurements(double *voltage, double *current) {
-    set_mux_diff(0);
-    uint16_t result = i2c_read_register(REG_CONV);
-    if(result > 32767) {
-        result -= 65536;
-    }
-    *voltage = ((result * 6.144) / 32768.0) * 11.236;
-    set_mux_diff(1);
-    *current = (0.595 - ((result * 6.144) / 32768.0)) / 0.0255;
- }
+void start_conversion(uint16_t config) {
+    config |= CFG_OS_SINGLE;
+    i2c_write_register(REG_CFG, config);
+}
+
+uint16_t read_conversion() {
+    usleep(10000);
+    return i2c_read_register(REG_CONV);
+}
+
+void read_measurements(double *voltage, double *current) {
+    uint16_t config;
+
+    config = i2c_read_register(REG_CFG);
+    config &= ~0x7000;         
+    config |= CFG_MUX_DIFF_0_1; 
+    start_conversion(config);  
+    int16_t raw_voltage = (int16_t) read_conversion();
+    *voltage = ((raw_voltage * 6.144) / 32768.0) * 11.236;
+
+    config = i2c_read_register(REG_CFG);
+    config &= ~0x7000;        
+    config |= CFG_MUX_DIFF_2_3;
+    start_conversion(config); 
+    int16_t raw_current = (int16_t) read_conversion();
+    *current = (0.595 - ((raw_current * 6.144) / 32768.0)) / 0.0255;
+}
 
