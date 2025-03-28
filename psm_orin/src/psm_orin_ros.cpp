@@ -41,13 +41,16 @@ void PSMOrinNode::read_ads_callback() {
 
     auto logger = spdlog::get("file_logger");
     if (logger) {
-        logger->info("Voltage: {} V, Current: {} A", voltage, current);
-    }
+        auto now = this->now();
+        logger->info("{},{},{}", now.seconds(), voltage, current
+
 }
 
 int main(int argc, char** argv) {
-    auto file_logger = spdlog::basic_logger_mt("file_logger", "psm_data.log");
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
+
+    auto file_logger = spdlog::basic_logger_mt("file_logger", "psm_data.csv");
+    spdlog::set_pattern("%v");
+
     rclcpp::init(argc, argv);
     spdlog::info("Hello ros world!");
     rclcpp::spin(std::make_shared<PSMOrinNode>());
