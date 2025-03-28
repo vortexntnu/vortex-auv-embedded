@@ -41,8 +41,7 @@ void PSMOrinNode::read_ads_callback() {
 
     auto logger = spdlog::get("file_logger");
     if (logger) {
-        logger->info("Timestamp: {} Voltage: {} V, Current: {} A",
-                     this->now().seconds(), voltage, current);
+        logger->info("Voltage: {} V, Current: {} A", voltage, current);
     }
 }
 
