@@ -4,6 +4,8 @@
 #include <chrono>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/float64.hpp>
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/spdlog.h"
 
 class PSMOrinNode : public rclcpp::Node {
    public:

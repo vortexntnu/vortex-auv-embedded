@@ -38,9 +38,17 @@ void PSMOrinNode::read_ads_callback() {
 
     publish_current();
     publish_voltage();
+
+    auto logger = spdlog::get("file_logger");
+    if (logger) {
+        logger->info("Timestamp: {} Voltage: {} V, Current: {} A",
+                     this->now().seconds(), voltage, current);
+    }
 }
 
 int main(int argc, char** argv) {
+    auto file_logger = spdlog::basic_logger_mt("file_logger", "psm_data.log");
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
     rclcpp::init(argc, argv);
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Hello ros world!");
     rclcpp::spin(std::make_shared<PSMOrinNode>());
