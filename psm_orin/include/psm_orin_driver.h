@@ -32,11 +32,7 @@ extern "C" {
 #endif  // __cplusplus
 
 int i2c_psm_init();
-int i2c_write_register(uint8_t reg, uint16_t value);
-uint16_t i2c_read_register(uint8_t reg);
 void config_ads();
-void set_mux_diff(int pair);
-
 void read_measurements(double* voltage, double* current);
 #ifdef __cplusplus
 }
