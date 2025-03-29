@@ -43,7 +43,7 @@ void PSMOrinNode::read_ads_callback() {
     auto logger = spdlog::get("file_logger");
     if (logger) {
         auto now = this->now();
-        logger->info("{},{},{}", now.seconds(), voltage, current
+        logger->info("{},{},{}", now.seconds(), voltage, current)
     }
 
     int main(int argc, char** argv) {
