@@ -37,8 +37,8 @@ extern "C" {
 #endif  // __cplusplus
 
 int i2c_psm_init();
-void config_ads();
-void read_measurements(double* voltage, double* current);
+int read_measurements(double* voltage, double* current);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

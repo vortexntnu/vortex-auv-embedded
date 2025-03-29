@@ -4,19 +4,6 @@
 
 static int i2c_fd;
 
-int i2c_psm_init() {
-  char *i2c_device = "/dev/i2c-7";
-  if ((i2c_fd = open(i2c_device, O_RDWR)) < 0) {
-    perror("Failed to open I2C device!");
-    return -1;
-  }
-  if (ioctl(i2c_fd, I2C_SLAVE, PSM_ADDRESS) < 0) {
-    perror("Failed to select I2C device");
-    return -1;
-  }
-  return 0;
-}
-
 static int i2c_write_register(uint8_t reg, uint16_t value) {
   uint8_t data[3];
   data[0] = reg;
@@ -44,14 +31,8 @@ static int i2c_read_register(uint8_t reg, uint16_t *data) {
   return 0;
 }
 
-void config_ads() {
-  uint16_t config = CFG_OS_SINGLE | CFG_MUX_DIFF_0_1 | CFG_PGA_6_144V |
-                    CFG_MODE_SINGLE | CFG_DR_128SPS | CFG_COMP_MODE |
-                    CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
-  i2c_write_register(REG_CFG, config);
-}
 
-static uint8_t start_conversion(uint16_t config) {
+static inline uint8_t start_conversion(uint16_t config) {
   config |= CFG_OS_SINGLE;
   if (i2c_write_register(REG_CFG, config)) {
     return 1;
@@ -59,7 +40,21 @@ static uint8_t start_conversion(uint16_t config) {
   return 0;
 }
 
-void read_measurements(double *voltage, double *current) {
+
+int i2c_psm_init() {
+  char *i2c_device = "/dev/i2c-7";
+  if ((i2c_fd = open(i2c_device, O_RDWR)) < 0) {
+    perror("Failed to open I2C device!");
+    return -1;
+  }
+  if (ioctl(i2c_fd, I2C_SLAVE, PSM_ADDRESS) < 0) {
+    perror("Failed to select I2C device");
+    return -1;
+  }
+  return 0;
+}
+
+int read_measurements(double *voltage, double *current) {
 
   static uint16_t default_config =
       CFG_OS_SINGLE | CFG_MUX_DIFF_0_1 | CFG_PGA_6_144V | CFG_MODE_SINGLE |
@@ -70,22 +65,23 @@ void read_measurements(double *voltage, double *current) {
   config &= ~0x7000;
   config |= CFG_MUX_DIFF_0_1;
   if (start_conversion(config))
-    return;
+    return 1;
   usleep(10000);
   int16_t raw_voltage;
   if (i2c_read_register(REG_CONV, (uint16_t *)&raw_voltage))
-    return;
+    return 1;
   *voltage = ((raw_voltage * VOLTAGE_RANGE) / 32768.0) * VOLTAGE_SCALE;
 
   config = default_config;
   config &= ~0x7000;
   config |= CFG_MUX_DIFF_2_3;
   if (start_conversion(config))
-    return;
+    return 1;
   usleep(10000);
   int16_t raw_current;
   if (i2c_read_register(REG_CONV, (uint16_t *)&raw_current))
-    return;
+    return 1;
   *current = (CURRENT_OFFSET - ((raw_current * VOLTAGE_RANGE) / 32768.0)) /
              CURRENT_SENSITIVITY;
+  return 0;
 }
