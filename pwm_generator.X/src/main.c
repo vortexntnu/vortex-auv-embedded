@@ -106,6 +106,8 @@ int main(void) {
     CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                         &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
     /*printf("Initialize complete\n");*/
+    
+    WDT_Enable();
     while (true) {
     }
 
@@ -146,6 +148,9 @@ static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     dutyCycle = dutyCycleMicroSeconds[14] << 8 | dutyCycleMicroSeconds[15];
     tccValue = (dutyCycle * (TCC2_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     TCC2_PWM16bitDutySet(1, (uint16_t)tccValue);
+
+    
+    WDT_Clear();
 }
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
