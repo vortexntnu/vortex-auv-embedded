@@ -11,6 +11,7 @@ dist/
 
 
 .clangd
+*.csv
 
 # MPLAB C compiler generated files
 *.elf
