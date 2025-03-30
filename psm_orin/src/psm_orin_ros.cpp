@@ -48,7 +48,15 @@ void PSMOrinNode::read_ads_callback() {
 }
 
 int main(int argc, char** argv) {
-    auto file_logger = spdlog::basic_logger_mt("file_logger", "psm_data.csv");
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm tm_struct;
+    localtime_r(&now_time, &tm_struct);
+    char timestamp[64];
+    std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", &tm_struct);
+    std::string filename = std::string("psm_data_") + timestamp + ".csv";
+
+    auto file_logger = spdlog::basic_logger_mt("file_logger", filename);
     spdlog::set_pattern("%v");
 
     rclcpp::init(argc, argv);

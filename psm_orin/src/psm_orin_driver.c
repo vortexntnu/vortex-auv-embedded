@@ -63,11 +63,11 @@ int read_measurements(double* voltage, double* current) {
     config &= ~0x7000;
     config |= CFG_MUX_DIFF_0_1;
     if (start_conversion(config))
-        return 1;
+        return -1;
     usleep(10000);
     int16_t raw_voltage;
     if (i2c_read_register(REG_CONV, (uint16_t*)&raw_voltage))
-        return 1;
+        return -1;
     // Aproximately 0.8 V lost over diode
     *voltage = ((raw_voltage * VOLTAGE_RANGE) / 32768.0) * VOLTAGE_SCALE + 0.8;
 
@@ -75,11 +75,11 @@ int read_measurements(double* voltage, double* current) {
     config &= ~0x7000;
     config |= CFG_MUX_DIFF_2_3;
     if (start_conversion(config))
-        return 1;
+        return -1;
     usleep(10000);
     int16_t raw_current;
     if (i2c_read_register(REG_CONV, (uint16_t*)&raw_current))
-        return 1;
+        return -1;
     *current = (CURRENT_OFFSET - ((raw_current * VOLTAGE_RANGE) / 32768.0)) /
                CURRENT_SENSITIVITY;
     return 0;
