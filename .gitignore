@@ -5,11 +5,13 @@ nbproject/configurations.xml
 nbproject/output/
 nbbuild/
 build/
+_build/
 dist/
 *.swp
 
 
 .clangd
+*.csv
 
 # MPLAB C compiler generated files
 *.elf
@@ -22,6 +24,7 @@ dist/
 *.lst
 *.d
 *.o
+*.out
 *.a
 *.s
 *.dylib
