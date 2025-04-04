@@ -101,8 +101,9 @@ volatile static STATES gripper_state = STATE_IDLE;
 
 static uint8_t encoder_angles[6] = {0};
 
-static uint8_t Encoder_Read(uint8_t* data, uint8_t reg);
-static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds);
+static uint8_t encoder_read(uint8_t* data, uint8_t reg);
+static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds);
+
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
 void CAN_Recieve_Callback(uintptr_t context);
@@ -186,7 +187,7 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
+static uint8_t encoder_read(uint8_t* data, uint8_t reg) {
     uint16_t rawData[3] = {0};
     uint8_t dataBuffer[2] = {0};
 
@@ -235,7 +236,7 @@ static uint8_t Encoder_Read(uint8_t* data, uint8_t reg) {
     return 0;
 }
 
-static void SetPWMDutyCycle(uint8_t* dutyCycleMicroSeconds) {
+static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds) {
     uint16_t shoulderDuty =
         (dutyCycleMicroSeconds[0] << 8) | dutyCycleMicroSeconds[1];
     uint16_t wristDuty =
@@ -297,7 +298,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY: {
-            // Sending encoder angles to master
             SERCOM3_I2C_WriteByte(encoder_angles[dataIndex++]);
             break;
         }
@@ -305,13 +305,11 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
             if (SERCOM3_I2C_TransferDirGet() ==
                 SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE) {
-                // First byte indicating what the MCU should do
                 uint8_t start_byte = dataBuffer[0];
                 switch (start_byte) {
                     case I2C_SET_PWM:
-                        // Start indexing at the second element
-                        SetPWMDutyCycle(dataBuffer + 1);
-                        if (Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                        set_pwm_dutycycle(dataBuffer + 1);
+                        if (encoder_read(encoder_angles, ANGLE_REGISTER)) {
                         }
                         break;
                     case I2C_STOP_GRIPPER:
@@ -391,8 +389,8 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 gripper_state = STATE_GRIPPER_ACTIVE;
                 break;
             case SET_PWM:
-                SetPWMDutyCycle(rx_message);
-                if (Encoder_Read(encoder_angles, ANGLE_REGISTER)) {
+                set_pwm_dutycycle(rx_message);
+                if (encoder_read(encoder_angles, ANGLE_REGISTER)) {
                     memset(rx_message, 0x00, sizeof(rx_message));
                     CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                         rx_message, &timestamp,
