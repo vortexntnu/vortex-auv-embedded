@@ -83,12 +83,9 @@ typedef enum {
 /*CAN*/
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
-/* Variable to save Tx/Rx message */
 static uint32_t messageID = 0x469;
 static uint32_t rx_messageID = 0;
-// static uint8_t message[64] = {0};
 static uint8_t rx_message[64] = {0};
-// static uint8_t messageLength = 0;
 static uint8_t rx_messageLength = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
@@ -97,11 +94,10 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 volatile SERVO_ADC_PINS servo_status = SERVO_1;
 uint32_t myAppObj = 0;
 uint16_t adc_result_array[TRANSFER_SIZE];
-/*float input_voltage;*/
 
 volatile static STATES gripper_state = STATE_IDLE;
-
 static uint8_t encoder_angles[7] = {0};
+
 
 static uint8_t encoder_read(uint8_t* data, uint8_t reg);
 static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds);
@@ -270,8 +266,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
 
-            // Encoder_Read(encoder_angles, ENCODER_ADDR,
-            // ANGLE_REGISTER);
             if (dataIndex < sizeof(dataBuffer)) {
                 dataBuffer[dataIndex++] = SERCOM3_I2C_ReadByte();
             }
