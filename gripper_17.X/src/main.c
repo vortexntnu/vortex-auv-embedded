@@ -34,7 +34,7 @@
 #define WRIST_ADDR 0x41
 #define GRIP_ADDR 0x42
 #define ANGLE_REGISTER 0xFE
-#define I2C_TIMOUT 10000
+#define I2C_TIMEOUT 10000
 #define NUM_ENCODERS 3
 
 #define TRANSFER_SIZE 16
@@ -186,7 +186,7 @@ static uint8_t encoder_read(uint8_t* data, uint8_t reg) {
     const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR, WRIST_ADDR,
                                                      GRIP_ADDR};
     uint8_t status = 0;
-    uint16_t timout = I2C_TIMOUT;
+    uint16_t timeout;
     uint16_t rawData[NUM_ENCODERS] = {0};
     uint8_t dataBuffer[2] = {0};
 
@@ -195,8 +195,9 @@ static uint8_t encoder_read(uint8_t* data, uint8_t reg) {
                                    2)) {
             return 1; 
         }
+        timeout = I2C_TIMEOUT;
         while (SERCOM1_I2C_IsBusy()) {
-            if (--timout == 0) {
+            if (--timeout == 0) {
                 status |= (1 << i);
                 break;
             }
