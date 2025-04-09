@@ -101,6 +101,14 @@ static uint8_t encoder_angles[7] = {0};
 static uint8_t encoder_read(uint8_t* data, uint8_t reg);
 static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds);
 
+
+static inline void enable_servos() {
+    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
+}
+static inline void disable_servos() {
+    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
+}
+
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
 void CAN_Recieve_Callback(uintptr_t context);
@@ -251,12 +259,6 @@ static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds) {
     }
 }
 
-static inline void enable_servos() {
-    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
-}
-static inline void disable_servos() {
-    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
-}
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
@@ -288,8 +290,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                 switch (start_byte) {
                     case I2C_SET_PWM:
                         set_pwm_dutycycle(dataBuffer + 1);
-                        if (encoder_read(encoder_angles, ANGLE_REGISTER)) {
-                        }
+                        encoder_read(encoder_angles, ANGLE_REGISTER); 
                         WDT_Clear();
                         break;
                     case I2C_STOP_GRIPPER:
@@ -402,6 +403,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
 }
 
 void CAN_Transmit_Callback(uintptr_t context) {
+
     status = CAN0_ErrorGet();
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
