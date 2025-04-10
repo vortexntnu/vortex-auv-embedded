@@ -229,34 +229,14 @@ static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds) {
 
     uint32_t tccValue =
         (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-
-    if (tccValue > PWM_MAX) {
-        TCC0_PWM24bitDutySet(3, PWM_MAX);
-    } else if (tccValue < PWM_MIN) {
-        TCC0_PWM24bitDutySet(3, PWM_MIN);
-    } else {
-        TCC0_PWM24bitDutySet(3, tccValue);
-    }
+    TCC0_PWM24bitDutySet(3, tccValue);
 
     tccValue = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-
-    if (tccValue > PWM_MAX) {
-        TCC1_PWM24bitDutySet(0, PWM_MAX);
-    } else if (tccValue < PWM_MIN) {
-        TCC1_PWM24bitDutySet(0, PWM_MIN);
-    } else {
-        TCC1_PWM24bitDutySet(0, tccValue);
-    }
+    TCC1_PWM24bitDutySet(0, tccValue);
+    
 
     tccValue = (gripDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-
-    if (tccValue > PWM_MAX) {
-        TCC1_PWM24bitDutySet(1, PWM_MAX);
-    } else if (tccValue < PWM_MIN) {
-        TCC1_PWM24bitDutySet(1, PWM_MIN);
-    } else {
-        TCC1_PWM24bitDutySet(1, tccValue);
-    }
+    TCC1_PWM24bitDutySet(1, tccValue);
 }
 
 
@@ -312,7 +292,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         WDT_Enable();
                         break;
                     case I2C_RESET_MCU:
-                        WDT_REGS->WDT_CLEAR = 0x0;
+                        WDT_REGS->WDT_CLEAR = 0;
                     default:
                         break;
                 }
@@ -339,7 +319,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
         switch (rx_messageID) {
             case STOP_GRIPPER:
                 WDT_Disable();
-
                 disable_servos();
                 TCC0_PWMStop();
                 TCC1_PWMStop();
@@ -378,7 +357,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
                         messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
                         CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
                 }
-                /*printf("SET_PWM");*/
                 WDT_Clear();
                 break;
             case RESET_MCU:
