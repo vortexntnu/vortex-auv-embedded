@@ -61,58 +61,6 @@ static uint8_t rx_messageLength = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
-static void SetLEDPWM(uint8_t* dutyCycleMicroSeconds);
-bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
-                         uintptr_t contextHandle);
-void CAN_Recieve_Callback(uintptr_t context);
-void CAN_Transmit_Callback(uintptr_t context);
-void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
-
-int main(void) {
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
-    PM_Initialize();
-    PIN_Initialize();
-    CLOCK_Initialize();
-    NVMCTRL_Initialize();
-    TCC0_PWMInitialize();
-    TCC1_PWMInitialize();
-    TCC2_PWMInitialize();
-    TC4_CompareInitialize();
-    CAN0_Initialize();
-
-    SERCOM3_USART_Initialize();  // USART for Debugging
-
-    /*SERCOM3_SLAVE_I2C_Initialize();*/
-
-    NVIC_Initialize();
-
-    TCC0_PWMStart();
-    TCC1_PWMStart();
-    TCC2_PWMStart();
-
-    TC4_CompareStart();
-
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
-    memset(rx_message, 0x00, sizeof(rx_message));
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-    /*printf("Initialize complete\n");*/
-    
-    WDT_Enable();
-    while (true) {
-    }
-
-    return EXIT_FAILURE;
-}
 
 static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
     uint16_t dutyCycle =
@@ -311,3 +259,53 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
         increment1 *= -1;
     }
 }
+
+
+int main(void) {
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
+    PIN_Initialize();
+    CLOCK_Initialize();
+    NVMCTRL_Initialize();
+    TCC0_PWMInitialize();
+    TCC1_PWMInitialize();
+    TCC2_PWMInitialize();
+    TC4_CompareInitialize();
+    CAN0_Initialize();
+
+    SERCOM3_USART_Initialize();  // USART for Debugging
+
+    /*SERCOM3_SLAVE_I2C_Initialize();*/
+
+    NVIC_Initialize();
+
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    TCC2_PWMStart();
+
+    TC4_CompareStart();
+
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
+    memset(rx_message, 0x00, sizeof(rx_message));
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+    /*printf("Initialize complete\n");*/
+    
+    WDT_Enable();
+    while (true) {
+    }
+
+    return EXIT_FAILURE;
+}
+
+
+

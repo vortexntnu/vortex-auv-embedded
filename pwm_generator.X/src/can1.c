@@ -914,7 +914,6 @@ void __attribute__((used)) CAN0_Handler(void) {
     /* Check if error occurred */
     if (ir & CAN_IR_BO_Msk) {
         CAN0_REGS->CAN_IR = CAN_IR_BO_Msk;
-        printf("CAN ERROR\n");
     }
     /* New Message in Rx FIFO 0 */
     if (ir & CAN_IR_RF0N_Msk) {

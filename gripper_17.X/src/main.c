@@ -46,7 +46,6 @@
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
-/* Application's state machine enum */
 typedef enum {
     STATE_IDLE,
     STATE_GRIPPER_ACTIVE,
@@ -57,7 +56,6 @@ typedef enum {
     STATE_CAN_TRANSMIT,
 } CAN_STATES;
 
-// CAN FD RECIEVE ID table
 typedef enum {
     STOP_GRIPPER = 0x469,
     START_GRIPPER,
@@ -65,7 +63,6 @@ typedef enum {
     RESET_MCU,
 } CAN_RECEIVE_ID;
 
-// I2C RECIEVE START BYTE table
 typedef enum {
     I2C_SET_PWM,
     I2C_STOP_GRIPPER,
@@ -73,7 +70,6 @@ typedef enum {
     I2C_RESET_MCU,
 } I2C_STARTBYTE_ID;
 
-/* Servo pins enum for ADC reading */
 typedef enum {
     SERVO_1,
     SERVO_2,
