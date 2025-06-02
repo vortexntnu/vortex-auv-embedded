@@ -87,100 +87,17 @@ static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 // ADC Variables
-volatile SERVO_ADC_PINS servo_status = SERVO_1;
-uint32_t myAppObj = 0;
-uint16_t adc_result_array[TRANSFER_SIZE];
+static uint8_t servo = SERVO_1;
+static uint16_t adc_result_array[TRANSFER_SIZE];
 
-volatile static STATES gripper_state = STATE_IDLE;
+static STATES gripper_state = STATE_IDLE;
 static uint8_t encoder_angles[7] = {0};
-
-static uint8_t encoder_read(uint8_t* data, uint8_t reg);
-static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds);
-
 
 static inline void enable_servos() {
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 }
 static inline void disable_servos() {
     PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
-}
-
-bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
-                         uintptr_t contextHandle);
-void CAN_Recieve_Callback(uintptr_t context);
-void CAN_Transmit_Callback(uintptr_t context);
-void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
-void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
-                            uintptr_t MyDmacContext);
-
-int main(void) {
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
-    PM_Initialize();
-    PIN_Initialize();
-    CLOCK_Initialize();
-    NVMCTRL_Initialize();
-    TCC1_PWMInitialize();
-    TCC0_PWMInitialize();
-    CAN0_Initialize();
-    // SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-
-    SERCOM0_USART_Initialize();  // USART for Debugging
-
-    SERCOM3_SLAVE_I2C_Initialize();
-
-    EVSYS_Initialize();
-    ADC0_Initialize();
-    DMAC_Initialize();
-    RTC_Initialize();
-
-    NVIC_Initialize();
-
-    /* Peripherals should be disabled by default and will be enabled
-     Enable if testing without CAN or I2C */
-    // TCC1_PWMStart();
-    // TCC0_PWMStart();
-    // ADC0_Enable();
-    // RTC_Timer32Start();
-    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback,
-                                 (uintptr_t)&myAppObj);
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
-
-    memset(rx_message, 0x00, sizeof(rx_message));
-    // Enabling CAN recieve interrupt for fifo0
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-
-    // Servo Enable
-    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
-    /*printf("Initialize complete\n");*/
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_result_array,
-                         sizeof(adc_result_array));
-    while (true) {
-        switch (gripper_state) {
-            case STATE_IDLE:
-                PM_IdleModeEnter();
-                break;
-            case STATE_GRIPPER_ACTIVE:
-                break;
-            default:
-                break;
-        }
-    }
-
-    return EXIT_FAILURE;
 }
 
 static uint8_t encoder_read(uint8_t* data, uint8_t reg) {
@@ -229,12 +146,10 @@ static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds) {
 
     tccValue = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(0, tccValue);
-    
 
     tccValue = (gripDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(1, tccValue);
 }
-
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
@@ -266,7 +181,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                 switch (start_byte) {
                     case I2C_SET_PWM:
                         set_pwm_dutycycle(dataBuffer + 1);
-                        encoder_read(encoder_angles, ANGLE_REGISTER); 
+                        encoder_read(encoder_angles, ANGLE_REGISTER);
                         WDT_Clear();
                         break;
                     case I2C_STOP_GRIPPER:
@@ -349,10 +264,10 @@ void CAN_Recieve_Callback(uintptr_t context) {
                                         CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
                     break;
                 }
-                if (CAN0_MessageTransmit(
-                        messageID, 6, encoder_angles, CAN_MODE_FD_WITHOUT_BRS,
-                        CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) == false) {
-                }
+                CAN0_MessageTransmit(messageID, 6, encoder_angles,
+                                     CAN_MODE_FD_WITHOUT_BRS,
+                                     CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
+
                 WDT_Clear();
                 break;
             case RESET_MCU:
@@ -377,16 +292,13 @@ void CAN_Recieve_Callback(uintptr_t context) {
 }
 
 void CAN_Transmit_Callback(uintptr_t context) {
-
     status = CAN0_ErrorGet();
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         memset(rx_message, 0x00, sizeof(rx_message));
-        if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                                &timestamp, CAN_MSG_ATTR_RX_FIFO0,
-                                &msgFrameAttr) == false) {
-        }
+        CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                            &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
     }
 }
 
@@ -453,13 +365,13 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
         if (input_voltage > VOLTAGE_THRESHOLD) {
             overCurrent = true;
         }
-        switch (servo_status) {
+        switch (servo) {
             case SERVO_1:
                 if (overCurrent) {
                     PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 27);
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
-                servo_status = SERVO_2;
+                servo = SERVO_2;
                 /*printf("SERVO2\n");*/
                 break;
             case SERVO_2:
@@ -467,7 +379,7 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                     PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 28);
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN4;
-                servo_status = SERVO_3;
+                servo = SERVO_3;
                 /*printf("SERVO3\n");*/
                 break;
             case SERVO_3:
@@ -475,7 +387,7 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                     PORT_REGS->GROUP[0].PORT_OUTCLR |= (1 << 0);
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN0;
-                servo_status = SERVO_1;
+                servo = SERVO_1;
                 /*printf("SERVO1\n");*/
                 break;
             default:
@@ -490,4 +402,73 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
             DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
             (const void*)adc_result_array, sizeof(adc_result_array));
     }
+}
+
+int main(void) {
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
+    PIN_Initialize();
+    CLOCK_Initialize();
+    NVMCTRL_Initialize();
+    TCC1_PWMInitialize();
+    TCC0_PWMInitialize();
+    CAN0_Initialize();
+    // SERCOM0_I2C_Initialize();  // I2C 3
+    SERCOM1_I2C_Initialize();  // I2C 2
+
+    SERCOM0_USART_Initialize();  // USART for Debugging
+
+    SERCOM3_SLAVE_I2C_Initialize();
+
+    EVSYS_Initialize();
+    ADC0_Initialize();
+    DMAC_Initialize();
+    RTC_Initialize();
+
+    NVIC_Initialize();
+
+    /* Peripherals should be disabled by default and will be enabled
+     Enable if testing without CAN or I2C */
+    // TCC1_PWMStart();
+    // TCC0_PWMStart();
+    // ADC0_Enable();
+    // RTC_Timer32Start();
+    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
+
+    memset(rx_message, 0x00, sizeof(rx_message));
+    // Enabling CAN recieve interrupt for fifo0
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+
+    // Servo Enable
+    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
+    /*printf("Initialize complete\n");*/
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
+    while (true) {
+        switch (gripper_state) {
+            case STATE_IDLE:
+                PM_IdleModeEnter();
+                break;
+            case STATE_GRIPPER_ACTIVE:
+                break;
+            default:
+                break;
+        }
+    }
+
+    return EXIT_FAILURE;
 }
