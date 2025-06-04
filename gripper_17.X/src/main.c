@@ -111,19 +111,10 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         WDT_Clear();
                         break;
                     case I2C_STOP_GRIPPER:
-                        WDT_Disable();
-                        disable_servos();
-                        TCC0_PWMStop();
-                        TCC1_PWMStop();
-                        ADC0_Disable();
+                        stop_gripper();
                         break;
                     case I2C_START_GRIPPER:
-                        TCC0_PWMStart();
-                        TCC1_PWMStart();
-                        ADC0_Enable();
-                        RTC_Timer32Start();
-                        RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-                        enable_servos();
+                        start_gripper();
                         WDT_Enable();
                         break;
                     case I2C_RESET_MCU:
@@ -144,6 +135,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
     return true;
 }
 
+
 void CAN_Recieve_Callback(uintptr_t context) {
     xferContext = context;
 
@@ -153,24 +145,14 @@ void CAN_Recieve_Callback(uintptr_t context) {
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         switch (rx_messageID) {
             case STOP_GRIPPER:
-                WDT_Disable();
-                disable_servos();
-                TCC0_PWMStop();
-                TCC1_PWMStop();
-                ADC0_Disable();
+                stop_gripper();
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-
                 break;
             case START_GRIPPER:
-                TCC0_PWMStart();
-                TCC1_PWMStart();
-                ADC0_Enable();
-                RTC_Timer32Start();
-                RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+                start_gripper();
 
-                enable_servos();
                 memset(rx_message, 0x00, sizeof(rx_message));
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
@@ -348,8 +330,6 @@ int main(void) {
                             CAN_MSG_ATTR_RX_FIFO0);
     CAN0_TxCallbackRegister(CAN_Transmit_Callback,
                             (uintptr_t)STATE_CAN_TRANSMIT);
-
-    memset(rx_message, 0x00, sizeof(rx_message));
 
     CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                         &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
