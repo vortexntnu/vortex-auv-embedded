@@ -23,7 +23,6 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 static uint8_t servo = SERVO_1;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 
-static STATES gripper_state = STATE_IDLE;
 static uint8_t encoder_angles[7] = {0};
 
 
@@ -117,7 +116,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         TCC0_PWMStop();
                         TCC1_PWMStop();
                         ADC0_Disable();
-                        gripper_state = STATE_IDLE;
                         break;
                     case I2C_START_GRIPPER:
                         TCC0_PWMStart();
@@ -126,7 +124,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         RTC_Timer32Start();
                         RTC_Timer32CompareSet(RTC_COMPARE_VAL);
                         enable_servos();
-                        gripper_state = STATE_GRIPPER_ACTIVE;
                         WDT_Enable();
                         break;
                     case I2C_RESET_MCU:
@@ -164,7 +161,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-                gripper_state = STATE_IDLE;
 
                 break;
             case START_GRIPPER:
@@ -179,7 +175,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-                gripper_state = STATE_GRIPPER_ACTIVE;
                 WDT_Enable();
                 break;
             case SET_PWM:
@@ -363,15 +358,7 @@ int main(void) {
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
     while (true) {
-        switch (gripper_state) {
-            case STATE_IDLE:
-                PM_IdleModeEnter();
-                break;
-            case STATE_GRIPPER_ACTIVE:
-                break;
-            default:
-                break;
-        }
+        PM_IdleModeEnter();
     }
 
     return EXIT_FAILURE;

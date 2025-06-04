@@ -39,10 +39,6 @@
 extern "C" {
 #endif
 
-typedef enum {
-    STATE_IDLE,
-    STATE_GRIPPER_ACTIVE,
-} STATES;
 
 typedef enum {
     STATE_CAN_RECEIVE,
