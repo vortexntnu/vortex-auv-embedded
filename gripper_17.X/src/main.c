@@ -3,6 +3,7 @@
 #include "samc21e17a.h"
 /*#include "sercom0_i2c.h"*/
 #include "system_init.h"
+#include <stddef.h>
 
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -86,7 +87,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
             dataIndex = 0;
             break;
-
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
 
             if (dataIndex < sizeof(dataBuffer)) {
@@ -94,12 +94,10 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             }
 
             break;
-
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY: {
             SERCOM3_I2C_WriteByte(encoder_angles[dataIndex++]);
             break;
         }
-
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
             if (SERCOM3_I2C_TransferDirGet() ==
                 SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE) {
@@ -131,7 +129,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
         default:
             break;
     }
-
     return true;
 }
 
@@ -250,7 +247,7 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
         bool overCurrent = false;
         uint16_t input_voltage = 0;
-        for (int sample = 0; sample < TRANSFER_SIZE; sample++) {
+        for (size_t sample = 0; sample < TRANSFER_SIZE; sample++) {
             input_voltage += adc_result_array[sample];
             input_voltage = input_voltage >> 1;  // Dividing by two
 
@@ -311,14 +308,8 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
 int main(void) {
     system_init();
 
-    /* Peripherals should be disabled by default and will be enabled
-     Enable if testing without CAN or I2C */
-    // TCC1_PWMStart();
-    // TCC0_PWMStart();
-    // ADC0_Enable();
-    // RTC_Timer32Start();
-    // RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-
+    // start_gripper();
+  
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
     // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);

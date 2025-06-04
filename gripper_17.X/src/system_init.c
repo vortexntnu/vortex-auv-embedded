@@ -76,9 +76,6 @@ static void nvic_init(void) {
     NVIC_EnableIRQ(SERCOM0_IRQn);
 
     // I2C 2
-    /* For nested I2C interrupts inside CAN Callback to work
-     * priority must be set higher than CAN interrupt
-     * */
     NVIC_SetPriority(SERCOM1_IRQn, 2);
     NVIC_EnableIRQ(SERCOM1_IRQn);
 
@@ -95,7 +92,6 @@ static void nvic_init(void) {
     NVIC_SetPriority(DMAC_IRQn, 3);
     NVIC_EnableIRQ(DMAC_IRQn);
 
-    /* Enable NVIC Controller */
     __DMB();
     __enable_irq();
 }
