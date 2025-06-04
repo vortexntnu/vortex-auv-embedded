@@ -1,85 +1,18 @@
-/*
- * File:   main.c
- * Author: nathaniel
- *
- * Created on January 19, 2025, 2:50 PM
- */
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "adc0.h"
-#include "can1.h"
-#include "can_common.h"
-#include "clock.h"
-#include "dma.h"
-#include "i2c.h"  // I2C client backup
-#include "pm.h"
-#include "rtc.h"
 #include "sam.h"
 #include "samc21e17a.h"
 /*#include "sercom0_i2c.h"*/
-#include "sercom1_i2c.h"  // Encoder i2c
 #include "system_init.h"
-#include "tcc.h"
-#include "tcc0.h"
-#include "tcc_common.h"
-#include "usart.h"
-#include "wdt.h"
 
-// Encoder
-#define SHOULDER_ADDR 0x40
-#define WRIST_ADDR 0x41
-#define GRIP_ADDR 0x42
-#define ANGLE_REGISTER 0xFE
-#define I2C_TIMEOUT 100000
-#define NUM_ENCODERS 3
-
-#define TRANSFER_SIZE 16
-#define ADC_VREF 5.0f
-#define CURRENT_TRESHOLD 2.7f  // 1 A
-#define VOLTAGE_THRESHOLD 2048
-#define RTC_COMPARE_VAL 50
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
-typedef enum {
-    STATE_IDLE,
-    STATE_GRIPPER_ACTIVE,
-} STATES;
-
-typedef enum {
-    STATE_CAN_RECEIVE,
-    STATE_CAN_TRANSMIT,
-} CAN_STATES;
-
-typedef enum {
-    STOP_GRIPPER = 0x469,
-    START_GRIPPER,
-    SET_PWM,
-    RESET_MCU,
-} CAN_RECEIVE_ID;
-
-typedef enum {
-    I2C_SET_PWM,
-    I2C_STOP_GRIPPER,
-    I2C_START_GRIPPER,
-    I2C_RESET_MCU,
-} I2C_STARTBYTE_ID;
-
-typedef enum {
-    SERVO_1,
-    SERVO_2,
-    SERVO_3,
-} SERVO_ADC_PINS;
 
 /*CAN*/
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
-static uint32_t messageID = 0x469;
+const static uint32_t messageID = 0x469;
 static uint32_t rx_messageID = 0;
 static uint8_t rx_message[64] = {0};
 static uint8_t rx_messageLength = 0;
@@ -93,12 +26,6 @@ static uint16_t adc_result_array[TRANSFER_SIZE];
 static STATES gripper_state = STATE_IDLE;
 static uint8_t encoder_angles[7] = {0};
 
-static inline void enable_servos() {
-    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
-}
-static inline void disable_servos() {
-    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
-}
 
 static uint8_t encoder_read(uint8_t* data, uint8_t reg) {
     const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR, WRIST_ADDR,
@@ -405,27 +332,7 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
 }
 
 int main(void) {
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
-    PM_Initialize();
-    PIN_Initialize();
-    CLOCK_Initialize();
-    NVMCTRL_Initialize();
-    TCC1_PWMInitialize();
-    TCC0_PWMInitialize();
-    CAN0_Initialize();
-    // SERCOM0_I2C_Initialize();  // I2C 3
-    SERCOM1_I2C_Initialize();  // I2C 2
-
-    SERCOM0_USART_Initialize();  // USART for Debugging
-
-    SERCOM3_SLAVE_I2C_Initialize();
-
-    EVSYS_Initialize();
-    ADC0_Initialize();
-    DMAC_Initialize();
-    RTC_Initialize();
-
-    NVIC_Initialize();
+    system_init();
 
     /* Peripherals should be disabled by default and will be enabled
      Enable if testing without CAN or I2C */
@@ -448,13 +355,10 @@ int main(void) {
                             (uintptr_t)STATE_CAN_TRANSMIT);
 
     memset(rx_message, 0x00, sizeof(rx_message));
-    // Enabling CAN recieve interrupt for fifo0
+
     CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
                         &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
 
-    // Servo Enable
-    /*PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);*/
-    /*printf("Initialize complete\n");*/
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
