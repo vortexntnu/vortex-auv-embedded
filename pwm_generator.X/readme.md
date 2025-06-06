@@ -58,6 +58,72 @@ The **PWM Generator MCU** utilizes the following peripherals:
 
 ---
 
+
+## Pinout
+
+### LED Pins
+| Pin  | Signal       | Direction | Notes               |
+|------|--------------|-----------|---------------------|
+| PA2  | Led_enable   | Output    | Enables LED drive   |
+| PA17 | LED_Red      | Output    | Red LED control     |
+| PA18 | LED_Yellow   | Output    | Yellow LED control  |
+| PA19 | LED_Green    | Output    | Green LED control   |
+---
+
+### PWM Pins
+
+#### TCC0 Channels
+| Pin  | Timer/Counter | Channel (WO) | Purpose             |
+|------|---------------|--------------|---------------------|
+| PA4  | TCC0          | WO[0] (C0)   | PWM output (thruster 1) |
+| PA5  | TCC0          | WO[1] (C1)   | PWM output (thruster 2) |
+| PA10 | TCC0          | WO[2] (C2)   | PWM output (thruster 3) |
+| PA11 | TCC0          | WO[3] (C3)   | PWM output (thruster 4) |
+
+
+#### TCC1 Channels
+| Pin  | Timer/Counter | Channel (WO) | Purpose             |
+|------|---------------|--------------|---------------------|
+| PA6  | TCC1          | WO[0] (C0)   | PWM output (thruster 5) |
+| PA7  | TCC1          | WO[1] (C1)   | PWM output (thruster 6) |
+| PA8  | TCC1          | WO[2] (C2)   | PWM output (thruster 7) |
+| PA9  | TCC1          | WO[3] (C3)   | PWM output (thruster 8) |
+
+
+#### TCC2 Channels
+| Pin   | Timer/Counter | Channel (WO) | Purpose                 |
+|-------|---------------|--------------|-------------------------|
+| PA16  | TCC2          | WO[0] (C0)   | PWM output (aux 1)      |
+| PA17  | TCC2          | WO[1] (C1)   | PWM output (aux 2)      |
+
+
+#### TC4 Channels (LED PWM)
+| Pin   | Timer/Counter | Channel (WO) | Purpose            |
+|-------|---------------|--------------|--------------------|
+| PA14  | TC4           | WO[0] (C0)   | PWM for indicator LED 1 |
+| PA15  | TC4           | WO[1] (C1)   | PWM for indicator LED 2 |
+
+
+---
+
+### I²C / USART (SERCOM3)
+| Pin   | Function       | Peripheral | Notes                              |
+|-------|----------------|------------|------------------------------------|
+| PA22  | SERCOM3 PAD0   | I²C SDA    | I²C slave SDA (or USART RX)        |
+| PA23  | SERCOM3 PAD1   | I²C SCL    | I²C slave SCL (or USART TX)        |
+
+
+---
+
+### CAN0
+| Pin   | Function  | Peripheral |
+|-------|-----------|------------|
+| PA24  | CAN0_TX   | CAN0       |
+| PA25  | CAN0_RX   | CAN0       |
+
+
+---
+
 ## **MCU Functionality**
 - The **MCU generates PWM signals** to control **eight thrusters**.
 - It **receives duty cycle data** (in microseconds) from the **Jetson Orin** via **I²C**.
