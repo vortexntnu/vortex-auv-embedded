@@ -7,6 +7,7 @@
 
 #include "sam.h"
 #include "samc21e17a.h"
+#include "system_init.h"
 
 void PIN_Initialize(void) {
 
@@ -110,4 +111,25 @@ void NVMCTRL_Initialize(void) {
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_READMODE_NO_MISS_PENALTY |
                                   NVMCTRL_CTRLB_SLEEPPRM_WAKEONACCESS |
                                   NVMCTRL_CTRLB_RWS(2) | NVMCTRL_CTRLB_MANW_Msk;
+}
+
+
+
+void system_init(void){
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
+    PIN_Initialize();
+    CLOCK_Initialize();
+    NVMCTRL_Initialize();
+    TCC0_PWMInitialize();
+    TCC1_PWMInitialize();
+    TCC2_PWMInitialize();
+    TC4_CompareInitialize();
+    CAN0_Initialize();
+
+    SERCOM3_USART_Initialize();  // USART for Debugging
+
+    /*SERCOM3_SLAVE_I2C_Initialize();*/
+
+    NVIC_Initialize();
 }

@@ -5,51 +5,13 @@
  * Created on January 19, 2025, 2:50 PM
  */
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "can1.h"
-#include "can_common.h"
-#include "clock.h"
-#include "i2c.h"  // I2C client backup
-/*#include "dma.h"*/
-#include "pm.h"
 #include "sam.h"
 #include "samc21e17a.h"
 #include "system_init.h"
-#include "tc4.h"
-#include "tcc.h"
-#include "tcc0.h"
-#include "tcc2.h"
-#include "tcc_common.h"
-#include "usart.h"
-#include "wdt.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
-typedef enum {
-    STATE_CAN_RECEIVE,
-    STATE_CAN_TRANSMIT,
-} CAN_STATES;
-
-typedef enum {
-    STOP_GENERATOR = 0x369,
-    START_GENERATOR,
-    SET_PWM,
-    LED,
-    RESET_MCU,
-} CAN_RECEIVE_ID;
-
-typedef enum {
-    I2C_SET_PWM,
-    I2C_STOP_GENERATOR,
-    I2C_START_GENERATOR,
-    I2C_LED,
-    I2C_RESET_MCU,
-} I2C_STARTBYTE_ID;
 
 // CAN
 static uint32_t status = 0;
@@ -134,12 +96,10 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                         SetThrusterPWM(dataBuffer + 1);
                         break;
                     case I2C_STOP_GENERATOR:
-                        TCC0_PWMStop();
-                        TCC1_PWMStop();
+                        stop_thrusters();
                         break;
                     case I2C_START_GENERATOR:
-                        TCC0_PWMStart();
-                        TCC1_PWMStart();
+                        start_thrusters();
                         break;
                     case I2C_LED:
                         TC4_Compare16bitCounterSet(
@@ -175,8 +135,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         switch (rx_messageID) {
             case STOP_GENERATOR:
-                TCC0_PWMStop();
-                TCC1_PWMStop();
+                stop_thrusters();
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
                                     rx_message, &timestamp,
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
@@ -184,8 +143,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
                 // PM_IdleModeEnter();
                 break;
             case START_GENERATOR:
-                TCC0_PWMStart();
-                TCC1_PWMStart();
+                start_thrusters();
                 /*printf("START_GRIPPER\n");*/
                 memset(rx_message, 0x00, sizeof(rx_message));
                 CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
@@ -262,26 +220,10 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
 
 
 int main(void) {
-    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
-    PM_Initialize();
-    PIN_Initialize();
-    CLOCK_Initialize();
-    NVMCTRL_Initialize();
-    TCC0_PWMInitialize();
-    TCC1_PWMInitialize();
-    TCC2_PWMInitialize();
-    TC4_CompareInitialize();
-    CAN0_Initialize();
+    system_init();
+    
 
-    SERCOM3_USART_Initialize();  // USART for Debugging
-
-    /*SERCOM3_SLAVE_I2C_Initialize();*/
-
-    NVIC_Initialize();
-
-    TCC0_PWMStart();
-    TCC1_PWMStart();
-    TCC2_PWMStart();
+    start_thrusters();
 
     TC4_CompareStart();
 
