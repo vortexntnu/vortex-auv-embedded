@@ -1,14 +1,6 @@
-/*
- * File:   main.c
- * Author: nathaniel
- *
- * Created on January 19, 2025, 2:50 PM
- */
-
 #include "sam.h"
 #include "samc21e17a.h"
 #include "system_init.h"
-#include <stddef.h>
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -24,7 +16,9 @@ static uint8_t rx_messageLength = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
+
 typedef void (*TccSetter_u32)(uint32_t channel, uint32_t duty);
+
 
 static void TCC2_Setter32(uint32_t channel, uint32_t duty) {
     TCC2_PWM16bitDutySet(channel, (uint16_t)duty);
@@ -48,7 +42,7 @@ static const ThrusterInfo thruster_table[8] = {
 };
 
 
-static void SetThrusterPWM(uint8_t* dutyCycleMicroSeconds) {
+static void set_thruster_pwm(uint8_t* dutyCycleMicroSeconds) {
     for (size_t thr = 0; thr < 8; thr++) {
         uint16_t dutyCycle =
             dutyCycleMicroSeconds[0] << 8 | dutyCycleMicroSeconds[1];
@@ -72,8 +66,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
-            /* Read the data sent by I2C Host */
-
             if (dataIndex < sizeof(dataBuffer)) {
                 dataBuffer[dataIndex++] = SERCOM3_I2C_ReadByte();
             }
@@ -90,7 +82,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                 uint8_t start_byte = dataBuffer[0];
                 switch (start_byte) {
                     case I2C_SET_PWM:
-                        SetThrusterPWM(dataBuffer + 1);
+                        set_thruster_pwm(dataBuffer + 1);
                         break;
                     case I2C_STOP_GENERATOR:
                         stop_thrusters();
@@ -148,7 +140,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
                                     CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
                 break;
             case SET_PWM:
-                SetThrusterPWM(rx_message);
+                set_thruster_pwm(rx_message);
                 /*printf("SET_PWM");*/
                 break;
             case LED:
@@ -192,6 +184,7 @@ void CAN_Transmit_Callback(uintptr_t context) {
     }
 }
 
+// used to test thrusters
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     /* duty cycle values */
     static int8_t increment1 = 10;
@@ -217,12 +210,11 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
 
 
 int main(void) {
-    system_init();
-    
 
+    system_init();
     start_thrusters();
 
-    TC4_CompareStart();
+    TC4_CompareStart(); // led
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
