@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
 #define CFG_OS_SINGLE 0x8000
 #define CFG_MUX_DIFF_0_1 0x0000
@@ -25,9 +26,6 @@
 #define REG_CONV 0x00
 #define REG_CFG 0x01
 
-static uint8_t tx_data[4] = {0};
-static uint8_t rx_data[4] = {0};
-
 static inline int start_conversion(uint16_t config) {
   config |= CFG_OS_SINGLE;
   uint8_t i2c_data[3];
@@ -38,42 +36,40 @@ static inline int start_conversion(uint16_t config) {
   return SERCOM0_I2C_Write(PSM_ADDRESS, i2c_data, 3);
 }
 
-static uint8_t read_psm() {
+static int wait_for_conversion_complete(void) {
+  uint8_t cfg_high;
+  do {
+    if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, (uint8_t[]){REG_CFG}, 1, &cfg_high,
+                              1)) {
+      return -1; // I²C error
+    }
+  } while ((cfg_high & 0x80) == 0);
+  return 0;
+}
 
-  static uint16_t default_config =
-      CFG_OS_SINGLE | CFG_MUX_DIFF_0_1 | CFG_PGA_6_144V | CFG_MODE_SINGLE |
-      CFG_DR_128SPS | CFG_COMP_MODE | CFG_COMP_POL | CFG_COMP_LAT |
-      CFG_COMP_QUE_DIS;
-  uint8_t reg_conv = REG_CONV;
+static int read_psm(uint8_t *output) {
 
-  uint16_t config = default_config;
-  config &= ~0x7000;
-  config |= CFG_MUX_DIFF_0_1;
+  const uint16_t base_cfg = CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE |
+                            CFG_DR_128SPS | CFG_COMP_MODE | CFG_COMP_POL |
+                            CFG_COMP_LAT | CFG_COMP_QUE_DIS;
 
-  if (start_conversion(config))
-    return 1;
-  
-  SYSTICK_DelayMs(10);
-  
-  if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg_conv, 1, tx_data, 2)) {
-    return 1;
+  const uint16_t cfg_list[2] = {(uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
+                                (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
+
+  uint8_t read_buffer[2], reg_conv = REG_CONV;
+
+  for (uint8_t i = 0; i < 2; i++) {
+    if (start_conversion(cfg_list[i]))
+      return -1;
+    if (wait_for_conversion_complete()) {
+      return -2;
+    }
+    if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg_conv, 1, read_buffer, 2)) {
+      return -3;
+    }
+    output[2 * i] = read_buffer[0];
+    output[2 * i + 1] = read_buffer[1];
   }
-
-
-  config = default_config;
-  config &= ~0x7000;
-  config |= CFG_MUX_DIFF_2_3;
-
-  if (start_conversion(config))
-    return 1;
-
-  SYSTICK_DelayMs(10);
-
-  if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg_conv, 1, tx_data + 2, 2)) {
-    return 1;
-  }
-
-
   return 0;
 }
 
@@ -81,6 +77,9 @@ bool sercom3_i2c_calback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
   bool isSuccess = true;
   static uint8_t index = 0;
+
+  static uint8_t tx_data[4] = {0};
+  static uint8_t rx_data[2] = {0};
 
   switch (event) {
   case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
@@ -103,9 +102,9 @@ bool sercom3_i2c_calback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
     if (rx_data[0]) {
       break;
     }
-    read_psm();
+    if (read_psm(tx_data)) {
+    };
 
-    
     break;
   default:
     break;
