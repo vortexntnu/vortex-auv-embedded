@@ -45,7 +45,7 @@ typedef enum {
 } CAN_STATES;
 
 typedef enum {
-    STOP_GRIPPER = 0x469,
+    STOP_GRIPPER,
     START_GRIPPER,
     SET_PWM,
     RESET_MCU,
