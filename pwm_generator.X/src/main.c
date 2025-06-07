@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "pm.h"
 #include "sam.h"
 #include "samc21e17a.h"
@@ -6,50 +7,48 @@
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
-
 // CAN
 static uint32_t status = 0;
 static uint32_t xferContext = 0;
 static uint32_t messageID = 0x169;
-static uint32_t rx_messageID = 0;
-static uint8_t rx_message[64] = {0};
-static uint8_t rx_messageLength = 0;
+static uint32_t rx_id = 0;
+static uint8_t rx_buf[64] = {0};
+static uint8_t rx_len = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
+static bool usesCan = true;
 
 typedef void (*TccSetter_u32)(uint32_t channel, uint32_t duty);
-
 
 static void TCC2_Setter32(uint32_t channel, uint32_t duty) {
     TCC2_PWM16bitDutySet(channel, (uint16_t)duty);
 }
 
 typedef struct {
-    TccSetter_u32  setter;    // which function to call
-    uint32_t       channel;   // channel index for that TCC instance
-    uint32_t       period;    // period used in (duty*(period+1))/PWM_PERIOD_MICROSECONDS
+    TccSetter_u32 setter;  // which function to call
+    uint32_t channel;      // channel index for that TCC instance
+    uint32_t
+        period;  // period used in (duty*(period+1))/PWM_PERIOD_MICROSECONDS
 } ThrusterInfo;
 
 static const ThrusterInfo thruster_table[8] = {
-    { &TCC0_PWM24bitDutySet, 0, TCC_PERIOD      },
-    { &TCC0_PWM24bitDutySet, 1, TCC_PERIOD      },
-    { &TCC0_PWM24bitDutySet, 2, TCC_PERIOD      },
-    { &TCC0_PWM24bitDutySet, 3, TCC_PERIOD      },
-    { &TCC1_PWM24bitDutySet, 0, TCC_PERIOD      },
-    { &TCC1_PWM24bitDutySet, 1, TCC_PERIOD      },
-    { &TCC2_Setter32,       0, TCC2_PERIOD     },
-    { &TCC2_Setter32,       1, TCC2_PERIOD     }
-};
-
+    {&TCC0_PWM24bitDutySet, 0, TCC_PERIOD},
+    {&TCC0_PWM24bitDutySet, 1, TCC_PERIOD},
+    {&TCC0_PWM24bitDutySet, 2, TCC_PERIOD},
+    {&TCC0_PWM24bitDutySet, 3, TCC_PERIOD},
+    {&TCC1_PWM24bitDutySet, 0, TCC_PERIOD},
+    {&TCC1_PWM24bitDutySet, 1, TCC_PERIOD},
+    {&TCC2_Setter32, 0, TCC2_PERIOD},
+    {&TCC2_Setter32, 1, TCC2_PERIOD}};
 
 static void set_thruster_pwm(uint8_t* dutyCycleMicroSeconds) {
     for (size_t thr = 0; thr < 8; thr++) {
         uint16_t dutyCycle =
             dutyCycleMicroSeconds[0] << 8 | dutyCycleMicroSeconds[1];
-        uint32_t tccValue =
-            (dutyCycle * (thruster_table[thr].period + 1)) / PWM_PERIOD_MICROSECONDS;
-        uint32_t channelIdx  = thruster_table[thr].channel;
+        uint32_t tccValue = (dutyCycle * (thruster_table[thr].period + 1)) /
+                            PWM_PERIOD_MICROSECONDS;
+        uint32_t channelIdx = thruster_table[thr].channel;
         thruster_table[thr].setter(channelIdx, tccValue);
     }
     WDT_Clear();
@@ -57,8 +56,6 @@ static void set_thruster_pwm(uint8_t* dutyCycleMicroSeconds) {
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
-    static uint8_t dataBuffer[17];
-
     static uint8_t dataIndex = 0;
 
     switch (event) {
@@ -67,9 +64,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
-            if (dataIndex < sizeof(dataBuffer)) {
-                dataBuffer[dataIndex++] = SERCOM3_I2C_ReadByte();
-            }
+            rx_buf[dataIndex++] = SERCOM3_I2C_ReadByte();
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY: {
@@ -79,27 +74,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
             if (SERCOM3_I2C_TransferDirGet() ==
                 SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE) {
-                // First byte indicating what the MCU should do
-                uint8_t start_byte = dataBuffer[0];
-                switch (start_byte) {
-                    case I2C_SET_PWM:
-                        set_thruster_pwm(dataBuffer + 1);
-                        break;
-                    case I2C_STOP_GENERATOR:
-                        stop_thrusters();
-                        break;
-                    case I2C_START_GENERATOR:
-                        start_thrusters();
-                        break;
-                    case I2C_LED:
-                        TC4_Compare16bitCounterSet(
-                            (uint16_t)((dataBuffer[1] << 8) | dataBuffer[2]));
-                        break;
-                    case I2C_RESET_MCU:
-                        WDT_REGS->WDT_CLEAR = 0x0;
-                    default:
-                        break;
-                }
                 /* Only used for debugging */
                 // printf("Message recieved\n");
                 // for (int i = 0; i < 7; i++) {
@@ -123,38 +97,6 @@ void CAN_Recieve_Callback(uintptr_t context) {
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        switch (rx_messageID) {
-            case STOP_GENERATOR:
-                stop_thrusters();
-                CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-                                    rx_message, &timestamp,
-                                    CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-                /*printf("STOP_GRIPPER\n");*/
-                // PM_IdleModeEnter();
-                break;
-            case START_GENERATOR:
-                start_thrusters();
-                /*printf("START_GRIPPER\n");*/
-                memset(rx_message, 0x00, sizeof(rx_message));
-                CAN0_MessageReceive(&rx_messageID, &rx_messageLength,
-                                    rx_message, &timestamp,
-                                    CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-                break;
-            case SET_PWM:
-                set_thruster_pwm(rx_message);
-                /*printf("SET_PWM");*/
-                break;
-            case LED:
-                TC4_Compare16bitCounterSet(
-                    (uint16_t)((rx_message[0] << 8) | rx_message[1]));
-                break;
-            case RESET_MCU:
-                /*printf("RESET_MCU\n");*/
-                WDT_REGS->WDT_CLEAR = 0x0;
-                break;
-            default:
-                break;
-        }
         /* Only used for debugging */
         /*printf(" New Message Received\r\n");*/
         /*uint8_t length = rx_messageLength;*/
@@ -177,9 +119,9 @@ void CAN_Transmit_Callback(uintptr_t context) {
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         // Sending encoder data
-        memset(rx_message, 0x00, sizeof(rx_message));
-        if (CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                                &timestamp, CAN_MSG_ATTR_RX_FIFO0,
+        memset(rx_buf, 0x00, sizeof(rx_buf));
+        if (CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                                CAN_MSG_ATTR_RX_FIFO0,
                                 &msgFrameAttr) == false) {
         }
     }
@@ -209,13 +151,47 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
+void message_handler() {
+    uint8_t event;
+    uint8_t* pData;
+    if (usesCan) {
+        event = rx_id;
+        pData = rx_buf;
+    } else {
+        event = rx_buf[0];
+        pData = rx_buf + 1;
+    }
+    switch (event) {
+        case STOP_GENERATOR:
+            stop_thrusters();
+            break;
+        case START_GENERATOR:
+            start_thrusters();
+            break;
+        case SET_PWM:
+            set_thruster_pwm(pData);
+            break;
+        case LED:
+            TC4_Compare16bitCounterSet(
+                (uint16_t)((rx_buf[0] << 8) | rx_buf[1]));
+            break;
+        case RESET_MCU:
+            WDT_REGS->WDT_CLEAR = 0x0;
+            break;
+        default:
+            break;
+    }
+    if (usesCan) {
+        CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+    }
+}
 
 int main(void) {
-
     system_init();
     start_thrusters();
 
-    TC4_CompareStart(); // led
+    TC4_CompareStart();  // led
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
 
@@ -227,18 +203,16 @@ int main(void) {
                             CAN_MSG_ATTR_RX_FIFO0);
     CAN0_TxCallbackRegister(CAN_Transmit_Callback,
                             (uintptr_t)STATE_CAN_TRANSMIT);
-    memset(rx_message, 0x00, sizeof(rx_message));
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
-                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+    memset(rx_buf, 0x00, sizeof(rx_buf));
+    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
     /*printf("Initialize complete\n");*/
-    
+
     WDT_Enable();
     while (true) {
-      PM_IdleModeEnter();
+        PM_IdleModeEnter();
+        message_handler();
     }
 
     return EXIT_FAILURE;
 }
-
-
-

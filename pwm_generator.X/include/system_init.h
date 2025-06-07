@@ -37,20 +37,13 @@ typedef enum {
 } CAN_STATES;
 
 typedef enum {
-    STOP_GENERATOR = 0x369,
+    STOP_GENERATOR,
     START_GENERATOR,
     SET_PWM,
     LED,
     RESET_MCU,
-} CAN_RECEIVE_ID;
+} STATES;
 
-typedef enum {
-    I2C_SET_PWM,
-    I2C_STOP_GENERATOR,
-    I2C_START_GENERATOR,
-    I2C_LED,
-    I2C_RESET_MCU,
-} I2C_STARTBYTE_ID;
 
 
 #ifdef	__cplusplus
