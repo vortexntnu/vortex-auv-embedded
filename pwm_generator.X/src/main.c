@@ -1,3 +1,4 @@
+#include "pm.h"
 #include "sam.h"
 #include "samc21e17a.h"
 #include "system_init.h"
@@ -233,6 +234,7 @@ int main(void) {
     
     WDT_Enable();
     while (true) {
+      PM_IdleModeEnter();
     }
 
     return EXIT_FAILURE;
