@@ -57,6 +57,7 @@ static void set_thruster_pwm(uint8_t* dutyCycleMicroSeconds) {
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataIndex = 0;
+    usesCan = false;
 
     switch (event) {
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
