@@ -4,6 +4,7 @@
 /*#include "sercom0_i2c.h"*/
 #include "system_init.h"
 #include <stddef.h>
+#include <stdint.h>
 
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -26,36 +27,42 @@ static uint16_t adc_result_array[TRANSFER_SIZE];
 
 static uint8_t encoder_angles[7] = {0};
 
-
-static uint8_t encoder_read(uint8_t* data, uint8_t reg) {
-    const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR, WRIST_ADDR,
+static const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR, WRIST_ADDR,
                                                      GRIP_ADDR};
-    uint8_t status = 0;
+
+
+/**
+ *@brief reads encoder
+ *@param data txbuffer for encoder angles
+ *@param reg which encoder register to read from
+ *@return 0 on success
+ *        -1 on failure
+ */
+static int encoder_read(uint8_t* data, uint8_t reg) {
     uint32_t timeout;
-    uint16_t rawData[NUM_ENCODERS] = {0};
-    uint8_t dataBuffer[2] = {0};
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
-        if (!SERCOM1_I2C_WriteRead(encoder_addresses[i], &reg, 1, dataBuffer,
+
+        uint8_t buf[2] = {0xFF};
+        if (!SERCOM1_I2C_WriteRead(encoder_addresses[i], &reg, 1, buf,
                                    2)) {
-            return 1;
+            return -1;
         }
         timeout = I2C_TIMEOUT;
         while (SERCOM1_I2C_IsBusy()) {
             if (--timeout == 0) {
-                status |= (1 << i);
                 break;
             }
         }
-        rawData[i] = (dataBuffer[0] << 6) | (dataBuffer[1] & 0x3F);
+        if (buf[0] == 0xFF && buf[1] == 0xFF){
+            data[2 * i] = 0xFF;
+            data[2* i +1] = 0xFF;
+            continue;
+        }
+        uint16_t rawAngle = (buf[0] << 6) | (buf[1] & 0x3F);
+        data[2 * i] = rawAngle >> 8;
+        data[2 * i + 1] = rawAngle & 0xFF;
     }
-
-    for (int i = 1; i < NUM_ENCODERS; i++) {
-        data[2 * i] = rawData[i] >> 8;
-        data[2 * i + 1] = rawData[i] & 0xFF;
-    }
-    data[6] = status;
-
     return 0;
 }
 
