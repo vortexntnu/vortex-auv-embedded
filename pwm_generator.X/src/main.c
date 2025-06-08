@@ -8,7 +8,7 @@ uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
 // CAN
-static uint32_t status = 0;
+static uint32_t can_status = 0;
 static uint32_t xferContext = 0;
 static uint32_t messageID = 0x169;
 static uint32_t rx_id = 0;
@@ -93,11 +93,11 @@ void CAN_Recieve_Callback(uintptr_t context) {
     xferContext = context;
 
     /* Check CAN Status */
-    status = CAN0_ErrorGet();
+    can_status = CAN0_ErrorGet();
     /*printf("Entering callback\n");*/
 
-    if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
-        ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
+    if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
+        ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         /* Only used for debugging */
         /*printf(" New Message Received\r\n");*/
         /*uint8_t length = rx_messageLength;*/
@@ -115,32 +115,24 @@ void CAN_Recieve_Callback(uintptr_t context) {
 
 void CAN_Transmit_Callback(uintptr_t context) {
     /* Check CAN Status */
-    status = CAN0_ErrorGet();
+    can_status = CAN0_ErrorGet();
 
-    if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
-        ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
+    if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
+        ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         // Sending encoder data
-        memset(rx_buf, 0x00, sizeof(rx_buf));
-        if (CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                                CAN_MSG_ATTR_RX_FIFO0,
-                                &msgFrameAttr) == false) {
-        }
     }
 }
 
 // used to test thrusters
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
-    /* duty cycle values */
     static int8_t increment1 = 10;
     static uint32_t duty1 = 0;
 
-    // Sets PWM on 2 and 2 thrusters at the same time
     for (int i = 0; i < 4; i++) {
         TCC0_PWM24bitDutySet(i, duty1);
         TCC1_PWM24bitDutySet(i, duty1);
     }
 
-    /* Increment duty cycle values */
     duty1 += increment1;
 
     if (duty1 > PWM_MAX) {
@@ -152,12 +144,15 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
-void message_handler() {
+static void message_handler() {
     uint8_t event;
     uint8_t* pData;
     if (usesCan) {
-        event = rx_id;
+        event = rx_id - 0x369;
         pData = rx_buf;
+        if (can_status) {
+            return;
+        }
     } else {
         event = rx_buf[0];
         pData = rx_buf + 1;
