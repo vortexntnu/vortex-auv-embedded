@@ -4,7 +4,6 @@
 /*#include "sercom0_i2c.h"*/
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/types.h>
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
