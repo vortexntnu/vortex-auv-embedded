@@ -6,9 +6,10 @@
  */
 
 #include "sam.h"
+#include "system_init.h"
 #include "samc21e17a.h"
 
-void PIN_Initialize(void) {
+static void gpio_init(void) {
 
     // ADC Pins
     PORT_REGS->GROUP[0].PORT_PINCFG[2] = 0x1;  // CS1
@@ -63,7 +64,7 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PMUX[12] = 0x66;
 }
 
-void NVIC_Initialize(void) {
+static void nvic_init(void) {
     // NVIC_SetPriority(TCC1_IRQn, 3);
     // NVIC_EnableIRQ(TCC1_IRQn);
 
@@ -75,9 +76,6 @@ void NVIC_Initialize(void) {
     NVIC_EnableIRQ(SERCOM0_IRQn);
 
     // I2C 2
-    /* For nested I2C interrupts inside CAN Callback to work
-     * priority must be set higher than CAN interrupt
-     * */
     NVIC_SetPriority(SERCOM1_IRQn, 2);
     NVIC_EnableIRQ(SERCOM1_IRQn);
 
@@ -94,18 +92,17 @@ void NVIC_Initialize(void) {
     NVIC_SetPriority(DMAC_IRQn, 3);
     NVIC_EnableIRQ(DMAC_IRQn);
 
-    /* Enable NVIC Controller */
     __DMB();
     __enable_irq();
 }
 
-void NVMCTRL_Initialize(void) {
+static void nvmctrl_init(void) {
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_READMODE_NO_MISS_PENALTY |
                                   NVMCTRL_CTRLB_SLEEPPRM_WAKEONACCESS |
                                   NVMCTRL_CTRLB_RWS(2) | NVMCTRL_CTRLB_MANW_Msk;
 }
 
-void EVSYS_Initialize(void) { /*Event Channel User Configuration*/
+static void evsys_init(void) { /*Event Channel User Configuration*/
     EVSYS_REGS->EVSYS_USER[28] = EVSYS_USER_CHANNEL(0x1);
 
     /* Event Channel 0 Configuration */
@@ -113,3 +110,29 @@ void EVSYS_Initialize(void) { /*Event Channel User Configuration*/
         EVSYS_CHANNEL_EVGEN(3) | EVSYS_CHANNEL_PATH(2) |
         EVSYS_CHANNEL_EDGSEL(0) | EVSYS_CHANNEL_RUNSTDBY_Msk;
 }
+
+void system_init(void){
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
+    PM_Initialize();
+    gpio_init();
+    CLOCK_Initialize();
+    nvmctrl_init();
+    TCC1_PWMInitialize();
+    TCC0_PWMInitialize();
+    CAN0_Initialize();
+    // SERCOM0_I2C_Initialize();  // I2C 3
+    SERCOM1_I2C_Initialize();  // I2C 2
+
+    SERCOM0_USART_Initialize();  // USART for Debugging
+
+    SERCOM3_SLAVE_I2C_Initialize();
+
+    evsys_init();
+    ADC0_Initialize();
+    DMAC_Initialize();
+    RTC_Initialize();
+
+    nvic_init();
+}
+
+

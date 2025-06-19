@@ -10,6 +10,7 @@ dist/
 *.swp
 
 
+compile_commands.json
 .clangd
 *.csv
 
