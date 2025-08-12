@@ -119,7 +119,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 
 void CAN_Recieve_Callback(uintptr_t context) {
     xferContext = context;
-
+    usesCan = true;
     status = CAN0_ErrorGet();
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||

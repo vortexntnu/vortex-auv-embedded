@@ -56,7 +56,8 @@ static int read_psm(uint8_t *output) {
   const uint16_t cfg_list[2] = {(uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
                                 (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
 
-  uint8_t read_buffer[2], reg_conv = REG_CONV;
+  uint8_t read_buffer[2];
+  uint8_t reg_conv = REG_CONV;
 
   for (uint8_t i = 0; i < 2; i++) {
     if (start_conversion(cfg_list[i]))
@@ -73,8 +74,8 @@ static int read_psm(uint8_t *output) {
   return 0;
 }
 
-bool sercom3_i2c_calback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
-                         uintptr_t contextHandle) {
+bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
+                          uintptr_t contextHandle) {
   bool isSuccess = true;
   static uint8_t index = 0;
 
@@ -123,7 +124,7 @@ int main() {
   SYSTICK_TimerInitialize();
   nvic_init();
 
-  SERCOM3_I2C_CallbackRegister(sercom3_i2c_calback, 0);
+  SERCOM3_I2C_CallbackRegister(sercom3_i2c_callback, 0);
 
   SYSTICK_TimerStart();
 
