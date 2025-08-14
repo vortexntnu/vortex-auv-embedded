@@ -1,15 +1,15 @@
 
 
-#include "clock.h"
-#include "sercom0_i2c.h"
-#include "sercom3_i2c.h"
-#include "system_init.h"
-#include "systick.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include "clock.h"
+#include "sercom0_i2c.h"
+#include "sercom3_i2c.h"
+#include "system_init.h"
+#include "systick.h"
 
 #define CFG_OS_SINGLE 0x8000
 #define CFG_MUX_DIFF_0_1 0x0000
@@ -27,109 +27,107 @@
 #define REG_CFG 0x01
 
 static inline int start_conversion(uint16_t config) {
-  config |= CFG_OS_SINGLE;
-  uint8_t i2c_data[3];
-  i2c_data[0] = REG_CFG;
-  i2c_data[1] = (config >> 8) & 0xFF;
-  i2c_data[2] = config & 0xFF;
+    config |= CFG_OS_SINGLE;
+    uint8_t i2c_data[3];
+    i2c_data[0] = REG_CFG;
+    i2c_data[1] = (config >> 8) & 0xFF;
+    i2c_data[2] = config & 0xFF;
 
-  return SERCOM0_I2C_Write(PSM_ADDRESS, i2c_data, 3);
+    return SERCOM0_I2C_Write(PSM_ADDRESS, i2c_data, 3);
 }
 
 static int wait_for_conversion_complete(void) {
-  uint8_t cfg_high;
-  do {
-    if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, (uint8_t[]){REG_CFG}, 1, &cfg_high,
-                              1)) {
-      return -1; // I²C error
-    }
-  } while ((cfg_high & 0x80) == 0);
-  return 0;
+    uint8_t cfg_high;
+    do {
+        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, (uint8_t[]){REG_CFG}, 1,
+                                  &cfg_high, 1)) {
+            return -1;  // I²C error
+        }
+    } while ((cfg_high & 0x80) == 0);
+    return 0;
 }
 
-static int read_psm(uint8_t *output) {
+static int read_psm(uint8_t* output) {
+    const uint16_t base_cfg = CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE |
+                              CFG_DR_128SPS | CFG_COMP_MODE | CFG_COMP_POL |
+                              CFG_COMP_LAT | CFG_COMP_QUE_DIS;
 
-  const uint16_t base_cfg = CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE |
-                            CFG_DR_128SPS | CFG_COMP_MODE | CFG_COMP_POL |
-                            CFG_COMP_LAT | CFG_COMP_QUE_DIS;
+    const uint16_t cfg_list[2] = {(uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
+                                  (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
 
-  const uint16_t cfg_list[2] = {(uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
-                                (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
+    uint8_t read_buffer[2];
+    uint8_t reg_conv = REG_CONV;
 
-  uint8_t read_buffer[2];
-  uint8_t reg_conv = REG_CONV;
-
-  for (uint8_t i = 0; i < 2; i++) {
-    if (start_conversion(cfg_list[i]))
-      return -1;
-    if (wait_for_conversion_complete()) {
-      return -2;
+    for (uint8_t i = 0; i < 2; i++) {
+        if (start_conversion(cfg_list[i]))
+            return -1;
+        if (wait_for_conversion_complete()) {
+            return -2;
+        }
+        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg_conv, 1, read_buffer, 2)) {
+            return -3;
+        }
+        output[2 * i] = read_buffer[0];
+        output[2 * i + 1] = read_buffer[1];
     }
-    if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg_conv, 1, read_buffer, 2)) {
-      return -3;
-    }
-    output[2 * i] = read_buffer[0];
-    output[2 * i + 1] = read_buffer[1];
-  }
-  return 0;
+    return 0;
 }
 
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                           uintptr_t contextHandle) {
-  bool isSuccess = true;
-  static uint8_t index = 0;
+    bool isSuccess = true;
+    static uint8_t index = 0;
 
-  static uint8_t tx_data[4] = {0};
-  static uint8_t rx_data[2] = {0};
+    static uint8_t tx_data[4] = {0};
+    static uint8_t rx_data[2] = {0};
 
-  switch (event) {
-  case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
-    index = 0;
-    break;
+    switch (event) {
+        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
+            index = 0;
+            break;
 
-  case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
+        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
 
-    rx_data[index++] = SERCOM3_I2C_ReadByte();
+            rx_data[index++] = SERCOM3_I2C_ReadByte();
 
-    break;
+            break;
 
-  case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY:
+        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY:
 
-    SERCOM3_I2C_WriteByte(tx_data[index++]);
+            SERCOM3_I2C_WriteByte(tx_data[index++]);
 
-    break;
+            break;
 
-  case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
-    if (rx_data[0]) {
-      break;
+        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
+            if (rx_data[0]) {
+                break;
+            }
+            if (read_psm(tx_data)) {
+            };
+
+            break;
+        default:
+            break;
     }
-    if (read_psm(tx_data)) {
-    };
 
-    break;
-  default:
-    break;
-  }
-
-  return isSuccess;
+    return isSuccess;
 }
 
 int main() {
+    nvm_ctrl_init();
+    pin_init();
+    CLOCK_Initialize();
+    SERCOM0_I2C_Initialize();
+    SERCOM3_I2C_Initialize();
+    SYSTICK_TimerInitialize();
+    nvic_init();
 
-  nvm_ctrl_init();
-  pin_init();
-  CLOCK_Initialize();
-  SERCOM0_I2C_Initialize();
-  SERCOM3_I2C_Initialize();
-  SYSTICK_TimerInitialize();
-  nvic_init();
+    SERCOM3_I2C_CallbackRegister(sercom3_i2c_callback, 0);
 
-  SERCOM3_I2C_CallbackRegister(sercom3_i2c_callback, 0);
+    SYSTICK_TimerStart();
 
-  SYSTICK_TimerStart();
+    while (1) {
+    }
 
-  while (1) {
-  }
-
-  return EXIT_FAILURE;
+    return EXIT_FAILURE;
 }
