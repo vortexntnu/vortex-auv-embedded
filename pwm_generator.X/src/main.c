@@ -1,8 +1,13 @@
+#include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
 #include "pm.h"
 #include "sam.h"
 #include "samc21e17a.h"
 #include "system_init.h"
+#include "tcc.h"
+#include "tcc2.h"
+#include "wdt.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -19,37 +24,41 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 static bool usesCan = true;
 
-typedef void (*TccSetter_u32)(uint32_t channel, uint32_t duty);
-
-static void TCC2_Setter32(uint32_t channel, uint32_t duty) {
-    TCC2_PWM16bitDutySet(channel, (uint16_t)duty);
-}
-
 typedef struct {
-    TccSetter_u32 setter;  // which function to call
-    uint32_t channel;      // channel index for that TCC instance
-    uint32_t
-        period;  // period used in (duty*(period+1))/PWM_PERIOD_MICROSECONDS
-} ThrusterInfo;
+    uint8_t tcc_num;
+    uint8_t channel;
+    uint32_t period;
+} ThrusterTable;
 
-static const ThrusterInfo thruster_table[8] = {
-    {&TCC0_PWM24bitDutySet, 0, TCC_PERIOD},
-    {&TCC0_PWM24bitDutySet, 1, TCC_PERIOD},
-    {&TCC0_PWM24bitDutySet, 2, TCC_PERIOD},
-    {&TCC0_PWM24bitDutySet, 3, TCC_PERIOD},
-    {&TCC1_PWM24bitDutySet, 0, TCC_PERIOD},
-    {&TCC1_PWM24bitDutySet, 1, TCC_PERIOD},
-    {&TCC2_Setter32, 0, TCC2_PERIOD},
-    {&TCC2_Setter32, 1, TCC2_PERIOD}};
+static const ThrusterTable thr_table[8] = {
+    {0, 0, TCC_PERIOD},  {0, 1, TCC_PERIOD}, {0, 2, TCC_PERIOD},
+    {0, 3, TCC_PERIOD},  {1, 0, TCC_PERIOD}, {1, 1, TCC_PERIOD},
+    {2, 0, TCC2_PERIOD}, {2, 1, TCC2_PERIOD}};
 
-static void set_thruster_pwm(uint8_t* dutyCycleMicroSeconds) {
+static void set_thruster_pwm(uint8_t* pData) {
     for (size_t thr = 0; thr < 8; thr++) {
+        uint8_t tcc_num = thr_table[thr].tcc_num;
+        uint8_t channel = thr_table[thr].channel;
+        uint32_t period = thr_table[thr].period;
+      
         uint16_t dutyCycle =
-            dutyCycleMicroSeconds[0] << 8 | dutyCycleMicroSeconds[1];
-        uint32_t tccValue = (dutyCycle * (thruster_table[thr].period + 1)) /
+            pData[2 * thr] << 8 | pData[2 * thr + 1];
+
+        uint32_t tccValue = (dutyCycle * (period + 1)) /
                             PWM_PERIOD_MICROSECONDS;
-        uint32_t channelIdx = thruster_table[thr].channel;
-        thruster_table[thr].setter(channelIdx, tccValue);
+        switch (tcc_num) {
+            case 0:
+                TCC0_PWM24bitDutySet(channel, tccValue);
+                break;
+            case 1:
+                TCC1_PWM24bitDutySet(channel, tccValue) ;
+                break;
+            case 2:
+                TCC2_PWM16bitDutySet(channel, (uint16_t) tccValue);
+                break;
+            default:
+                break;
+        }
     }
     WDT_Clear();
 }
