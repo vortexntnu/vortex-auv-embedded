@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/types.h>
 #include "pm.h"
 #include "sam.h"
 #include "samc21e17a.h"
@@ -35,26 +34,69 @@ static const ThrusterTable thr_table[8] = {
     {0, 3, TCC_PERIOD},  {1, 0, TCC_PERIOD}, {1, 1, TCC_PERIOD},
     {2, 0, TCC2_PERIOD}, {2, 1, TCC2_PERIOD}};
 
+
+/**
+ *@brief set thruster pwm dutyCycle
+ *@param pData pointer to array containing dutyCycle values
+ */
+static void set_thruster_pwm(uint8_t* pData);
+static void message_handler(); 
+bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
+                         uintptr_t contextHandle);
+void CAN_Recieve_Callback(uintptr_t context); 
+void CAN_Transmit_Callback(uintptr_t context); 
+void TCC_PeriodEventHandler(uint32_t status, uintptr_t context); 
+
+
+int main(void) {
+    system_init();
+    start_thrusters();
+
+    TC4_CompareStart();  // led
+
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
+    memset(rx_buf, 0x00, sizeof(rx_buf));
+    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+    /*printf("Initialize complete\n");*/
+
+    WDT_Enable();
+    while (true) {
+        PM_IdleModeEnter();
+        message_handler();
+    }
+
+    return EXIT_FAILURE;
+}
+
 static void set_thruster_pwm(uint8_t* pData) {
     for (size_t thr = 0; thr < 8; thr++) {
         uint8_t tcc_num = thr_table[thr].tcc_num;
         uint8_t channel = thr_table[thr].channel;
         uint32_t period = thr_table[thr].period;
-      
-        uint16_t dutyCycle =
-            pData[2 * thr] << 8 | pData[2 * thr + 1];
 
-        uint32_t tccValue = (dutyCycle * (period + 1)) /
-                            PWM_PERIOD_MICROSECONDS;
+        uint16_t dutyCycle = pData[2 * thr] << 8 | pData[2 * thr + 1];
+
+        uint32_t tccValue =
+            (dutyCycle * (period + 1)) / PWM_PERIOD_MICROSECONDS;
         switch (tcc_num) {
             case 0:
                 TCC0_PWM24bitDutySet(channel, tccValue);
                 break;
             case 1:
-                TCC1_PWM24bitDutySet(channel, tccValue) ;
+                TCC1_PWM24bitDutySet(channel, tccValue);
                 break;
             case 2:
-                TCC2_PWM16bitDutySet(channel, (uint16_t) tccValue);
+                TCC2_PWM16bitDutySet(channel, (uint16_t)tccValue);
                 break;
             default:
                 break;
@@ -190,34 +232,4 @@ static void message_handler() {
         CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
                             CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
     }
-}
-
-int main(void) {
-    system_init();
-    start_thrusters();
-
-    TC4_CompareStart();  // led
-
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
-    memset(rx_buf, 0x00, sizeof(rx_buf));
-    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-    /*printf("Initialize complete\n");*/
-
-    WDT_Enable();
-    while (true) {
-        PM_IdleModeEnter();
-        message_handler();
-    }
-
-    return EXIT_FAILURE;
 }

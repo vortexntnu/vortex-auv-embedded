@@ -30,12 +30,62 @@ static const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR,
 volatile bool usesCan = true;
 
 /**
- *@brief reads encoder
+ *@brief reads encoder angle registers
  *@param data txbuffer for encoder angles
  *@param reg which encoder register to read from
  *@return 0 on success
  *       -1 on failure
  */
+static int encoder_read(uint8_t* data, uint8_t reg);
+/**
+ *@brief sets servos pwm
+ *@param pData pointer to array containing duty cycle values
+ */
+static void set_servo_pwm(uint8_t* pData);
+
+static void message_handler();
+
+
+bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
+                         uintptr_t contextHandle);
+void CAN_Recieve_Callback(uintptr_t context);
+void CAN_Transmit_Callback(uintptr_t context);
+void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
+void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
+                            uintptr_t MyDmacContext);
+
+int main(void) {
+    system_init();
+
+    // start_gripper();
+
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+
+    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
+
+    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
+
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
+    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
+                            (uintptr_t)STATE_CAN_TRANSMIT);
+
+    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
+
+    while (true) {
+        PM_IdleModeEnter();
+        message_handler();
+    }
+
+    return EXIT_FAILURE;
+}
+
 static int encoder_read(uint8_t* data, uint8_t reg) {
     uint32_t timeout;
 
@@ -62,13 +112,10 @@ static int encoder_read(uint8_t* data, uint8_t reg) {
     return 0;
 }
 
-static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds) {
-    uint16_t shoulderDuty =
-        (dutyCycleMicroSeconds[0] << 8) | dutyCycleMicroSeconds[1];
-    uint16_t wristDuty =
-        (dutyCycleMicroSeconds[2] << 8) | dutyCycleMicroSeconds[3];
-    uint16_t gripDuty =
-        (dutyCycleMicroSeconds[4] << 8) | dutyCycleMicroSeconds[5];
+static void set_servo_pwm(uint8_t* pData) {
+    uint16_t shoulderDuty = (pData[0] << 8) | pData[1];
+    uint16_t wristDuty = (pData[2] << 8) | pData[3];
+    uint16_t gripDuty = (pData[4] << 8) | pData[5];
 
     uint32_t tccValue =
         (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
@@ -79,6 +126,47 @@ static void set_pwm_dutycycle(uint8_t* dutyCycleMicroSeconds) {
 
     tccValue = (gripDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(1, tccValue);
+}
+
+static void message_handler() {
+    uint8_t event;
+    uint8_t* pData;
+    if (usesCan) {
+        event = rx_id - 0x469;
+        pData = rx_buf;
+    } else {
+        event = rx_buf[0];
+        pData = rx_buf + 1;
+    }
+    switch (event) {
+        case STOP_GRIPPER:
+            stop_gripper();
+            break;
+        case START_GRIPPER:
+            start_gripper();
+            WDT_Enable();
+            break;
+        case SET_PWM:
+            set_servo_pwm(pData);
+            encoder_read(encoder_angles, ANGLE_REGISTER);
+            if (usesCan) {
+                CAN0_MessageTransmit(messageID, 6, encoder_angles,
+                                     CAN_MODE_FD_WITHOUT_BRS,
+                                     CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
+            }
+
+            WDT_Clear();
+            break;
+        case RESET_MCU:
+            WDT_REGS->WDT_CLEAR = 0x0;
+            break;
+        default:
+            break;
+    }
+    if (usesCan) {
+        CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+    }
 }
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
@@ -246,77 +334,4 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
             DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
             (const void*)adc_result_array, sizeof(adc_result_array));
     }
-}
-
-static void message_handler() {
-    uint8_t event;
-    uint8_t* pData;
-    if (usesCan) {
-        event = rx_id - 0x469;
-        pData = rx_buf;
-    } else {
-        event = rx_buf[0];
-        pData = rx_buf + 1;
-    }
-    switch (event) {
-        case STOP_GRIPPER:
-            stop_gripper();
-            break;
-        case START_GRIPPER:
-            start_gripper();
-            WDT_Enable();
-            break;
-        case SET_PWM:
-            set_pwm_dutycycle(pData);
-            encoder_read(encoder_angles, ANGLE_REGISTER);
-            if (usesCan) {
-                CAN0_MessageTransmit(messageID, 6, encoder_angles,
-                                     CAN_MODE_FD_WITHOUT_BRS,
-                                     CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
-            }
-
-            WDT_Clear();
-            break;
-        case RESET_MCU:
-            WDT_REGS->WDT_CLEAR = 0x0;
-            break;
-        default:
-            break;
-    }
-    if (usesCan) {
-        CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-    }
-}
-
-int main(void) {
-    system_init();
-
-    // start_gripper();
-
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
-
-    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_result_array,
-                         sizeof(adc_result_array));
-
-    while (true) {
-        PM_IdleModeEnter();
-        message_handler();
-    }
-
-    return EXIT_FAILURE;
 }
