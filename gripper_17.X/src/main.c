@@ -42,10 +42,9 @@ static int encoder_read(uint8_t* data, uint8_t reg);
  *@param pData pointer to array containing duty cycle values
  */
 static void set_servo_pwm(uint8_t* pData);
-
 static void message_handler();
-
-
+static void stop_gripper(void);
+static void start_gripper(void);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
 void CAN_Recieve_Callback(uintptr_t context);
@@ -53,6 +52,8 @@ void CAN_Transmit_Callback(uintptr_t context);
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
+
+
 
 int main(void) {
     system_init();
@@ -167,6 +168,23 @@ static void message_handler() {
         CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
                             CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
     }
+}
+
+static void stop_gripper(void) {
+    WDT_Disable();
+    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
+    TCC0_PWMStop();
+    TCC1_PWMStop();
+    ADC0_Disable();
+}
+
+static void start_gripper(void) {
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    ADC0_Enable();
+    RTC_Timer32Start();
+    RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 }
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
