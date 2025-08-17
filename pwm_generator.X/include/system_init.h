@@ -31,6 +31,13 @@
 #include "wdt.h"
 
 
+
+
+
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     STATE_CAN_RECEIVE,
     STATE_CAN_TRANSMIT,
@@ -44,23 +51,13 @@ typedef enum {
     RESET_MCU,
 } STATES;
 
-
-
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-void NVIC_Initialize(void); 
-
-
-void NVMCTRL_Initialize(void);
-
-void PIN_Initialize(void);
-
+struct ThrusterTable{
+    uint8_t tcc_num;
+    uint8_t channel;
+    uint32_t period;
+};
 
 void system_init(void);
-
-
 
 #ifdef	__cplusplus
 }

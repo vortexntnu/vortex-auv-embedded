@@ -23,33 +23,24 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 static bool usesCan = true;
 
-struct ThrusterTable{
-    uint8_t tcc_num;
-    uint8_t channel;
-    uint32_t period;
-};
-
 static const struct ThrusterTable thr_table[8] = {
     {0, 0, TCC_PERIOD},  {0, 1, TCC_PERIOD}, {0, 2, TCC_PERIOD},
     {0, 3, TCC_PERIOD},  {1, 0, TCC_PERIOD}, {1, 1, TCC_PERIOD},
     {2, 0, TCC2_PERIOD}, {2, 1, TCC2_PERIOD}};
-
 
 /**
  *@brief set thruster pwm dutyCycle
  *@param pData pointer to array containing dutyCycle values
  */
 static void set_thruster_pwm(uint8_t* pData);
-static void message_handler(); 
+static void message_handler(void);
 static void stop_thrusters(void);
 static void start_thrusters(void);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
-void CAN_Recieve_Callback(uintptr_t context); 
-void CAN_Transmit_Callback(uintptr_t context); 
-void TCC_PeriodEventHandler(uint32_t status, uintptr_t context); 
-
-
+void CAN_Recieve_Callback(uintptr_t context);
+void CAN_Transmit_Callback(uintptr_t context);
+void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 
 int main(void) {
     system_init();
@@ -83,23 +74,20 @@ int main(void) {
 
 static void set_thruster_pwm(uint8_t* pData) {
     for (size_t thr = 0; thr < 8; thr++) {
-        uint8_t tcc_num = thr_table[thr].tcc_num;
-        uint8_t channel = thr_table[thr].channel;
-        uint32_t period = thr_table[thr].period;
-
         uint16_t dutyCycle = pData[2 * thr] << 8 | pData[2 * thr + 1];
-
         uint32_t tccValue =
-            (dutyCycle * (period + 1)) / PWM_PERIOD_MICROSECONDS;
-        switch (tcc_num) {
+            (dutyCycle * (thr_table[thr].period + 1)) / PWM_PERIOD_MICROSECONDS;
+
+        switch (thr_table[thr].tcc_num) {
             case 0:
-                TCC0_PWM24bitDutySet(channel, tccValue);
+                TCC0_PWM24bitDutySet(thr_table[thr].channel, tccValue);
                 break;
             case 1:
-                TCC1_PWM24bitDutySet(channel, tccValue);
+                TCC1_PWM24bitDutySet(thr_table[thr].channel, tccValue);
                 break;
             case 2:
-                TCC2_PWM16bitDutySet(channel, (uint16_t)tccValue);
+                TCC2_PWM16bitDutySet(thr_table[thr].channel,
+                                     (uint16_t)tccValue);
                 break;
             default:
                 break;
@@ -108,7 +96,7 @@ static void set_thruster_pwm(uint8_t* pData) {
     WDT_Clear();
 }
 
-static void message_handler() {
+static void message_handler(void) {
     uint8_t event;
     uint8_t* pData;
     if (usesCan) {
@@ -147,13 +135,13 @@ static void message_handler() {
     }
 }
 
-static void stop_thrusters(void){
+static void stop_thrusters(void) {
     TCC0_PWMStop();
     TCC1_PWMStop();
     TCC2_PWMStop();
 }
 
-static void start_thrusters(void){
+static void start_thrusters(void) {
     TCC0_PWMStart();
     TCC1_PWMStart();
     TCC2_PWMStart();
@@ -248,5 +236,3 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
         increment1 *= -1;
     }
 }
-
-
