@@ -60,17 +60,6 @@ void PIN_Initialize(void);
 
 void system_init(void);
 
-static inline void stop_thrusters(void){
-    TCC0_PWMStop();
-    TCC1_PWMStop();
-    TCC2_PWMStop();
-}
-
-static inline void start_thrusters(void){
-    TCC0_PWMStart();
-    TCC1_PWMStart();
-    TCC2_PWMStart();
-}
 
 
 #ifdef	__cplusplus

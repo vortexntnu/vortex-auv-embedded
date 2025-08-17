@@ -23,13 +23,13 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
 static bool usesCan = true;
 
-typedef struct {
+struct ThrusterTable{
     uint8_t tcc_num;
     uint8_t channel;
     uint32_t period;
-} ThrusterTable;
+};
 
-static const ThrusterTable thr_table[8] = {
+static const struct ThrusterTable thr_table[8] = {
     {0, 0, TCC_PERIOD},  {0, 1, TCC_PERIOD}, {0, 2, TCC_PERIOD},
     {0, 3, TCC_PERIOD},  {1, 0, TCC_PERIOD}, {1, 1, TCC_PERIOD},
     {2, 0, TCC2_PERIOD}, {2, 1, TCC2_PERIOD}};
@@ -41,11 +41,14 @@ static const ThrusterTable thr_table[8] = {
  */
 static void set_thruster_pwm(uint8_t* pData);
 static void message_handler(); 
+static void stop_thrusters(void);
+static void start_thrusters(void);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
 void CAN_Recieve_Callback(uintptr_t context); 
 void CAN_Transmit_Callback(uintptr_t context); 
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context); 
+
 
 
 int main(void) {
@@ -103,6 +106,57 @@ static void set_thruster_pwm(uint8_t* pData) {
         }
     }
     WDT_Clear();
+}
+
+static void message_handler() {
+    uint8_t event;
+    uint8_t* pData;
+    if (usesCan) {
+        event = rx_id - 0x369;
+        pData = rx_buf;
+        if (can_status) {
+            return;
+        }
+    } else {
+        event = rx_buf[0];
+        pData = rx_buf + 1;
+    }
+    switch (event) {
+        case STOP_GENERATOR:
+            stop_thrusters();
+            break;
+        case START_GENERATOR:
+            start_thrusters();
+            break;
+        case SET_PWM:
+            set_thruster_pwm(pData);
+            break;
+        case LED:
+            TC4_Compare16bitCounterSet(
+                (uint16_t)((rx_buf[0] << 8) | rx_buf[1]));
+            break;
+        case RESET_MCU:
+            WDT_REGS->WDT_CLEAR = 0x0;
+            break;
+        default:
+            break;
+    }
+    if (usesCan) {
+        CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+    }
+}
+
+static void stop_thrusters(void){
+    TCC0_PWMStop();
+    TCC1_PWMStop();
+    TCC2_PWMStop();
+}
+
+static void start_thrusters(void){
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    TCC2_PWMStart();
 }
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
@@ -195,41 +249,4 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     }
 }
 
-static void message_handler() {
-    uint8_t event;
-    uint8_t* pData;
-    if (usesCan) {
-        event = rx_id - 0x369;
-        pData = rx_buf;
-        if (can_status) {
-            return;
-        }
-    } else {
-        event = rx_buf[0];
-        pData = rx_buf + 1;
-    }
-    switch (event) {
-        case STOP_GENERATOR:
-            stop_thrusters();
-            break;
-        case START_GENERATOR:
-            start_thrusters();
-            break;
-        case SET_PWM:
-            set_thruster_pwm(pData);
-            break;
-        case LED:
-            TC4_Compare16bitCounterSet(
-                (uint16_t)((rx_buf[0] << 8) | rx_buf[1]));
-            break;
-        case RESET_MCU:
-            WDT_REGS->WDT_CLEAR = 0x0;
-            break;
-        default:
-            break;
-    }
-    if (usesCan) {
-        CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-    }
-}
+
