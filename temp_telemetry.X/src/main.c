@@ -26,7 +26,31 @@
 #define REG_CONV 0x00
 #define REG_CFG 0x01
 
-static inline int start_conversion(uint16_t config) {
+static int start_conversion(uint16_t config);
+static int wait_for_conversion_complete(void);
+static int read_psm(uint8_t* output);
+bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
+                          uintptr_t contextHandle);
+int main() {
+    nvm_ctrl_init();
+    pin_init();
+    CLOCK_Initialize();
+    SERCOM0_I2C_Initialize();
+    SERCOM3_I2C_Initialize();
+    SYSTICK_TimerInitialize();
+    nvic_init();
+
+    SERCOM3_I2C_CallbackRegister(sercom3_i2c_callback, 0);
+
+    SYSTICK_TimerStart();
+
+    while (1) {
+    }
+
+    return EXIT_FAILURE;
+}
+
+static int start_conversion(uint16_t config) {
     config |= CFG_OS_SINGLE;
     uint8_t i2c_data[3];
     i2c_data[0] = REG_CFG;
@@ -113,21 +137,4 @@ bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
     return isSuccess;
 }
 
-int main() {
-    nvm_ctrl_init();
-    pin_init();
-    CLOCK_Initialize();
-    SERCOM0_I2C_Initialize();
-    SERCOM3_I2C_Initialize();
-    SYSTICK_TimerInitialize();
-    nvic_init();
 
-    SERCOM3_I2C_CallbackRegister(sercom3_i2c_callback, 0);
-
-    SYSTICK_TimerStart();
-
-    while (1) {
-    }
-
-    return EXIT_FAILURE;
-}
