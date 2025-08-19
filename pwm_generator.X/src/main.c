@@ -21,6 +21,14 @@ static uint8_t rx_len = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
 
+struct can_frame{
+    uint32_t id;
+    uint8_t data[64];
+    uint8_t len;
+    uint16_t timestamp;
+};
+
+
 static bool usesCan = true;
 
 static const struct ThrusterTable thr_table[8] = {
@@ -41,6 +49,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 void CAN_Recieve_Callback(uintptr_t context);
 void CAN_Transmit_Callback(uintptr_t context);
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
+void print_can_frame(void);
 
 int main(void) {
     system_init();
@@ -61,7 +70,7 @@ int main(void) {
     memset(rx_buf, 0x00, sizeof(rx_buf));
     CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
                         CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-    /*printf("Initialize complete\n");*/
+    // printf("Initialize complete\n");
 
     WDT_Enable();
     while (true) {
@@ -187,22 +196,11 @@ void CAN_Recieve_Callback(uintptr_t context) {
 
     /* Check CAN Status */
     can_status = CAN0_ErrorGet();
-    /*printf("Entering callback\n");*/
 
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        /* Only used for debugging */
-        /*printf(" New Message Received\r\n");*/
-        /*uint8_t length = rx_messageLength;*/
-        /*printf(*/
-        /*    " Message - Timestamp : 0x%x ID : 0x%x Length "*/
-        /*    ":0x%x",*/
-        /*    (unsigned int)timestamp, (unsigned int)rx_messageID,*/
-        /*    (unsigned int)rx_messageLength);*/
-        /*printf("Message : ");*/
-        /*while (length) {*/
-        /*    printf("0x%x ", rx_message[rx_messageLength - length--]);*/
-        /*}*/
+        
+        // print_can_frame();
     }
 }
 
@@ -234,5 +232,18 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     } else if (duty1 < PWM_MIN) {
         duty1 = PWM_MIN;
         increment1 *= -1;
+    }
+}
+
+void print_can_frame(void) {
+    printf(" New Message Received\r\n");
+    uint8_t length = rx_len;
+    printf(
+        " Message - Timestamp : 0x%x ID : 0x%x Length "
+        ":0x%x",
+        (unsigned int)timestamp, (unsigned int)rx_id, (unsigned int)rx_len);
+    printf("Message : ");
+    while (length) {
+        printf("0x%x ", rx_buf[rx_len - length--]);
     }
 }

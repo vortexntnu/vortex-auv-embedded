@@ -52,6 +52,7 @@ void CAN_Transmit_Callback(uintptr_t context);
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
+void print_can_frame(void);
 
 
 
@@ -230,17 +231,7 @@ void CAN_Recieve_Callback(uintptr_t context) {
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        /*printf(" New Message Received\r\n");*/
-        /*uint8_t length = rx_messageLength;*/
-        /*printf(*/
-        /*    " Message - Timestamp : 0x%x ID : 0x%x Length "*/
-        /*    ":0x%x",*/
-        /*    (unsigned int)timestamp, (unsigned int)rx_messageID,*/
-        /*    (unsigned int)rx_messageLength);*/
-        /*printf("Message : ");*/
-        /*while (length) {*/
-        /*    printf("0x%x ", rx_message[rx_messageLength - length--]);*/
-        /*}*/
+        // print_can_frame();
     }
 }
 
@@ -351,5 +342,18 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
         DMAC_ChannelTransfer(
             DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
             (const void*)adc_result_array, sizeof(adc_result_array));
+    }
+}
+
+void print_can_frame(void) {
+    printf(" New Message Received\r\n");
+    uint8_t length = rx_len;
+    printf(
+        " Message - Timestamp : 0x%x ID : 0x%x Length "
+        ":0x%x",
+        (unsigned int)timestamp, (unsigned int)rx_id, (unsigned int)rx_len);
+    printf("Message : ");
+    while (length) {
+        printf("0x%x ", rx_buf[rx_len - length--]);
     }
 }

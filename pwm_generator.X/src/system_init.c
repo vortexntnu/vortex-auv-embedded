@@ -129,7 +129,7 @@ void system_init(void){
 
     SERCOM3_USART_Initialize();  // USART for Debugging
 
-    /*SERCOM3_SLAVE_I2C_Initialize();*/
+    // SERCOM3_SLAVE_I2C_Initialize();
 
     NVIC_Initialize();
 }
