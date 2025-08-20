@@ -351,6 +351,16 @@ typedef struct
 
 } CAN_OBJ;
 
+
+
+struct can_frame{
+    uint32_t id;
+    uint8_t data[64];
+    uint8_t len;
+    uint16_t timestamp;
+};
+
+
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
 }

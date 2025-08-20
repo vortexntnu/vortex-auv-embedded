@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include "can_common.h"
 #include "pm.h"
 #include "sam.h"
 #include "samc21e17a.h"
@@ -20,14 +21,6 @@ static uint8_t rx_buf[64] = {0};
 static uint8_t rx_len = 0;
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
-
-struct can_frame{
-    uint32_t id;
-    uint8_t data[64];
-    uint8_t len;
-    uint16_t timestamp;
-};
-
 
 static bool usesCan = true;
 
