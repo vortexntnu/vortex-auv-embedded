@@ -32,13 +32,8 @@ static int read_psm(uint8_t* output);
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                           uintptr_t contextHandle);
 int main() {
-    nvm_ctrl_init();
-    pin_init();
-    CLOCK_Initialize();
-    SERCOM0_I2C_Initialize();
-    SERCOM3_I2C_Initialize();
-    SYSTICK_TimerInitialize();
-    nvic_init();
+
+    system_init();
 
     SERCOM3_I2C_CallbackRegister(sercom3_i2c_callback, 0);
 

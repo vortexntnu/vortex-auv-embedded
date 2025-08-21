@@ -3,7 +3,8 @@
 #include "system_init.h"
 #include "same51j20a.h"
 
-void pin_init() {
+
+static void pin_init() {
     // SERCOM0
     PORT_REGS->GROUP[0].PORT_PINCFG[8] = 0x1;
     PORT_REGS->GROUP[0].PORT_PINCFG[9] = 0x1;
@@ -15,12 +16,12 @@ void pin_init() {
     PORT_REGS->GROUP[0].PORT_PMUX[11] = 0x22;
 }
 
-void nvm_ctrl_init() {
+static void nvm_ctrl_init() {
     NVMCTRL_REGS->NVMCTRL_CTRLA =
         (uint16_t)NVMCTRL_CTRLA_RWS(5U) | NVMCTRL_CTRLA_AUTOWS_Msk;
 }
 
-void nvic_init() {
+static void nvic_init() {
     /* Priority 0 to 7 and no sub-priority. 0 is the highest priority */
     NVIC_SetPriorityGrouping(0x00);
 
@@ -58,4 +59,14 @@ void nvic_init() {
 
     /* Enable memory management fault */
     SCB->SHCSR |= (SCB_SHCSR_MEMFAULTENA_Msk);
+}
+
+void system_init(void) {
+    nvm_ctrl_init();
+    pin_init();
+    CLOCK_Initialize();
+    SERCOM0_I2C_Initialize();
+    SERCOM3_I2C_Initialize();
+    SYSTICK_TimerInitialize();
+    nvic_init();
 }
