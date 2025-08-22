@@ -31,8 +31,8 @@ static int wait_for_conversion_complete(void);
 static int read_psm(uint8_t* output);
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                           uintptr_t contextHandle);
-int main() {
 
+int main(void) {
     system_init();
 
     SERCOM3_I2C_CallbackRegister(sercom3_i2c_callback, 0);
@@ -57,8 +57,9 @@ static int start_conversion(uint16_t config) {
 
 static int wait_for_conversion_complete(void) {
     uint8_t cfg_high;
+    uint8_t reg = REG_CFG;
     do {
-        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, (uint8_t[]){REG_CFG}, 1,
+        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg, 1,
                                   &cfg_high, 1)) {
             return -1;  // I²C error
         }
@@ -78,8 +79,9 @@ static int read_psm(uint8_t* output) {
     uint8_t reg_conv = REG_CONV;
 
     for (uint8_t i = 0; i < 2; i++) {
-        if (start_conversion(cfg_list[i]))
+        if (start_conversion(cfg_list[i])) {
             return -1;
+        }
         if (wait_for_conversion_complete()) {
             return -2;
         }
@@ -131,5 +133,3 @@ bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 
     return isSuccess;
 }
-
-
