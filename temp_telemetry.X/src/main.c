@@ -49,8 +49,8 @@ static int start_conversion(uint16_t config) {
     config |= CFG_OS_SINGLE;
     uint8_t i2c_data[3];
     i2c_data[0] = REG_CFG;
-    i2c_data[1] = (config >> 8) & 0xFF;
-    i2c_data[2] = config & 0xFF;
+    i2c_data[1] = (uint8_t) ((config >> 8) & 0xFF);
+    i2c_data[2] = (uint8_t) (config & 0xFF);
 
     return SERCOM0_I2C_Write(PSM_ADDRESS, i2c_data, 3);
 }
@@ -59,8 +59,7 @@ static int wait_for_conversion_complete(void) {
     uint8_t cfg_high;
     uint8_t reg = REG_CFG;
     do {
-        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg, 1,
-                                  &cfg_high, 1)) {
+        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg, 1, &cfg_high, 1)) {
             return -1;  // I²C error
         }
     } while ((cfg_high & 0x80) == 0);
@@ -68,12 +67,13 @@ static int wait_for_conversion_complete(void) {
 }
 
 static int read_psm(uint8_t* output) {
-    const uint16_t base_cfg = CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE |
-                              CFG_DR_128SPS | CFG_COMP_MODE | CFG_COMP_POL |
-                              CFG_COMP_LAT | CFG_COMP_QUE_DIS;
+    static const uint16_t base_cfg =
+        CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE | CFG_DR_128SPS |
+        CFG_COMP_MODE | CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
 
-    const uint16_t cfg_list[2] = {(uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
-                                  (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
+    static const uint16_t cfg_list[2] = {
+        (uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
+        (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
 
     uint8_t read_buffer[2];
     uint8_t reg_conv = REG_CONV;
