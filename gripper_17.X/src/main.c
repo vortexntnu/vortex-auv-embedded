@@ -41,8 +41,8 @@ static int encoder_read(uint8_t* data, uint8_t reg);
  *@brief sets servos pwm
  *@param pData pointer to array containing duty cycle values
  */
-static void set_servo_pwm(uint8_t* pData);
-static void message_handler();
+static void set_servos_pwm(uint8_t* pData);
+static void message_handler(void);
 static void stop_gripper(void);
 static void start_gripper(void);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
@@ -114,7 +114,7 @@ static int encoder_read(uint8_t* data, uint8_t reg) {
     return 0;
 }
 
-static void set_servo_pwm(uint8_t* pData) {
+static void set_servos_pwm(uint8_t* pData) {
     uint16_t shoulderDuty = (pData[0] << 8) | pData[1];
     uint16_t wristDuty = (pData[2] << 8) | pData[3];
     uint16_t gripDuty = (pData[4] << 8) | pData[5];
@@ -130,7 +130,7 @@ static void set_servo_pwm(uint8_t* pData) {
     TCC1_PWM24bitDutySet(1, tccValue);
 }
 
-static void message_handler() {
+static void message_handler(void) {
     uint8_t event;
     uint8_t* pData;
     if (usesCan) {
@@ -149,7 +149,7 @@ static void message_handler() {
             WDT_Enable();
             break;
         case SET_PWM:
-            set_servo_pwm(pData);
+            set_servos_pwm(pData);
             encoder_read(encoder_angles, ANGLE_REGISTER);
             if (usesCan) {
                 CAN0_MessageTransmit(messageID, 6, encoder_angles,

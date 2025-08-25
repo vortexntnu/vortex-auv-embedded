@@ -30,7 +30,7 @@ static const struct ThrusterTable thr_table[8] = {
     {2, 0, TCC2_PERIOD}, {2, 1, TCC2_PERIOD}};
 
 /**
- *@brief set thruster pwm dutyCycle
+ *@brief set thruster pwm dutyCycle and reset watchdog timer
  *@param pData pointer to array containing dutyCycle values
  */
 static void set_thruster_pwm(uint8_t* pData);
@@ -207,7 +207,7 @@ void CAN_Transmit_Callback(uintptr_t context) {
     }
 }
 
-// used to test thrusters
+
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     static int8_t increment1 = 10;
     static uint32_t duty1 = 0;
