@@ -56,7 +56,9 @@ struct ThrusterTable{
     uint8_t channel;
     uint32_t period;
 };
-
+/**
+ *@brief Initializes all system peripherals
+ */
 void system_init(void);
 
 #ifdef	__cplusplus

@@ -26,7 +26,6 @@
 #define REG_CONV 0x00
 #define REG_CFG 0x01
 
-
 static int start_conversion(uint8_t cfg_idx);
 static int wait_for_conversion_complete(void);
 static int read_psm(uint8_t* output);
@@ -55,12 +54,12 @@ static int start_conversion(uint8_t cfg_idx) {
         (uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
         (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
 
-
     uint16_t config = cfg_list[cfg_idx] | CFG_OS_SINGLE;
+
     uint8_t i2c_data[3];
     i2c_data[0] = REG_CFG;
-    i2c_data[1] = (uint8_t) ((config >> 8) & 0xFF);
-    i2c_data[2] = (uint8_t) (config & 0xFF);
+    i2c_data[1] = (uint8_t)((config >> 8) & 0xFF);
+    i2c_data[2] = (uint8_t)(config & 0xFF);
 
     return SERCOM0_I2C_Write(PSM_ADDRESS, i2c_data, 3);
 }

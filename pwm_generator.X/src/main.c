@@ -31,7 +31,7 @@ static const struct ThrusterTable thr_table[8] = {
 
 /**
  *@brief set thruster pwm dutyCycle and reset watchdog timer
- *@param pData pointer to array containing dutyCycle values
+ *@param pData pointer to array containing dutycycle values
  */
 static void set_thruster_pwm(uint8_t* pData);
 static void message_handler(void);
@@ -136,7 +136,6 @@ static void message_handler(void) {
                             CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
     }
 }
-
 static void stop_thrusters(void) {
     TCC0_PWMStop();
     TCC1_PWMStop();

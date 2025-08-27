@@ -64,6 +64,9 @@ typedef enum {
     SERVO_3,
 } SERVO_ADC_PINS;
 
+/**
+ *@brief Initializes all system peripherals
+ */
 void system_init(void);
 
 

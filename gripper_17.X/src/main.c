@@ -38,7 +38,7 @@ volatile bool usesCan = true;
  */
 static int encoder_read(uint8_t* data, uint8_t reg);
 /**
- *@brief sets servos pwm
+ *@brief Sets servos duty cycle
  *@param pData pointer to array containing duty cycle values
  */
 static void set_servos_pwm(uint8_t* pData);
