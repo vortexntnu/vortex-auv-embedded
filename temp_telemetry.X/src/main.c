@@ -26,7 +26,8 @@
 #define REG_CONV 0x00
 #define REG_CFG 0x01
 
-static int start_conversion(uint16_t config);
+
+static int start_conversion(uint8_t cfg_idx);
 static int wait_for_conversion_complete(void);
 static int read_psm(uint8_t* output);
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
@@ -45,8 +46,17 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static int start_conversion(uint16_t config) {
-    config |= CFG_OS_SINGLE;
+static int start_conversion(uint8_t cfg_idx) {
+    static const uint16_t base_cfg =
+        CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE | CFG_DR_128SPS |
+        CFG_COMP_MODE | CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
+
+    static const uint16_t cfg_list[2] = {
+        (uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
+        (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
+
+
+    uint16_t config = cfg_list[cfg_idx] | CFG_OS_SINGLE;
     uint8_t i2c_data[3];
     i2c_data[0] = REG_CFG;
     i2c_data[1] = (uint8_t) ((config >> 8) & 0xFF);
@@ -67,29 +77,21 @@ static int wait_for_conversion_complete(void) {
 }
 
 static int read_psm(uint8_t* output) {
-    static const uint16_t base_cfg =
-        CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE | CFG_DR_128SPS |
-        CFG_COMP_MODE | CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
-
-    static const uint16_t cfg_list[2] = {
-        (uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
-        (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
-
-    uint8_t read_buffer[2];
+    uint8_t rx_buf[2];
     uint8_t reg_conv = REG_CONV;
 
     for (uint8_t i = 0; i < 2; i++) {
-        if (start_conversion(cfg_list[i])) {
+        if (start_conversion(i)) {
             return -1;
         }
         if (wait_for_conversion_complete()) {
             return -2;
         }
-        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg_conv, 1, read_buffer, 2)) {
+        if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg_conv, 1, rx_buf, 2)) {
             return -3;
         }
-        output[2 * i] = read_buffer[0];
-        output[2 * i + 1] = read_buffer[1];
+        output[2 * i] = rx_buf[0];
+        output[2 * i + 1] = rx_buf[1];
     }
     return 0;
 }
