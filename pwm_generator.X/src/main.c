@@ -1,28 +1,17 @@
-#include <stddef.h>
-#include <stdint.h>
 #include "can_common.h"
-#include "pm.h"
-#include "sam.h"
-#include "samc21e17a.h"
 #include "system_init.h"
-#include "tcc.h"
-#include "tcc2.h"
-#include "wdt.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
 // CAN
 static uint32_t can_status = 0;
-static uint32_t xferContext = 0;
-static uint32_t messageID = 0x169;
 static uint32_t rx_id = 0;
 static uint8_t rx_buf[64] = {0};
 static uint8_t rx_len = 0;
 static uint16_t timestamp = 0;
-static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
-
-static bool usesCan = true;
+static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
+static bool use_can = true;
 
 static const struct ThrusterTable thr_table[8] = {
     {0, 0, TCC_PERIOD},  {0, 1, TCC_PERIOD}, {0, 2, TCC_PERIOD},
@@ -34,6 +23,9 @@ static const struct ThrusterTable thr_table[8] = {
  *@param pData pointer to array containing dutycycle values
  */
 static void set_thruster_pwm(uint8_t* pData);
+/**
+ *@brief function called everytime the CPU has awoke from sleep
+ */
 static void message_handler(void);
 static void stop_thrusters(void);
 static void start_thrusters(void);
@@ -62,7 +54,7 @@ int main(void) {
                             (uintptr_t)STATE_CAN_TRANSMIT);
     memset(rx_buf, 0x00, sizeof(rx_buf));
     CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
     // printf("Initialize complete\n");
 
     WDT_Enable();
@@ -101,7 +93,7 @@ static void set_thruster_pwm(uint8_t* pData) {
 static void message_handler(void) {
     uint8_t event;
     uint8_t* pData;
-    if (usesCan) {
+    if (use_can) {
         event = rx_id - 0x369;
         pData = rx_buf;
         if (can_status) {
@@ -131,9 +123,9 @@ static void message_handler(void) {
         default:
             break;
     }
-    if (usesCan) {
+    if (use_can) {
         CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                            CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
     }
 }
 static void stop_thrusters(void) {
@@ -151,7 +143,7 @@ static void start_thrusters(void) {
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataIndex = 0;
-    usesCan = false;
+    use_can = false;
 
     switch (event) {
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
@@ -184,14 +176,11 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 }
 
 void CAN_Recieve_Callback(uintptr_t context) {
-    xferContext = context;
-
     /* Check CAN Status */
     can_status = CAN0_ErrorGet();
 
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        
         // print_can_frame();
     }
 }
@@ -205,7 +194,6 @@ void CAN_Transmit_Callback(uintptr_t context) {
         // Sending encoder data
     }
 }
-
 
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     static int8_t increment1 = 10;

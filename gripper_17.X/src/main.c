@@ -1,33 +1,24 @@
 
-#include "sam.h"
-#include "samc21e17a.h"
-/*#include "sercom0_i2c.h"*/
-#include <stddef.h>
-#include <stdint.h>
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
+#define CAN_SEND_ANGLES 0x469
+
 /*CAN*/
 static uint32_t status = 0;
-static uint32_t xferContext = 0;
-const static uint32_t messageID = 0x469;
 static uint32_t rx_id = 0;
 static uint8_t rx_buf[64] = {0};
 static uint8_t rx_len = 0;
 static uint16_t timestamp = 0;
-static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
+static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 
-// ADC Variables
-static uint8_t servo = SERVO_1;
 static uint16_t adc_result_array[TRANSFER_SIZE];
-
 static uint8_t encoder_angles[7] = {0};
-
 static const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR,
                                                         WRIST_ADDR, GRIP_ADDR};
-volatile bool usesCan = true;
+static bool use_can = true;
 
 /**
  *@brief reads encoder angle registers
@@ -54,8 +45,6 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 void print_can_frame(void);
 
-
-
 int main(void) {
     system_init();
 
@@ -74,7 +63,7 @@ int main(void) {
                             (uintptr_t)STATE_CAN_TRANSMIT);
 
     CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
 
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
@@ -133,7 +122,7 @@ static void set_servos_pwm(uint8_t* pData) {
 static void message_handler(void) {
     uint8_t event;
     uint8_t* pData;
-    if (usesCan) {
+    if (use_can) {
         event = rx_id - 0x469;
         pData = rx_buf;
     } else {
@@ -151,8 +140,8 @@ static void message_handler(void) {
         case SET_PWM:
             set_servos_pwm(pData);
             encoder_read(encoder_angles, ANGLE_REGISTER);
-            if (usesCan) {
-                CAN0_MessageTransmit(messageID, 6, encoder_angles,
+            if (use_can) {
+                CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
                                      CAN_MODE_FD_WITHOUT_BRS,
                                      CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
             }
@@ -165,9 +154,9 @@ static void message_handler(void) {
         default:
             break;
     }
-    if (usesCan) {
+    if (use_can) {
         CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                            CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
     }
 }
 
@@ -192,7 +181,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[7];
     static uint8_t dataIndex = 0;
-    usesCan = false;
+    use_can = false;
 
     switch (event) {
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
@@ -225,8 +214,7 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 }
 
 void CAN_Recieve_Callback(uintptr_t context) {
-    xferContext = context;
-    usesCan = true;
+    use_can = true;
     status = CAN0_ErrorGet();
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
@@ -284,6 +272,8 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
 
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
+    static uint8_t servo = SERVO_1;
+
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
         bool overCurrent = false;
         uint16_t input_voltage = 0;

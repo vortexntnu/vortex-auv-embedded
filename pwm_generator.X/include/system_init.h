@@ -21,7 +21,6 @@
 #include "i2c.h"  // I2C client backup
 /*#include "dma.h"*/
 #include "pm.h"
-
 #include "tc4.h"
 #include "tcc.h"
 #include "tcc0.h"
