@@ -172,22 +172,27 @@ SERCOM_I2C_SLAVE_ACK_STATUS SERCOM3_I2C_LastByteAckStatusGet(void) {
 }
 
 void SERCOM3_I2C_CommandSet(SERCOM_I2C_SLAVE_COMMAND command) {
-    if (command == SERCOM_I2C_SLAVE_COMMAND_SEND_ACK) {
-        SERCOM3_REGS->I2CS.SERCOM_CTRLB =
-            (SERCOM3_REGS->I2CS.SERCOM_CTRLB | SERCOM_I2CS_CTRLB_CMD(0x03)) &
-            (~SERCOM_I2CS_CTRLB_ACKACT_Msk);
-    } else if (command == SERCOM_I2C_SLAVE_COMMAND_SEND_NAK) {
-        SERCOM3_REGS->I2CS.SERCOM_CTRLB |=
-            (SERCOM_I2CS_CTRLB_CMD(0x03) | (SERCOM_I2CS_CTRLB_ACKACT_Msk));
-    } else if (command == SERCOM_I2C_SLAVE_COMMAND_RECEIVE_ACK_NAK) {
-        SERCOM3_REGS->I2CS.SERCOM_CTRLB =
-            (SERCOM3_REGS->I2CS.SERCOM_CTRLB | SERCOM_I2CS_CTRLB_CMD(0x03));
-    } else if (command == SERCOM_I2C_SLAVE_COMMAND_WAIT_FOR_START) {
-        SERCOM3_REGS->I2CS.SERCOM_CTRLB =
-            (SERCOM3_REGS->I2CS.SERCOM_CTRLB & ~SERCOM_I2CS_CTRLB_CMD_Msk) |
-            SERCOM_I2CS_CTRLB_CMD(0x02);
-    } else {
-        /* Do nothing, return */
+    switch (command) {
+        case SERCOM_I2C_SLAVE_COMMAND_SEND_ACK:
+            SERCOM3_REGS->I2CS.SERCOM_CTRLB = (SERCOM3_REGS->I2CS.SERCOM_CTRLB |
+                                               SERCOM_I2CS_CTRLB_CMD(0x03)) &
+                                              (~SERCOM_I2CS_CTRLB_ACKACT_Msk);
+            break;
+        case SERCOM_I2C_SLAVE_COMMAND_SEND_NAK:
+            SERCOM3_REGS->I2CS.SERCOM_CTRLB |=
+                (SERCOM_I2CS_CTRLB_CMD(0x03) | (SERCOM_I2CS_CTRLB_ACKACT_Msk));
+            break;
+        case SERCOM_I2C_SLAVE_COMMAND_RECEIVE_ACK_NAK:
+            SERCOM3_REGS->I2CS.SERCOM_CTRLB =
+                (SERCOM3_REGS->I2CS.SERCOM_CTRLB | SERCOM_I2CS_CTRLB_CMD(0x03));
+            break;
+        case SERCOM_I2C_SLAVE_COMMAND_WAIT_FOR_START:
+            SERCOM3_REGS->I2CS.SERCOM_CTRLB =
+                (SERCOM3_REGS->I2CS.SERCOM_CTRLB & ~SERCOM_I2CS_CTRLB_CMD_Msk) |
+                SERCOM_I2CS_CTRLB_CMD(0x02);
+            break;
+        default:
+            break;
     }
 }
 
