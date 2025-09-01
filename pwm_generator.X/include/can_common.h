@@ -353,10 +353,13 @@ typedef struct
 
 
 
-struct can_frame{
+struct canfd_frame{
     uint32_t id;
+
     uint8_t data[64];
+
     uint8_t len;
+
     uint16_t timestamp;
 };
 
