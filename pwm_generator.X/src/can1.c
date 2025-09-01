@@ -63,6 +63,7 @@
 #define CAN_CALLBACK_TX_INDEX 3
 
 static CAN_RX_MSG can0RxMsg[3][1];
+static struct canfd_frame* can0_rx[3];
 static CAN_CALLBACK_OBJ can0CallbackObj[4];
 static CAN_OBJ can0Obj;
 
@@ -295,11 +296,9 @@ bool CAN0_MessageTransmit(uint32_t id,
     return true;
 }
 
-
-
 bool CAN0_MessageTransmitStruct(struct canfd_frame* frame,
-                          CAN_MODE mode,
-                          CAN_MSG_TX_ATTRIBUTE msgAttr) {
+                                CAN_MODE mode,
+                                CAN_MSG_TX_ATTRIBUTE msgAttr) {
     uint8_t dlc = 0;
     uint8_t tfqpi = 0;
     can_txbe_registers_t* fifo = NULL;
@@ -367,7 +366,6 @@ bool CAN0_MessageTransmitStruct(struct canfd_frame* frame,
     CAN0_REGS->CAN_IE |= CAN_IE_TCE_Msk;
     return true;
 }
-
 
 // *****************************************************************************
 /* Function:
@@ -458,6 +456,60 @@ bool CAN0_MessageReceive(uint32_t* id,
         default:
             return status;
     }
+    return status;
+}
+
+
+bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
+                               CAN_MSG_RX_ATTRIBUTE msgAttr,
+                               CAN_MSG_RX_FRAME_ATTRIBUTE* msgFrameAttr) {
+    uint8_t bufferIndex = 0;
+    bool status = false;
+    switch (msgAttr) {
+        case CAN_MSG_ATTR_RX_BUFFER:
+            for (bufferIndex = 0; bufferIndex < 1; bufferIndex++) {
+                if (bufferIndex < 32) {
+                    if ((can0Obj.rxBufferIndex1 &
+                         (1 << (bufferIndex & 0x1F))) == 0) {
+                        can0Obj.rxBufferIndex1 |= (1 << (bufferIndex & 0x1F));
+                        break;
+                    }
+                } else if ((can0Obj.rxBufferIndex2 &
+                            (1 << ((bufferIndex - 32) & 0x1F))) == 0) {
+                    can0Obj.rxBufferIndex2 |=
+                        (1 << ((bufferIndex - 32) & 0x1F));
+                    break;
+                }
+            }
+            if (bufferIndex == 1) {
+                /* The Rx buffers are full */
+                return false;
+            }
+            CAN0_REGS->CAN_IE |= CAN_IE_DRXE_Msk;
+            status = true;
+            break;
+        case CAN_MSG_ATTR_RX_FIFO0:
+            bufferIndex =
+                (uint8_t)((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0GI_Msk) >>
+                          CAN_RXF0S_F0GI_Pos);
+            CAN0_REGS->CAN_IE |= CAN_IE_RF0NE_Msk;
+            status = true;
+            break;
+        case CAN_MSG_ATTR_RX_FIFO1:
+            bufferIndex =
+                (uint8_t)((CAN0_REGS->CAN_RXF1S & CAN_RXF1S_F1GI_Msk) >>
+                          CAN_RXF1S_F1GI_Pos);
+            CAN0_REGS->CAN_IE |= CAN_IE_RF1NE_Msk;
+            status = true;
+            break;
+        default:
+            return status;
+    }
+    can0RxMsg[msgAttr][bufferIndex].rxId = &frame->id;
+    can0RxMsg[msgAttr][bufferIndex].rxBuffer = (uint8_t*) &frame->data;
+    can0RxMsg[msgAttr][bufferIndex].rxsize = &frame->len;
+    can0RxMsg[msgAttr][bufferIndex].timestamp = &frame->timestamp;
+    can0RxMsg[msgAttr][bufferIndex].msgFrameAttr = msgFrameAttr;
     return status;
 }
 
