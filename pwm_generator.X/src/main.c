@@ -1,4 +1,3 @@
-#include "can_common.h"
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -9,6 +8,7 @@ static uint32_t can_status = 0;
 static uint32_t rx_id = 0;
 static uint8_t rx_buf[64] = {0};
 static uint8_t rx_len = 0;
+
 static uint16_t timestamp = 0;
 static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 static bool use_can = true;

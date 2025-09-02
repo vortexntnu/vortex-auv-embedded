@@ -485,6 +485,7 @@ bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
                 /* The Rx buffers are full */
                 return false;
             }
+            can0_rx[bufferIndex] = frame;
             CAN0_REGS->CAN_IE |= CAN_IE_DRXE_Msk;
             status = true;
             break;
@@ -492,6 +493,7 @@ bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
             bufferIndex =
                 (uint8_t)((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0GI_Msk) >>
                           CAN_RXF0S_F0GI_Pos);
+            can0_rx[bufferIndex] = frame;
             CAN0_REGS->CAN_IE |= CAN_IE_RF0NE_Msk;
             status = true;
             break;
@@ -499,17 +501,13 @@ bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
             bufferIndex =
                 (uint8_t)((CAN0_REGS->CAN_RXF1S & CAN_RXF1S_F1GI_Msk) >>
                           CAN_RXF1S_F1GI_Pos);
+            can0_rx[bufferIndex] = frame;
             CAN0_REGS->CAN_IE |= CAN_IE_RF1NE_Msk;
             status = true;
             break;
         default:
             return status;
     }
-    can0RxMsg[msgAttr][bufferIndex].rxId = &frame->id;
-    can0RxMsg[msgAttr][bufferIndex].rxBuffer = (uint8_t*) &frame->data;
-    can0RxMsg[msgAttr][bufferIndex].rxsize = &frame->len;
-    can0RxMsg[msgAttr][bufferIndex].timestamp = &frame->timestamp;
-    can0RxMsg[msgAttr][bufferIndex].msgFrameAttr = msgFrameAttr;
     return status;
 }
 
