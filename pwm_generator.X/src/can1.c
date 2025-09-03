@@ -296,7 +296,7 @@ bool CAN0_MessageTransmit(uint32_t id,
     return true;
 }
 
-bool CAN0_MessageTransmitStruct(struct canfd_frame* frame,
+bool CAN0_MessageTransmitStruct(struct canfd_frame* can_frame,
                                 CAN_MODE mode,
                                 CAN_MSG_TX_ATTRIBUTE msgAttr) {
     uint8_t dlc = 0;
@@ -326,17 +326,18 @@ bool CAN0_MessageTransmitStruct(struct canfd_frame* frame,
 
     /* If the id is longer than 11 bits, it is considered as extended identifier
      */
-    if (frame->id > CAN_STD_ID_Msk) {
+    if (can_frame->id > CAN_STD_ID_Msk) {
         /* An extended identifier is stored into ID */
-        fifo->CAN_TXBE_0 = (frame->id & CAN_TXBE_0_ID_Msk) | CAN_TXBE_0_XTD_Msk;
+        fifo->CAN_TXBE_0 =
+            (can_frame->id & CAN_TXBE_0_ID_Msk) | CAN_TXBE_0_XTD_Msk;
     } else {
         /* A standard identifier is stored into ID[28:18] */
-        fifo->CAN_TXBE_0 = frame->id << 18;
+        fifo->CAN_TXBE_0 = can_frame->id << 18;
     }
-    if (frame->len > 64)
-        frame->len = 64;
+    if (can_frame->len > 64)
+        can_frame->len = 64;
 
-    CANLengthToDlcGet(frame->len, &dlc);
+    CANLengthToDlcGet(can_frame->len, &dlc);
 
     fifo->CAN_TXBE_1 = CAN_TXBE_1_DLC(dlc);
 
@@ -349,7 +350,7 @@ bool CAN0_MessageTransmitStruct(struct canfd_frame* frame,
     if (msgAttr == CAN_MSG_ATTR_TX_BUFFER_DATA_FRAME ||
         msgAttr == CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) {
         /* copy the data into the payload */
-        memcpy((uint8_t*)&fifo->CAN_TXBE_DATA, frame->data, frame->len);
+        memcpy((uint8_t*)&fifo->CAN_TXBE_DATA, can_frame->data, can_frame->len);
     } else if (msgAttr == CAN_MSG_ATTR_TX_BUFFER_RTR_FRAME ||
                msgAttr == CAN_MSG_ATTR_TX_FIFO_RTR_FRAME) {
         fifo->CAN_TXBE_0 |= CAN_TXBE_0_RTR_Msk;
@@ -459,10 +460,8 @@ bool CAN0_MessageReceive(uint32_t* id,
     return status;
 }
 
-
-bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
-                               CAN_MSG_RX_ATTRIBUTE msgAttr,
-                               CAN_MSG_RX_FRAME_ATTRIBUTE* msgFrameAttr) {
+bool CAN0_MessageReceiveStruct(struct canfd_frame* can_frame,
+                               CAN_MSG_RX_ATTRIBUTE msgAttr) {
     uint8_t bufferIndex = 0;
     bool status = false;
     switch (msgAttr) {
@@ -485,7 +484,7 @@ bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
                 /* The Rx buffers are full */
                 return false;
             }
-            can0_rx[bufferIndex] = frame;
+            can0_rx[bufferIndex] = can_frame;
             CAN0_REGS->CAN_IE |= CAN_IE_DRXE_Msk;
             status = true;
             break;
@@ -493,7 +492,7 @@ bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
             bufferIndex =
                 (uint8_t)((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0GI_Msk) >>
                           CAN_RXF0S_F0GI_Pos);
-            can0_rx[bufferIndex] = frame;
+            can0_rx[bufferIndex] = can_frame;
             CAN0_REGS->CAN_IE |= CAN_IE_RF0NE_Msk;
             status = true;
             break;
@@ -501,7 +500,7 @@ bool CAN0_MessageReceiveStruct(struct canfd_frame* frame,
             bufferIndex =
                 (uint8_t)((CAN0_REGS->CAN_RXF1S & CAN_RXF1S_F1GI_Msk) >>
                           CAN_RXF1S_F1GI_Pos);
-            can0_rx[bufferIndex] = frame;
+            can0_rx[bufferIndex] = can_frame;
             CAN0_REGS->CAN_IE |= CAN_IE_RF1NE_Msk;
             status = true;
             break;
