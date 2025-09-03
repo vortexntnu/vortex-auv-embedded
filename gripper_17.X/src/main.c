@@ -22,12 +22,12 @@ static bool use_can = true;
 
 /**
  *@brief reads encoder angle registers
- *@param data txbuffer for encoder angles
- *@param reg which encoder register to read from
+ *@param[in] reg which register to read from
+ *@param[out] data txbuffer for encoder angles
  *@return 0 on success
  *       -1 on failure
  */
-static int encoder_read(uint8_t* data, uint8_t reg);
+static int encoder_read(uint8_t reg, uint8_t* data);
 /**
  *@brief Sets servos duty cycle
  *@param pData pointer to array containing duty cycle values
@@ -77,7 +77,7 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static int encoder_read(uint8_t* data, uint8_t reg) {
+static int encoder_read(uint8_t reg, uint8_t* data) {
     uint32_t timeout;
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
@@ -139,7 +139,7 @@ static void message_handler(void) {
             break;
         case SET_PWM:
             set_servos_pwm(pData);
-            encoder_read(encoder_angles, ANGLE_REGISTER);
+            encoder_read(ANGLE_REGISTER, encoder_angles);
             if (use_can) {
                 CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
                                      CAN_MODE_FD_WITHOUT_BRS,
