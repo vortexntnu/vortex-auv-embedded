@@ -11,6 +11,9 @@
 #include "system_init.h"
 #include "systick.h"
 
+static uint8_t tx_data[4] = {0};
+static uint8_t rx_data[2] = {0};
+
 /**
  *@brief Starts PSM conversion
  @param cfg_idx 0 for voltage reading
@@ -27,6 +30,7 @@ static int wait_for_conversion_complete(void);
  *format
  */
 static int read_psm(uint8_t* output);
+void message_handler(void);
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                           uintptr_t contextHandle);
 
@@ -38,6 +42,7 @@ int main(void) {
     SYSTICK_TimerStart();
 
     while (1) {
+        message_handler();
     }
 
     return EXIT_FAILURE;
@@ -92,13 +97,15 @@ static int read_psm(uint8_t* output) {
     return 0;
 }
 
+void message_handler(void) {
+    if (read_psm(tx_data)) {
+    };
+}
+
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                           uintptr_t contextHandle) {
     bool isSuccess = true;
     static uint8_t index = 0;
-
-    static uint8_t tx_data[4] = {0};
-    static uint8_t rx_data[2] = {0};
 
     switch (event) {
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
@@ -118,12 +125,9 @@ bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
 
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
-            if (rx_data[0]) {
-                break;
-            }
-            if (read_psm(tx_data)) {
-            };
-
+            // if (rx_data[0]) {
+            //     break;
+            // }
             break;
         default:
             break;
