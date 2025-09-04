@@ -11,23 +11,21 @@
 #include "system_init.h"
 #include "systick.h"
 
-#define CFG_OS_SINGLE 0x8000
-#define CFG_MUX_DIFF_0_1 0x0000
-#define CFG_MUX_DIFF_2_3 0x3000
-#define CFG_PGA_6_144V 0x0000
-#define CFG_MODE_SINGLE 0x0100
-#define CFG_DR_128SPS 0x0080
-#define CFG_COMP_MODE 0x0010
-#define CFG_COMP_POL 0x0008
-#define CFG_COMP_LAT 0x0004
-#define CFG_COMP_QUE_DIS 0x0003
-
-#define PSM_ADDRESS 0x48
-#define REG_CONV 0x00
-#define REG_CFG 0x01
-
+/**
+ *@brief Starts PSM conversion
+ @param cfg_idx 0 for voltage reading
+                1 for current reading
+ */
 static int start_conversion(uint8_t cfg_idx);
+/**
+ *@brief Polling PSM until conversion is complete
+ */
 static int wait_for_conversion_complete(void);
+/**
+ *@brief Read the PSM for both voltage and current readings
+ *@param[out] output array which contains voltage and current reading in raw
+ *format
+ */
 static int read_psm(uint8_t* output);
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                           uintptr_t contextHandle);
@@ -49,7 +47,6 @@ static int start_conversion(uint8_t cfg_idx) {
     static const uint16_t base_cfg =
         CFG_OS_SINGLE | CFG_PGA_6_144V | CFG_MODE_SINGLE | CFG_DR_128SPS |
         CFG_COMP_MODE | CFG_COMP_POL | CFG_COMP_LAT | CFG_COMP_QUE_DIS;
-
     static const uint16_t cfg_list[2] = {
         (uint16_t)(base_cfg | CFG_MUX_DIFF_0_1),
         (uint16_t)(base_cfg | CFG_MUX_DIFF_2_3)};
