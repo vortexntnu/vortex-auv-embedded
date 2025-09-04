@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include "clock.h"
+#include "pm.h"
 #include "sercom0_i2c.h"
 #include "sercom3_i2c.h"
 #include "system_init.h"
@@ -43,6 +44,7 @@ int main(void) {
 
     while (1) {
         message_handler();
+        PM_IdleModeEnter();
     }
 
     return EXIT_FAILURE;

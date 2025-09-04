@@ -13,6 +13,7 @@
 #include "sercom0_i2c.h"
 #include "sercom3_i2c.h"
 #include "systick.h"
+#include "pm.h"
 
 #define CFG_OS_SINGLE 0x8000
 #define CFG_MUX_DIFF_0_1 0x0000

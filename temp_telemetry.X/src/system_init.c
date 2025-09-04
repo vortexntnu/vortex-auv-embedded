@@ -68,5 +68,6 @@ void system_init(void) {
     SERCOM0_I2C_Initialize();
     SERCOM3_I2C_Initialize();
     SYSTICK_TimerInitialize();
+    PM_Initialize();
     nvic_init();
 }
