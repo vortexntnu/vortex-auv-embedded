@@ -53,12 +53,12 @@ target_link_libraries(pico_pwm_generator
     hardware_pwm
     hardware_clocks
     hardware_irq
-    include
 )
 
 # Add the standard include files to the build
 target_include_directories(pico_pwm_generator PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        include
 )
 
 pico_add_extra_outputs(pico_pwm_generator)
