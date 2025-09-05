@@ -31,7 +31,7 @@ static int wait_for_conversion_complete(void);
  *format
  */
 static int read_psm(uint8_t* output);
-void message_handler(void);
+static void message_handler(void);
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                           uintptr_t contextHandle);
 
@@ -69,7 +69,7 @@ static int start_conversion(uint8_t cfg_idx) {
 }
 
 static int wait_for_conversion_complete(void) {
-    uint8_t cfg_high;
+    uint8_t cfg_high = 0;
     uint8_t reg = REG_CFG;
     do {
         if (SERCOM0_I2C_WriteRead(PSM_ADDRESS, &reg, 1, &cfg_high, 1)) {
@@ -99,9 +99,8 @@ static int read_psm(uint8_t* output) {
     return 0;
 }
 
-void message_handler(void) {
-    if (read_psm(tx_data)) {
-    };
+static void message_handler(void) {
+    read_psm(tx_data);
 }
 
 bool sercom3_i2c_callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
