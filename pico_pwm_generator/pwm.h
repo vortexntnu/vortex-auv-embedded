@@ -1,5 +1,6 @@
 #ifndef PWM_H
 #define PWM_H
+#include "common.h"
 
 #include <stdint.h>
 #include "hardware/pwm.h"
