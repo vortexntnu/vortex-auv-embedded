@@ -1,9 +1,9 @@
 #include "pwm.h"
-#include "hardware/pwm.h"
+#include <string.h>
 #include "hardware/clocks.h"
 #include "hardware/irq.h"
+#include "hardware/pwm.h"
 #include "pico/stdlib.h"
-#include <string.h>
 
 int esc_attach(const uint pin) {
     gpio_set_function(pin, GPIO_FUNC_PWM);
@@ -11,17 +11,18 @@ int esc_attach(const uint pin) {
 
     const uint freq = 50;
     uint32_t source_hz = clock_get_hz(clk_sys);
-    uint32_t div16_top = 16 * source_hz / freq; 
+    uint32_t div16_top = 16 * source_hz / freq;
     uint32_t top = 1;
 
-    while(true) {
-        if(div16_top >= 16 * 5 && div16_top % 5 == 0 && top * 5 <= 65534) {
+    while (true) {
+        if (div16_top >= 16 * 5 && div16_top % 5 == 0 && top * 5 <= 65534) {
             div16_top /= 5;
             top *= 5;
-        } else if(div16_top >= 16 * 3 && div16_top % 3 == 0 && top * 3 <= 65534) {
+        } else if (div16_top >= 16 * 3 && div16_top % 3 == 0 &&
+                   top * 3 <= 65534) {
             div16_top /= 3;
             top *= 3;
-        } else if(div16_top >= 16 * 2 && top * 2 <= 65534) {
+        } else if (div16_top >= 16 * 2 && top * 2 <= 65534) {
             div16_top /= 2;
             top *= 2;
         } else {
@@ -29,9 +30,9 @@ int esc_attach(const uint pin) {
         }
     }
 
-    if(div16_top < 16) {
+    if (div16_top < 16) {
         return 2;
-    } else if(div16_top >= 256 * 16) {
+    } else if (div16_top >= 256 * 16) {
         return 1;
     }
     pwm_hw->slice[slice].div = div16_top;
@@ -41,10 +42,9 @@ int esc_attach(const uint pin) {
 }
 
 int esc_set_pwm(const uint pin, uint16_t esc_pwm) {
-
-    if(esc_pwm < MIN_PWM) {
+    if (esc_pwm < MIN_PWM) {
         esc_pwm = MIN_PWM;
-    } else if(esc_pwm > MAX_PWM) {
+    } else if (esc_pwm > MAX_PWM) {
         esc_pwm = MAX_PWM;
     }
 
