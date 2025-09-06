@@ -46,46 +46,50 @@ The **Gripper MCU** utilizes the following peripherals:
 
 ---
 
-## **State Machine Explanation**
+## Functionality
 
-### **1️⃣ CAN_RECEIVE State**
-- In this state, the **CAN receive interrupt** is enabled.
-- In the idle state, the MCU willl be set to idle0 sleep mode
-- The MCU remains **idle**, waiting for a CAN message.
-- The MCU **only exits this state through a CAN interrupt**.
-- CAN interrupt will wake the MCU from idle0 sleep mode
-- CAN interrupts are deactivated after an interrupt has been triggered
+After initialization, the microcontroller immediately enters **idle mode**.  
+It will only wake up when one of the following interrupts occurs:
 
-### **2️⃣ PROCESS_PWM State**
-- Once the MCU successfully receives a **PWM command** via CAN:
-  1. It reads the received **PWM signal** (in **microseconds**).
-  2. Converts the **microsecond value** into a duty cycle using the formula:
+- **CAN_RX interrupt** – triggered on reception of a CAN frame  
+- **I2C_RX interrupt** – triggered on reception of an I²C message  
+- **DMA interrupt** – triggered after **1024 ADC samples** are collected  
 
-  
-  $$
-  \text{Duty Cycle} = \frac{\text{DATA MICROSECONDS} \times (\text{TCC PERIOD} + 1)}
-  {\text{PWM PERIOD MICROSECONDS}}
-  $$
+---
 
+### Message Handling
 
+Once the processor wakes up, it calls the `message_handler` function.  
+This function decides what action to take based on:
 
-  - The **PWM signal range** is **700 microseconds to 2300 microseconds**.
-  - The **PWM_PERIOD** is 2000 microseconds, and 119999 in **TCC_PERIOD**
+- The **CAN RX identifier** (`rx_id`), or  
+- The **first byte** of the incoming I²C message  
 
-### **3️⃣ READ_ENCODER State**
-- The MCU reads **all connected encoders**.
-- This is done in **Encoder_Read** function
-- A Watchdog Timer Reset will be triggered if MCU is stuck in while loop
-- The **angle register** for each encoder is:
-  - **0xFE** (MSB - Most Significant Byte)
-  - **0xFF** (LSB - Least Significant Byte, with 2 unused bits)
-- The **raw encoder data** is:
-  1. **Adjusted** to remove the **2 unused bits**.
-  2. **Stored** in a `uint16_t` array.
-  3. **Converted** into a `uint8_t` array for CAN transmission.
+See the reference tables below for how IDs and command bytes map to actions.
 
-### **4️⃣ CAN_TRANSMIT State**
-- The processed encoder data (`uint8_t` array) is **sent over CAN** with the ID 0x469.
+---
+
+### **2️⃣SET_PWM M**
+
+When the MCU successfully receives a **PWM command** via CAN:
+
+1. It reads the received **PWM value** (in **microseconds**).  
+2. It converts this value into a **duty cycle** using the formula:  
+   \text{Duty Cycle} =
+   \frac{\text{DATA\_MICROSECONDS} \times (\text{TCC\_PERIOD} + 1)}
+   {\text{PWM\_PERIOD\_MICROSECONDS}}
+   $$
+
+3. The resulting duty cycle is applied to the configured TCC channel.  
+4. Calls the `Encoder_Read` function to read all connected encoders.  
+5. Ensures that encoder reads complete in a timely manner.  
+6. If the MCU becomes stuck in a loop (e.g., encoder not responding), a **Watchdog Timer Reset** will be triggered to recover safely.  
+   $$
+
+**Notes:**
+- Valid PWM signal range: **700 µs → 2300 µs**  
+- `PWM_PERIOD`: **2000 µs**  
+- `TCC_PERIOD`: **119999**  
 
 ---
 
@@ -154,26 +158,6 @@ To correctly configure **TCC (Timer/Counter for Control)** for PWM generation, w
 $$
 \text{TCC PERIOD} = \frac{(\text{Clock Frequency} / \text{Prescaler}) \times \text{PWM Period (μs)}}{2} - 1
 $$
-
-### **Example Calculation**
-For a **PWM period of 20 ms (50 Hz)**:
-
-$$
-\text{TCC PERIOD} = \frac{(48,000,000 / 4) \times 0.020}{2} - 1
-$$
-$$
-= \frac{12,000,000 \times 0.020}{2} - 1
-$$
-$$
-= {120,000} - 1
-$$
-$$
-= 119,999
-$$
-
-Thus, for **50 Hz PWM**, the **TCC period should be set to `119999`**.
-
----
 
 ## **Future Improvements**
 - 🔹 **Direct Memory Access (DMA)** for efficient data handling.
