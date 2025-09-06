@@ -46,15 +46,6 @@ The **Gripper MCU** utilizes the following peripherals:
 
 ---
 
-## **Finite State Machine Representation**
-The **state machine** for the **Gripper MCU** is visualized below:
-
-<center>
-    <img src="gripper_diagram.png" alt="Gripper Diagram">
-</center>
-
----
-
 ## **State Machine Explanation**
 
 ### **1️⃣ CAN_RECEIVE State**
