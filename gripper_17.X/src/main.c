@@ -16,8 +16,6 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 
 static uint16_t adc_result_array[TRANSFER_SIZE];
 static uint8_t encoder_angles[7] = {0};
-static const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR,
-                                                        WRIST_ADDR, GRIP_ADDR};
 static bool use_can = true;
 
 /**
@@ -30,9 +28,9 @@ static bool use_can = true;
 static int encoder_read(uint8_t reg, uint8_t* data);
 /**
  *@brief Sets servos duty cycle
- *@param pData pointer to array containing duty cycle values
+ *@param data pointer to array containing duty cycle values
  */
-static void set_servos_pwm(uint8_t* pData);
+static void set_servos_pwm(uint8_t* data);
 static void message_handler(void);
 static void stop_gripper(void);
 static void start_gripper(void);
@@ -78,6 +76,8 @@ int main(void) {
 }
 
 static int encoder_read(uint8_t reg, uint8_t* data) {
+    static const uint8_t encoder_addresses[NUM_ENCODERS] = {
+        SHOULDER_ADDR, WRIST_ADDR, GRIP_ADDR};
     uint32_t timeout;
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
