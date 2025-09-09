@@ -19,6 +19,7 @@ set(sdkVersion 2.1.1)
 set(toolchainVersion 14_2_Rel1)
 set(picotoolVersion 2.1.1)
 set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+set(PICO_SDK_PATH ${USERHOME}/pico-sdk)
 if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
@@ -35,7 +36,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(pico_pwm_generator main.c i2c.c pwm.c)
+add_executable(pico_pwm_generator src/main.c src/i2c.c src/pwm.c)
 
 pico_set_program_name(pico_pwm_generator "pico_pwm_generator")
 pico_set_program_version(pico_pwm_generator "0.1")
@@ -57,6 +58,7 @@ target_link_libraries(pico_pwm_generator
 # Add the standard include files to the build
 target_include_directories(pico_pwm_generator PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        include
 )
 
 pico_add_extra_outputs(pico_pwm_generator)

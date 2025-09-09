@@ -1,51 +1,39 @@
 
-#include "sam.h"
-#include "samc21e17a.h"
-/*#include "sercom0_i2c.h"*/
-#include <stddef.h>
-#include <stdint.h>
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
+#define CAN_SEND_ANGLES 0x469
+
 /*CAN*/
 static uint32_t status = 0;
-static uint32_t xferContext = 0;
-const static uint32_t messageID = 0x469;
 static uint32_t rx_id = 0;
 static uint8_t rx_buf[64] = {0};
 static uint8_t rx_len = 0;
 static uint16_t timestamp = 0;
-static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
+static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 
-// ADC Variables
-static uint8_t servo = SERVO_1;
 static uint16_t adc_result_array[TRANSFER_SIZE];
-
 static uint8_t encoder_angles[7] = {0};
-
-static const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR,
-                                                        WRIST_ADDR, GRIP_ADDR};
-volatile bool usesCan = true;
+static bool use_can = true;
 
 /**
  *@brief reads encoder angle registers
- *@param data txbuffer for encoder angles
- *@param reg which encoder register to read from
+ *@param[in] reg which register to read from
+ *@param[out] data txbuffer for encoder angles
  *@return 0 on success
  *       -1 on failure
  */
-static int encoder_read(uint8_t* data, uint8_t reg);
+static int encoder_read(uint8_t reg, uint8_t* data);
 /**
- *@brief sets servos pwm
- *@param pData pointer to array containing duty cycle values
+ *@brief Sets servos duty cycle
+ *@param data pointer to array containing duty cycle values
  */
-static void set_servo_pwm(uint8_t* pData);
-
-static void message_handler();
-
-
+static void set_servos_pwm(uint8_t* data);
+static void message_handler(void);
+static void stop_gripper(void);
+static void start_gripper(void);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle);
 void CAN_Recieve_Callback(uintptr_t context);
@@ -53,6 +41,7 @@ void CAN_Transmit_Callback(uintptr_t context);
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
+void print_can_frame(void);
 
 int main(void) {
     system_init();
@@ -72,7 +61,7 @@ int main(void) {
                             (uintptr_t)STATE_CAN_TRANSMIT);
 
     CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
 
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
@@ -86,7 +75,9 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static int encoder_read(uint8_t* data, uint8_t reg) {
+static int encoder_read(uint8_t reg, uint8_t* data) {
+    static const uint8_t encoder_addresses[NUM_ENCODERS] = {
+        SHOULDER_ADDR, WRIST_ADDR, GRIP_ADDR};
     uint32_t timeout;
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
@@ -112,7 +103,7 @@ static int encoder_read(uint8_t* data, uint8_t reg) {
     return 0;
 }
 
-static void set_servo_pwm(uint8_t* pData) {
+static void set_servos_pwm(uint8_t* pData) {
     uint16_t shoulderDuty = (pData[0] << 8) | pData[1];
     uint16_t wristDuty = (pData[2] << 8) | pData[3];
     uint16_t gripDuty = (pData[4] << 8) | pData[5];
@@ -128,10 +119,10 @@ static void set_servo_pwm(uint8_t* pData) {
     TCC1_PWM24bitDutySet(1, tccValue);
 }
 
-static void message_handler() {
+static void message_handler(void) {
     uint8_t event;
     uint8_t* pData;
-    if (usesCan) {
+    if (use_can) {
         event = rx_id - 0x469;
         pData = rx_buf;
     } else {
@@ -147,10 +138,10 @@ static void message_handler() {
             WDT_Enable();
             break;
         case SET_PWM:
-            set_servo_pwm(pData);
-            encoder_read(encoder_angles, ANGLE_REGISTER);
-            if (usesCan) {
-                CAN0_MessageTransmit(messageID, 6, encoder_angles,
+            set_servos_pwm(pData);
+            encoder_read(ANGLE_REGISTER, encoder_angles);
+            if (use_can) {
+                CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
                                      CAN_MODE_FD_WITHOUT_BRS,
                                      CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
             }
@@ -163,17 +154,34 @@ static void message_handler() {
         default:
             break;
     }
-    if (usesCan) {
+    if (use_can) {
         CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                            CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+                            CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
     }
+}
+
+static void stop_gripper(void) {
+    WDT_Disable();
+    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
+    TCC0_PWMStop();
+    TCC1_PWMStop();
+    ADC0_Disable();
+}
+
+static void start_gripper(void) {
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    ADC0_Enable();
+    RTC_Timer32Start();
+    RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 }
 
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
                          uintptr_t contextHandle) {
     static uint8_t dataBuffer[7];
     static uint8_t dataIndex = 0;
-    usesCan = false;
+    use_can = false;
 
     switch (event) {
         case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
@@ -206,23 +214,12 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
 }
 
 void CAN_Recieve_Callback(uintptr_t context) {
-    xferContext = context;
-    usesCan = true;
+    use_can = true;
     status = CAN0_ErrorGet();
 
     if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        /*printf(" New Message Received\r\n");*/
-        /*uint8_t length = rx_messageLength;*/
-        /*printf(*/
-        /*    " Message - Timestamp : 0x%x ID : 0x%x Length "*/
-        /*    ":0x%x",*/
-        /*    (unsigned int)timestamp, (unsigned int)rx_messageID,*/
-        /*    (unsigned int)rx_messageLength);*/
-        /*printf("Message : ");*/
-        /*while (length) {*/
-        /*    printf("0x%x ", rx_message[rx_messageLength - length--]);*/
-        /*}*/
+        // print_can_frame();
     }
 }
 
@@ -275,6 +272,8 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
 
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
+    static uint8_t servo = SERVO_1;
+
     if (DMAC_TRANSFER_EVENT_COMPLETE == returned_evnt) {
         bool overCurrent = false;
         uint16_t input_voltage = 0;
@@ -333,5 +332,18 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
         DMAC_ChannelTransfer(
             DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
             (const void*)adc_result_array, sizeof(adc_result_array));
+    }
+}
+
+void print_can_frame(void) {
+    printf(" New Message Received\r\n");
+    uint8_t length = rx_len;
+    printf(
+        " Message - Timestamp : 0x%x ID : 0x%x Length "
+        ":0x%x",
+        (unsigned int)timestamp, (unsigned int)rx_id, (unsigned int)rx_len);
+    printf("Message : ");
+    while (length) {
+        printf("0x%x ", rx_buf[rx_len - length--]);
     }
 }

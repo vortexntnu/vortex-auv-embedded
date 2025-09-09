@@ -52,6 +52,7 @@
 
 #include "can1.h"
 #include <stdio.h>
+#include "can_common.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -62,6 +63,7 @@
 #define CAN_CALLBACK_TX_INDEX 3
 
 static CAN_RX_MSG can0RxMsg[3][1];
+static struct canfd_frame* can0_rx[3];
 static CAN_CALLBACK_OBJ can0CallbackObj[4];
 static CAN_OBJ can0Obj;
 
@@ -294,6 +296,78 @@ bool CAN0_MessageTransmit(uint32_t id,
     return true;
 }
 
+bool CAN0_MessageTransmitStruct(struct canfd_frame* can_frame,
+                                CAN_MODE mode,
+                                CAN_MSG_TX_ATTRIBUTE msgAttr) {
+    uint8_t dlc = 0;
+    uint8_t tfqpi = 0;
+    can_txbe_registers_t* fifo = NULL;
+    static uint8_t messageMarker = 0;
+
+    switch (msgAttr) {
+        case CAN_MSG_ATTR_TX_FIFO_DATA_FRAME:
+        case CAN_MSG_ATTR_TX_FIFO_RTR_FRAME:
+            if (CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFQF_Msk) {
+                /* The FIFO is full */
+                return false;
+            }
+            tfqpi = (uint8_t)((CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFQPI_Msk) >>
+                              CAN_TXFQS_TFQPI_Pos);
+            fifo =
+                (can_txbe_registers_t*)((uint8_t*)can0Obj.msgRAMConfig
+                                            .txBuffersAddress +
+                                        tfqpi *
+                                            CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE);
+            break;
+        default:
+            /* Invalid Message Attribute */
+            return false;
+    }
+
+    /* If the id is longer than 11 bits, it is considered as extended identifier
+     */
+    if (can_frame->id > CAN_STD_ID_Msk) {
+        /* An extended identifier is stored into ID */
+        fifo->CAN_TXBE_0 =
+            (can_frame->id & CAN_TXBE_0_ID_Msk) | CAN_TXBE_0_XTD_Msk;
+    } else {
+        /* A standard identifier is stored into ID[28:18] */
+        fifo->CAN_TXBE_0 = can_frame->id << 18;
+    }
+    if (can_frame->len > 64)
+        can_frame->len = 64;
+
+    CANLengthToDlcGet(can_frame->len, &dlc);
+
+    fifo->CAN_TXBE_1 = CAN_TXBE_1_DLC(dlc);
+
+    if (mode == CAN_MODE_FD_WITH_BRS) {
+        fifo->CAN_TXBE_1 |= CAN_TXBE_1_FDF_Msk | CAN_TXBE_1_BRS_Msk;
+    } else if (mode == CAN_MODE_FD_WITHOUT_BRS) {
+        fifo->CAN_TXBE_1 |= CAN_TXBE_1_FDF_Msk;
+    }
+
+    if (msgAttr == CAN_MSG_ATTR_TX_BUFFER_DATA_FRAME ||
+        msgAttr == CAN_MSG_ATTR_TX_FIFO_DATA_FRAME) {
+        /* copy the data into the payload */
+        memcpy((uint8_t*)&fifo->CAN_TXBE_DATA, can_frame->data, can_frame->len);
+    } else if (msgAttr == CAN_MSG_ATTR_TX_BUFFER_RTR_FRAME ||
+               msgAttr == CAN_MSG_ATTR_TX_FIFO_RTR_FRAME) {
+        fifo->CAN_TXBE_0 |= CAN_TXBE_0_RTR_Msk;
+    }
+
+    fifo->CAN_TXBE_1 |=
+        ((++messageMarker << CAN_TXBE_1_MM_Pos) & CAN_TXBE_1_MM_Msk);
+
+    CAN0_REGS->CAN_TXBTIE = 1U << tfqpi;
+
+    /* request the transmit */
+    CAN0_REGS->CAN_TXBAR = 1U << tfqpi;
+
+    CAN0_REGS->CAN_IE |= CAN_IE_TCE_Msk;
+    return true;
+}
+
 // *****************************************************************************
 /* Function:
     bool CAN0_MessageReceive(uint32_t *id, uint8_t *length, uint8_t *data,
@@ -377,6 +451,56 @@ bool CAN0_MessageReceive(uint32_t* id,
             can0RxMsg[msgAttr][bufferIndex].rxsize = length;
             can0RxMsg[msgAttr][bufferIndex].timestamp = timestamp;
             can0RxMsg[msgAttr][bufferIndex].msgFrameAttr = msgFrameAttr;
+            CAN0_REGS->CAN_IE |= CAN_IE_RF1NE_Msk;
+            status = true;
+            break;
+        default:
+            return status;
+    }
+    return status;
+}
+
+bool CAN0_MessageReceiveStruct(struct canfd_frame* can_frame,
+                               CAN_MSG_RX_ATTRIBUTE msgAttr) {
+    uint8_t bufferIndex = 0;
+    bool status = false;
+    switch (msgAttr) {
+        case CAN_MSG_ATTR_RX_BUFFER:
+            for (bufferIndex = 0; bufferIndex < 1; bufferIndex++) {
+                if (bufferIndex < 32) {
+                    if ((can0Obj.rxBufferIndex1 &
+                         (1 << (bufferIndex & 0x1F))) == 0) {
+                        can0Obj.rxBufferIndex1 |= (1 << (bufferIndex & 0x1F));
+                        break;
+                    }
+                } else if ((can0Obj.rxBufferIndex2 &
+                            (1 << ((bufferIndex - 32) & 0x1F))) == 0) {
+                    can0Obj.rxBufferIndex2 |=
+                        (1 << ((bufferIndex - 32) & 0x1F));
+                    break;
+                }
+            }
+            if (bufferIndex == 1) {
+                /* The Rx buffers are full */
+                return false;
+            }
+            can0_rx[bufferIndex] = can_frame;
+            CAN0_REGS->CAN_IE |= CAN_IE_DRXE_Msk;
+            status = true;
+            break;
+        case CAN_MSG_ATTR_RX_FIFO0:
+            bufferIndex =
+                (uint8_t)((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0GI_Msk) >>
+                          CAN_RXF0S_F0GI_Pos);
+            can0_rx[bufferIndex] = can_frame;
+            CAN0_REGS->CAN_IE |= CAN_IE_RF0NE_Msk;
+            status = true;
+            break;
+        case CAN_MSG_ATTR_RX_FIFO1:
+            bufferIndex =
+                (uint8_t)((CAN0_REGS->CAN_RXF1S & CAN_RXF1S_F1GI_Msk) >>
+                          CAN_RXF1S_F1GI_Pos);
+            can0_rx[bufferIndex] = can_frame;
             CAN0_REGS->CAN_IE |= CAN_IE_RF1NE_Msk;
             status = true;
             break;

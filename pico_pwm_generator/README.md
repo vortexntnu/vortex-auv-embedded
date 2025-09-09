@@ -26,8 +26,11 @@ Installing this extension could take a bit as it will try to check if you have t
 
 The code defines three states of "operation" that defines what the built in LED blinking sequence should be, those being: 
 1. During startup, the LED will blink rapidly for 20 iteration with each iteration being 100ms long. 
-2. During Idle state, the LED will have a slow blink sequence with would toggle it every 500ms 
-3. After receiving any successful I2C message, the LED should blink for 5 iterations, with each being 20ms long. 
+2. During Idle state, the LED will be on constantly.
+3. After receiving any successful I2C message, the LED should blink for 5 iterations, with each being 30ms long. 
+4. If the I2C handler is triggered, but for some reason ends up in the default state, the led will blink 20 times in a varying on-off length of 60ms and 30ms
+5. After receiving any I2C message with **incorrect message length** the led will blink for 10 iterations with each one being 60ms long.
+6. After a successful I2C read operation, the led will blink for 20 iterations with each being 45ms long.
 
 This is done to ensure a visual representation of what state the pico is operating at when access to the board itself and the i2c buss is limited or not possible. To alter or disable this sequence, refer to the function called "led_sequence" in main.c
 

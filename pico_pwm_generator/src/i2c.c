@@ -1,0 +1,91 @@
+#include "i2c.h"
+#include <string.h>
+#include "pico/stdlib.h"
+#include "pwm.h"
+
+// Define the shared I2C data
+volatile i2c_data_t i2c_data = {.mem = {0}, .mem_address = 0, .i2c_state = 0};
+
+void i2c_slave_handler(i2c_inst_t* i2c, i2c_slave_event_t event) {
+    switch (event) {
+        case I2C_SLAVE_RECEIVE: {
+            // Read one byte and store it in the buffer.
+            uint8_t byte = i2c_read_byte_raw(i2c);
+            if (i2c_data.mem_address < sizeof(i2c_data.mem))
+                i2c_data.mem[i2c_data.mem_address++] = byte;
+            break;
+        }
+        case I2C_SLAVE_REQUEST: {
+            // When a master requests a read, send a default response.
+            uint8_t response = (i2c_data.mem_address > 0) ? i2c_data.mem[0] : 0;
+            i2c_write_byte_raw(i2c, response);
+            i2c_data.i2c_state = 5;
+            break;
+        }
+        case I2C_SLAVE_FINISH: {
+            // If the expected message length is received, process it.
+            if (i2c_data.mem_address == I2C_MSG_LENGTH) {
+                // Discard the dummy byte and process the following 16 bytes as
+                // eight 16-bit values.
+                for (int i = 0; i < 8; i++) {
+                    uint16_t pwm_val =
+                        ((uint16_t)i2c_data.mem[1 + i * 2] << 8) |
+                        i2c_data.mem[1 + i * 2 + 1];
+                    switch (i) {
+                        case 0:
+                            esc_set_pwm(ESC1, pwm_val);
+                            break;
+                        case 1:
+                            esc_set_pwm(ESC2, pwm_val);
+                            break;
+                        case 2:
+                            esc_set_pwm(ESC3, pwm_val);
+                            break;
+                        case 3:
+                            esc_set_pwm(ESC4, pwm_val);
+                            break;
+                        case 4:
+                            esc_set_pwm(ESC5, pwm_val);
+                            break;
+                        case 5:
+                            esc_set_pwm(ESC6, pwm_val);
+                            break;
+                        case 6:
+                            esc_set_pwm(ESC7, pwm_val);
+                            break;
+                        case 7:
+                            esc_set_pwm(ESC8, pwm_val);
+                            break;
+                    }
+                }
+            } else {
+                i2c_data.mem_address = 0;
+                i2c_data.i2c_state = 4;
+                break;
+            }
+            // Reset the message buffer and state.
+            i2c_data.mem_address = 0;
+            i2c_data.i2c_state = 2;
+            break;
+        }
+        default: {
+            i2c_data.i2c_state = 3;
+            break;
+        }
+    }
+}
+
+void i2c_setup(void) {
+    gpio_init(I2C_SDA);
+    gpio_init(I2C_SCL);
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+
+#ifdef PULLUP_ENABLE
+    gpio_pull_up(I2C_SDA);
+    gpio_pull_up(I2C_SCL);
+#endif  // PULLUP Check
+
+    // Initialize as I2C slave with the given address and handler.
+    i2c_slave_init(I2C_PORT, I2C_ADDRESS, &i2c_slave_handler);
+}

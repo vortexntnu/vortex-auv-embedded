@@ -2,6 +2,11 @@
 
 # **PWM Generator MCU Documentation**
 
+## **Before you read**
+The pwm_generator was originally designed to use the SAMC21E17A (same MCU as the gripper). However, we have since realized that the SAMC21E17A does not have enough distinct PWM channels.
+If we in the future decide to use a similar setup a different MCU has to be chosen. For instance a MCU from the SAME5x series will have enough distinct channels. 
+This is an import lesson for future embedded teams. Coordinate with electrical to avoid these errors in the future
+
 ## **Overview**
 The **PWM Generator MCU** is responsible for generating precise PWM signals to control **thrusters**. The MCU receives **duty cycle commands** (in microseconds) from the **Jetson Orin** over **CAN** and converts them into appropriate PWM signals.
 

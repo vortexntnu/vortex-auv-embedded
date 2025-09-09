@@ -9,7 +9,7 @@
 #include "samc21e17a.h"
 #include "system_init.h"
 
-void PIN_Initialize(void) {
+static void gpio_init(void) {
 
     /* LED Pins */
     // PA2: Led_enable
@@ -71,7 +71,7 @@ void PIN_Initialize(void) {
     PORT_REGS->GROUP[0].PORT_PMUX[12] = 0x66;
 }
 
-void NVIC_Initialize(void) {
+static void NVIC_Initialize(void) {
     // NVIC_SetPriority(TCC1_IRQn, 3);
     // NVIC_EnableIRQ(TCC1_IRQn);
 
@@ -107,7 +107,7 @@ void NVIC_Initialize(void) {
     __enable_irq();
 }
 
-void NVMCTRL_Initialize(void) {
+static void NVMCTRL_Initialize(void) {
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_READMODE_NO_MISS_PENALTY |
                                   NVMCTRL_CTRLB_SLEEPPRM_WAKEONACCESS |
                                   NVMCTRL_CTRLB_RWS(2) | NVMCTRL_CTRLB_MANW_Msk;
@@ -118,7 +118,7 @@ void NVMCTRL_Initialize(void) {
 void system_init(void){
     NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3);
     PM_Initialize();
-    PIN_Initialize();
+    gpio_init();
     CLOCK_Initialize();
     NVMCTRL_Initialize();
     TCC0_PWMInitialize();
@@ -129,7 +129,7 @@ void system_init(void){
 
     SERCOM3_USART_Initialize();  // USART for Debugging
 
-    /*SERCOM3_SLAVE_I2C_Initialize();*/
+    // SERCOM3_SLAVE_I2C_Initialize();
 
     NVIC_Initialize();
 }

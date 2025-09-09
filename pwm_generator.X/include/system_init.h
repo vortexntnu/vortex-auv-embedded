@@ -21,7 +21,6 @@
 #include "i2c.h"  // I2C client backup
 /*#include "dma.h"*/
 #include "pm.h"
-
 #include "tc4.h"
 #include "tcc.h"
 #include "tcc0.h"
@@ -30,6 +29,13 @@
 #include "usart.h"
 #include "wdt.h"
 
+
+
+
+
+#ifdef	__cplusplus
+extern "C" {
+#endif
 
 typedef enum {
     STATE_CAN_RECEIVE,
@@ -44,34 +50,15 @@ typedef enum {
     RESET_MCU,
 } STATES;
 
-
-
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-void NVIC_Initialize(void); 
-
-
-void NVMCTRL_Initialize(void);
-
-void PIN_Initialize(void);
-
-
+struct ThrusterTable{
+    uint8_t tcc_num;
+    uint8_t channel;
+    uint32_t period;
+};
+/**
+ *@brief Initializes all system peripherals
+ */
 void system_init(void);
-
-static inline void stop_thrusters(void){
-    TCC0_PWMStop();
-    TCC1_PWMStop();
-    TCC2_PWMStop();
-}
-
-static inline void start_thrusters(void){
-    TCC0_PWMStart();
-    TCC1_PWMStart();
-    TCC2_PWMStart();
-}
-
 
 #ifdef	__cplusplus
 }
