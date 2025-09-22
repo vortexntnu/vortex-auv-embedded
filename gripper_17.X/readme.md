@@ -81,7 +81,7 @@ When the MCU successfully receives a **PWM command** via CAN:
    $$
 
 3. The resulting duty cycle is applied to the configured TCC channel.  
-4. Calls the `Encoder_Read` function to read all connected encoders.  
+4. Calls the `read_encoders` function to read all connected encoders.  
 5. Ensures that encoder reads complete in a timely manner.  
 6. If the MCU becomes stuck in a loop (e.g., encoder not responding), a **Watchdog Timer Reset** will be triggered to recover safely.  
    $$
