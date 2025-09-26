@@ -94,6 +94,10 @@ The **PWM Generator MCU** utilizes the following peripherals:
 | PA8  | TCC1          | WO[2] (C2)   | PWM output (thruster 7) |
 | PA9  | TCC1          | WO[3] (C3)   | PWM output (thruster 8) |
 
+> Channel 2 and 3 are not independent. C2 has the same waveform output as C0.
+C3 and C1 also share the same WO. Due to this reason this current setup
+has too few PWM outputs for 8 thrusters
+> 
 
 #### TCC2 Channels
 | Pin   | Timer/Counter | Channel (WO) | Purpose                 |
@@ -101,12 +105,22 @@ The **PWM Generator MCU** utilizes the following peripherals:
 | PA16  | TCC2          | WO[0] (C0)   | PWM output (aux 1)      |
 | PA17  | TCC2          | WO[1] (C1)   | PWM output (aux 2)      |
 
+> TCC2 has 16 bit resolution instead of the 24 bit TCC0 and TCC1 offers.
+Although this is probably not a big issue since 16 bit is good enough resolution
+for our purposes
+> 
+
 
 #### TC4 Channels (LED PWM)
 | Pin   | Timer/Counter | Channel (WO) | Purpose            |
 |-------|---------------|--------------|--------------------|
 | PA14  | TC4           | WO[0] (C0)   | PWM for indicator LED 1 |
 | PA15  | TC4           | WO[1] (C1)   | PWM for indicator LED 2 |
+
+> TC4 also offers wafeform output although not specifically for control purposes
+TCCx peripherals are therefore preferred when it comes to control systems.
+However when it comes to modulation the strength of LED TCx peripheral are all you need
+>
 
 
 ---

@@ -25,7 +25,7 @@ static bool use_can = true;
  *@return 0 on success
  *       -1 on failure
  */
-static int encoder_read(uint8_t reg, uint8_t* data);
+static int read_encoders(uint8_t reg, uint8_t* data);
 /**
  *@brief Sets servos duty cycle
  *@param data pointer to array containing duty cycle values
@@ -75,7 +75,7 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static int encoder_read(uint8_t reg, uint8_t* data) {
+static int read_encoders(uint8_t reg, uint8_t* data) {
     static const uint8_t encoder_addresses[NUM_ENCODERS] = {
         SHOULDER_ADDR, WRIST_ADDR, GRIP_ADDR};
     uint32_t timeout;
@@ -139,7 +139,7 @@ static void message_handler(void) {
             break;
         case SET_PWM:
             set_servos_pwm(pData);
-            encoder_read(ANGLE_REGISTER, encoder_angles);
+            read_encoders(ANGLE_REGISTER, encoder_angles);
             if (use_can) {
                 CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
                                      CAN_MODE_FD_WITHOUT_BRS,
