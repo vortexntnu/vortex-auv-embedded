@@ -94,10 +94,13 @@ The **PWM Generator MCU** utilizes the following peripherals:
 | PA8  | TCC1          | WO[2] (C2)   | PWM output (thruster 7) |
 | PA9  | TCC1          | WO[3] (C3)   | PWM output (thruster 8) |
 
-> Channel 2 and 3 are not independent. C2 has the same waveform output as C0.
-C3 and C1 also share the same WO. Due to this reason this current setup
-has too few PWM outputs for 8 thrusters
-> 
+> **Note:**  
+> PWM channels 2 and 3 are not independent.  
+> - Channel 2 mirrors Channel 0’s waveform.  
+> - Channel 3 mirrors Channel 1’s waveform.  
+>   
+> As a result, this configuration does not provide enough independent PWM outputs for controlling 8 thrusters.
+
 
 #### TCC2 Channels
 | Pin   | Timer/Counter | Channel (WO) | Purpose                 |
@@ -105,10 +108,10 @@ has too few PWM outputs for 8 thrusters
 | PA16  | TCC2          | WO[0] (C0)   | PWM output (aux 1)      |
 | PA17  | TCC2          | WO[1] (C1)   | PWM output (aux 2)      |
 
-> TCC2 has 16 bit resolution instead of the 24 bit TCC0 and TCC1 offers.
-Although this is probably not a big issue since 16 bit is good enough resolution
-for our purposes
-> 
+> **Note:**  
+> TCC2 provides 16-bit resolution, compared to the 24-bit resolution of TCC0 and TCC1.  
+> This should not be a significant limitation, since 16-bit resolution is sufficient for our purposes.
+
 
 
 #### TC4 Channels (LED PWM)
@@ -117,10 +120,11 @@ for our purposes
 | PA14  | TC4           | WO[0] (C0)   | PWM for indicator LED 1 |
 | PA15  | TC4           | WO[1] (C1)   | PWM for indicator LED 2 |
 
-> TC4 also offers wafeform output although not specifically for control purposes
-TCCx peripherals are therefore preferred when it comes to control systems.
-However when it comes to modulation the strength of LED TCx peripheral are all you need
->
+> **Note:**  
+> TC4 can also generate waveform output, but it is not designed specifically for control applications.  
+> For control systems, the TCCx peripherals are preferred.  
+> However, for tasks such as LED modulation, the simpler TCx peripherals are sufficient.
+
 
 
 ---
