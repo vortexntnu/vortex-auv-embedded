@@ -1,13 +1,23 @@
 # MPLAB X IDE generated files
-nbproject/private/
-nbproject/Makefile-*
-nbproject/configurations.xml
-nbproject/output/
-nbbuild/
+**/nbproject/private
+**/nbproject/Makefile-*
+**/nbproject/Package-*
+**/nbproject/project.properties
+**/*.X/debug
+**/*.X/dist
+**/*.X/build
+**/*.X/.generated_files
+**/*.IAR/Debug
+**/*.IAR/settings
+**/*.IAR/*.dep
+**/*.IAR/*.custom_argvars
+**/*.KEIL/Objects
+**/*.KEIL/*.uvguix.*
 build/
 _build/
 dist/
 *.swp
+.generated_files/
 
 
 compile_commands.json

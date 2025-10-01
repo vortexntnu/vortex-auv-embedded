@@ -66,22 +66,22 @@ int main(void) {
     return EXIT_FAILURE;
 }
 
-static void set_thruster_pwm(uint8_t* pData) {
+static void set_thruster_pwm(uint8_t* data) {
     for (size_t thr = 0; thr < 8; thr++) {
-        uint16_t dutyCycle = pData[2 * thr] << 8 | pData[2 * thr + 1];
-        uint32_t tccValue =
-            (dutyCycle * (thr_table[thr].period + 1)) / PWM_PERIOD_MICROSECONDS;
+        uint16_t duty_cycle = data[2 * thr] << 8 | data[2 * thr + 1];
+        uint32_t tcc_value =
+            (duty_cycle * (thr_table[thr].period + 1)) / PWM_PERIOD_MICROSECONDS;
 
         switch (thr_table[thr].tcc_num) {
             case 0:
-                TCC0_PWM24bitDutySet(thr_table[thr].channel, tccValue);
+                TCC0_PWM24bitDutySet(thr_table[thr].channel, tcc_value);
                 break;
             case 1:
-                TCC1_PWM24bitDutySet(thr_table[thr].channel, tccValue);
+                TCC1_PWM24bitDutySet(thr_table[thr].channel, tcc_value);
                 break;
             case 2:
                 TCC2_PWM16bitDutySet(thr_table[thr].channel,
-                                     (uint16_t)tccValue);
+                                     (uint16_t)tcc_value);
                 break;
             default:
                 break;
