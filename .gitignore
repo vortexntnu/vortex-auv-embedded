@@ -8,6 +8,7 @@ build/
 _build/
 dist/
 *.swp
+.generated_files/
 
 
 compile_commands.json
