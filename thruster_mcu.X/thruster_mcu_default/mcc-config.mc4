@@ -1,0 +1,14 @@
+configVersion: 1.0.0
+coreVersion: 5.8.2
+spaHostVersion: 1.0.0
+device: ATSAME54P20A
+deviceLibrary:
+  className: null
+groupModules: []
+modules:
+- cmsis
+- core
+- dfp
+- evsys
+- nvmctrl
+generatedFileHashHistoryMap: []
