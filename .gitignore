@@ -18,6 +18,7 @@ _build/
 dist/
 *.swp
 .generated_files/
+**/.generated/
 
 
 compile_commands.json
