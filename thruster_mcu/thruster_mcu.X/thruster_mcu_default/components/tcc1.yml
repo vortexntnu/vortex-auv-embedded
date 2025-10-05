@@ -1,0 +1,207 @@
+configVersion: 1.0.0
+componentName: tcc1
+coreVersion: 5.8.2
+device: ATSAME54P20A
+library: []
+dependency:
+- dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
+  name: tcc1
+  type: module
+  version: ''
+- dependencyPackage: ''
+  name: csp
+  type: package
+  version: v3.23.0
+customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
+data:
+  attachments: {}
+  elementPosition:
+    attributes:
+      id: __ROOTVIEW
+    children:
+    - children:
+      - attributes:
+          id: tcc1
+          x: '177'
+          y: '280'
+        type: ElementPosition
+      type: ElementPositions
+    type: ComponentGraph
+  symbols:
+    INTR_PWM_FAULT:
+      attributes:
+        id: INTR_PWM_FAULT
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_OTHER_IRQn
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_CALLBACK_API:
+      attributes:
+        id: PWM_CALLBACK_API
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_PWMCallbackRegister
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_GET_PERIOD_API:
+      attributes:
+        id: PWM_GET_PERIOD_API
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_PWM24bitPeriodGet
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_OUTPUT_DISABLE_API:
+      attributes:
+        id: PWM_OUTPUT_DISABLE_API
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_PWMPatternSet
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_OUTPUT_ENABLE_API:
+      attributes:
+        id: PWM_OUTPUT_ENABLE_API
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_PWMPatternSet
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_PATTERN_MASK:
+      attributes:
+        id: PWM_PATTERN_MASK
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: '119'
+          type: Dynamic
+        type: Values
+      type: Hex
+    PWM_PH_MASK:
+      attributes:
+        id: PWM_PH_MASK
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: '7'
+          type: Dynamic
+        type: Values
+      type: Hex
+    PWM_PH_U:
+      attributes:
+        id: PWM_PH_U
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1CHANNEL0
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_PH_V:
+      attributes:
+        id: PWM_PH_V
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1CHANNEL1
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_PH_W:
+      attributes:
+        id: PWM_PH_W
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1CHANNEL2
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_SET_DUTY_API:
+      attributes:
+        id: PWM_SET_DUTY_API
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_PWM24bitDutySet
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_START_API:
+      attributes:
+        id: PWM_START_API
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_PWMStart
+          type: Dynamic
+        type: Values
+      type: String
+    PWM_STOP_API:
+      attributes:
+        id: PWM_STOP_API
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: TCC1_PWMStop
+          type: Dynamic
+        type: Values
+      type: String
+    TCC_RAMP_CH1_DUTY:
+      attributes:
+        id: TCC_RAMP_CH1_DUTY
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TCC_RAMP_CYCLEA_PERIOD:
+      attributes:
+        id: TCC_RAMP_CYCLEA_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: '2399'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TCC_RAMP_CYCLEB_PERIOD:
+      attributes:
+        id: TCC_RAMP_CYCLEB_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: '2399'
+          type: Dynamic
+        type: Values
+      type: Integer
+  userData: {}

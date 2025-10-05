@@ -1,0 +1,154 @@
+configVersion: 1.0.0
+componentName: can1
+coreVersion: 5.8.2
+device: ATSAME54P20A
+library: []
+dependency:
+- dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
+  name: can1
+  type: module
+  version: ''
+- dependencyPackage: ''
+  name: csp
+  type: package
+  version: v3.23.0
+customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
+data:
+  attachments: {}
+  elementPosition:
+    attributes:
+      id: __ROOTVIEW
+    children:
+    - children:
+      - attributes:
+          id: can1
+          x: '5'
+          y: '180'
+        type: ElementPosition
+      type: ElementPositions
+    type: ComponentGraph
+  symbols:
+    CALCULATED_DATA_BITRATE:
+      attributes:
+        id: CALCULATED_DATA_BITRATE
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '1224'
+          type: Dynamic
+        type: Values
+      type: Integer
+    CALCULATED_DATA_ERRORRATE:
+      attributes:
+        id: CALCULATED_DATA_ERRORRATE
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '144.898'
+          type: Dynamic
+        type: Values
+      type: String
+    CAN_OPMODE:
+      attributes:
+        id: CAN_OPMODE
+      children:
+      - children:
+        - attributes:
+            value: CAN FD
+          type: User
+        type: Values
+      type: Combo
+    DATA_TIME_QUANTA_PERIOD:
+      attributes:
+        id: DATA_TIME_QUANTA_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '16.667'
+          type: Dynamic
+        type: Values
+      type: String
+    DBTP_DSJW:
+      attributes:
+        id: DBTP_DSJW
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '8'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DBTP_DTSEG1:
+      attributes:
+        id: DBTP_DTSEG1
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '89'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DBTP_DTSEG2:
+      attributes:
+        id: DBTP_DTSEG2
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '30'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DBTP_TOTAL_TIME_QUANTA:
+      attributes:
+        id: DBTP_TOTAL_TIME_QUANTA
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '49'
+          type: Dynamic
+        type: Values
+      type: Integer
+    INTERRUPT_MODE:
+      attributes:
+        id: INTERRUPT_MODE
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    instHeaderFile:
+      attributes:
+        id: instHeaderFile
+      children:
+      - children:
+        - attributes:
+            id: source
+          children:
+          - type: Value
+            value: ../peripheral/can_u2003/templates/plib_can_interrupt.h.ftl
+          type: String
+        type: Attributes
+      type: File
+    sourceFile:
+      attributes:
+        id: sourceFile
+      children:
+      - children:
+        - attributes:
+            id: source
+          children:
+          - type: Value
+            value: ../peripheral/can_u2003/templates/plib_can_interrupt.c.ftl
+          type: String
+        type: Attributes
+      type: File
+  userData: {}
