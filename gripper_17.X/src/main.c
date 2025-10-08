@@ -196,7 +196,6 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN1;
                 servo = SERVO_2;
-                /*printf("SERVO2\n");*/
                 break;
             case SERVO_2:
                 if (overCurrent) {
@@ -204,7 +203,6 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN4;
                 servo = SERVO_3;
-                /*printf("SERVO3\n");*/
                 break;
             case SERVO_3:
                 if (overCurrent) {
@@ -212,7 +210,6 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                 }
                 ADC0_REGS->ADC_INPUTCTRL = ADC_POSINPUT_AIN0;
                 servo = SERVO_1;
-                /*printf("SERVO1\n");*/
                 break;
             default:
                 break;
