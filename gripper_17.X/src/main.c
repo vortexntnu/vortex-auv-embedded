@@ -1,4 +1,5 @@
 
+#include <sys/types.h>
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -7,7 +8,6 @@ uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
 #define CAN_SEND_ANGLES 0x469
 
 /*CAN*/
-static uint32_t status = 0;
 static uint32_t rx_id = 0;
 static uint8_t rx_buf[64] = {0};
 static uint8_t rx_len = 0;
@@ -17,6 +17,14 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 static uint8_t encoder_angles[7] = {0};
 static bool use_can = true;
+
+struct gripper_angles {
+    uint16_t shoulder;
+    uint16_t wrist;
+    uint16_t grip;
+};
+
+static struct gripper_angles gripper_angles;
 
 /**
  *@brief reads encoder angle registers
@@ -55,10 +63,6 @@ int main(void) {
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
 
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
-    CAN0_RxCallbackRegister(CAN_Recieve_Callback, (uintptr_t)STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_TxCallbackRegister(CAN_Transmit_Callback,
-                            (uintptr_t)STATE_CAN_TRANSMIT);
 
     CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
                         CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
@@ -120,15 +124,7 @@ static void set_servos_pwm(uint8_t* pwm_data) {
 }
 
 static void state_machine(void) {
-    uint8_t event;
-    uint8_t* data;
-    if (use_can) {
-        event = rx_id - 0x469;
-        data = rx_buf;
-    } else {
-        event = rx_buf[0];
-        data = rx_buf + 1;
-    }
+    uint8_t event = rx_id - 0x469;
     switch (event) {
         case STOP_GRIPPER:
             stop_gripper();
@@ -138,13 +134,12 @@ static void state_machine(void) {
             WDT_Enable();
             break;
         case SET_PWM:
-            set_servos_pwm(data);
+            set_servos_pwm(rx_buf);
             read_encoders(ANGLE_REGISTER, encoder_angles);
-            if (use_can) {
-                CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
-                                     CAN_MODE_FD_WITHOUT_BRS,
-                                     CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
-            }
+
+            CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
+                                 CAN_MODE_FD_WITHOUT_BRS,
+                                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
 
             WDT_Clear();
             break;
@@ -154,10 +149,9 @@ static void state_machine(void) {
         default:
             break;
     }
-    if (use_can) {
-        CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                            CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
-    }
+
+    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
+                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
 }
 
 static void stop_gripper(void) {
@@ -211,24 +205,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
             break;
     }
     return true;
-}
-
-void CAN_Recieve_Callback(uintptr_t context) {
-    use_can = true;
-    status = CAN0_ErrorGet();
-
-    if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
-        ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        // print_can_frame();
-    }
-}
-
-void CAN_Transmit_Callback(uintptr_t context) {
-    status = CAN0_ErrorGet();
-
-    if (((status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
-        ((status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-    }
 }
 
 // Only used for testing SERVOS
