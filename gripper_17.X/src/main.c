@@ -31,7 +31,7 @@ static int read_encoders(uint8_t reg, uint8_t* data);
  *@param data pointer to array containing duty cycle values
  */
 static void set_servos_pwm(uint8_t* data);
-static void message_handler(void);
+static void state_machine(void);
 static void stop_gripper(void);
 static void start_gripper(void);
 bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
@@ -69,7 +69,7 @@ int main(void) {
 
     while (true) {
         PM_IdleModeEnter();
-        message_handler();
+        state_machine();
     }
 
     return EXIT_FAILURE;
@@ -103,23 +103,23 @@ static int read_encoders(uint8_t reg, uint8_t* data) {
     return 0;
 }
 
-static void set_servos_pwm(uint8_t* data) {
-    uint16_t shoulderDuty = (data[0] << 8) | data[1];
-    uint16_t wristDuty = (data[2] << 8) | data[3];
-    uint16_t gripDuty = (data[4] << 8) | data[5];
+static void set_servos_pwm(uint8_t* pwm_data) {
+    uint16_t shoulder_duty = (pwm_data[0] << 8) | pwm_data[1];
+    uint16_t wrist_duty = (pwm_data[2] << 8) | pwm_data[3];
+    uint16_t grip_duty = (pwm_data[4] << 8) | pwm_data[5];
 
     uint32_t tcc_val =
-        (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+        (shoulder_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     TCC0_PWM24bitDutySet(3, tcc_val);
 
-    tcc_val = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    tcc_val = (wrist_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(0, tcc_val);
 
-    tcc_val = (gripDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    tcc_val = (grip_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(1, tcc_val);
 }
 
-static void message_handler(void) {
+static void state_machine(void) {
     uint8_t event;
     uint8_t* data;
     if (use_can) {

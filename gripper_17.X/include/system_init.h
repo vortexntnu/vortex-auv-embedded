@@ -20,6 +20,7 @@
 #include "tcc_common.h"
 #include "usart.h"
 #include "wdt.h"
+#include "tc0.h"
 
 // Encoder
 #define SHOULDER_ADDR 0x40
