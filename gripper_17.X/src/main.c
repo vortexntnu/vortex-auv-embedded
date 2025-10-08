@@ -207,44 +207,6 @@ bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
     return true;
 }
 
-// Only used for testing SERVOS
-void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
-    /* duty cycle values */
-    static int8_t increment1 = 10;
-    static uint32_t duty1 = 0;
-    static uint32_t duty2 = 0;
-    static uint32_t duty3 = 0U;
-
-    TCC0_PWM24bitDutySet(1, duty1);
-    TCC1_PWM24bitDutySet(0, duty2);
-    TCC1_PWM24bitDutySet(1, duty3);
-
-    duty1 += increment1;
-    duty2 += increment1;
-    duty3 += increment1;
-
-    if (duty1 > PWM_MAX) {
-        duty1 = PWM_MAX;
-        increment1 *= -1;
-    } else if (duty2 < PWM_MIN) {
-        duty1 = PWM_MIN;
-        increment1 *= -1;
-    }
-    if (duty2 > PWM_MAX) {
-        duty2 = PWM_MAX;
-        increment1 *= -1;
-    } else if (duty2 < PWM_MIN) {
-        duty2 = PWM_MIN;
-        increment1 *= -1;
-    }
-    if (duty3 > PWM_MAX) {
-        duty3 = PWM_MAX;
-        increment1 *= -1;
-    } else if (duty3 < PWM_MIN) {
-        duty3 = PWM_MIN;
-        increment1 *= -1;
-    }
-}
 
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
