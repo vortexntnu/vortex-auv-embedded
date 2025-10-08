@@ -78,20 +78,25 @@ static int read_encoders(uint8_t reg, uint8_t* data) {
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
         uint8_t buf[2] = {0xFF};
+
         if (!SERCOM1_I2C_WriteRead(encoder_addresses[i], &reg, 1, buf, 2)) {
             return -1;
         }
+
         timeout = I2C_TIMEOUT;
+
         while (SERCOM1_I2C_IsBusy()) {
             if (--timeout == 0) {
                 break;
             }
         }
+
         if (buf[0] == 0xFF && buf[1] == 0xFF) {
             data[2 * i] = 0xFF;
             data[2 * i + 1] = 0xFF;
             continue;
         }
+
         uint16_t raw_angle = (buf[0] << 6) | (buf[1] & 0x3F);
         data[2 * i] = raw_angle >> 8;
         data[2 * i + 1] = raw_angle & 0xFF;
@@ -226,7 +231,7 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
 }
 
 #ifdef DEBUG
-void print_can_frame(void) {
+void print_can_frame(uint32_t rx_id, uint8_t rx_len, uint16_t timestamp, uint8_t* rx_buf) {
     printf(" New Message Received\r\n");
     uint8_t length = rx_len;
     printf(
