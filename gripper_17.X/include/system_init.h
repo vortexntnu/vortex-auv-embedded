@@ -46,18 +46,11 @@ typedef enum {
 } CAN_STATES;
 
 typedef enum {
-    STOP_GRIPPER,
+    STOP_GRIPPER = 0x469,
     START_GRIPPER,
     SET_PWM,
     RESET_MCU,
 } CAN_RECEIVE_ID;
-
-typedef enum {
-    I2C_SET_PWM,
-    I2C_STOP_GRIPPER,
-    I2C_START_GRIPPER,
-    I2C_RESET_MCU,
-} I2C_STARTBYTE_ID;
 
 typedef enum {
     SERVO_1,

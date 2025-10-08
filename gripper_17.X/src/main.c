@@ -16,7 +16,6 @@ static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 
 static uint16_t adc_result_array[TRANSFER_SIZE];
 static uint8_t encoder_angles[7] = {0};
-static bool use_can = true;
 
 struct gripper_angles {
     uint16_t shoulder;
@@ -54,19 +53,10 @@ void print_can_frame(void);
 int main(void) {
     system_init();
 
-    // start_gripper();
-
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
-
-    // SERCOM3_I2C_CallbackRegister(SERCOM_I2C_Callback, 0);
-
-    // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
-
     CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
                         CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
-
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
@@ -124,8 +114,7 @@ static void set_servos_pwm(uint8_t* pwm_data) {
 }
 
 static void state_machine(void) {
-    uint8_t event = rx_id - 0x469;
-    switch (event) {
+    switch (rx_id) {
         case STOP_GRIPPER:
             stop_gripper();
             break;
@@ -149,7 +138,6 @@ static void state_machine(void) {
         default:
             break;
     }
-
     CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
                         CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
 }
@@ -171,41 +159,6 @@ static void start_gripper(void) {
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 }
 
-bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
-                         uintptr_t contextHandle) {
-    static uint8_t dataBuffer[7];
-    static uint8_t dataIndex = 0;
-    use_can = false;
-
-    switch (event) {
-        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_ADDR_MATCH:
-            dataIndex = 0;
-            break;
-        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_RX_READY:
-
-            if (dataIndex < sizeof(dataBuffer)) {
-                dataBuffer[dataIndex++] = SERCOM3_I2C_ReadByte();
-            }
-
-            break;
-        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_TX_READY: {
-            SERCOM3_I2C_WriteByte(encoder_angles[dataIndex++]);
-            break;
-        }
-        case SERCOM_I2C_SLAVE_TRANSFER_EVENT_STOP_BIT_RECEIVED:
-            if (SERCOM3_I2C_TransferDirGet() ==
-                SERCOM_I2C_SLAVE_TRANSFER_DIR_WRITE) {
-                // printf("Message recieved\n");
-                // for (int i = 0; i < 7; i++) {
-                //     printf("%x\n", dataBuffer[i]);
-                // }
-            }
-            break;
-        default:
-            break;
-    }
-    return true;
-}
 
 
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
