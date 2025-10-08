@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "adc0.h"
 #include "can1.h"
@@ -18,9 +17,12 @@
 #include "tcc.h"
 #include "tcc0.h"
 #include "tcc_common.h"
-#include "usart.h"
 #include "wdt.h"
 #include "tc0.h"
+
+#ifdef DEBUG
+#include "usart.h"
+#endif 
 
 // Encoder
 #define SHOULDER_ADDR 0x40

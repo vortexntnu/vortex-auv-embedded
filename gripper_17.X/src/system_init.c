@@ -128,7 +128,9 @@ void system_init(void){
     // SERCOM0_I2C_Initialize();  // I2C 3
     SERCOM1_I2C_Initialize();  // I2C 2
 
+#ifdef DEBUG
     SERCOM0_USART_Initialize();  // USART for Debugging
+#endif
 
     SERCOM3_SLAVE_I2C_Initialize();
 

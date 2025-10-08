@@ -9,7 +9,6 @@
 
 #include <stdbool.h>  // Defines true
 #include <stddef.h>   // Defines NULL
-#include <stdio.h>
 #include <stdlib.h>  // Defines EXIT_FAILURE
 #include "i2c.h"
 #include "samc21e17a.h"
