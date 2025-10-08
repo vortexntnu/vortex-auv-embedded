@@ -103,31 +103,31 @@ static int read_encoders(uint8_t reg, uint8_t* data) {
     return 0;
 }
 
-static void set_servos_pwm(uint8_t* pData) {
-    uint16_t shoulderDuty = (pData[0] << 8) | pData[1];
-    uint16_t wristDuty = (pData[2] << 8) | pData[3];
-    uint16_t gripDuty = (pData[4] << 8) | pData[5];
+static void set_servos_pwm(uint8_t* data) {
+    uint16_t shoulderDuty = (data[0] << 8) | data[1];
+    uint16_t wristDuty = (data[2] << 8) | data[3];
+    uint16_t gripDuty = (data[4] << 8) | data[5];
 
-    uint32_t tccValue =
+    uint32_t tcc_val =
         (shoulderDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    TCC0_PWM24bitDutySet(3, tccValue);
+    TCC0_PWM24bitDutySet(3, tcc_val);
 
-    tccValue = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    TCC1_PWM24bitDutySet(0, tccValue);
+    tcc_val = (wristDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC1_PWM24bitDutySet(0, tcc_val);
 
-    tccValue = (gripDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    TCC1_PWM24bitDutySet(1, tccValue);
+    tcc_val = (gripDuty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    TCC1_PWM24bitDutySet(1, tcc_val);
 }
 
 static void message_handler(void) {
     uint8_t event;
-    uint8_t* pData;
+    uint8_t* data;
     if (use_can) {
         event = rx_id - 0x469;
-        pData = rx_buf;
+        data = rx_buf;
     } else {
         event = rx_buf[0];
-        pData = rx_buf + 1;
+        data = rx_buf + 1;
     }
     switch (event) {
         case STOP_GRIPPER:
@@ -138,7 +138,7 @@ static void message_handler(void) {
             WDT_Enable();
             break;
         case SET_PWM:
-            set_servos_pwm(pData);
+            set_servos_pwm(data);
             read_encoders(ANGLE_REGISTER, encoder_angles);
             if (use_can) {
                 CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
