@@ -41,8 +41,10 @@ int main ( void )
 
     while ( true )
     {
-        /* Maintain state machines of all polled MPLAB Harmony modules. */
-        SYS_Tasks ( );
+        //LED0_Clear();
+
+
+        LED0_Clear();
     }
 
     /* Execution should not come here during normal operation */

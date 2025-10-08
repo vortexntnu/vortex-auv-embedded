@@ -23,7 +23,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: 0f5822ab8fce55de8350ca340e0367bd68399f9bef3f2415042e5e587885117c
+  hash: 1fce5221bec278be9706c2834d3da8520497249265a4594cbb8ab4832d7cb82a
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -33,7 +33,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: 15ecdc738f5971507045be530a9a71e2a412fe5b6c0c187771eb32a5969d3d4a
+  hash: 94a617a98708d82cc5a74417e188fe87a9275ac7656d908fd64ef35f0d38d746
 - file: ../src/config/default/interrupts.c
   hash: a5b92c20944202b26469dd0731589e4294df41a8806bd9fe21b26543acb5613f
 - file: ../src/config/default/interrupts.h
@@ -67,9 +67,9 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/nvmctrl/plib_nvmctrl.h
   hash: fd7749dc74a885efd7c593394454abc74afc7cf184123f0315425a3600c26ac5
 - file: ../src/config/default/peripheral/port/plib_port.c
-  hash: f03d9a6c11ff6841e25cea1c51b2834bcfa6c3b99f5c8f82d8bfc0309889bc77
+  hash: f7be442ea320301c2d8a67de3aae0f7f96fcb7e5b0f152b90029c0dcdeac5573
 - file: ../src/config/default/peripheral/port/plib_port.h
-  hash: 7854b8a6074c06d95e6b3982c1ebf66d14d4c5e6c7fa1426a787ec2ac6b26dc8
+  hash: bd4b3257c12b2240ab8dc2225d4fbb47663a617410bee20db44b60417e499be3
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.c
   hash: 1e27abbbc16f54171c2752d8e01fdc7e2a96ecfb1c06f4575104d05c139de7ac
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.h
@@ -99,7 +99,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/tcc/plib_tcc_common.h
   hash: 2bd78c7b794475007265f122ca57ef54a64efc8894cc2423a1d0f74caa627b2b
 - file: ../src/config/default/pin_configurations.csv
-  hash: 0ed8527d4eeaa2ce7bf34c7ff8e2d05a2c04a9b214c9a5a4e21cff71a08d9b3a
+  hash: b977f8dad9e9f38ba9a40a489263c7cb152addaa0de5abf0648858a90e993832
 - file: ../src/config/default/startup_xc32.c
   hash: f374b97d65f92553f1b75d8c9239b8b0f8581c710f78ea47b02c7f6fa6f74c74
 - file: ../src/config/default/stdio/xc32_monitor.c
