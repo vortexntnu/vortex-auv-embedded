@@ -92,6 +92,9 @@ static void nvic_init(void) {
     NVIC_SetPriority(DMAC_IRQn, 3);
     NVIC_EnableIRQ(DMAC_IRQn);
 
+    NVIC_SetPriority(TC0_IRQn, 3);
+    NVIC_EnableIRQ(TC0_IRQn);
+
     __DMB();
     __enable_irq();
 }
