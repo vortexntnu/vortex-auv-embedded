@@ -96,9 +96,9 @@ static int read_encoders(uint8_t reg, uint8_t* data) {
             data[2 * i + 1] = 0xFF;
             continue;
         }
-        uint16_t rawAngle = (buf[0] << 6) | (buf[1] & 0x3F);
-        data[2 * i] = rawAngle >> 8;
-        data[2 * i + 1] = rawAngle & 0xFF;
+        uint16_t raw_angle = (buf[0] << 6) | (buf[1] & 0x3F);
+        data[2 * i] = raw_angle >> 8;
+        data[2 * i + 1] = raw_angle & 0xFF;
     }
     return 0;
 }
