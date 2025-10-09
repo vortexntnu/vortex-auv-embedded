@@ -22,8 +22,8 @@ data:
     - children:
       - attributes:
           id: adc0
-          x: '37'
-          y: '233'
+          x: '30'
+          y: '216'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
@@ -204,4 +204,34 @@ data:
           type: Dynamic
         type: Values
       type: String
+    ADC_CTRLB_PRESCALER:
+      attributes:
+        id: ADC_CTRLB_PRESCALER
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    ADC_CTRLC_DIFFMODE:
+      attributes:
+        id: ADC_CTRLC_DIFFMODE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_CONV_TRIGGER:
+      attributes:
+        id: ADC_CONV_TRIGGER
+      children:
+      - children:
+        - attributes:
+            value: SW Trigger
+          type: User
+        type: Values
+      type: Combo
   userData: {}

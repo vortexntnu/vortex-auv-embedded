@@ -22,8 +22,8 @@ data:
     - children:
       - attributes:
           id: nvmctrl
-          x: '438'
-          y: '69'
+          x: '339'
+          y: '7'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
