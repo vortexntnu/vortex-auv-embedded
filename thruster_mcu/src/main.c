@@ -7,7 +7,7 @@ const uint32_t tcc0_period = 74000U;
 const uint32_t tcc1_period = 74000U;
 const uint32_t tcc2_period = 18500U;
 
-const pwm_period_microseconds = 20000U;
+const uint32_t pwm_period_microseconds = 20000U;
 
 
 struct Thruster {
@@ -33,6 +33,10 @@ static const struct Thruster thrusters[8] = {
  * @param pData pointer to array containing dutycycle values
  */
 static void set_thruster_pwm(uint8_t *data);
+
+static void stop_thrusters(void);
+
+static void start_thrusters(void);
 
 
 int main ( void ) {
@@ -74,5 +78,17 @@ static void set_thruster_pwm(uint8_t *data) {
     }
     // TODO: Reset watchdog timer
 }
+
+static void stop_thrusters(void) {
+    TCC0_PWMStop();
+    TCC1_PWMStop();
+    TCC2_PWMStop();
+};
+
+static void start_thrusters(void) {
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    TCC2_PWMStart();
+};
 
 
