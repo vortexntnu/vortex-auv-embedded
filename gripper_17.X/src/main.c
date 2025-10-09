@@ -7,11 +7,6 @@ uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
 
 #define CAN_SEND_ANGLES 0x469
 
-static uint32_t rx_id = 0;
-static uint8_t rx_buf[64] = {0};
-static uint8_t rx_len = 0;
-static uint16_t timestamp = 0;
-
 static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 
@@ -136,7 +131,7 @@ static void set_servos_pwm(uint8_t* pwm_data) {
 }
 
 static void state_machine(void) {
-    switch (rx_id) {
+    switch (rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
             break;
@@ -145,7 +140,7 @@ static void state_machine(void) {
             WDT_Enable();
             break;
         case SET_PWM:
-            set_servos_pwm(rx_buf);
+            set_servos_pwm(rx_frame.buf);
 
             struct can_tx_frame tx_frame;
             tx_frame.id = CAN_SEND_ANGLES;
@@ -161,8 +156,7 @@ static void state_machine(void) {
         default:
             break;
     }
-    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
+    can_recieve(&rx_frame);
 }
 
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
