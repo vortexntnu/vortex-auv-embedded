@@ -14,7 +14,6 @@ static uint16_t timestamp = 0;
 
 static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 static uint16_t adc_result_array[TRANSFER_SIZE];
-static uint8_t encoder_angles[7] = {0};
 
 struct gripper_angles {
     uint16_t shoulder;
@@ -37,6 +36,8 @@ struct can_rx_frame {
     uint16_t timestamp;
 };
 
+static struct can_rx_frame rx_frame;
+
 static struct gripper_angles gripper_angles;
 
 /**
@@ -56,13 +57,13 @@ static void state_machine(void);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 
-bool can_transmit(const struct can_tx_frame* frame) {
+static inline bool can_transmit(const struct can_tx_frame* frame) {
     return CAN0_MessageTransmit(frame->id, frame->len, frame->buf,
                                 CAN_MODE_FD_WITHOUT_BRS,
                                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
 }
 
-bool can_recieve(struct can_rx_frame* frame) {
+static inline bool can_recieve(struct can_rx_frame* frame) {
     return CAN0_MessageReceive(&frame->id, &frame->len, frame->buf, &frame->timestamp,
                         CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
 }
@@ -72,11 +73,10 @@ int main(void) {
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
-    CAN0_MessageReceive(&rx_id, &rx_len, rx_buf, &timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
+    can_recieve(&rx_frame);
 
     while (true) {
         PM_IdleModeEnter();
@@ -146,11 +146,12 @@ static void state_machine(void) {
             break;
         case SET_PWM:
             set_servos_pwm(rx_buf);
-            read_encoders(ANGLE_REGISTER, encoder_angles);
 
-            CAN0_MessageTransmit(CAN_SEND_ANGLES, 6, encoder_angles,
-                                 CAN_MODE_FD_WITHOUT_BRS,
-                                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
+            struct can_tx_frame tx_frame;
+            tx_frame.id = CAN_SEND_ANGLES;
+            tx_frame.len = 6;
+            read_encoders(ANGLE_REGISTER, tx_frame.buf);
+            can_transmit(&tx_frame);
 
             WDT_Clear();
             break;
