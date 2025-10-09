@@ -34,9 +34,9 @@ static struct gripper_angles gripper_angles;
 static int read_encoders(uint8_t reg, uint8_t* data);
 /**
  *@brief Sets servos duty cycle
- *@param data pointer to array containing duty cycle values
+ *@param[in] data pointer to array containing duty cycle values
  */
-static void set_servos_pwm(uint8_t* data);
+static void set_servos_pwm(uint8_t* pwm_data);
 static void state_machine(void);
 static void stop_gripper(void);
 static void start_gripper(void);
