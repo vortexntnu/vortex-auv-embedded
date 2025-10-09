@@ -200,7 +200,7 @@ data:
       - children:
         - attributes:
             id: tcc1
-            value: '4600'
+            value: '74000'
           type: Dynamic
         type: Values
       type: Integer
@@ -211,7 +211,7 @@ data:
       - children:
         - attributes:
             id: tcc1
-            value: '234375'
+            value: '3750000'
           type: Dynamic
         type: Values
       type: Integer
@@ -222,7 +222,7 @@ data:
       - children:
         - attributes:
             id: tcc1
-            value: '233'
+            value: '3749'
           type: Dynamic
         type: Values
       type: Long
@@ -235,7 +235,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '71582.79'
+            value: '4473.9243'
           type: Float
         type: Attributes
       type: Float
@@ -245,7 +245,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '6'
+            value: '4'
           type: User
         type: Values
       type: KeyValueSet
@@ -255,7 +255,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '4600'
+            value: '74000'
           type: User
         type: Values
       type: Integer
