@@ -416,7 +416,19 @@ int write(int handle, void* buffer, size_t count) {
     return (int)count;
 }
 
-// static int USART_printf(char c, FILE* stream) {
-//     SERCOM0_USART_WriteByte(c);
-//     return 0;
-// }
+#ifdef DEBUG
+void print_can_frame(uint32_t rx_id, uint8_t rx_len, uint16_t timestamp, uint8_t* rx_buf) {
+    printf(" New Message Received\r\n");
+    uint8_t length = rx_len;
+    printf(
+        " Message - Timestamp : 0x%x ID : 0x%x Length "
+        ":0x%x",
+        (unsigned int)timestamp, (unsigned int)rx_id, (unsigned int)rx_len);
+    printf("Message : ");
+    while (length) {
+        printf("0x%x ", rx_buf[rx_len - length--]);
+    }
+}
+#endif
+
+

@@ -1,5 +1,4 @@
 
-#include <sys/types.h>
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -48,9 +47,6 @@ void CAN_Transmit_Callback(uintptr_t context);
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
-#ifdef DEBUG
-void print_can_frame(void);
-#endif
 
 int main(void) {
     system_init();
@@ -230,17 +226,3 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
     }
 }
 
-#ifdef DEBUG
-void print_can_frame(uint32_t rx_id, uint8_t rx_len, uint16_t timestamp, uint8_t* rx_buf) {
-    printf(" New Message Received\r\n");
-    uint8_t length = rx_len;
-    printf(
-        " Message - Timestamp : 0x%x ID : 0x%x Length "
-        ":0x%x",
-        (unsigned int)timestamp, (unsigned int)rx_id, (unsigned int)rx_len);
-    printf("Message : ");
-    while (length) {
-        printf("0x%x ", rx_buf[rx_len - length--]);
-    }
-}
-#endif
