@@ -409,7 +409,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -442,7 +442,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -475,7 +475,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -508,7 +508,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -1052,7 +1052,7 @@ data:
       - children:
         - attributes:
             id: sercom1
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -1096,7 +1096,7 @@ data:
       - children:
         - attributes:
             id: sercom1
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -1140,7 +1140,7 @@ data:
       - children:
         - attributes:
             id: sercom1
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -1206,7 +1206,7 @@ data:
       - children:
         - attributes:
             id: sercom1
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String

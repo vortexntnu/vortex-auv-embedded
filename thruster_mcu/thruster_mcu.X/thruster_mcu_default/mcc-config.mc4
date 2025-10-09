@@ -23,7 +23,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: 0f5822ab8fce55de8350ca340e0367bd68399f9bef3f2415042e5e587885117c
+  hash: 2add27656b812029ebb11d8983b6f74d1f94160d67805f41abf13666484bcebb
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -33,11 +33,11 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: 15ecdc738f5971507045be530a9a71e2a412fe5b6c0c187771eb32a5969d3d4a
+  hash: 0806bd3c476210839d2c179352fa2f9a24d5da23dd186e538dda67c990fd0d4c
 - file: ../src/config/default/interrupts.c
-  hash: a5b92c20944202b26469dd0731589e4294df41a8806bd9fe21b26543acb5613f
+  hash: 9583303d92d1b29dc1119b10d05e6608658a36d3b7562306c800d02a1c74a726
 - file: ../src/config/default/interrupts.h
-  hash: eca00d1f300a307cbf3f6c0504ad95d633d9ec2d351856cf0365a40c10e60ab7
+  hash: 671fac730318537672357cfd0c467ba8ca4ff588a2d3cc90612a1c9a02aa838c
 - file: ../src/config/default/libc_syscalls.c
   hash: 88bb2e34c939601b5b7ad076556e3ee0fcedf388436b8cddb6d6fd3e9d07472f
 - file: ../src/config/default/peripheral/can/plib_can1.c
@@ -70,14 +70,16 @@ generatedFileHashHistoryMap:
   hash: 4cedcb28f082422cb2926a2b197fd4d252855ddfbb82c928604dcf9657489c26
 - file: ../src/config/default/peripheral/port/plib_port.h
   hash: bd4b3257c12b2240ab8dc2225d4fbb47663a617410bee20db44b60417e499be3
+- file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c
+  hash: 887030ee8ef788dc6f07c13e3910191f241c1a1ce07f1fdfeb34d63d0d51559e
+- file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.h
+  hash: 989b307a02a3932781c3120222b4624c5536e6cda1a1d70259e230a8f60c5ed4
+- file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom_i2c_master_common.h
+  hash: f167b04b3c6a0f83fe41b7b6f810cbf0a48b8ca7d5a747b76463dd53d3c1a2a2
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.c
   hash: 1e27abbbc16f54171c2752d8e01fdc7e2a96ecfb1c06f4575104d05c139de7ac
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.h
   hash: e71168d38895bf59feced00ea282037b83ae26cf23116fc26881075607db51ac
-- file: ../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.c
-  hash: c0481112248d5fbfedda4ec2a33bc91d488a02c3671cad540d79a4a1888f0a26
-- file: ../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.h
-  hash: 721b767702c85a60634480b2759b12de7c24e3a3d3cbba8e540ed6ca0c083828
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.c
   hash: 5b78242431200768a57649ff00fad44a63801384776c3be877415e31bcfe74ec
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.h
