@@ -7,6 +7,8 @@ const uint32_t tcc0_period = 74000U;
 const uint32_t tcc1_period = 74000U;
 const uint32_t tcc2_period = 18500U;
 
+const pwm_period_microseconds = 20000U;
+
 
 struct Thruster {
     uint8_t tcc_num;
@@ -25,11 +27,15 @@ static const struct Thruster thrusters[8] = {
     {1, 1, tcc1_period}  // TCC1_CHANNEL1 
 };
 
+/*
+ * Set thruster PWM dutycycle and reset watchdog timer 
+ * 
+ * @param pData pointer to array containing dutycycle values
+ */
+static void set_thruster_pwm(uint8_t *data);
 
 
-int main ( void )
-{
-    printf(thrusters[0].tcc_num);
+int main ( void ) {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
 
@@ -43,4 +49,30 @@ int main ( void )
 
     return ( EXIT_FAILURE );
 }
+
+static void set_thruster_pwm(uint8_t *data) {
+    for (size_t thr; thr < 8; thr++) {
+        uint16_t duty_cycle = (data[2*thr] << 8) | data[2*thr + 1];
+        uint32_t tcc_value = (duty_cycle * (thrusters[thr].period + 1)) / pwm_period_microseconds;
+        
+        switch (thrusters[thr].tcc_num) {
+            case 0:
+                TCC0_PWM24bitDutySet(thrusters[thr].channel, tcc_value);
+                break;
+                
+            case 1:
+                TCC1_PWM24bitDutySet(thrusters[thr].channel, tcc_value);
+                break;
+                
+            case 2:
+                // Shouldn't hit this with current TCC channel configuration
+                TCC2_PWM16bitDutySet(thrusters[thr].channel, (uint16_t) tcc_value);
+                break;
+            default:
+                break;
+        }
+    }
+    // TODO: Reset watchdog timer
+}
+
 
