@@ -1837,6 +1837,143 @@ data:
           type: User
         type: Values
       type: String
+    PIN_41_MODE:
+      attributes:
+        id: PIN_41_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_41_FUNCTION_TYPE:
+      attributes:
+        id: PIN_41_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: CAN1_TX
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_1_PMUX6:
+      attributes:
+        id: PORT_GROUP_1_PMUX6
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x77'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PAD_12:
+      attributes:
+        id: PORT_GROUP_1_PAD_12
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PB12
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PINCFG12:
+      attributes:
+        id: PORT_GROUP_1_PINCFG12
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PIN_12_USED:
+      attributes:
+        id: PORT_GROUP_1_PIN_12_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_41_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_41_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: H
+          type: User
+        type: Values
+      type: String
+    PIN_42_MODE:
+      attributes:
+        id: PIN_42_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_42_FUNCTION_TYPE:
+      attributes:
+        id: PIN_42_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: CAN1_RX
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_1_PAD_13:
+      attributes:
+        id: PORT_GROUP_1_PAD_13
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PB13
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PINCFG13:
+      attributes:
+        id: PORT_GROUP_1_PINCFG13
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PIN_13_USED:
+      attributes:
+        id: PORT_GROUP_1_PIN_13_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_42_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_42_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: H
+          type: User
+        type: Values
+      type: String
   userData:
     children:
     - attributes:
