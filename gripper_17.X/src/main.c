@@ -1,4 +1,5 @@
-
+#include <stdint.h>
+#include "can1.h"
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -6,13 +7,12 @@ uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
 
 #define CAN_SEND_ANGLES 0x469
 
-/*CAN*/
 static uint32_t rx_id = 0;
 static uint8_t rx_buf[64] = {0};
 static uint8_t rx_len = 0;
 static uint16_t timestamp = 0;
-static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 
+static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 static uint8_t encoder_angles[7] = {0};
 
@@ -20,6 +20,21 @@ struct gripper_angles {
     uint16_t shoulder;
     uint16_t wrist;
     uint16_t grip;
+};
+
+
+struct can_tx_frame {
+    uint32_t id;
+    uint8_t buf[64];
+    uint8_t len;
+};
+
+
+struct can_rx_frame {
+    uint32_t id;
+    uint8_t buf[64];
+    uint8_t len;
+    uint16_t timestamp;
 };
 
 static struct gripper_angles gripper_angles;
@@ -38,15 +53,19 @@ static int read_encoders(uint8_t reg, uint8_t* data);
  */
 static void set_servos_pwm(uint8_t* pwm_data);
 static void state_machine(void);
-static void stop_gripper(void);
-static void start_gripper(void);
-bool SERCOM_I2C_Callback(SERCOM_I2C_SLAVE_TRANSFER_EVENT event,
-                         uintptr_t contextHandle);
-void CAN_Recieve_Callback(uintptr_t context);
-void CAN_Transmit_Callback(uintptr_t context);
-void TCC_PeriodEventHandler(uint32_t status, uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
+
+bool can_transmit(const struct can_tx_frame* frame) {
+    return CAN0_MessageTransmit(frame->id, frame->len, frame->buf,
+                                CAN_MODE_FD_WITHOUT_BRS,
+                                CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
+}
+
+bool can_recieve(struct can_rx_frame* frame) {
+    return CAN0_MessageReceive(&frame->id, &frame->len, frame->buf, &frame->timestamp,
+                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
+}
 
 int main(void) {
     system_init();
@@ -145,25 +164,6 @@ static void state_machine(void) {
                         CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
 }
 
-static void stop_gripper(void) {
-    WDT_Disable();
-    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
-    TCC0_PWMStop();
-    TCC1_PWMStop();
-    ADC0_Disable();
-}
-
-static void start_gripper(void) {
-    TCC0_PWMStart();
-    TCC1_PWMStart();
-    ADC0_Enable();
-    RTC_Timer32Start();
-    RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
-}
-
-
-
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
     static uint8_t servo = SERVO_1;
@@ -225,4 +225,3 @@ void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
             (const void*)adc_result_array, sizeof(adc_result_array));
     }
 }
-

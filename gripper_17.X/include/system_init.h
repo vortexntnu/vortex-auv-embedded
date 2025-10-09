@@ -14,15 +14,15 @@
 #include "pm.h"
 #include "rtc.h"
 #include "sercom1_i2c.h"  // Encoder i2c
+#include "tc0.h"
 #include "tcc.h"
 #include "tcc0.h"
 #include "tcc_common.h"
 #include "wdt.h"
-#include "tc0.h"
 
 #ifdef DEBUG
 #include "usart.h"
-#endif 
+#endif
 
 // Encoder
 #define SHOULDER_ADDR 0x40
@@ -65,7 +65,22 @@ typedef enum {
  */
 void system_init(void);
 
+static inline void stop_gripper(void) {
+    WDT_Disable();
+    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
+    TCC0_PWMStop();
+    TCC1_PWMStop();
+    ADC0_Disable();
+}
 
+static inline void start_gripper(void) {
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    ADC0_Enable();
+    RTC_Timer32Start();
+    RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
+}
 
 #ifdef __cplusplus
 }
