@@ -200,8 +200,63 @@ data:
       - children:
         - attributes:
             id: tcc1
-            value: '2399'
+            value: '4600'
           type: Dynamic
+        type: Values
+      type: Integer
+    TCC_MODULE_FREQUENCY:
+      attributes:
+        id: TCC_MODULE_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: '234375'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TCC_TIMER_PERIOD:
+      attributes:
+        id: TCC_TIMER_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: tcc1
+            value: '233'
+          type: Dynamic
+        type: Values
+      type: Long
+    TCC_TIMER_TIME_MS:
+      attributes:
+        id: TCC_TIMER_TIME_MS
+      children:
+      - children:
+        - attributes:
+            id: max
+          children:
+          - type: Value
+            value: '71582.79'
+          type: Float
+        type: Attributes
+      type: Float
+    TCC_CTRLA_PRESCALER:
+      attributes:
+        id: TCC_CTRLA_PRESCALER
+      children:
+      - children:
+        - attributes:
+            value: '6'
+          type: User
+        type: Values
+      type: KeyValueSet
+    TCC_PER_PER:
+      attributes:
+        id: TCC_PER_PER
+      children:
+      - children:
+        - attributes:
+            value: '4600'
+          type: User
         type: Values
       type: Integer
   userData: {}

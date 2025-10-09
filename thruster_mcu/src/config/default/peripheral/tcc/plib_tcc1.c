@@ -66,7 +66,7 @@ void TCC1_PWMInitialize(void)
         /* Wait for sync */
     }
     /* Clock prescaler */
-    TCC1_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV1
+    TCC1_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV256
                             | TCC_CTRLA_PRESCSYNC_PRESC ;
     TCC1_REGS->TCC_WEXCTRL = TCC_WEXCTRL_OTMX(0UL);
     /* Dead time configurations */
@@ -81,7 +81,7 @@ void TCC1_PWMInitialize(void)
     TCC1_REGS->TCC_CC[1] = 0U;
     TCC1_REGS->TCC_CC[2] = 0U;
     TCC1_REGS->TCC_CC[3] = 0U;
-    TCC1_REGS->TCC_PER = 2399U;
+    TCC1_REGS->TCC_PER = 4600U;
 
 
 
