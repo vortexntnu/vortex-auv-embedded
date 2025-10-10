@@ -1,5 +1,3 @@
-#include <stdint.h>
-#include "can1.h"
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -17,19 +15,6 @@ struct gripper_angles {
 };
 
 
-struct can_tx_frame {
-    uint32_t id;
-    uint8_t buf[64];
-    uint8_t len;
-};
-
-
-struct can_rx_frame {
-    uint32_t id;
-    uint8_t buf[64];
-    uint8_t len;
-    uint16_t timestamp;
-};
 
 static struct can_rx_frame rx_frame;
 
@@ -52,16 +37,6 @@ static void state_machine(void);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 
-static inline bool can_transmit(const struct can_tx_frame* frame) {
-    return CAN0_MessageTransmit(frame->id, frame->len, frame->buf,
-                                CAN_MODE_FD_WITHOUT_BRS,
-                                CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
-}
-
-static inline bool can_recieve(struct can_rx_frame* frame) {
-    return CAN0_MessageReceive(&frame->id, &frame->len, frame->buf, &frame->timestamp,
-                        CAN_MSG_ATTR_RX_FIFO0, &msg_frame_atr);
-}
 
 int main(void) {
     system_init();

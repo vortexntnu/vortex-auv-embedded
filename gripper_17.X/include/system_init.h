@@ -60,6 +60,21 @@ typedef enum {
     SERVO_3,
 } SERVO_ADC_PINS;
 
+struct can_tx_frame {
+    uint32_t id;
+    uint8_t buf[64];
+    uint8_t len;
+};
+
+
+struct can_rx_frame {
+    uint32_t id;
+    uint8_t buf[64];
+    uint8_t len;
+    uint16_t timestamp;
+    CAN_MSG_RX_ATTRIBUTE msg_atr;
+};
+
 /**
  *@brief Initializes all system peripherals
  */
@@ -80,6 +95,17 @@ static inline void start_gripper(void) {
     RTC_Timer32Start();
     RTC_Timer32CompareSet(RTC_COMPARE_VAL);
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
+}
+
+static inline bool can_transmit(const struct can_tx_frame* frame) {
+    return CAN0_MessageTransmit(frame->id, frame->len, frame->buf,
+                                CAN_MODE_FD_WITHOUT_BRS,
+                                CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
+}
+
+static inline bool can_recieve(struct can_rx_frame* frame) {
+    return CAN0_MessageReceive(&frame->id, &frame->len, frame->buf, &frame->timestamp,
+                        CAN_MSG_ATTR_RX_FIFO0, &frame->msg_atr);
 }
 
 #ifdef __cplusplus

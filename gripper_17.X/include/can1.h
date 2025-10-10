@@ -89,6 +89,9 @@
    for allocating buffer from non-cached contiguous memory */
 #define CAN0_MESSAGE_RAM_CONFIG_SIZE     320
 
+
+
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Interface Routines
@@ -111,6 +114,10 @@ bool CAN0_ExtendedFilterElementSet(uint8_t filterNumber, can_xidfe_registers_t *
 bool CAN0_ExtendedFilterElementGet(uint8_t filterNumber, can_xidfe_registers_t *extMsgIDFilterElement);
 void CAN0_TxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle);
 void CAN0_RxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle, CAN_MSG_RX_ATTRIBUTE msgAttr);
+
+
+
+
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
     }
