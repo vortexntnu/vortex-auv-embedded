@@ -81,7 +81,7 @@ static int read_encoders(uint8_t reg, uint8_t* data) {
             }
         }
 
-        if (buf[0] == 0xFF && buf[1] == 0xFF) {
+        if (timeout == 0 || (buf[0] == 0xFF && buf[1] == 0xFF)) {
             data[2 * i] = 0xFF;
             data[2 * i + 1] = 0xFF;
             continue;
