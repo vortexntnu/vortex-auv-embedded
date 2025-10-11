@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
@@ -134,6 +133,14 @@ void can_rx_callback(uintptr_t context){
         return;
     }
     state = rx_frame.id;
+}
+
+void tc0_callback(){
+    state = READ_ENCODER;
+}
+
+void tc1_callback(){
+    state = TRANSMIT_ANGLES;
 }
 
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
