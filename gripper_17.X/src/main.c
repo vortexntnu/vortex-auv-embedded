@@ -24,7 +24,7 @@ static int read_encoders(uint8_t reg, uint8_t* data);
 static void set_servos_pwm(uint8_t* pwm_data);
 static void state_machine(void);
 void can_rx_callback(uintptr_t context);
-void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
+void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context);
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context);
@@ -35,7 +35,7 @@ int main(void) {
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     CAN0_RxCallbackRegister(can_rx_callback, STATE_CAN_RECEIVE,CAN_MSG_ATTR_RX_FIFO0);
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
@@ -150,7 +150,7 @@ void tc1_callback(TC_TIMER_STATUS status, uintptr_t context){
     state = TRANSMIT_ANGLES;
 }
 
-void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
+void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
     static uint8_t servo = SERVO_1;
 
