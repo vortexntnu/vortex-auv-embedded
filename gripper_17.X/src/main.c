@@ -3,22 +3,10 @@
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
-#define CAN_SEND_ANGLES 0x469
-
-static CAN_MSG_RX_FRAME_ATTRIBUTE msg_frame_atr = CAN_MSG_RX_DATA_FRAME;
 static uint16_t adc_result_array[TRANSFER_SIZE];
-
-struct gripper_angles {
-    uint16_t shoulder;
-    uint16_t wrist;
-    uint16_t grip;
-};
-
-
 
 static struct can_rx_frame rx_frame;
 
-static struct gripper_angles gripper_angles;
 
 /**
  *@brief reads encoder angle registers

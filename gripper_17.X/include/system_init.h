@@ -32,6 +32,9 @@
 #define I2C_TIMEOUT 100000
 #define NUM_ENCODERS 3
 
+
+#define CAN_SEND_ANGLES 0x469
+
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f
 #define CURRENT_TRESHOLD 2.7f  // 1 A
@@ -72,7 +75,7 @@ struct can_rx_frame {
     uint8_t buf[64];
     uint8_t len;
     uint16_t timestamp;
-    CAN_MSG_RX_ATTRIBUTE msg_atr;
+    CAN_MSG_RX_FRAME_ATTRIBUTE msg_atr;
 };
 
 /**
@@ -97,7 +100,7 @@ static inline void start_gripper(void) {
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 }
 
-static inline bool can_transmit(const struct can_tx_frame* frame) {
+static inline bool can_transmit(struct can_tx_frame* frame) {
     return CAN0_MessageTransmit(frame->id, frame->len, frame->buf,
                                 CAN_MODE_FD_WITHOUT_BRS,
                                 CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);

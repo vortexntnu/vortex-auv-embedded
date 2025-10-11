@@ -47,6 +47,7 @@
       <itemPath>src/dmac.c</itemPath>
       <itemPath>src/pm.c</itemPath>
       <itemPath>src/wdt.c</itemPath>
+      <itemPath>src/tc0.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
