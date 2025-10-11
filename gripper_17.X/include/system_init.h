@@ -56,9 +56,7 @@ typedef enum {
     START_GRIPPER,
     SET_PWM,
     RESET_MCU,
-    READ_ENCODER,
-    TRANSMIT_ANGLES,
-} STATE;
+} CAN_RX_ID;
 
 
 typedef enum {

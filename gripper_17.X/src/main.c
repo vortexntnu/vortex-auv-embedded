@@ -3,13 +3,18 @@
 #include "system_init.h"
 #include "tc0.h"
 #include "tc1.h"
+#include "wdt.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 static struct can_rx_frame rx_frame;
 static uint16_t adc_result_array[TRANSFER_SIZE];
-static STATE state = 0;
+static volatile uint32_t events;
 
+#define EVENT_SET_PWM (1 << 3)
+#define EVENT_READ_ENCODER (1 << 4)
+#define EVENT_START_GRIPPER (1 << 5)
+#define EVENT_TRANSMIT_ANGLES (1 << 3)
 
 /**
  * @brief Read encoder angle registers over I2C.
@@ -20,9 +25,9 @@ static STATE state = 0;
  *                   Must be at least 2 * NUM_ENCODERS bytes long.
  *
  * @return  0  on success,
- *         -1  on failure 
+ *         -1  on failure
  */
-static int read_encoders(uint8_t reg, uint8_t *data);
+static int read_encoders(uint8_t reg, uint8_t* data);
 
 /**
  * @brief Set servo PWM duty cycles.
@@ -31,31 +36,54 @@ static int read_encoders(uint8_t reg, uint8_t *data);
  *                      for each servo channel. Array length must match
  *                      the number of servos.
  */
-static void set_servos_pwm(uint8_t *pwm_data);
-static void state_machine(void);
+static void set_servos_pwm(const uint8_t* pwm_data);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context);
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context);
 
-
 int main(void) {
     system_init();
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
-    CAN0_RxCallbackRegister(can_rx_callback, STATE_CAN_RECEIVE,CAN_MSG_ATTR_RX_FIFO0);
+    CAN0_RxCallbackRegister(can_rx_callback, STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
-    TC0_TimerCallbackRegister(tc0_callback, (uintptr_t) NULL);
-    TC1_TimerCallbackRegister(tc1_callback, (uintptr_t) NULL);
+    TC0_TimerCallbackRegister(tc0_callback, (uintptr_t)NULL);
+    TC1_TimerCallbackRegister(tc1_callback, (uintptr_t)NULL);
     can_recieve(&rx_frame);
+
+
+    static struct can_tx_frame angles_tx_frame;
+
+    WDT_Enable();
 
     while (true) {
         PM_IdleModeEnter();
-        state_machine();
+
+        uint32_t ev = events;
+        events &= ~ev;
+
+        if (ev & EVENT_SET_PWM){
+            set_servos_pwm(rx_frame.buf);
+            WDT_Clear();
+        }
+
+        if (ev & EVENT_READ_ENCODER){
+            angles_tx_frame.id = CAN_SEND_ANGLES;
+            angles_tx_frame.len = 6;
+            read_encoders(ANGLE_REGISTER, angles_tx_frame.buf);
+        }
+
+        if (ev & EVENT_TRANSMIT_ANGLES){
+            can_transmit(&angles_tx_frame);
+        }
+
+        can_recieve(&rx_frame);
     }
 
     return EXIT_FAILURE;
@@ -94,7 +122,7 @@ static int read_encoders(uint8_t reg, uint8_t* data) {
     return 0;
 }
 
-static void set_servos_pwm(uint8_t* pwm_data) {
+static void set_servos_pwm(const uint8_t* pwm_data) {
     uint16_t shoulder_duty = (pwm_data[0] << 8) | pwm_data[1];
     uint16_t wrist_duty = (pwm_data[2] << 8) | pwm_data[3];
     uint16_t grip_duty = (pwm_data[4] << 8) | pwm_data[5];
@@ -110,16 +138,16 @@ static void set_servos_pwm(uint8_t* pwm_data) {
     TCC1_PWM24bitDutySet(1, tcc_val);
 }
 
-static void state_machine(void) {
-    static struct can_tx_frame angles_tx_frame;
-
-    switch (state) {
+void can_rx_callback(uintptr_t context) {
+    if (CAN0_ErrorGet()) {
+        return;
+    }
+    switch (rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
             break;
         case START_GRIPPER:
             start_gripper();
-            WDT_Enable();
             break;
         case SET_PWM:
             set_servos_pwm(rx_frame.buf);
@@ -128,36 +156,17 @@ static void state_machine(void) {
         case RESET_MCU:
             NVIC_SystemReset();
             break;
-        case READ_ENCODER:
-            angles_tx_frame.id = CAN_SEND_ANGLES;
-            angles_tx_frame.len = 6;
-            read_encoders(ANGLE_REGISTER, angles_tx_frame.buf);
-            break;
-        case TRANSMIT_ANGLES:
-            can_transmit(&angles_tx_frame);
-            break;
         default:
             break;
     }
-    state = 0;
-    can_recieve(&rx_frame);
 }
 
-
-
-void can_rx_callback(uintptr_t context){
-    if (CAN0_ErrorGet()){
-        return;
-    }
-    state = rx_frame.id;
+void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
+    events |= EVENT_READ_ENCODER;
 }
 
-void tc0_callback(TC_TIMER_STATUS status, uintptr_t context){
-    state = READ_ENCODER;
-}
-
-void tc1_callback(TC_TIMER_STATUS status, uintptr_t context){
-    state = TRANSMIT_ANGLES;
+void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
+    events |= EVENT_TRANSMIT_ANGLES;
 }
 
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
@@ -173,7 +182,8 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
 
             // 2.5 V == 0 A
             /*input_voltage =*/
-            /*    (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5) /*/
+            /*    (float)(adc_result_array[sample] * ADC_VREF / 4095U - 2.5)
+             * /*/
             /*    0.4;*/
 
             /*printf(*/
