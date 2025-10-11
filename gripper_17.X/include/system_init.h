@@ -18,6 +18,7 @@
 #include "tcc.h"
 #include "tcc0.h"
 #include "tcc_common.h"
+#include "tc1.h"
 #include "wdt.h"
 
 #ifdef DEBUG

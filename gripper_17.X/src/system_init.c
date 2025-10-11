@@ -5,10 +5,8 @@
  * Created on January 19, 2025, 4:28 PM
  */
 
-#include "sam.h"
 #include "system_init.h"
-#include "samc21e17a.h"
-#include "tc0.h"
+#include "tc1.h"
 
 static void gpio_init(void) {
 
@@ -124,6 +122,7 @@ void system_init(void){
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
     TC0_TimerInitialize();
+    TC1_TimerInitialize();
     CAN0_Initialize();
     // SERCOM0_I2C_Initialize();  // I2C 3
     SERCOM1_I2C_Initialize();  // I2C 2

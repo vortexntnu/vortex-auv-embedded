@@ -48,6 +48,7 @@
       <itemPath>src/pm.c</itemPath>
       <itemPath>src/wdt.c</itemPath>
       <itemPath>src/tc0.c</itemPath>
+      <itemPath>src/tc1.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
