@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "samc21e17a.h"
 #include "system_init.h"
 #include "tc0.h"
 #include "tc1.h"
@@ -125,7 +126,7 @@ static void state_machine(void) {
             WDT_Clear();
             break;
         case RESET_MCU:
-            WDT_REGS->WDT_CLEAR = 0x0;
+            NVIC_SystemReset();
             break;
         case READ_ENCODER:
             angles_tx_frame.id = CAN_SEND_ANGLES;
