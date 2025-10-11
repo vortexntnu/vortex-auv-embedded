@@ -1,12 +1,11 @@
+#include <stdint.h>
 #include "system_init.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
-
-static uint16_t adc_result_array[TRANSFER_SIZE];
-
 static struct can_rx_frame rx_frame;
-
+static uint16_t adc_result_array[TRANSFER_SIZE];
+static STATE state = 0;
 
 /**
  *@brief reads encoder angle registers
@@ -22,6 +21,7 @@ static int read_encoders(uint8_t reg, uint8_t* data);
  */
 static void set_servos_pwm(uint8_t* pwm_data);
 static void state_machine(void);
+void can_rx_callback(uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 
@@ -30,6 +30,7 @@ int main(void) {
     system_init();
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
+    CAN0_RxCallbackRegister(can_rx_callback, STATE_CAN_RECEIVE,CAN_MSG_ATTR_RX_FIFO0);
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, Dmac_Channel0_Callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
@@ -50,7 +51,7 @@ static int read_encoders(uint8_t reg, uint8_t* data) {
     uint32_t timeout;
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
-        uint8_t buf[2] = {0xFF};
+        uint8_t buf[2] = {0xFF, 0xFF};
 
         if (!SERCOM1_I2C_WriteRead(encoder_addresses[i], &reg, 1, buf, 2)) {
             return -1;
@@ -94,7 +95,9 @@ static void set_servos_pwm(uint8_t* pwm_data) {
 }
 
 static void state_machine(void) {
-    switch (rx_frame.id) {
+    static struct can_tx_frame angles_tx_frame;
+
+    switch (state) {
         case STOP_GRIPPER:
             stop_gripper();
             break;
@@ -104,22 +107,33 @@ static void state_machine(void) {
             break;
         case SET_PWM:
             set_servos_pwm(rx_frame.buf);
-
-            struct can_tx_frame tx_frame;
-            tx_frame.id = CAN_SEND_ANGLES;
-            tx_frame.len = 6;
-            read_encoders(ANGLE_REGISTER, tx_frame.buf);
-            can_transmit(&tx_frame);
-
             WDT_Clear();
             break;
         case RESET_MCU:
             WDT_REGS->WDT_CLEAR = 0x0;
             break;
+        case READ_ENCODER:
+            angles_tx_frame.id = CAN_SEND_ANGLES;
+            angles_tx_frame.len = 6;
+            read_encoders(ANGLE_REGISTER, angles_tx_frame.buf);
+            break;
+        case TRANSMIT_ANGLES:
+            can_transmit(&angles_tx_frame);
+            break;
         default:
             break;
     }
+    state = 0;
     can_recieve(&rx_frame);
+}
+
+
+
+void can_rx_callback(uintptr_t context){
+    if (CAN0_ErrorGet()){
+        return;
+    }
+    state = rx_frame.id;
 }
 
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,

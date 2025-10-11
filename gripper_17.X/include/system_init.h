@@ -55,7 +55,10 @@ typedef enum {
     START_GRIPPER,
     SET_PWM,
     RESET_MCU,
-} CAN_RECEIVE_ID;
+    READ_ENCODER,
+    TRANSMIT_ANGLES,
+} STATE;
+
 
 typedef enum {
     SERVO_1,
