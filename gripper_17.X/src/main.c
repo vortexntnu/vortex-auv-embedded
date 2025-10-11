@@ -1,4 +1,5 @@
 #include "system_init.h"
+#include "tc0.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -23,6 +24,7 @@ static void state_machine(void);
 void can_rx_callback(uintptr_t context);
 void Dmac_Channel0_Callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
+void tc0_callback(TC_TIMER_STATUS status, uintptr_t context);
 
 
 int main(void) {
@@ -34,6 +36,7 @@ int main(void) {
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
+    TC0_TimerCallbackRegister(tc0_callback, NULL);
     can_recieve(&rx_frame);
 
     while (true) {
@@ -135,11 +138,11 @@ void can_rx_callback(uintptr_t context){
     state = rx_frame.id;
 }
 
-void tc0_callback(){
+void tc0_callback(TC_TIMER_STATUS status, uintptr_t context){
     state = READ_ENCODER;
 }
 
-void tc1_callback(){
+void tc1_callback(TC_TIMER_STATUS status, uintptr_t context){
     state = TRANSMIT_ANGLES;
 }
 
