@@ -9,19 +9,28 @@ static struct can_rx_frame rx_frame;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 static STATE state = 0;
 
+
 /**
- *@brief reads encoder angle registers
- *@param[in] reg which register to read from
- *@param[out] data txbuffer for encoder angles
- *@return 0 on success
- *       -1 on failure
+ * @brief Read encoder angle registers over I2C.
+ *
+ *
+ * @param[in]  reg   Register address to read from each encoder.
+ * @param[out] data  Pointer to a buffer that will receive the angle data.
+ *                   Must be at least 2 * NUM_ENCODERS bytes long.
+ *
+ * @return  0  on success,
+ *         -1  on failure 
  */
-static int read_encoders(uint8_t reg, uint8_t* data);
+static int read_encoders(uint8_t reg, uint8_t *data);
+
 /**
- *@brief Sets servos duty cycle
- *@param[in] data pointer to array containing duty cycle values
+ * @brief Set servo PWM duty cycles.
+ *
+ * @param[in] pwm_data  Pointer to an array containing the PWM duty values
+ *                      for each servo channel. Array length must match
+ *                      the number of servos.
  */
-static void set_servos_pwm(uint8_t* pwm_data);
+static void set_servos_pwm(uint8_t *pwm_data);
 static void state_machine(void);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
