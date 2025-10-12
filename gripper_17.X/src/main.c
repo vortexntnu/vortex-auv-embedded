@@ -104,7 +104,6 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
         uint16_t input_voltage = 0;
         for (size_t sample = 0; sample < TRANSFER_SIZE; sample++) {
             input_voltage += adc_result_array[sample];
-            input_voltage = input_voltage >> 1;  // Dividing by two
 
             // 2.5 V == 0 A
             /*input_voltage =*/
@@ -118,6 +117,7 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
             /*    adc_result_array[sample], (int)input_voltage,*/
             /*    (int)((input_voltage - (int)input_voltage) * 100.0));*/
         }
+        input_voltage = input_voltage / TRANSFER_SIZE;
 
         if (input_voltage > VOLTAGE_THRESHOLD) {
             overCurrent = true;
