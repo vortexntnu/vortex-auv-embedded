@@ -19,6 +19,7 @@
       <itemPath>include/wdt.h</itemPath>
       <itemPath>include/pm.h</itemPath>
       <itemPath>include/gripper.h</itemPath>
+      <itemPath>include/state_machine.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -51,6 +52,7 @@
       <itemPath>src/tc0.c</itemPath>
       <itemPath>src/tc1.c</itemPath>
       <itemPath>src/gripper.c</itemPath>
+      <itemPath>src/state_machine.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

@@ -27,51 +27,14 @@
 
 #define CAN_SEND_ANGLES 0x469
 
-#define TRANSFER_SIZE 16
-#define ADC_VREF 5.0f
-#define CURRENT_TRESHOLD 2.7f  // 1 A
-#define VOLTAGE_THRESHOLD 2048
 
-#define EVENT_SET_PWM (1 << 3)
-#define EVENT_READ_ENCODER (1 << 4)
-#define EVENT_START_GRIPPER (1 << 5)
-#define EVENT_TRANSMIT_ANGLES (1 << 3)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef enum {
-    STATE_CAN_RECEIVE,
-    STATE_CAN_TRANSMIT,
-} CAN_STATES;
 
-typedef enum {
-    STOP_GRIPPER = 0x469,
-    START_GRIPPER,
-    SET_PWM,
-    RESET_MCU,
-} CAN_RX_ID;
 
-typedef enum {
-    SERVO_1,
-    SERVO_2,
-    SERVO_3,
-} SERVO_ADC_PINS;
-
-struct can_tx_frame {
-    uint32_t id;
-    uint8_t buf[64];
-    uint8_t len;
-};
-
-struct can_rx_frame {
-    uint32_t id;
-    uint8_t buf[64];
-    uint8_t len;
-    uint16_t timestamp;
-    CAN_MSG_RX_FRAME_ATTRIBUTE msg_atr;
-};
 
 /**
  *@brief Initializes all system peripherals
