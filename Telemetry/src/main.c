@@ -27,7 +27,7 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 
-#include "ws2812_spi_enc.h"
+#include "led_facade.h" 
 
 
 // *****************************************************************************
@@ -38,15 +38,17 @@
 
 int main ( void )
 {
-    /* Initialize all modules */
-    SYS_Initialize ( NULL );
-    
-    while ( true )
-    {
-        /* Maintain state machines of all polled MPLAB Harmony modules. */
-        SYS_Tasks ( );
-    }
+    // system init...
+    led_init();                              // calls ws_led_sercom5_init_2p4mhz(),
+                                             // ws2812enc_init(), and bind()
 
+    led_set(0, 0x00, 0x10, 0x00);
+    led_commit_async();
+    while (1) {
+        if (!led_busy()) {
+            // update again if needed
+        }
+    }
     /* Execution should not come here during normal operation */
 
     return ( EXIT_FAILURE );

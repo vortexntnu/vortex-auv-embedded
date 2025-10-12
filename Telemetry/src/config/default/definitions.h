@@ -50,8 +50,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "peripheral/sercom/usart/plib_sercom3_usart.h"
-#include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/sercom/i2c_master/plib_sercom2_i2c_master.h"
+#include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/evsys/plib_evsys.h"
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
@@ -60,6 +60,7 @@
 #include "peripheral/can/plib_can0.h"
 #include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "peripheral/eic/plib_eic.h"
+#include "peripheral/tc/plib_tc3.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility

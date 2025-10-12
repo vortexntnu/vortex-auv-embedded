@@ -11,6 +11,8 @@
             <sourceRootList>
                 <sourceRootElem>../drivers/ws2812/include</sourceRootElem>
                 <sourceRootElem>../drivers/ws2812/src</sourceRootElem>
+                <sourceRootElem>../app/include</sourceRootElem>
+                <sourceRootElem>../app/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

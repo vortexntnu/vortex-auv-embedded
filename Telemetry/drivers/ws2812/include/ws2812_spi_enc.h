@@ -1,17 +1,13 @@
 /*
  * ws2812_spi_enc.h
  *
- * 3-bit SPI encoder for WS2812/WS2812B on Microchip SAMC21 (or any MCU with SPI).
- * Each WS2812 bit (~1.25 us) is encoded into 3 SPI bits at ~2.4 MHz:
- *   WS '0' => 100  (T_high ? 0.417us, T_low ? 0.833us)
- *   WS '1' => 110  (T_high ? 0.833us, T_low ? 0.417us)
+ * Non-blocking 3-bit SPI encoder for WS2812/WS2812B.
+ * - Encoding: WS bit (1.25us) -> 3 SPI bits at ~2.4 MHz (0->100, 1->110)
+ * - SPI: Mode 0, MSB-first, continuous, NO gaps
+ * - Latch: keep DIN low for >= 80us after transfer
  *
- * Use SPI Mode 0, MSB-first, continuous stream with NO gaps between bytes.
- * Recommended SAMC21 SPI clock: 2.4 MHz (SERCOM GCLK = 48 MHz, BAUD = 9).
- *
- * Public API is hardware-agnostic; you provide a TX callback that pushes bytes
- * to the SPI (blocking or via DMA). A weak ws2812_delay_us() is provided; implement
- * it in your platform layer to ensure ?80us latch after each frame.
+ * This core is hardware-agnostic. You provide async TX callbacks
+ * (typically SPI+IRQ or SPI+DMAC on SAMC21) via ws2812enc_set_async_port().
  */
 
 #ifndef WS2812_SPI_ENC_H
@@ -23,64 +19,59 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
-/* ----- Configuration & constants ----- */
+/* --- Constants --- */
 #define WS2812_SPI_BYTES_PER_COLOR   (3u)   /* 1 data byte -> 3 SPI bytes */
 #define WS2812_SPI_BYTES_PER_LED     (9u)   /* GRB -> 3 * 3 bytes */
 #define WS2812_RESET_US              (80u)  /* latch/reset low time (>= 80us) */
 
-/* WS2812 pixel in GRB order */
+/* Pixel format (GRB order) */
 typedef struct {
     uint8_t g;
     uint8_t r;
     uint8_t b;
 } ws2812_grb_t;
 
-/* Initialize the encoder (builds the 256x3 LUT). Does not touch SPI HW. */
-void ws2812enc_init(void);
+/* --- Core API (encoding only) --- */
+void   ws2812enc_init(void);                          /* build LUT */
+size_t ws2812enc_buffer_bytes(size_t num_leds);       /* n * 9 */
+void   ws2812enc_byte_encode(uint8_t value, uint8_t out3[3]);
+void   ws2812enc_encode_grb(const ws2812_grb_t *in, size_t num_leds, uint8_t *out);
+void   ws2812enc_encode_bytes_grb(const uint8_t *grb_bytes, size_t num_leds, uint8_t *out);
 
-/* Number of encoded SPI bytes required for N LEDs. */
-size_t ws2812enc_buffer_bytes(size_t num_leds);
-
-/* Encode an array of GRB pixels into an SPI byte stream.
- * out must have at least ws2812enc_buffer_bytes(num_leds) bytes.
+/* --- Async transmit port (to be implemented by platform) ---
+ * start: begin streaming 'data' (len bytes) out of SPI with NO gaps and return immediately.
+ *        The port must call 'on_tx_done(user)' when the LAST bit has left the shifter.
+ * busy:  true while the SPI/IRQ/DMA is still transmitting the current frame (optional).
+ * delay_us: schedule a non-blocking >=us delay and invoke 'on_delay_done(user)' for the latch.
  */
-void ws2812enc_encode_grb(const ws2812_grb_t *in, size_t num_leds, uint8_t *out);
+typedef void (*ws_on_tx_done_t)(void *user);
+typedef void (*ws_on_delay_done_t)(void *user);
 
-/* Encode flat GRB bytes (len = 3*num_leds) into SPI byte stream. */
-void ws2812enc_encode_bytes_grb(const uint8_t *grb_bytes, size_t num_leds, uint8_t *out);
+typedef bool (*ws_async_busy_fn_t)(void);
+typedef int  (*ws_async_start_fn_t)(const uint8_t *data, size_t len, ws_on_tx_done_t on_tx_done, void *user);
+typedef int  (*ws_async_delay_fn_t)(uint32_t us, ws_on_delay_done_t on_delay_done, void *user);
 
-/* Encode a single data byte (one GRB component) into 3 SPI bytes. */
-void ws2812enc_byte_encode(uint8_t value, uint8_t out3[3]);
+void ws2812enc_set_async_port(ws_async_start_fn_t start_fn,
+                              ws_async_busy_fn_t  busy_fn,
+                              ws_async_delay_fn_t delay_fn);
 
-/* ----- Transmit integration ----- */
-/* Provide a TX callback that transmits bytes over SPI without inter-byte gaps.
- * Return nonzero on success.
+/* --- High-level non-blocking send orchestration ---
+ * Manages send + latch sequencing using the async port.
  */
-typedef int (*ws2812enc_tx_fn_t)(const uint8_t *data, size_t len);
-void ws2812enc_set_tx_callback(ws2812enc_tx_fn_t fn);
 
-/* Convenience: encode and transmit in one call using the TX callback.
- * Returns 0 on failure (no callback set) or nonzero on success.
+/* Start sending an already-encoded buffer (returns immediately). 
+ * When complete (including latch), your 'user_done_cb(user)' is called.
  */
-int ws2812_send_blocking(const ws2812_grb_t *pixels, size_t num_leds);
+typedef void (*ws_user_done_cb_t)(void *user);
 
-/* Weak delay hook used by ws2812_send_blocking() for the latch period. 
- * Implement this in your platform layer with ~1us accuracy.
- */
-__attribute__((weak)) void ws2812_delay_us(uint32_t us);
+int  ws2812_send_encoded_async(const uint8_t *encoded, size_t len, ws_user_done_cb_t user_done_cb, void *user);
 
-/* ----- Optional SAMC21 helpers (declarations only) -----
- * You can define these in your project if you want ready-made TX and init.
- * They are not required by the encoder itself.
- */
-#ifdef __SAMD21__  /* some projects define this; adapt if desired */
-#endif
-
-/* Example signatures you may implement in your platform code:
- * void samc21_sercom_spi_init_2p4mhz(void);
- * int  samc21_sercom_spi_tx_blocking(const uint8_t *data, size_t len);
- */
+/* Convenience: encode then send. Caller provides encoded_out buffer memory. */
+int  ws2812_encode_and_send_async(const ws2812_grb_t *pixels, size_t num_leds,
+                                  uint8_t *encoded_out, size_t encoded_out_len,
+                                  ws_user_done_cb_t user_done_cb, void *user);
 
 #ifdef __cplusplus
 }

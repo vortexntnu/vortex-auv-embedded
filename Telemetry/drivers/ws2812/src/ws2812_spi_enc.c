@@ -1,34 +1,37 @@
 /*
- * ws2812_spi_enc.c
- *
- * Implementation of a 3-bit SPI encoder for WS2812/WS2812B.
- * See ws2812_spi_enc.h for usage notes.
+ * ws2812_spi_enc.c  (non-blocking core)
  */
 
 #include "ws2812_spi_enc.h"
 
 /* Internal LUT: each input byte expands to 24 bits = 3 output bytes */
 static uint8_t s_lut[256][3];
-static ws2812enc_tx_fn_t s_tx_cb = 0;
 
-/* 3-bit symbols (MSB-first inside the 3-bit group)
- * '0' => 1 0 0  (0b100)
- * '1' => 1 1 0  (0b110)
- */
-#define SYM0 0x4u
-#define SYM1 0x6u
+/* Async port callbacks */
+static ws_async_start_fn_t g_start_fn = 0;
+static ws_async_busy_fn_t  g_busy_fn  = 0;
+static ws_async_delay_fn_t g_delay_fn = 0;
+
+/* Forward internal callbacks */
+static void _on_tx_done(void *user);
+static void _on_latch_done(void *user);
+
+/* Small state for sequencing TX -> latch -> user done */
+typedef struct {
+    ws_user_done_cb_t user_done;
+    void *user_ctx;
+} ws_state_t;
 
 static void build_lut_3x(void)
 {
+    #define SYM0 0x4u /* 0b100 */
+    #define SYM1 0x6u /* 0b110 */
     for (unsigned v = 0; v < 256; ++v) {
-        uint32_t stream = 0;    /* 24-bit packed stream (MSB-first) */
-        int bitpos = 23;        /* next bit position to fill */
-
+        uint32_t stream = 0;
+        int bitpos = 23;
         for (int b = 7; b >= 0; --b) {
             unsigned in_bit = (v >> b) & 1u;
-            unsigned sym = in_bit ? SYM1 : SYM0; /* 3-bit symbol */
-
-            /* write 3 bits MSB-first: s2, s1, s0 */
+            unsigned sym = in_bit ? SYM1 : SYM0;
             for (int s = 2; s >= 0; --s) {
                 unsigned sb = (sym >> s) & 1u;
                 if (sb) stream |= (1u << bitpos);
@@ -41,15 +44,9 @@ static void build_lut_3x(void)
     }
 }
 
-void ws2812enc_init(void)
-{
-    build_lut_3x();
-}
+void ws2812enc_init(void) { build_lut_3x(); }
 
-size_t ws2812enc_buffer_bytes(size_t num_leds)
-{
-    return num_leds * (size_t)WS2812_SPI_BYTES_PER_LED;
-}
+size_t ws2812enc_buffer_bytes(size_t num_leds) { return num_leds * (size_t)WS2812_SPI_BYTES_PER_LED; }
 
 void ws2812enc_byte_encode(uint8_t value, uint8_t out3[3])
 {
@@ -75,8 +72,7 @@ void ws2812enc_encode_grb(const ws2812_grb_t *in, size_t num_leds, uint8_t *out)
 
 void ws2812enc_encode_bytes_grb(const uint8_t *grb_bytes, size_t num_leds, uint8_t *out)
 {
-    size_t w = 0;
-    size_t in_idx = 0;
+    size_t w = 0, in_idx = 0;
     for (size_t i = 0; i < num_leds; ++i) {
         const uint8_t *lg = s_lut[grb_bytes[in_idx + 0]]; /* G */
         const uint8_t *lr = s_lut[grb_bytes[in_idx + 1]]; /* R */
@@ -89,65 +85,50 @@ void ws2812enc_encode_bytes_grb(const uint8_t *grb_bytes, size_t num_leds, uint8
     }
 }
 
-void ws2812enc_set_tx_callback(ws2812enc_tx_fn_t fn)
+/* --- Async port binding --- */
+void ws2812enc_set_async_port(ws_async_start_fn_t start_fn,
+                              ws_async_busy_fn_t  busy_fn,
+                              ws_async_delay_fn_t delay_fn)
 {
-    s_tx_cb = fn;
+    g_start_fn = start_fn;
+    g_busy_fn  = busy_fn;
+    g_delay_fn = delay_fn;
 }
 
-/* Weak default; override in your platform layer */
-__attribute__((weak)) void ws2812_delay_us(uint32_t us)
+/* User-facing async send: already-encoded buffer */
+int ws2812_send_encoded_async(const uint8_t *encoded, size_t len, ws_user_done_cb_t user_done_cb, void *user)
 {
-    (void)us;
+    if (!g_start_fn || !g_delay_fn) return 0;
+    static ws_state_t s;                 /* single in-flight; extend if multi-buffer */
+    s.user_done = user_done_cb;
+    s.user_ctx  = user;
+    /* Start async TX; when hardware finishes last bit, _on_tx_done will run */
+    return g_start_fn(encoded, len, _on_tx_done, &s);
 }
 
-int ws2812_send_blocking(const ws2812_grb_t *pixels, size_t num_leds)
+/* Convenience: encode then send. Caller provides the encoded buffer memory. */
+int ws2812_encode_and_send_async(const ws2812_grb_t *pixels, size_t num_leds,
+                                 uint8_t *encoded_out, size_t encoded_out_len,
+                                 ws_user_done_cb_t user_done_cb, void *user)
 {
-    if (!s_tx_cb) return 0;
-
-    const size_t enc_len = ws2812enc_buffer_bytes(num_leds);
-
-    /* For large LED counts, avoid large VLAs; manage a persistent buffer in app code.
-       Here we demonstrate a simple stack allocation for modest strip sizes. */
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvla"
-#endif
-    uint8_t *tmp = (enc_len > 0) ? (uint8_t*)__builtin_alloca(enc_len) : 0;
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
-    if (!tmp && enc_len) return 0;
-
-    ws2812enc_encode_grb(pixels, num_leds, tmp);
-    int ok = s_tx_cb(tmp, enc_len);
-
-    /* Latch/reset: hold line low for >= 80us */
-    ws2812_delay_us(WS2812_RESET_US);
-    return ok;
+    const size_t need = ws2812enc_buffer_bytes(num_leds);
+    if (encoded_out_len < need) return 0;
+    ws2812enc_encode_grb(pixels, num_leds, encoded_out);
+    return ws2812_send_encoded_async(encoded_out, need, user_done_cb, user);
 }
 
-/* ---------------------------- SAMC21 Notes ----------------------------
- * Configure SERCOMx as SPI master, Mode 0, MSB-first, 8-bit frames.
- * Recommended clock: 2.4 MHz (GCLK_SERCOMx = 48 MHz, BAUD = 9).
- *
- * Pseudocode for init:
- *   - Enable APB clock to SERCOMx; route GCLK 48MHz to SERCOMx core.
- *   - MUX SCK/MOSI pins to SERCOMx pads; choose DOPO accordingly.
- *   - CTRLA: MODE=SPI_MASTER, DOPO=..., DIPO(any), CPOL=0, CPHA=0.
- *   - CTRLB: RX disabled (optional), TX enabled.
- *   - BAUD = 9  => fSPI = 48MHz / (2*(9+1)) = 2.4MHz.
- *   - ENABLE.
- *
- * Blocking TX callback example signature you can implement:
- *   int samc21_sercom_spi_tx_blocking(const uint8_t *data, size_t len) {
- *       for (size_t i = 0; i < len; ++i) {
- *           while (!(SERCOMx->SPI.INTFLAG.bit.DRE)) { }
- *           SERCOMx->SPI.DATA.reg = data[i];
- *       }
- *       while (!SERCOMx->SPI.INTFLAG.bit.TXC) { }
- *       return 1;
- *   }
- *
- * After setting the callback with ws2812enc_set_tx_callback(),
- * call ws2812_send_blocking(pixels, count) whenever you want to update the LEDs.
- * --------------------------------------------------------------------- */
+/* --- Internal async chain: TX done -> start latch timer -> latch done -> user callback --- */
+static void _on_tx_done(void *user)
+{
+    (void)user;
+    if (g_delay_fn) {
+        /* schedule >= 80us latch delay; then call _on_latch_done */
+        g_delay_fn(WS2812_RESET_US, _on_latch_done, user);
+    }
+}
+
+static void _on_latch_done(void *user)
+{
+    ws_state_t *s = (ws_state_t *)user;
+    if (s && s->user_done) s->user_done(s->user_ctx);
+}

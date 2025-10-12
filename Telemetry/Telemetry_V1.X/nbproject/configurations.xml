@@ -4,6 +4,9 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <logicalFolder name="f2" displayName="app" projectFiles="true">
+        <itemPath>../app/include/led_facade.h</itemPath>
+      </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
           <logicalFolder name="peripheral" displayName="peripheral" projectFiles="true">
@@ -44,6 +47,10 @@
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h</itemPath>
               </logicalFolder>
             </logicalFolder>
+            <logicalFolder name="tc" displayName="tc" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/tc/plib_tc3.h</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc_common.h</itemPath>
+            </logicalFolder>
           </logicalFolder>
           <itemPath>../src/config/default/device.h</itemPath>
           <itemPath>../src/config/default/definitions.h</itemPath>
@@ -56,6 +63,7 @@
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
         <logicalFolder name="f1" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/include/ws2812_spi_enc.h</itemPath>
+          <itemPath>../drivers/ws2812/include/ws2812_port_sercom5_harmony.h</itemPath>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="packs" displayName="packs" projectFiles="true">
@@ -186,6 +194,9 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <logicalFolder name="f2" displayName="app" projectFiles="true">
+        <itemPath>../app/src/led_facade.c</itemPath>
+      </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
           <logicalFolder name="peripheral" displayName="peripheral" projectFiles="true">
@@ -222,6 +233,9 @@
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c</itemPath>
               </logicalFolder>
             </logicalFolder>
+            <logicalFolder name="tc" displayName="tc" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/tc/plib_tc3.c</itemPath>
+            </logicalFolder>
           </logicalFolder>
           <logicalFolder name="stdio" displayName="stdio" projectFiles="true">
             <itemPath>../src/config/default/stdio/xc32_monitor.c</itemPath>
@@ -236,6 +250,7 @@
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
         <logicalFolder name="f1" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/src/ws2812_spi_enc.c</itemPath>
+          <itemPath>../drivers/ws2812/src/ws2812_port_sercom5_harmony.c</itemPath>
         </logicalFolder>
       </logicalFolder>
       <itemPath>../src/main.c</itemPath>
@@ -245,6 +260,8 @@
   <sourceRootList>
     <Elem>../drivers/ws2812/include</Elem>
     <Elem>../drivers/ws2812/src</Elem>
+    <Elem>../app/include</Elem>
+    <Elem>../app/src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -254,7 +271,7 @@
         <targetDevice>ATSAMC21J18A</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>noID</platformTool>
+        <platformTool>Simulator</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>4.45</languageToolchainVersion>
         <platform>3</platform>
@@ -293,13 +310,14 @@
       <C32>
         <property key="additional-warnings" value="true"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="enable-app-io" value="false"/>
         <property key="enable-omit-frame-pointer" value="false"/>
         <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="exclude-floating-point" value="false"/>
         <property key="extra-include-directories"
-                  value="../src;../src/config/default;../src/packs/ATSAMC21J18A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../app/include;../drivers/ws2812/include;../utils/include;../drivers/wsen_pads/include"/>
+                  value="../app/include;../drivers/ws2812/include;../drivers/wsen_pads/include;../src;../src/config/default;../src/packs/ATSAMC21J18A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../utils/include"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>
@@ -349,6 +367,7 @@
         <property key="additional-options-use-response-files" value="false"/>
         <property key="additional-options-write-sla" value="false"/>
         <property key="allocate-dinit" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="code-dinit" value="false"/>
         <property key="ebase-addr" value=""/>
         <property key="enable-check-sections" value="false"/>
@@ -388,6 +407,7 @@
       <C32CPP>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="check-new" value="false"/>
         <property key="eh-specs" value="true"/>
         <property key="enable-app-io" value="false"/>
