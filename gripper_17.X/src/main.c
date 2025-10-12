@@ -1,9 +1,4 @@
-#include <stdint.h>
-#include "samc21e17a.h"
 #include "system_init.h"
-#include "tc0.h"
-#include "tc1.h"
-#include "wdt.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -11,10 +6,6 @@ static struct can_rx_frame rx_frame;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 static volatile uint32_t events;
 
-#define EVENT_SET_PWM (1 << 3)
-#define EVENT_READ_ENCODER (1 << 4)
-#define EVENT_START_GRIPPER (1 << 5)
-#define EVENT_TRANSMIT_ANGLES (1 << 3)
 
 /**
  * @brief Read encoder angle registers over I2C.

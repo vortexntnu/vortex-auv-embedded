@@ -42,6 +42,13 @@
 #define VOLTAGE_THRESHOLD 2048
 #define RTC_COMPARE_VAL 50
 
+
+#define EVENT_SET_PWM (1 << 3)
+#define EVENT_READ_ENCODER (1 << 4)
+#define EVENT_START_GRIPPER (1 << 5)
+#define EVENT_TRANSMIT_ANGLES (1 << 3)
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
