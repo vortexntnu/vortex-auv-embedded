@@ -27,6 +27,8 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 
+#include "ws2812_spi_enc.h"
+
 
 // *****************************************************************************
 // *****************************************************************************

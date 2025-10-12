@@ -57,8 +57,8 @@
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
 #include "peripheral/sercom/spi_master/plib_sercom5_spi_master.h"
-#include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "peripheral/can/plib_can0.h"
+#include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "peripheral/eic/plib_eic.h"
 
 // DOM-IGNORE-BEGIN
