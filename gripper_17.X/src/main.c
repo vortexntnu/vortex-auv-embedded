@@ -28,6 +28,7 @@ static int read_encoders(uint8_t reg, uint8_t* data);
  *                      the number of servos.
  */
 static void set_servos_pwm(const uint8_t* pwm_data);
+static void callback_init(void);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
@@ -38,14 +39,14 @@ int main(void) {
     system_init();
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
-    CAN0_RxCallbackRegister(can_rx_callback, STATE_CAN_RECEIVE,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, 0);
+
+    callback_init();
+
+
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
-    TC0_TimerCallbackRegister(tc0_callback, (uintptr_t)NULL);
-    TC1_TimerCallbackRegister(tc1_callback, (uintptr_t)NULL);
+
     can_recieve(&rx_frame);
 
 
@@ -221,4 +222,13 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
             DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
             (const void*)adc_result_array, sizeof(adc_result_array));
     }
+}
+
+
+static void callback_init(void){
+    CAN0_RxCallbackRegister(can_rx_callback, STATE_CAN_RECEIVE,
+                            CAN_MSG_ATTR_RX_FIFO0);
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, 0);
+    TC0_TimerCallbackRegister(tc0_callback, (uintptr_t)NULL);
+    TC1_TimerCallbackRegister(tc1_callback, (uintptr_t)NULL);
 }
