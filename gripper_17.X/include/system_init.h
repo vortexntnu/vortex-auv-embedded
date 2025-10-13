@@ -25,7 +25,6 @@
 #include "usart.h"
 #endif
 
-#define CAN_SEND_ANGLES 0x469
 
 
 
@@ -41,17 +40,6 @@ extern "C" {
  */
 void system_init(void);
 
-static inline bool can_transmit(struct can_tx_frame* frame) {
-    return CAN0_MessageTransmit(frame->id, frame->len, frame->buf,
-                                CAN_MODE_FD_WITHOUT_BRS,
-                                CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
-}
-
-static inline bool can_recieve(struct can_rx_frame* frame) {
-    return CAN0_MessageReceive(&frame->id, &frame->len, frame->buf,
-                               &frame->timestamp, CAN_MSG_ATTR_RX_FIFO0,
-                               &frame->msg_atr);
-}
 
 #ifdef __cplusplus
 }

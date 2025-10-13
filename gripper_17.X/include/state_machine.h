@@ -7,6 +7,9 @@
 #include "tc0.h"
 #include "tc1.h"
 
+
+#define CAN_SEND_ANGLES 0x469
+
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f
 #define CURRENT_TRESHOLD 2.7f  // 1 A
@@ -34,11 +37,26 @@ typedef enum {
 extern "C" {
 #endif
 
+void state_machine(struct can_rx_frame* rx_frame);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context);
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context);
+
+
+
+static inline bool can_transmit(struct can_tx_frame* frame) {
+    return CAN0_MessageTransmit(frame->id, frame->len, frame->buf,
+                                CAN_MODE_FD_WITHOUT_BRS,
+                                CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
+}
+
+static inline bool can_recieve(struct can_rx_frame* frame) {
+    return CAN0_MessageReceive(&frame->id, &frame->len, frame->buf,
+                               &frame->timestamp, CAN_MSG_ATTR_RX_FIFO0,
+                               &frame->msg_atr);
+}
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,35 @@
 #include "state_machine.h"
+#include "can_common.h"
 #include "dma.h"
+#include "can1.h"
+
+
+
+    
+static struct can_tx_frame angles_tx_frame;
+static volatile uint32_t events;
+
+void state_machine(struct can_rx_frame* rx_frame) {
+    uint32_t ev = events;
+    events &= ~ev;
+
+    if (ev & EVENT_SET_PWM) {
+        set_servos_pwm(rx_frame->buf);
+        WDT_Clear();
+    }
+
+    if (ev & EVENT_READ_ENCODER) {
+        angles_tx_frame.id = CAN_SEND_ANGLES;
+        angles_tx_frame.len = 6;
+        read_encoders(ANGLE_REGISTER, angles_tx_frame.buf);
+    }
+
+    if (ev & EVENT_TRANSMIT_ANGLES) {
+        can_transmit(&angles_tx_frame);
+    }
+
+    can_recieve(rx_frame);
+}
 
 void can_rx_callback(uintptr_t context) {
     struct can_rx_frame* rx_frame = (struct can_rx_frame*)context;
@@ -27,13 +57,11 @@ void can_rx_callback(uintptr_t context) {
 }
 
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    uint32_t* ev = (uint32_t*)context;
-    *ev |= EVENT_READ_ENCODER;
+    events |= EVENT_READ_ENCODER;
 }
 
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    uint32_t* ev = (uint32_t*)context;
-    *ev |= EVENT_TRANSMIT_ANGLES;
+    events |= EVENT_TRANSMIT_ANGLES;
 }
 
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
