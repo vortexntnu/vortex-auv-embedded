@@ -13,6 +13,8 @@
                 <sourceRootElem>../drivers/ws2812/src</sourceRootElem>
                 <sourceRootElem>../app/include</sourceRootElem>
                 <sourceRootElem>../app/src</sourceRootElem>
+                <sourceRootElem>../drivers/wsen-pads/include</sourceRootElem>
+                <sourceRootElem>../drivers/wsen-pads/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>
