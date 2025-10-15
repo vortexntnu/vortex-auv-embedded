@@ -5,7 +5,7 @@
     Microchip Technology Inc.
 
   File Name:
-    plib_can1.h
+    plib_can0.h
 
   Summary:
     CAN PLIB interface declarations.
@@ -44,8 +44,8 @@
 *******************************************************************************/
 //DOM-IGNORE-END
 
-#ifndef PLIB_CAN1_H
-#define PLIB_CAN1_H
+#ifndef PLIB_CAN0_H
+#define PLIB_CAN0_H
 
 // *****************************************************************************
 // *****************************************************************************
@@ -73,50 +73,50 @@
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-#define CAN1_CLOCK_FREQUENCY    60000000U
+#define CAN0_CLOCK_FREQUENCY    60000000U
 
-/* CAN1 Message RAM Configuration Size */
-#define CAN1_RX_FIFO0_ELEMENT_SIZE       16U
-#define CAN1_RX_FIFO0_SIZE               16U
-#define CAN1_RX_FIFO1_ELEMENT_SIZE       16U
-#define CAN1_RX_FIFO1_SIZE               16U
-#define CAN1_TX_FIFO_BUFFER_ELEMENT_SIZE 16U
-#define CAN1_TX_FIFO_BUFFER_SIZE         16U
-#define CAN1_TX_EVENT_FIFO_SIZE          8U
+/* CAN0 Message RAM Configuration Size */
+#define CAN0_RX_FIFO0_ELEMENT_SIZE       16U
+#define CAN0_RX_FIFO0_SIZE               16U
+#define CAN0_RX_FIFO1_ELEMENT_SIZE       16U
+#define CAN0_RX_FIFO1_SIZE               16U
+#define CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE 16U
+#define CAN0_TX_FIFO_BUFFER_SIZE         16U
+#define CAN0_TX_EVENT_FIFO_SIZE          8U
 
-/* CAN1_MESSAGE_RAM_CONFIG_SIZE to be used by application or driver
+/* CAN0_MESSAGE_RAM_CONFIG_SIZE to be used by application or driver
    for allocating buffer from non-cached contiguous memory */
-#define CAN1_MESSAGE_RAM_CONFIG_SIZE     56U
+#define CAN0_MESSAGE_RAM_CONFIG_SIZE     56U
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-void CAN1_Initialize(void);
-bool CAN1_MessageTransmitFifo(uint8_t numberOfMessage, CAN_TX_BUFFER *txBuffer);
-uint8_t CAN1_TxFifoFreeLevelGet(void);
-bool CAN1_TxBufferIsBusy(uint8_t bufferNumber);
-bool CAN1_TxEventFifoRead(uint8_t numberOfTxEvent, CAN_TX_EVENT_FIFO *txEventFifo);
-bool CAN1_MessageReceiveFifo(CAN_RX_FIFO_NUM rxFifoNum, uint8_t numberOfMessage, CAN_RX_BUFFER *rxBuffer);
-CAN_ERROR CAN1_ErrorGet(void);
-void CAN1_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount);
-void CAN1_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress);
-void CAN1_SleepModeEnter(void);
-void CAN1_SleepModeExit(void);
-bool CAN1_BitTimingCalculationGet(CAN_BIT_TIMING_SETUP *setup, CAN_BIT_TIMING *bitTiming);
-bool CAN1_BitTimingSet(CAN_BIT_TIMING *bitTiming);
-void CAN1_TxFifoCallbackRegister(CAN_TX_FIFO_CALLBACK callback, uintptr_t contextHandle);
-void CAN1_TxEventFifoCallbackRegister(CAN_TX_EVENT_FIFO_CALLBACK callback, uintptr_t contextHandle);
-void CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_NUM rxFifoNum, CAN_RX_FIFO_CALLBACK callback, uintptr_t contextHandle);
-void CAN1_CallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle);
+void CAN0_Initialize(void);
+bool CAN0_MessageTransmitFifo(uint8_t numberOfMessage, CAN_TX_BUFFER *txBuffer);
+uint8_t CAN0_TxFifoFreeLevelGet(void);
+bool CAN0_TxBufferIsBusy(uint8_t bufferNumber);
+bool CAN0_TxEventFifoRead(uint8_t numberOfTxEvent, CAN_TX_EVENT_FIFO *txEventFifo);
+bool CAN0_MessageReceiveFifo(CAN_RX_FIFO_NUM rxFifoNum, uint8_t numberOfMessage, CAN_RX_BUFFER *rxBuffer);
+CAN_ERROR CAN0_ErrorGet(void);
+void CAN0_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount);
+void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress);
+void CAN0_SleepModeEnter(void);
+void CAN0_SleepModeExit(void);
+bool CAN0_BitTimingCalculationGet(CAN_BIT_TIMING_SETUP *setup, CAN_BIT_TIMING *bitTiming);
+bool CAN0_BitTimingSet(CAN_BIT_TIMING *bitTiming);
+void CAN0_TxFifoCallbackRegister(CAN_TX_FIFO_CALLBACK callback, uintptr_t contextHandle);
+void CAN0_TxEventFifoCallbackRegister(CAN_TX_EVENT_FIFO_CALLBACK callback, uintptr_t contextHandle);
+void CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_NUM rxFifoNum, CAN_RX_FIFO_CALLBACK callback, uintptr_t contextHandle);
+void CAN0_CallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle);
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
     }
 #endif
 // DOM-IGNORE-END
 
-#endif // PLIB_CAN1_H
+#endif // PLIB_CAN0_H
 
 /*******************************************************************************
  End of File

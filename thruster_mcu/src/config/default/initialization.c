@@ -173,7 +173,7 @@ void SYS_Initialize ( void* data )
 
     SERCOM0_USART_Initialize();
 
-    CAN1_Initialize();
+    CAN0_Initialize();
 
     TCC1_PWMInitialize();
 

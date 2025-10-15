@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: can1
+componentName: can0
 coreVersion: 5.8.2
 device: ATSAME54P20A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: can1
+  name: can0
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,20 +21,40 @@ data:
     children:
     - children:
       - attributes:
-          id: can1
+          id: can0
           x: '5'
-          y: '180'
+          y: '179'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
   symbols:
+    AUTO_DATA_BIT_TIMING_CALCULATION:
+      attributes:
+        id: AUTO_DATA_BIT_TIMING_CALCULATION
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    AUTO_NOMINAL_BIT_TIMING_CALCULATION:
+      attributes:
+        id: AUTO_NOMINAL_BIT_TIMING_CALCULATION
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
     CALCULATED_DATA_BITRATE:
       attributes:
         id: CALCULATED_DATA_BITRATE
       children:
       - children:
         - attributes:
-            id: can1
+            id: can0
             value: '2000'
           type: Dynamic
         type: Values
@@ -45,7 +65,29 @@ data:
       children:
       - children:
         - attributes:
-            id: can1
+            id: can0
+            value: '0.000'
+          type: Dynamic
+        type: Values
+      type: String
+    CALCULATED_NOMINAL_BITRATE:
+      attributes:
+        id: CALCULATED_NOMINAL_BITRATE
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '500'
+          type: Dynamic
+        type: Values
+      type: Integer
+    CALCULATED_NOMINAL_ERRORRATE:
+      attributes:
+        id: CALCULATED_NOMINAL_ERRORRATE
+      children:
+      - children:
+        - attributes:
+            id: can0
             value: '0.000'
           type: Dynamic
         type: Values
@@ -60,24 +102,72 @@ data:
           type: User
         type: Values
       type: Combo
+    DATA_BITRATE:
+      attributes:
+        id: DATA_BITRATE
+      children:
+      - children:
+        - attributes:
+            value: '2000'
+          type: User
+        type: Values
+      type: Integer
+    DATA_SAMPLE_POINT:
+      attributes:
+        id: DATA_SAMPLE_POINT
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '96.666664'
+          type: Dynamic
+        type: Values
+      type: Float
     DATA_TIME_QUANTA_PERIOD:
       attributes:
         id: DATA_TIME_QUANTA_PERIOD
       children:
       - children:
         - attributes:
-            id: can1
+            id: can0
             value: '16.667'
           type: Dynamic
         type: Values
       type: String
+    DBTP_DBRP:
+      attributes:
+        id: DBTP_DBRP
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
     DBTP_DSJW:
       attributes:
         id: DBTP_DSJW
       children:
       - children:
         - attributes:
-            id: can1
+            id: can0
             value: '1'
           type: Dynamic
         type: Values
@@ -88,7 +178,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can1
+            id: can0
             value: '28'
           type: Dynamic
         type: Values
@@ -99,7 +189,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can1
+            id: can0
             value: '1'
           type: Dynamic
         type: Values
@@ -110,7 +200,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can1
+            id: can0
             value: '30'
           type: Dynamic
         type: Values
@@ -125,6 +215,99 @@ data:
           type: User
         type: Values
       type: Boolean
+    NBTP_NBRP:
+      attributes:
+        id: NBTP_NBRP
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    NBTP_NSJW:
+      attributes:
+        id: NBTP_NSJW
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '1'
+          type: Dynamic
+        type: Values
+      type: Integer
+    NBTP_NTSEG1:
+      attributes:
+        id: NBTP_NTSEG1
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '118'
+          type: Dynamic
+        type: Values
+      type: Integer
+    NBTP_NTSEG2:
+      attributes:
+        id: NBTP_NTSEG2
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '1'
+          type: Dynamic
+        type: Values
+      type: Integer
+    NBTP_TOTAL_TIME_QUANTA:
+      attributes:
+        id: NBTP_TOTAL_TIME_QUANTA
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '120'
+          type: Dynamic
+        type: Values
+      type: Integer
+    NOMINAL_SAMPLE_POINT:
+      attributes:
+        id: NOMINAL_SAMPLE_POINT
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '99.166664'
+          type: Dynamic
+        type: Values
+      type: Float
+    NOMINAL_TIME_QUANTA_PERIOD:
+      attributes:
+        id: NOMINAL_TIME_QUANTA_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '16.667'
+          type: Dynamic
+        type: Values
+      type: String
     instHeaderFile:
       attributes:
         id: instHeaderFile
@@ -151,197 +334,4 @@ data:
           type: String
         type: Attributes
       type: File
-    NBTP_NBRP:
-      attributes:
-        id: NBTP_NBRP
-      children:
-      - children:
-        - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            id: can1
-            value: '0'
-          type: Dynamic
-        type: Values
-      type: Integer
-    NOMINAL_SAMPLE_POINT:
-      attributes:
-        id: NOMINAL_SAMPLE_POINT
-      children:
-      - children:
-        - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            id: can1
-            value: '99.166664'
-          type: Dynamic
-        type: Values
-      type: Float
-    NBTP_TOTAL_TIME_QUANTA:
-      attributes:
-        id: NBTP_TOTAL_TIME_QUANTA
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: '120'
-          type: Dynamic
-        type: Values
-      type: Integer
-    NBTP_NTSEG1:
-      attributes:
-        id: NBTP_NTSEG1
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: '118'
-          type: Dynamic
-        type: Values
-      type: Integer
-    NBTP_NTSEG2:
-      attributes:
-        id: NBTP_NTSEG2
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: '1'
-          type: Dynamic
-        type: Values
-      type: Integer
-    NBTP_NSJW:
-      attributes:
-        id: NBTP_NSJW
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: '1'
-          type: Dynamic
-        type: Values
-      type: Integer
-    CALCULATED_NOMINAL_BITRATE:
-      attributes:
-        id: CALCULATED_NOMINAL_BITRATE
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: '500'
-          type: Dynamic
-        type: Values
-      type: Integer
-    NOMINAL_TIME_QUANTA_PERIOD:
-      attributes:
-        id: NOMINAL_TIME_QUANTA_PERIOD
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: '16.667'
-          type: Dynamic
-        type: Values
-      type: String
-    CALCULATED_NOMINAL_ERRORRATE:
-      attributes:
-        id: CALCULATED_NOMINAL_ERRORRATE
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: '0.000'
-          type: Dynamic
-        type: Values
-      type: String
-    AUTO_NOMINAL_BIT_TIMING_CALCULATION:
-      attributes:
-        id: AUTO_NOMINAL_BIT_TIMING_CALCULATION
-      children:
-      - children:
-        - attributes:
-            value: 'true'
-          type: User
-        type: Values
-      type: Boolean
-    DBTP_DBRP:
-      attributes:
-        id: DBTP_DBRP
-      children:
-      - children:
-        - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            id: can1
-            value: '0'
-          type: Dynamic
-        type: Values
-      type: Integer
-    DATA_SAMPLE_POINT:
-      attributes:
-        id: DATA_SAMPLE_POINT
-      children:
-      - children:
-        - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            id: can1
-            value: '96.666664'
-          type: Dynamic
-        type: Values
-      type: Float
-    AUTO_DATA_BIT_TIMING_CALCULATION:
-      attributes:
-        id: AUTO_DATA_BIT_TIMING_CALCULATION
-      children:
-      - children:
-        - attributes:
-            value: 'true'
-          type: User
-        type: Values
-      type: Boolean
-    DATA_BITRATE:
-      attributes:
-        id: DATA_BITRATE
-      children:
-      - children:
-        - attributes:
-            value: '2000'
-          type: User
-        type: Values
-      type: Integer
-    NOMINAL_BITRATE:
-      attributes:
-        id: NOMINAL_BITRATE
-      children:
-      - children:
-        - attributes:
-            value: '500'
-          type: User
-        type: Values
-      type: Integer
   userData: {}
