@@ -84,6 +84,8 @@ int main ( void ) {
     
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, messages_to_read, &rx_buf);
 
+    WDT_Enable();
+    
     while ( true )
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
