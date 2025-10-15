@@ -41,9 +41,9 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/libc_syscalls.c
   hash: 88bb2e34c939601b5b7ad076556e3ee0fcedf388436b8cddb6d6fd3e9d07472f
 - file: ../src/config/default/peripheral/can/plib_can0.c
-  hash: abd42a1fdf825d58f216eaeb6ec29472992e9c6171c00499e161b7bae7d376c1
+  hash: d0737551587cc8e44ef6f8404992fffda0e82d6ea878eb4c14e574d456232929
 - file: ../src/config/default/peripheral/can/plib_can0.h
-  hash: 93529b37c933612badd743a9ea9b61773fbbf5b150494fe9aa3b935c13e62713
+  hash: 7b13b1a960a68010b3474faccd7d46c3000e3e8e9c5b1eb12e1bfe2ca9e45b93
 - file: ../src/config/default/peripheral/can/plib_can_common.h
   hash: e0e3b54f69be9d8811bbe507f91daa443ae7bff5dc724ac51baebc160097b2d6
 - file: ../src/config/default/peripheral/clock/plib_clock.c

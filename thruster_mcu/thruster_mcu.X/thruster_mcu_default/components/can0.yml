@@ -334,4 +334,58 @@ data:
           type: String
         type: Attributes
       type: File
+    RXF0_BYTES_CFG:
+      attributes:
+        id: RXF0_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
+    RXF1_BYTES_CFG:
+      attributes:
+        id: RXF1_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
+    TX_FIFO_BYTES_CFG:
+      attributes:
+        id: TX_FIFO_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData: {}

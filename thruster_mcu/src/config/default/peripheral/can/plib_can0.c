@@ -115,9 +115,9 @@ void CAN0_Initialize(void)
     CAN0_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(117UL) | CAN_NBTP_NBRP(0UL) | CAN_NBTP_NSJW(0UL);
 
     /* Receive Buffer / FIFO Element Size Configuration Register */
-    CAN0_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(0UL) | CAN_RXESC_F1DS(0UL);
+    CAN0_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(7UL) | CAN_RXESC_F1DS(7UL);
     /* Transmit Buffer/FIFO Element Size Configuration Register */
-    CAN0_REGS->CAN_TXESC = CAN_TXESC_TBDS(0UL);
+    CAN0_REGS->CAN_TXESC = CAN_TXESC_TBDS(7UL);
 
     /* Global Filter Configuration Register */
     CAN0_REGS->CAN_GFC = CAN_GFC_ANFS_REJECT | CAN_GFC_ANFE_REJECT;
