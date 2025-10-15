@@ -177,7 +177,7 @@ void ADC0_ComparisonWindowSet(uint16_t low_threshold, uint16_t high_threshold)
     ADC0_REGS->ADC_WINUT = high_threshold;
     while((ADC0_REGS->ADC_SYNCBUSY & ADC_SYNCBUSY_WINLT_Msk) == ADC_SYNCBUSY_WINLT_Msk)
     {
-        /* Wait for Synchronization */
+         /* Wait for Synchronization */
     }
     while((ADC0_REGS->ADC_SYNCBUSY & ADC_SYNCBUSY_WINUT_Msk) == ADC_SYNCBUSY_WINUT_Msk)
     {
@@ -226,3 +226,5 @@ bool ADC0_ConversionStatusGet( void )
     }
     return status;
 }
+
+

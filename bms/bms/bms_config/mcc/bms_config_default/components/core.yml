@@ -167,7 +167,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1dff'
+            value: '0x1fff'
           type: Dynamic
         type: Values
       type: String
@@ -343,7 +343,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -354,7 +354,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -365,7 +365,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -453,7 +453,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -464,7 +464,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -475,7 +475,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: CAN1_Handler
+            value: CAN1_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -486,7 +486,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -732,6 +732,50 @@ data:
           type: Dynamic
         type: Values
       type: String
+    CAN1_CLOCK_ENABLE:
+      attributes:
+        id: CAN1_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    CAN1_INTERRUPT_ENABLE:
+      attributes:
+        id: CAN1_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    CAN1_INTERRUPT_HANDLER:
+      attributes:
+        id: CAN1_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: CAN1_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    CAN1_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: CAN1_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData:
     children:
     - attributes:

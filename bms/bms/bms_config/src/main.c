@@ -26,6 +26,10 @@
 #include <stdbool.h>                    // Defines true
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
+#include "peripheral/adc/plib_adc0.h"
+
+
+
 
 
 // *****************************************************************************
@@ -45,6 +49,7 @@ int main ( void )
         SYS_Tasks ( );
     }
 
+    
     /* Execution should not come here during normal operation */
 
     return ( EXIT_FAILURE );

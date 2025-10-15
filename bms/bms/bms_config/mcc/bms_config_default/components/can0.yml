@@ -334,4 +334,14 @@ data:
           type: User
         type: Values
       type: Integer
+    NOMINAL_BITRATE:
+      attributes:
+        id: NOMINAL_BITRATE
+      children:
+      - children:
+        - attributes:
+            value: '500'
+          type: User
+        type: Values
+      type: Integer
   userData: {}
