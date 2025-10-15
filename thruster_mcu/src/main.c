@@ -50,18 +50,20 @@ static void start_thrusters(void);
 /*
  * RX interrupt callback for CAN0
  * Called when one or more frames arrive
+ * Mainly for debugging purposes
  * 
  * @param context user context value (e.g., STATE_CAN_RECEIVE) passed at register time
  */
-void CAN_Receive_Callback(uintptr_t context);
+void CAN_Receive_Callback(uintptr_t context); // TODO: Remove after verifying CAN works
 
 /*
  * TX interrupt callback for CAN0
  * Called when TX FIFO element completes / space becomes available
+ * Mainly for debugging purposes
  * 
  * @param context user context value (e.g., STATE_CAN_TRANSMIT) passed at register time
  */
-void CAN_Transmit_Callback(uintptr_t context);
+void CAN_Transmit_Callback(uintptr_t context); // TODO: Remove after verifying CAN works
 
 
 int main ( void ) {
