@@ -3,12 +3,15 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 
+// TCC
 const uint32_t tcc0_period = 74000U;
 const uint32_t tcc1_period = 74000U;
 const uint32_t tcc2_period = 18500U;
-
 const uint32_t pwm_period_microseconds = 20000U;
 
+// CAN0
+uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
+static uint32_t can_status = 0;
 
 struct Thruster {
     uint8_t tcc_num;
@@ -34,14 +37,42 @@ static const struct Thruster thrusters[8] = {
  */
 static void set_thruster_pwm(uint8_t *data);
 
+/*
+ * Stop all thrusters
+ */
 static void stop_thrusters(void);
 
+/*
+ * Start all thrusters
+ */
 static void start_thrusters(void);
+
+/*
+ * RX interrupt callback for CAN0
+ * Called when one or more frames arrive
+ * 
+ * @param context user context value (e.g., STATE_CAN_RECEIVE) passed at register time
+ */
+void CAN_Receive_Callback(uintptr_t context);
+
+/*
+ * TX interrupt callback for CAN0
+ * Called when TX FIFO element completes / space becomes available
+ * 
+ * @param context user context value (e.g., STATE_CAN_TRANSMIT) passed at register time
+ */
+void CAN_Transmit_Callback(uintptr_t context);
 
 
 int main ( void ) {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
+    
+    CAN0_MessageRAMConfigSet(Can0MessageRAM);
+    
+    CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
+    
+    CAN0_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
 
     while ( true )
     {
@@ -82,13 +113,33 @@ static void set_thruster_pwm(uint8_t *data) {
 static void stop_thrusters(void) {
     TCC0_PWMStop();
     TCC1_PWMStop();
-    TCC2_PWMStop();
-};
+    //TCC2_PWMStop();
+}
 
 static void start_thrusters(void) {
     TCC0_PWMStart();
     TCC1_PWMStart();
-    TCC2_PWMStart();
-};
+    //TCC2_PWMStart();
+}
 
+void CAN_Receive_Callback(uintptr_t context) {
+    /* Check CAN Status */
+    can_status = CAN0_ErrorGet();
+
+    // If no new error, handle CAN frame
+    if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
+        ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
+        // print_can_frame();
+    }
+}
+
+void CAN_Transmit_Callback(uintptr_t context) {
+    /* Check CAN Status */
+    can_status = CAN0_ErrorGet();
+
+    if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
+        ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
+        // Sending encoder data
+    }
+}
 
