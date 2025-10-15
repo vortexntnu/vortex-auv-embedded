@@ -1,14 +1,14 @@
 /*******************************************************************************
-  SERIAL COMMUNICATION SERIAL PERIPHERAL INTERFACE(SERCOM5_SPI) PLIB
+  SERIAL COMMUNICATION SERIAL PERIPHERAL INTERFACE(SERCOM0_SPI) PLIB
 
   Company
     Microchip Technology Inc.
 
   File Name
-    plib_sercom5_spi_master.c
+    plib_sercom0_spi_master.c
 
   Summary
-    SERCOM5_SPI Master PLIB Implementation File.
+    SERCOM0_SPI Master PLIB Implementation File.
 
   Description
     This file defines the interface to the SERCOM SPI peripheral library.
@@ -46,7 +46,7 @@
 // DOM-IGNORE-END
 
 #include "interrupts.h"
-#include "plib_sercom5_spi_master.h"
+#include "plib_sercom0_spi_master.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -55,67 +55,67 @@
 // *****************************************************************************
 
 
-/* SERCOM5 clk freq value for the baud calculation */
-#define SERCOM5_Frequency      (48000000UL)
+/* SERCOM0 clk freq value for the baud calculation */
+#define SERCOM0_Frequency      (48000000UL)
 
-/* SERCOM5 SPI baud value for 2400000 Hz baud rate */
-#define SERCOM5_SPIM_BAUD_VALUE         (9UL)
+/* SERCOM0 SPI baud value for 2400000 Hz baud rate */
+#define SERCOM0_SPIM_BAUD_VALUE         (9UL)
 
 /*Global object to save SPI Exchange related data  */
-static volatile SPI_OBJECT sercom5SPIObj;
+static volatile SPI_OBJECT sercom0SPIObj;
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: SERCOM5_SPI Implementation
+// Section: SERCOM0_SPI Implementation
 // *****************************************************************************
 // *****************************************************************************
 // *****************************************************************************
 
 // *****************************************************************************
 /* Function:
-    void SERCOM5_SPI_Initialize(void);
+    void SERCOM0_SPI_Initialize(void);
 
   Summary:
-    Initializes instance SERCOM5 of the SERCOM module operating in SPI mode.
+    Initializes instance SERCOM0 of the SERCOM module operating in SPI mode.
 
   Description:
-    This function initializes instance SERCOM5 of SERCOM module operating in SPI mode.
+    This function initializes instance SERCOM0 of SERCOM module operating in SPI mode.
     This function should be called before any other library function. The SERCOM
     module will be configured as per the MHC settings.
 
   Remarks:
-    Refer plib_sercom5_spi.h file for more information.
+    Refer plib_sercom0_spi.h file for more information.
 */
 
-void SERCOM5_SPI_Initialize(void)
+void SERCOM0_SPI_Initialize(void)
 {
-    /* Instantiate the SERCOM5 SPI object */
-    sercom5SPIObj.callback = NULL ;
-    sercom5SPIObj.transferIsBusy = false ;
-    sercom5SPIObj.txSize = 0U;
-    sercom5SPIObj.rxSize = 0U;
+    /* Instantiate the SERCOM0 SPI object */
+    sercom0SPIObj.callback = NULL ;
+    sercom0SPIObj.transferIsBusy = false ;
+    sercom0SPIObj.txSize = 0U;
+    sercom0SPIObj.rxSize = 0U;
 
     /* Selection of the Character Size and Receiver Enable */
-    SERCOM5_REGS->SPIM.SERCOM_CTRLB = SERCOM_SPIM_CTRLB_CHSIZE_8_BIT | SERCOM_SPIM_CTRLB_RXEN_Msk ;
+    SERCOM0_REGS->SPIM.SERCOM_CTRLB = SERCOM_SPIM_CTRLB_CHSIZE_8_BIT | SERCOM_SPIM_CTRLB_RXEN_Msk ;
 
     /* Wait for synchronization */
-    while((SERCOM5_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
+    while((SERCOM0_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
     {
         /* Do nothing */
     }
 
     /* Selection of the Baud Value */
-    SERCOM5_REGS->SPIM.SERCOM_BAUD = (uint8_t)SERCOM_SPIM_BAUD_BAUD(SERCOM5_SPIM_BAUD_VALUE);
+    SERCOM0_REGS->SPIM.SERCOM_BAUD = (uint8_t)SERCOM_SPIM_BAUD_BAUD(SERCOM0_SPIM_BAUD_VALUE);
 
     /* Configure Data Out Pin Out , Master Mode,
      * Data In and Pin Out,Data Order and Standby mode if configured
      * and Selection of the Clock Phase and Polarity and Enable the SPI Module
      */
-    SERCOM5_REGS->SPIM.SERCOM_CTRLA = SERCOM_SPIM_CTRLA_MODE_SPI_MASTER | SERCOM_SPIM_CTRLA_DOPO_PAD0 | SERCOM_SPIM_CTRLA_DIPO_PAD0 | SERCOM_SPIM_CTRLA_CPOL_IDLE_LOW | SERCOM_SPIM_CTRLA_CPHA_LEADING_EDGE | SERCOM_SPIM_CTRLA_DORD_MSB | SERCOM_SPIM_CTRLA_ENABLE_Msk ;
+    SERCOM0_REGS->SPIM.SERCOM_CTRLA = SERCOM_SPIM_CTRLA_MODE_SPI_MASTER | SERCOM_SPIM_CTRLA_DOPO_PAD1 | SERCOM_SPIM_CTRLA_DIPO_PAD0 | SERCOM_SPIM_CTRLA_CPOL_IDLE_LOW | SERCOM_SPIM_CTRLA_CPHA_LEADING_EDGE | SERCOM_SPIM_CTRLA_DORD_MSB | SERCOM_SPIM_CTRLA_ENABLE_Msk ;
 
 
     /* Wait for synchronization */
-    while((SERCOM5_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
+    while((SERCOM0_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
     {
         /* Do nothing */
     }
@@ -123,7 +123,7 @@ void SERCOM5_SPI_Initialize(void)
 
 // *****************************************************************************
 /* Function:
-    bool SERCOM5_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup,
+    bool SERCOM0_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup,
                                                 uint32_t spiSourceClock);
 
  Summary:
@@ -146,10 +146,10 @@ void SERCOM5_SPI_Initialize(void)
     calling this function.
 
   Remarks:
-    Refer plib_sercom5_spi.h file for more information.
+    Refer plib_sercom0_spi.h file for more information.
 */
 
-bool SERCOM5_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup, uint32_t spiSourceClock)
+bool SERCOM0_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup, uint32_t spiSourceClock)
 {
     uint32_t baudValue = 0U;
 
@@ -158,22 +158,22 @@ bool SERCOM5_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup, uint32_t spiSourceCloc
     if(spiSourceClock == 0U)
     {
         /* Fetch Master Clock Frequency directly */
-        spiSourceClock = SERCOM5_Frequency;
+        spiSourceClock = SERCOM0_Frequency;
     }
 
     /* Disable the SPI Module */
-    SERCOM5_REGS->SPIM.SERCOM_CTRLA &= ~(SERCOM_SPIM_CTRLA_ENABLE_Msk);
+    SERCOM0_REGS->SPIM.SERCOM_CTRLA &= ~(SERCOM_SPIM_CTRLA_ENABLE_Msk);
 
     /* Disabling SPI module, also clears the TXC (Transmit Complete) bit to 0. TXC = 0 means transfer is not complete (busy).
-       As a result, calling SERCOM5_SPI_IsBusy() after a call to SERCOM5_SPI_TransferSetup() always returns busy.
-       Since, application must call the SERCOM5_SPI_TransferSetup() API only after ensuring that no transfer is in progress,
-       it is safe to clear the rxSize and txSize to 0, so as to let the SERCOM5_SPI_IsBusy() return false (not busy).
+       As a result, calling SERCOM0_SPI_IsBusy() after a call to SERCOM0_SPI_TransferSetup() always returns busy.
+       Since, application must call the SERCOM0_SPI_TransferSetup() API only after ensuring that no transfer is in progress,
+       it is safe to clear the rxSize and txSize to 0, so as to let the SERCOM0_SPI_IsBusy() return false (not busy).
     */
-    sercom5SPIObj.rxSize = 0;
-    sercom5SPIObj.txSize = 0;
+    sercom0SPIObj.rxSize = 0;
+    sercom0SPIObj.txSize = 0;
 
     /* Wait for synchronization */
-    while((SERCOM5_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
+    while((SERCOM0_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
     {
         /* Do nothing */
     }
@@ -191,18 +191,18 @@ bool SERCOM5_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup, uint32_t spiSourceCloc
             }
 
             /* Selection of the Clock Polarity and Clock Phase */
-            SERCOM5_REGS->SPIM.SERCOM_CTRLA &= ~(SERCOM_SPIM_CTRLA_CPOL_Msk | SERCOM_SPIM_CTRLA_CPHA_Msk);
-            SERCOM5_REGS->SPIM.SERCOM_CTRLA |= (uint32_t)setup->clockPolarity | (uint32_t)setup->clockPhase;
+            SERCOM0_REGS->SPIM.SERCOM_CTRLA &= ~(SERCOM_SPIM_CTRLA_CPOL_Msk | SERCOM_SPIM_CTRLA_CPHA_Msk);
+            SERCOM0_REGS->SPIM.SERCOM_CTRLA |= (uint32_t)setup->clockPolarity | (uint32_t)setup->clockPhase;
 
             /* Selection of the Baud Value */
-            SERCOM5_REGS->SPIM.SERCOM_BAUD = (uint8_t)baudValue;
+            SERCOM0_REGS->SPIM.SERCOM_BAUD = (uint8_t)baudValue;
 
             /* Selection of the Character Size */
-            SERCOM5_REGS->SPIM.SERCOM_CTRLB &= ~SERCOM_SPIM_CTRLB_CHSIZE_Msk;
-            SERCOM5_REGS->SPIM.SERCOM_CTRLB |= (uint32_t)setup->dataBits;
+            SERCOM0_REGS->SPIM.SERCOM_CTRLB &= ~SERCOM_SPIM_CTRLB_CHSIZE_Msk;
+            SERCOM0_REGS->SPIM.SERCOM_CTRLB |= (uint32_t)setup->dataBits;
 
             /* Wait for synchronization */
-            while((SERCOM5_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
+            while((SERCOM0_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
             {
                 /* Do nothing */
             }
@@ -212,10 +212,10 @@ bool SERCOM5_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup, uint32_t spiSourceCloc
     }
 
     /* Enabling the SPI Module */
-    SERCOM5_REGS->SPIM.SERCOM_CTRLA |= SERCOM_SPIM_CTRLA_ENABLE_Msk;
+    SERCOM0_REGS->SPIM.SERCOM_CTRLA |= SERCOM_SPIM_CTRLA_ENABLE_Msk;
 
     /* Wait for synchronization */
-    while((SERCOM5_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
+    while((SERCOM0_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
     {
         /* Do nothing */
     }
@@ -226,7 +226,7 @@ bool SERCOM5_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup, uint32_t spiSourceCloc
 
 // *****************************************************************************
 /* Function:
-    void SERCOM5_SPI_CallbackRegister(const SERCOM_SPI_CALLBACK* callBack,
+    void SERCOM0_SPI_CallbackRegister(const SERCOM_SPI_CALLBACK* callBack,
                                                     uintptr_t context);
 
   Summary:
@@ -242,26 +242,26 @@ bool SERCOM5_SPI_TransferSetup(SPI_TRANSFER_SETUP *setup, uint32_t spiSourceCloc
     function with "callBack" value as NULL.
 
   Remarks:
-    Refer plib_sercom5_spi.h file for more information.
+    Refer plib_sercom0_spi.h file for more information.
 */
 
-void SERCOM5_SPI_CallbackRegister(SERCOM_SPI_CALLBACK callBack, uintptr_t context )
+void SERCOM0_SPI_CallbackRegister(SERCOM_SPI_CALLBACK callBack, uintptr_t context )
 {
-    sercom5SPIObj.callback = callBack;
+    sercom0SPIObj.callback = callBack;
 
-    sercom5SPIObj.context = context;
+    sercom0SPIObj.context = context;
 }
 
 // *****************************************************************************
 /* Function:
-    bool SERCOM5_SPI_IsBusy(void);
+    bool SERCOM0_SPI_IsBusy(void);
 
   Summary:
-    Returns transfer status of SERCOM SERCOM5SPI.
+    Returns transfer status of SERCOM SERCOM0SPI.
 
   Description:
-    This function ture if the SERCOM SERCOM5SPI module is busy with a transfer. The
-    application can use the function to check if SERCOM SERCOM5SPI module is busy
+    This function ture if the SERCOM SERCOM0SPI module is busy with a transfer. The
+    application can use the function to check if SERCOM SERCOM0SPI module is busy
     before calling any of the data transfer functions. The library does not
     allow a data transfer operation if another transfer operation is already in
     progress.
@@ -271,16 +271,16 @@ void SERCOM5_SPI_CallbackRegister(SERCOM_SPI_CALLBACK callBack, uintptr_t contex
     implement a synchronous interface to the library.
 
   Remarks:
-    Refer plib_sercom5_spi.h file for more information.
+    Refer plib_sercom0_spi.h file for more information.
 */
 
-bool SERCOM5_SPI_IsBusy(void)
+bool SERCOM0_SPI_IsBusy(void)
 {
     bool isBusy = false;
-    size_t txSize = sercom5SPIObj.txSize;
-    bool transferIsBusy = sercom5SPIObj.transferIsBusy;
+    size_t txSize = sercom0SPIObj.txSize;
+    bool transferIsBusy = sercom0SPIObj.transferIsBusy;
 
-    if ((sercom5SPIObj.rxSize == 0U) && (txSize == 0U))
+    if ((sercom0SPIObj.rxSize == 0U) && (txSize == 0U))
     {
         /* This means no transfer has been requested yet; hence SPI is not busy. */
         isBusy = false;
@@ -288,27 +288,27 @@ bool SERCOM5_SPI_IsBusy(void)
     else
     {
         /* if transmit is not complete or if the state flag is not set, SPI is busy */
-        isBusy = (((SERCOM5_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_TXC_Msk) == 0U) || transferIsBusy);
+        isBusy = (((SERCOM0_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_TXC_Msk) == 0U) || transferIsBusy);
     }
     return isBusy;
 }
 
-bool SERCOM5_SPI_IsTransmitterBusy(void)
+bool SERCOM0_SPI_IsTransmitterBusy(void)
 {
-    return ((SERCOM5_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_TXC_Msk) == 0U)? true : false;
+    return ((SERCOM0_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_TXC_Msk) == 0U)? true : false;
 }
 
 // *****************************************************************************
 /* Function:
-    bool SERCOM5_SPI_WriteRead (void* pTransmitData, size_t txSize
+    bool SERCOM0_SPI_WriteRead (void* pTransmitData, size_t txSize
                                         void* pReceiveData, size_t rxSize);
 
   Summary:
-    Write and Read data on SERCOM SERCOM5 SPI peripheral.
+    Write and Read data on SERCOM SERCOM0 SPI peripheral.
 
   Description:
     This function transmits "txSize" number of bytes and receives "rxSize"
-    number of bytes on SERCOM SERCOM5 SPI module. Data pointed by pTransmitData is
+    number of bytes on SERCOM SERCOM0 SPI module. Data pointed by pTransmitData is
     transmitted and received data is saved in the location pointed by
     pReceiveData. The function will transfer the maximum of "txSize" or "rxSize"
     data units towards completion.
@@ -327,25 +327,25 @@ bool SERCOM5_SPI_IsTransmitterBusy(void)
     transfer is complete.  Only one transfer is allowed at any time. The
     Application can use a callback function or a polling function to check for
     completion of the transfer. If a callback is required, this should be
-    registered prior to calling the SERCOM5_SPI_WriteRead() function. The
-    application can use the SERCOM5_SPI_IsBusy() to poll for completion.
+    registered prior to calling the SERCOM0_SPI_WriteRead() function. The
+    application can use the SERCOM0_SPI_IsBusy() to poll for completion.
 
   Remarks:
-    Refer plib_sercom5_spi.h file for more information.
+    Refer plib_sercom0_spi.h file for more information.
 */
 
-bool SERCOM5_SPI_WriteRead (void* pTransmitData, size_t txSize, void* pReceiveData, size_t rxSize)
+bool SERCOM0_SPI_WriteRead (void* pTransmitData, size_t txSize, void* pReceiveData, size_t rxSize)
 {
     bool isRequestAccepted = false;
     uint32_t dummyData = 0U;
     size_t txSz;
 
-    if (sercom5SPIObj.transferIsBusy == false)
+    if (sercom0SPIObj.transferIsBusy == false)
     {
         /* Verify the request */
         if(((txSize > 0U) && (pTransmitData != NULL)) || ((rxSize > 0U) && (pReceiveData != NULL)))
         {
-            if((SERCOM5_REGS->SPIM.SERCOM_CTRLB & SERCOM_SPIM_CTRLB_CHSIZE_Msk) == (uint32_t)SPI_DATA_BITS_9)
+            if((SERCOM0_REGS->SPIM.SERCOM_CTRLB & SERCOM_SPIM_CTRLB_CHSIZE_Msk) == (uint32_t)SPI_DATA_BITS_9)
             {
                 /* For 9-bit transmission, the txSize and rxSize must be an even number. */
                 if(((txSize > 0U) && ((txSize & 0x01U) != 0U)) || ((rxSize > 0U) && ((rxSize & 0x01U) != 0U)))
@@ -355,64 +355,64 @@ bool SERCOM5_SPI_WriteRead (void* pTransmitData, size_t txSize, void* pReceiveDa
             }
 
             isRequestAccepted = true;
-            sercom5SPIObj.txBuffer = pTransmitData;
-            sercom5SPIObj.rxBuffer = pReceiveData;
-            sercom5SPIObj.rxCount = 0U;
-            sercom5SPIObj.txCount = 0U;
-            sercom5SPIObj.dummySize = 0U;
+            sercom0SPIObj.txBuffer = pTransmitData;
+            sercom0SPIObj.rxBuffer = pReceiveData;
+            sercom0SPIObj.rxCount = 0U;
+            sercom0SPIObj.txCount = 0U;
+            sercom0SPIObj.dummySize = 0U;
 
             if(pTransmitData != NULL)
             {
-                sercom5SPIObj.txSize = txSize;
+                sercom0SPIObj.txSize = txSize;
             }
             else
             {
-                sercom5SPIObj.txSize = 0U;
+                sercom0SPIObj.txSize = 0U;
             }
 
             if(pReceiveData != NULL)
             {
-                sercom5SPIObj.rxSize = rxSize;
+                sercom0SPIObj.rxSize = rxSize;
             }
             else
             {
-                sercom5SPIObj.rxSize = 0U;
+                sercom0SPIObj.rxSize = 0U;
             }
 
-            sercom5SPIObj.transferIsBusy = true;
+            sercom0SPIObj.transferIsBusy = true;
 
             /* Flush out any unread data in SPI read buffer */
-            while((SERCOM5_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_RXC_Msk) == SERCOM_SPIM_INTFLAG_RXC_Msk)
+            while((SERCOM0_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_RXC_Msk) == SERCOM_SPIM_INTFLAG_RXC_Msk)
             {
-                dummyData = SERCOM5_REGS->SPIM.SERCOM_DATA;
+                dummyData = SERCOM0_REGS->SPIM.SERCOM_DATA;
                 (void)dummyData;
             }
 
-            SERCOM5_REGS->SPIM.SERCOM_STATUS |= SERCOM_SPIM_STATUS_BUFOVF_Msk;
+            SERCOM0_REGS->SPIM.SERCOM_STATUS |= SERCOM_SPIM_STATUS_BUFOVF_Msk;
 
-            SERCOM5_REGS->SPIM.SERCOM_INTFLAG |= (uint8_t)SERCOM_SPIM_INTFLAG_ERROR_Msk;
+            SERCOM0_REGS->SPIM.SERCOM_INTFLAG |= (uint8_t)SERCOM_SPIM_INTFLAG_ERROR_Msk;
 
-            txSz = sercom5SPIObj.txSize;
+            txSz = sercom0SPIObj.txSize;
 
-            if(sercom5SPIObj.rxSize > txSz)
+            if(sercom0SPIObj.rxSize > txSz)
             {
-                sercom5SPIObj.dummySize = sercom5SPIObj.rxSize - txSz;
+                sercom0SPIObj.dummySize = sercom0SPIObj.rxSize - txSz;
             }
 
             /* Start the first write here itself, rest will happen in ISR context */
-            if((SERCOM5_REGS->SPIM.SERCOM_CTRLB & SERCOM_SPIM_CTRLB_CHSIZE_Msk) == (uint32_t)SPI_DATA_BITS_8)
+            if((SERCOM0_REGS->SPIM.SERCOM_CTRLB & SERCOM_SPIM_CTRLB_CHSIZE_Msk) == (uint32_t)SPI_DATA_BITS_8)
             {
-                if(sercom5SPIObj.txCount < txSz)
+                if(sercom0SPIObj.txCount < txSz)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = *((uint8_t*)sercom5SPIObj.txBuffer);
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = *((uint8_t*)sercom0SPIObj.txBuffer);
 
-                    sercom5SPIObj.txCount++;
+                    sercom0SPIObj.txCount++;
                 }
-                else if(sercom5SPIObj.dummySize > 0U)
+                else if(sercom0SPIObj.dummySize > 0U)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = 0xFFU;
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = 0xFFU;
 
-                    sercom5SPIObj.dummySize--;
+                    sercom0SPIObj.dummySize--;
                 }
                 else
                 {
@@ -421,23 +421,23 @@ bool SERCOM5_SPI_WriteRead (void* pTransmitData, size_t txSize, void* pReceiveDa
             }
             else
             {
-                sercom5SPIObj.txSize >>= 1U;
-                sercom5SPIObj.dummySize >>= 1U;
-                sercom5SPIObj.rxSize >>= 1U;
+                sercom0SPIObj.txSize >>= 1U;
+                sercom0SPIObj.dummySize >>= 1U;
+                sercom0SPIObj.rxSize >>= 1U;
 
-                txSz = sercom5SPIObj.txSize;
+                txSz = sercom0SPIObj.txSize;
 
-                if(sercom5SPIObj.txCount < txSz)
+                if(sercom0SPIObj.txCount < txSz)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = *((uint16_t*)sercom5SPIObj.txBuffer) & SERCOM_SPIM_DATA_Msk;
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = *((uint16_t*)sercom0SPIObj.txBuffer) & SERCOM_SPIM_DATA_Msk;
 
-                    sercom5SPIObj.txCount++;
+                    sercom0SPIObj.txCount++;
                 }
-                else if(sercom5SPIObj.dummySize > 0U)
+                else if(sercom0SPIObj.dummySize > 0U)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = 0xFFFFU & SERCOM_SPIM_DATA_Msk;
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = 0xFFFFU & SERCOM_SPIM_DATA_Msk;
 
-                    sercom5SPIObj.dummySize--;
+                    sercom0SPIObj.dummySize--;
                 }
                 else
                 {
@@ -448,12 +448,12 @@ bool SERCOM5_SPI_WriteRead (void* pTransmitData, size_t txSize, void* pReceiveDa
             if(rxSize > 0U)
             {
                 /* Enable ReceiveComplete  */
-                SERCOM5_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_RXC_Msk;
+                SERCOM0_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_RXC_Msk;
             }
             else
             {
                 /* Enable the DataRegisterEmpty  */
-                SERCOM5_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_DRE_Msk;
+                SERCOM0_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_DRE_Msk;
             }
         }
     }
@@ -461,19 +461,19 @@ bool SERCOM5_SPI_WriteRead (void* pTransmitData, size_t txSize, void* pReceiveDa
     return isRequestAccepted;
 }
 
-bool SERCOM5_SPI_Write(void* pTransmitData, size_t txSize)
+bool SERCOM0_SPI_Write(void* pTransmitData, size_t txSize)
 {
-    return SERCOM5_SPI_WriteRead(pTransmitData, txSize, NULL, 0U);
+    return SERCOM0_SPI_WriteRead(pTransmitData, txSize, NULL, 0U);
 }
 
-bool SERCOM5_SPI_Read(void* pReceiveData, size_t rxSize)
+bool SERCOM0_SPI_Read(void* pReceiveData, size_t rxSize)
 {
-    return SERCOM5_SPI_WriteRead(NULL, 0U, pReceiveData, rxSize);
+    return SERCOM0_SPI_WriteRead(NULL, 0U, pReceiveData, rxSize);
 }
 
 // *****************************************************************************
 /* Function:
-    void SERCOM5_SPI_InterruptHandler(void);
+    void SERCOM0_SPI_InterruptHandler(void);
 
   Summary:
     Handler that handles the SPI interrupts
@@ -483,62 +483,62 @@ bool SERCOM5_SPI_Read(void* pReceiveData, size_t rxSize)
     Interrupts.
 
   Remarks:
-    Refer plib_sercom5_spi.h file for more information.
+    Refer plib_sercom0_spi.h file for more information.
 */
 
-void __attribute__((used)) SERCOM5_SPI_InterruptHandler(void)
+void __attribute__((used)) SERCOM0_SPI_InterruptHandler(void)
 {
     uint32_t dataBits = 0U;
     uint32_t receivedData = 0U;
     static bool isLastByteTransferInProgress = false;
-    uintptr_t context = sercom5SPIObj.context;
+    uintptr_t context = sercom0SPIObj.context;
 
-    if(SERCOM5_REGS->SPIM.SERCOM_INTENSET != 0U)
+    if(SERCOM0_REGS->SPIM.SERCOM_INTENSET != 0U)
     {
-        dataBits = SERCOM5_REGS->SPIM.SERCOM_CTRLB & SERCOM_SPIM_CTRLB_CHSIZE_Msk;
+        dataBits = SERCOM0_REGS->SPIM.SERCOM_CTRLB & SERCOM_SPIM_CTRLB_CHSIZE_Msk;
 
-        size_t rxCount = sercom5SPIObj.rxCount;
-        size_t txCount = sercom5SPIObj.txCount;
-        size_t txSize  = sercom5SPIObj.txSize;
+        size_t rxCount = sercom0SPIObj.rxCount;
+        size_t txCount = sercom0SPIObj.txCount;
+        size_t txSize  = sercom0SPIObj.txSize;
 
-        if((SERCOM5_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_RXC_Msk) == SERCOM_SPIM_INTFLAG_RXC_Msk)
+        if((SERCOM0_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_RXC_Msk) == SERCOM_SPIM_INTFLAG_RXC_Msk)
         {
-            receivedData =  SERCOM5_REGS->SPIM.SERCOM_DATA;
+            receivedData =  SERCOM0_REGS->SPIM.SERCOM_DATA;
 
-            if(rxCount < sercom5SPIObj.rxSize)
+            if(rxCount < sercom0SPIObj.rxSize)
             {
                 if(dataBits == (uint32_t)SPI_DATA_BITS_8)
                 {
-                    ((uint8_t*)sercom5SPIObj.rxBuffer)[rxCount] = (uint8_t)receivedData;
+                    ((uint8_t*)sercom0SPIObj.rxBuffer)[rxCount] = (uint8_t)receivedData;
                     rxCount++;
                 }
                 else
                 {
-                    ((uint16_t*)sercom5SPIObj.rxBuffer)[rxCount] = (uint16_t)receivedData;
+                    ((uint16_t*)sercom0SPIObj.rxBuffer)[rxCount] = (uint16_t)receivedData;
                     rxCount++;
                 }
             }
         }
 
         /* If there are more words to be transmitted, then transmit them here and keep track of the count */
-        if((SERCOM5_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_DRE_Msk) == SERCOM_SPIM_INTFLAG_DRE_Msk)
+        if((SERCOM0_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_DRE_Msk) == SERCOM_SPIM_INTFLAG_DRE_Msk)
         {
             /* Disable the DRE interrupt. This will be enabled back if more than
              * one byte is pending to be transmitted */
-            SERCOM5_REGS->SPIM.SERCOM_INTENCLR = (uint8_t)SERCOM_SPIM_INTENCLR_DRE_Msk;
+            SERCOM0_REGS->SPIM.SERCOM_INTENCLR = (uint8_t)SERCOM_SPIM_INTENCLR_DRE_Msk;
 
             if(dataBits == (uint32_t)SPI_DATA_BITS_8)
             {
-                if(txCount < sercom5SPIObj.txSize)
+                if(txCount < sercom0SPIObj.txSize)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = ((uint8_t*)sercom5SPIObj.txBuffer)[txCount];
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = ((uint8_t*)sercom0SPIObj.txBuffer)[txCount];
                     txCount++;
                 }
-                else if(sercom5SPIObj.dummySize > 0U)
+                else if(sercom0SPIObj.dummySize > 0U)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = 0xFFU;
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = 0xFFU;
 
-                    sercom5SPIObj.dummySize--;
+                    sercom0SPIObj.dummySize--;
                 }
                 else
                 {
@@ -547,16 +547,16 @@ void __attribute__((used)) SERCOM5_SPI_InterruptHandler(void)
             }
             else
             {
-                if(txCount < sercom5SPIObj.txSize)
+                if(txCount < sercom0SPIObj.txSize)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = ((uint16_t*)sercom5SPIObj.txBuffer)[txCount];
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = ((uint16_t*)sercom0SPIObj.txBuffer)[txCount];
                     txCount++;
                 }
-                else if(sercom5SPIObj.dummySize > 0U)
+                else if(sercom0SPIObj.dummySize > 0U)
                 {
-                    SERCOM5_REGS->SPIM.SERCOM_DATA = 0xFFFFU;
+                    SERCOM0_REGS->SPIM.SERCOM_DATA = 0xFFFFU;
 
-                    sercom5SPIObj.dummySize--;
+                    sercom0SPIObj.dummySize--;
                 }
                 else
                 {
@@ -564,7 +564,7 @@ void __attribute__((used)) SERCOM5_SPI_InterruptHandler(void)
                 }
             }
 
-            if((sercom5SPIObj.dummySize == 0U) && (txCount == txSize))
+            if((sercom0SPIObj.dummySize == 0U) && (txCount == txSize))
             {
                  /* At higher baud rates, the data in the shift register can be
                  * shifted out and TXC flag can get set resulting in a
@@ -577,11 +577,11 @@ void __attribute__((used)) SERCOM5_SPI_InterruptHandler(void)
 
                 isLastByteTransferInProgress = true;
             }
-            else if(rxCount == sercom5SPIObj.rxSize)
+            else if(rxCount == sercom0SPIObj.rxSize)
             {
-                SERCOM5_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_DRE_Msk;
+                SERCOM0_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_DRE_Msk;
 
-                SERCOM5_REGS->SPIM.SERCOM_INTENCLR = (uint8_t)SERCOM_SPIM_INTENCLR_RXC_Msk;
+                SERCOM0_REGS->SPIM.SERCOM_INTENCLR = (uint8_t)SERCOM_SPIM_INTENCLR_RXC_Msk;
             }
             else
             {
@@ -589,23 +589,23 @@ void __attribute__((used)) SERCOM5_SPI_InterruptHandler(void)
             }
         }
 
-        sercom5SPIObj.rxCount = rxCount;
-        sercom5SPIObj.txCount = txCount;
+        sercom0SPIObj.rxCount = rxCount;
+        sercom0SPIObj.txCount = txCount;
 
-        if(((SERCOM5_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_TXC_Msk) == SERCOM_SPIM_INTFLAG_TXC_Msk) && (isLastByteTransferInProgress == true))
+        if(((SERCOM0_REGS->SPIM.SERCOM_INTFLAG & SERCOM_SPIM_INTFLAG_TXC_Msk) == SERCOM_SPIM_INTFLAG_TXC_Msk) && (isLastByteTransferInProgress == true))
         {
-            if(rxCount == sercom5SPIObj.rxSize)
+            if(rxCount == sercom0SPIObj.rxSize)
             {
-                sercom5SPIObj.transferIsBusy = false;
+                sercom0SPIObj.transferIsBusy = false;
 
                 /* Disable the Data Register empty and Receive Complete Interrupt flags */
-                SERCOM5_REGS->SPIM.SERCOM_INTENCLR = (uint8_t)(SERCOM_SPIM_INTENCLR_DRE_Msk | SERCOM_SPIM_INTENCLR_RXC_Msk | SERCOM_SPIM_INTENSET_TXC_Msk);
+                SERCOM0_REGS->SPIM.SERCOM_INTENCLR = (uint8_t)(SERCOM_SPIM_INTENCLR_DRE_Msk | SERCOM_SPIM_INTENCLR_RXC_Msk | SERCOM_SPIM_INTENSET_TXC_Msk);
 
                 isLastByteTransferInProgress = false;
 
-                if(sercom5SPIObj.callback != NULL)
+                if(sercom0SPIObj.callback != NULL)
                 {
-                    sercom5SPIObj.callback(context);
+                    sercom0SPIObj.callback(context);
                 }
             }
         }
@@ -616,7 +616,7 @@ void __attribute__((used)) SERCOM5_SPI_InterruptHandler(void)
              * Enable TXC interrupt to ensure no data is present in the shift
              * register before application callback is called.
              */
-            SERCOM5_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_TXC_Msk;
+            SERCOM0_REGS->SPIM.SERCOM_INTENSET = (uint8_t)SERCOM_SPIM_INTENSET_TXC_Msk;
         }
     }
 }

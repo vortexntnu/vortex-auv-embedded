@@ -1,23 +1,23 @@
 /*
- * ws2812_port_sercom5_harmony.c
+ * ws2812_port_sercom0_harmony.c
  * Harmony-backed async port for WS2812 on SAMC21
  *
- * - Uses SERCOM5 SPI Master PLIB non-blocking write + callback
+ * - Uses SERCOM0 SPI Master PLIB non-blocking write + callback
  * - Uses TC3 Timer PLIB one-shot for >=80 us latch
- * Assumes SERCOM5 and TC3 are configured & pins muxed in MCC/MHC (SYS_Initialize).
+ * Assumes SERCOM0 and TC3 are configured & pins muxed in MCC/MHC (SYS_Initialize).
  */
 
 #include "definitions.h"          // Harmony PLIBs
 #include "ws2812_spi_enc.h"
-#include "ws2812_port_sercom5_harmony.h"
+#include "ws2812_port_sercom0_harmony.h"
 
 static ws_on_tx_done_t    s_tx_done_cb;
 static void*              s_tx_done_ctx;
 static ws_on_delay_done_t s_delay_cb;
 static void*              s_delay_ctx;
 
-/* ---------- SERCOM5 SPI non-blocking TX ---------- */
-static void sercom5_spi_cb(uintptr_t context)
+/* ---------- SERCOM0 SPI non-blocking TX ---------- */
+static void sercom0_spi_cb(uintptr_t context)
 {
     (void)context;
     if (s_tx_done_cb) s_tx_done_cb(s_tx_done_ctx);
@@ -29,13 +29,13 @@ static int start_spi5_write(const uint8_t* data, size_t len,
     s_tx_done_cb  = on_tx_done;
     s_tx_done_ctx = user;
 
-    SERCOM5_SPI_CallbackRegister(sercom5_spi_cb, 0);
-    return SERCOM5_SPI_Write((void*)data, len) ? 1 : 0;   // returns immediately
+    SERCOM0_SPI_CallbackRegister(sercom0_spi_cb, 0);
+    return SERCOM0_SPI_Write((void*)data, len) ? 1 : 0;   // returns immediately
 }
 
 static bool spi5_busy(void)
 {
-    return SERCOM5_SPI_IsBusy();
+    return SERCOM0_SPI_IsBusy();
 }
 
 /* ------------------ Latch via TC3 (one-shot >=80 us) ------------------ */
@@ -44,7 +44,7 @@ static bool spi5_busy(void)
 static ws_on_delay_done_t s_delay_cb;
 static void*              s_delay_ctx;
 
-/* Harmony?s TC_TIMER_CALLBACK is typically: void (*cb)(uint32_t status, uintptr_t ctx) */
+/* Harmony TC_TIMER_CALLBACK is typically: void (*cb)(uint32_t status, uintptr_t ctx) */
 static void tc3_cb(uint32_t status, uintptr_t context)
 {
     (void)status; (void)context;
@@ -86,8 +86,8 @@ static int delay_us_tc3(uint32_t us, ws_on_delay_done_t on_delay_done, void* use
 }
 
 /* -------- Bind Harmony-backed port to encoder -------- */
-void ws2812_port_bind_sercom5_harmony(void)
+void ws2812_port_bind_sercom0_harmony(void)
 {
-    // SERCOM5 & TC3 must be initialized by SYS_Initialize() (MCC/MHC).
+    // SERCOM0 & TC3 must be initialized by SYS_Initialize() (MCC/MHC).
     ws2812enc_set_async_port(start_spi5_write, spi5_busy, delay_us_tc3);
 }

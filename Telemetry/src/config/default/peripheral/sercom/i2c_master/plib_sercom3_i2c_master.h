@@ -1,24 +1,22 @@
 /*******************************************************************************
-  SERCOM Universal Synchronous/Asynchrnous Receiver/Transmitter PLIB
+  Serial Communication Interface Inter-Integrated Circuit (SERCOM I2C) Library
+  Instance Header File
 
-  Company
+  Company:
     Microchip Technology Inc.
 
-  File Name
-    plib_sercom4_usart.h
+  File Name:
+    plib_sercom3_i2c.h
 
-  Summary
-    USART peripheral library interface.
+  Summary:
+    SERCOM I2C PLIB Header file
 
-  Description
-    This file defines the interface to the USART peripheral library. This
+  Description:
+    This file defines the interface to the SERCOM I2C peripheral library. This
     library provides access to and control of the associated peripheral
     instance.
-
-  Remarks:
-    None.
 *******************************************************************************/
-
+// DOM-IGNORE-BEGIN
 /*******************************************************************************
 * Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
@@ -41,17 +39,20 @@
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
+// DOM-IGNORE-END
 
-#ifndef PLIB_SERCOM4_USART_H // Guards against multiple inclusion
-#define PLIB_SERCOM4_USART_H
+#ifndef PLIB_SERCOM3_I2C_H
+#define PLIB_SERCOM3_I2C_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
+/* This section lists the other files that are included in this file.
+*/
 
-#include "plib_sercom_usart_common.h"
+#include "plib_sercom_i2c_master_common.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus // Provide C++ Compatibility
@@ -67,49 +68,37 @@
 // *****************************************************************************
 // *****************************************************************************
 
-void SERCOM4_USART_Initialize( void );
+/*
+ * The following functions make up the methods (set of possible operations) of
+ * this interface.
+ */
 
-bool SERCOM4_USART_SerialSetup( USART_SERIAL_SETUP * serialSetup, uint32_t clkFrequency );
+void SERCOM3_I2C_Initialize(void);
 
-void SERCOM4_USART_Enable( void );
+bool SERCOM3_I2C_Read(uint16_t address, uint8_t* rdData, uint32_t rdLength);
 
-void SERCOM4_USART_Disable( void );
+bool SERCOM3_I2C_Write(uint16_t address, uint8_t* wrData, uint32_t wrLength);
 
-void SERCOM4_USART_TransmitterEnable( void );
+bool SERCOM3_I2C_WriteRead(uint16_t address, uint8_t* wrData, uint32_t wrLength, uint8_t* rdData, uint32_t rdLength);
 
-void SERCOM4_USART_TransmitterDisable( void );
+bool SERCOM3_I2C_IsBusy(void);
 
-bool SERCOM4_USART_Write( void *buffer, const size_t size );
+SERCOM_I2C_ERROR SERCOM3_I2C_ErrorGet(void);
 
-bool SERCOM4_USART_TransmitComplete( void );
+void SERCOM3_I2C_CallbackRegister(SERCOM_I2C_CALLBACK callback, uintptr_t contextHandle);
 
-
-bool SERCOM4_USART_TransmitterIsReady( void );
-
-void SERCOM4_USART_WriteByte( int data );
+bool SERCOM3_I2C_TransferSetup(SERCOM_I2C_TRANSFER_SETUP* setup, uint32_t srcClkFreq );
 
 
-void SERCOM4_USART_ReceiverEnable( void );
+void SERCOM3_I2C_TransferAbort( void );
 
-void SERCOM4_USART_ReceiverDisable( void );
-
-bool SERCOM4_USART_Read( void *buffer, const size_t size );
-
-bool SERCOM4_USART_ReceiverIsReady( void );
-
-int SERCOM4_USART_ReadByte( void );
-
-USART_ERROR SERCOM4_USART_ErrorGet( void );
-
-uint32_t SERCOM4_USART_FrequencyGet( void );
+bool SERCOM3_I2C_BusScan(uint16_t start_addr, uint16_t end_addr, void* pDevicesList, uint8_t* nDevicesFound);
 
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
-
-    }
-
+}
 #endif
 // DOM-IGNORE-END
 
-#endif //PLIB_SERCOM4_USART_H
+#endif /* PLIB_SERCOM3_I2C_H */

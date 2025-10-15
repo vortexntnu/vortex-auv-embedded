@@ -3,7 +3,7 @@
  */
 
 #include "ws2812_spi_enc.h"
-#include "ws2812_port_sercom5_harmony.h"   // Harmony-backed port
+#include "ws2812_port_sercom0_harmony.h"   // Harmony-backed port
 #include "led_facade.h"
 
 #ifndef LED_COUNT
@@ -18,11 +18,11 @@ static void _led_done(void *ctx) { (void)ctx; s_inflight = false; }
 
 void led_init(void)
 {
-    // SERCOM5 pins/clock and TC3 are configured by SYS_Initialize() (MCC/MHC).
+    // SERCOM0 pins/clock and TC3 are configured by SYS_Initialize() (MCC/MHC).
     ws2812enc_init();                 // build LUT
-    ws2812_port_bind_sercom5_harmony();   // bind async SPI + TC3 latch
+    ws2812_port_bind_sercom0_harmony();   // bind async SPI + TC3 latch
     for (unsigned i = 0; i < LED_COUNT; ++i) {
-        s_px[i].g = s_px[i].r = s_px[i].b = 0;
+        s_px[i].g = s_px[i].r = s_px[i].b = 0; // Set all leds to 0
     }
 }
 

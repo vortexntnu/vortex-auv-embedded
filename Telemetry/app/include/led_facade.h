@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-void led_init(void);                         // init SERCOM5, TC3, encoder, bind async
+void led_init(void);                         // init SERCOM0, TC3, encoder, bind async
 void led_set(uint8_t i, uint8_t r, uint8_t g, uint8_t b);
 bool led_commit_async(void);                 // returns false if a frame is already in-flight
 bool led_busy(void);                         // query if TX+latch in progress

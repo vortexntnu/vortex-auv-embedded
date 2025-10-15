@@ -166,19 +166,19 @@ void SYS_Initialize ( void* data )
 
 
 
-    SERCOM3_USART_Initialize();
+    SERCOM3_I2C_Initialize();
 
-    SERCOM2_I2C_Initialize();
+    SERCOM2_USART_Initialize();
 
     NVMCTRL_Initialize( );
 
+    SERCOM1_USART_Initialize();
+
     EVSYS_Initialize();
 
-    SERCOM5_SPI_Initialize();
+    SERCOM0_SPI_Initialize();
 
     CAN0_Initialize();
-
-    SERCOM4_USART_Initialize();
 
     EIC_Initialize();
 
