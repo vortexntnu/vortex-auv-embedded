@@ -58,6 +58,7 @@
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
+#include "peripheral/wdt/plib_wdt.h"
 #include "peripheral/cmcc/plib_cmcc.h"
 #include "peripheral/tcc/plib_tcc1.h"
 #include "peripheral/tcc/plib_tcc2.h"

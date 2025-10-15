@@ -23,7 +23,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: 2add27656b812029ebb11d8983b6f74d1f94160d67805f41abf13666484bcebb
+  hash: f4f2a0637e5a3d2186b3ae3de4f0890c5f3671019fbbf459ab2a2d51417948a5
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -100,6 +100,10 @@ generatedFileHashHistoryMap:
   hash: bf72011f3c6df5d45ae42c366ee75fe4ae19d8855841ee67792764e1a5d7d16a
 - file: ../src/config/default/peripheral/tcc/plib_tcc_common.h
   hash: 2bd78c7b794475007265f122ca57ef54a64efc8894cc2423a1d0f74caa627b2b
+- file: ../src/config/default/peripheral/wdt/plib_wdt.c
+  hash: 8141b251001b8b8bb15d7702b42d513005a158b30629d0d2a3d4091ccf646afa
+- file: ../src/config/default/peripheral/wdt/plib_wdt.h
+  hash: d4bb429b750e4e2970fe12d9c4eea02d2e0b1f1d30279577033555379f94e1a0
 - file: ../src/config/default/pin_configurations.csv
   hash: 67fbc3bd07b3485ceabd943f2f70831bfc128d801501f38c7231fca0e414788c
 - file: ../src/config/default/startup_xc32.c
