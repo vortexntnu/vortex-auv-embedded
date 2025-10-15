@@ -76,7 +76,7 @@ static void set_thruster_pwm(uint8_t *data) {
                 break;
         }
     }
-    // TODO: Reset watchdog timer
+    WDT_Clear();
 }
 
 static void stop_thrusters(void) {
