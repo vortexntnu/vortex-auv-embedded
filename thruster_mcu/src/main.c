@@ -11,6 +11,8 @@ const uint32_t pwm_period_microseconds = 20000U;
 
 // CAN0
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
+static CAN_RX_BUFFER rx_buf;
+
 static uint32_t can_status = 0;
 
 struct Thruster {
@@ -73,8 +75,14 @@ int main ( void ) {
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     
     CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
-    
     CAN0_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
+    
+    // Clear rx_buf
+    memset(&rx_buf, 0x00, sizeof(rx_buf)); 
+    
+    uint8_t messages_to_read = 1;
+    
+    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, messages_to_read, &rx_buf);
 
     while ( true )
     {
@@ -88,7 +96,7 @@ int main ( void ) {
 }
 
 static void set_thruster_pwm(uint8_t *data) {
-    for (size_t thr; thr < 8; thr++) {
+    for (size_t thr = 0; thr < 8; thr++) {
         uint16_t duty_cycle = (data[2*thr] << 8) | data[2*thr + 1];
         uint32_t tcc_value = (duty_cycle * (thrusters[thr].period + 1)) / pwm_period_microseconds;
         
