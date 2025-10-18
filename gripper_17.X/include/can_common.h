@@ -351,6 +351,23 @@ typedef struct
 
 } CAN_OBJ;
 
+
+
+struct can_tx_frame {
+    uint32_t id;
+    uint8_t buf[64];
+    uint8_t len;
+};
+
+struct can_rx_frame {
+    uint32_t id;
+    uint8_t buf[64];
+    uint8_t len;
+    uint16_t timestamp;
+    CAN_MSG_RX_FRAME_ATTRIBUTE msg_atr;
+};
+
+
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
 }

@@ -8,7 +8,6 @@
  */
 
 #include "tcc0.h"
-#include <stdio.h>
 
 TCC_CALLBACK_OBJECT TCC0_CallbackObj;
 

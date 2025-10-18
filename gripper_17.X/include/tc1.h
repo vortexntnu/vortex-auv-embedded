@@ -1,26 +1,26 @@
-
 /*******************************************************************************
-  CAN Peripheral Library Interface Header File
+  Timer/Counter(TC1) PLIB
 
-  Company:
+  Company
     Microchip Technology Inc.
 
-  File Name:
-    plib_can1.h
+  File Name
+    plib_tc0.h
 
-  Summary:
-    CAN PLIB interface declarations.
+  Summary
+    TC1 PLIB Header File.
 
-  Description:
-    The CAN plib provides a simple interface to manage the CAN modules on
-    Microchip microcontrollers. This file defines the interface declarations
-    for the CAN plib.
+  Description
+    This file defines the interface to the TC peripheral library. This
+    library provides access to and control of the associated peripheral
+    instance.
 
   Remarks:
     None.
 
 *******************************************************************************/
-//DOM-IGNORE-BEGIN
+
+// DOM-IGNORE-BEGIN
 /*******************************************************************************
 * Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
@@ -43,27 +43,26 @@
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
-//DOM-IGNORE-END
+// DOM-IGNORE-END
 
-#ifndef CAN1_H
-#define CAN1_H
+#ifndef PLIB_TC1_H      // Guards against multiple inclusion
+#define PLIB_TC1_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
+/* This section lists the other files that are included in this file.
+*/
 
-/*
- * This section lists the other files that are included in this file.
- */
-#include <stdbool.h>
-#include <string.h>
-#include "can_common.h"
+#include "tc_common.h"
 
 // DOM-IGNORE-BEGIN
-#ifdef __cplusplus  // Provide C++ Compatibility
+#ifdef __cplusplus // Provide C Compatibility
+
     extern "C" {
+
 #endif
 // DOM-IGNORE-END
 
@@ -72,60 +71,53 @@
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-/* CAN0 Message RAM Configuration Size */
-#define CAN0_RX_FIFO0_ELEMENT_SIZE       72
-#define CAN0_RX_FIFO0_SIZE               72
-#define CAN0_RX_FIFO1_ELEMENT_SIZE       72
-#define CAN0_RX_FIFO1_SIZE               72
-#define CAN0_RX_BUFFER_ELEMENT_SIZE      72
-#define CAN0_RX_BUFFER_SIZE              72
-#define CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE 72
-#define CAN0_TX_FIFO_BUFFER_SIZE         72
-#define CAN0_TX_EVENT_FIFO_SIZE          8
-#define CAN0_STD_MSG_ID_FILTER_SIZE      8
-#define CAN0_EXT_MSG_ID_FILTER_SIZE      16
-
-/* CAN0_MESSAGE_RAM_CONFIG_SIZE to be used by application or driver
-   for allocating buffer from non-cached contiguous memory */
-#define CAN0_MESSAGE_RAM_CONFIG_SIZE     320
-
-
-
+/* The following data type definitions are used by the functions in this
+    interface and should be considered part it.
+*/
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-void CAN0_Initialize (void);
-bool CAN0_MessageTransmit(uint32_t id, uint8_t length, uint8_t* data, CAN_MODE mode, CAN_MSG_TX_ATTRIBUTE msgAttr);
-bool CAN0_MessageReceive(uint32_t *id, uint8_t *length, uint8_t *data, uint16_t *timestamp,
-                                         CAN_MSG_RX_ATTRIBUTE msgAttr, CAN_MSG_RX_FRAME_ATTRIBUTE *msgFrameAttr);
-bool CAN0_TransmitEventFIFOElementGet(uint32_t *id, uint8_t *messageMarker, uint16_t *timestamp);
-CAN_ERROR CAN0_ErrorGet(void);
-void CAN0_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount);
-bool CAN0_InterruptGet(CAN_INTERRUPT_MASK interruptMask);
-void CAN0_InterruptClear(CAN_INTERRUPT_MASK interruptMask);
-bool CAN0_TxFIFOIsFull(void);
-void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress);
-bool CAN0_StandardFilterElementSet(uint8_t filterNumber, can_sidfe_registers_t *stdMsgIDFilterElement);
-bool CAN0_StandardFilterElementGet(uint8_t filterNumber, can_sidfe_registers_t *stdMsgIDFilterElement);
-bool CAN0_ExtendedFilterElementSet(uint8_t filterNumber, can_xidfe_registers_t *extMsgIDFilterElement);
-bool CAN0_ExtendedFilterElementGet(uint8_t filterNumber, can_xidfe_registers_t *extMsgIDFilterElement);
-void CAN0_TxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle);
-void CAN0_RxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle, CAN_MSG_RX_ATTRIBUTE msgAttr);
+/* The following functions make up the methods (set of possible operations) of
+   this interface.
+*/
+
+// *****************************************************************************
+
+void TC1_TimerInitialize( void );
+
+void TC1_TimerStart( void );
+
+void TC1_TimerStop( void );
+
+uint32_t TC1_TimerFrequencyGet( void );
 
 
+void TC1_Timer16bitPeriodSet( uint16_t period );
+
+uint16_t TC1_Timer16bitPeriodGet( void );
+
+uint16_t TC1_Timer16bitCounterGet( void );
+
+void TC1_Timer16bitCounterSet( uint16_t count );
+
+
+
+
+void TC1_TimerCallbackRegister( TC_TIMER_CALLBACK callback, uintptr_t context );
+
+
+void TC1_TimerCommandSet(TC_COMMAND command);
 
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
+
     }
+
 #endif
 // DOM-IGNORE-END
 
-#endif // CAN01_H
-
-/*******************************************************************************
- End of File
-*/
+#endif /* PLIB_TC1_H */

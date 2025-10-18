@@ -6,7 +6,6 @@
  */
 
 #include "tcc.h"
-#include <stdio.h>
 #include "sam.h"
 
 TCC_CALLBACK_OBJECT TCC1_CallbackObj;
