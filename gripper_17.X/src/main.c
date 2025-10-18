@@ -4,6 +4,8 @@
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 static struct can_rx_frame rx_frame;
+static struct can_tx_frame tx_frame;
+static volatile uint32_t events;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 
 int main(void) {
@@ -25,7 +27,7 @@ int main(void) {
 
     while (true) {
         PM_IdleModeEnter();
-        state_machine(&rx_frame);
+        state_machine(&events, &tx_frame, &rx_frame);
     }
 
     return EXIT_FAILURE;

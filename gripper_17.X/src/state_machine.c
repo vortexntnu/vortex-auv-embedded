@@ -1,17 +1,12 @@
 #include "state_machine.h"
+#include <stdint.h>
 #include "can_common.h"
 #include "dma.h"
 #include "can1.h"
 
-
-
-    
-static struct can_tx_frame angles_tx_frame;
-static volatile uint32_t events;
-
-void state_machine(struct can_rx_frame* rx_frame) {
-    uint32_t ev = events;
-    events &= ~ev;
+void state_machine(volatile uint32_t* events, struct can_tx_frame* tx_frame, struct can_rx_frame* rx_frame) {
+    uint32_t ev = *events;
+    *events &= ~ev;
 
     if (ev & EVENT_SET_PWM) {
         set_servos_pwm(rx_frame->buf);
@@ -19,13 +14,13 @@ void state_machine(struct can_rx_frame* rx_frame) {
     }
 
     if (ev & EVENT_READ_ENCODER) {
-        angles_tx_frame.id = CAN_SEND_ANGLES;
-        angles_tx_frame.len = 6;
-        read_encoders(ANGLE_REGISTER, angles_tx_frame.buf);
+        tx_frame->id = CAN_SEND_ANGLES;
+        tx_frame->len = 6;
+        read_encoders(ANGLE_REGISTER, tx_frame->buf);
     }
 
     if (ev & EVENT_TRANSMIT_ANGLES) {
-        can_transmit(&angles_tx_frame);
+        can_transmit(tx_frame);
     }
 
     can_recieve(rx_frame);
@@ -57,11 +52,13 @@ void can_rx_callback(uintptr_t context) {
 }
 
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    events |= EVENT_READ_ENCODER;
+    volatile uint32_t* events = (volatile uint32_t*) context;
+    *events |= EVENT_READ_ENCODER;
 }
 
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    events |= EVENT_TRANSMIT_ANGLES;
+    volatile uint32_t* events = (volatile uint32_t*) context;
+    *events |= EVENT_TRANSMIT_ANGLES;
 }
 
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
@@ -70,7 +67,7 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
     static uint8_t servo = SERVO_1;
 
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_results, sizeof(adc_results));
+                         (const void*)adc_results, sizeof(*adc_results));
 
     if (DMAC_TRANSFER_EVENT_ERROR == returned_evnt) {
         return;

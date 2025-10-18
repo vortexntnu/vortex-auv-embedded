@@ -2,6 +2,7 @@
 #define STATE_MACHINE_H
 
 #include "can1.h"
+#include "can_common.h"
 #include "dma.h"
 #include "gripper.h"
 #include "tc0.h"
@@ -37,7 +38,7 @@ typedef enum {
 extern "C" {
 #endif
 
-void state_machine(struct can_rx_frame* rx_frame);
+void state_machine(volatile uint32_t* events, struct can_tx_frame* tx_frame, struct can_rx_frame* rx_frame);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
