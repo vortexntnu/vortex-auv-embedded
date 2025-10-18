@@ -15,8 +15,8 @@ int main(void) {
     CAN0_RxCallbackRegister(can_rx_callback, (uintptr_t)&rx_frame,
                             CAN_MSG_ATTR_RX_FIFO0);
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, 0);
-    TC0_TimerCallbackRegister(tc0_callback, (uintptr_t)NULL);
-    TC1_TimerCallbackRegister(tc1_callback, (uintptr_t)NULL);
+    TC0_TimerCallbackRegister(tc0_callback, (uintptr_t)&events);
+    TC1_TimerCallbackRegister(tc1_callback, (uintptr_t)&events);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
