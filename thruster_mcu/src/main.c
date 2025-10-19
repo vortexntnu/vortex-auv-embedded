@@ -88,6 +88,8 @@ int main ( void ) {
     
     while ( true )
     {
+        PM_IdleModeEnter();
+        
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
     }
