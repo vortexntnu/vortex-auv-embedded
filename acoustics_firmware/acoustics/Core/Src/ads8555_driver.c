@@ -8,6 +8,7 @@ static inline void fs_low(void) {
 static inline void fs_high(void) {
     HAL_GPIO_WritePin(ADS8555_FS_GPIO_Port, ADS8555_FS_Pin, GPIO_PIN_SET);
 }
+
 #ifdef ADS8555_CONV_Pin
 static inline void conv_low(void) {
     HAL_GPIO_WritePin(ADS8555_CONV_GPIO_Port, ADS8555_CONV_Pin, GPIO_PIN_RESET);
@@ -16,6 +17,7 @@ static inline void conv_high(void) {
     HAL_GPIO_WritePin(ADS8555_CONV_GPIO_Port, ADS8555_CONV_Pin, GPIO_PIN_SET);
 }
 #endif
+
 #ifdef ADS8555_BUSY_Pin
 static inline GPIO_PinState busy_read(void) {
     return HAL_GPIO_ReadPin(ADS8555_BUSY_GPIO_Port, ADS8555_BUSY_Pin);
