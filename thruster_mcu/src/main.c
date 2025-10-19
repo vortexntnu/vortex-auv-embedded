@@ -9,6 +9,7 @@ static const uint32_t TCC1_PERIOD = 74000U;
 static const uint32_t TCC2_PERIOD = 18500U;
 static const uint32_t PWM_PERIOD_MICROSECONDS = 20000U;
 static const uint32_t CAN_EVENT_ID_BASE = 0x369U;
+static const uint8_t MESSAGES_TO_READ = 1;
 
 // CAN0
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
@@ -35,8 +36,6 @@ static const struct Thruster thrusters[8] = {
 
 // MCU states
 typedef enum {STOP, START, RESET, SET_PWM} STATES;
-
-uint8_t messages_to_read = 1;
 
 /*
  * Set thruster PWM dutycycle and reset watchdog timer 
@@ -93,7 +92,7 @@ int main ( void ) {
     // Clear rx_buf
     memset(&rx_buf, 0x00, sizeof(rx_buf)); 
     
-    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, messages_to_read, &rx_buf);
+    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 
     WDT_Enable();
     
@@ -158,7 +157,7 @@ static void message_handler(void) {
             break;
     }
     
-    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, messages_to_read, &rx_buf);
+    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 }
 
 static void stop_thrusters(void) {
