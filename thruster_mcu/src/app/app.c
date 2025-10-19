@@ -14,7 +14,7 @@ static const uint8_t  MESSAGES_TO_READ                  = 1U;
 
 /* --- Types --- */
 typedef struct {
-    uint8_t  tcc_num;
+    uint8_t  instance;
     uint8_t  channel;
     uint32_t period;
 } Thruster;
@@ -124,7 +124,7 @@ static void set_thruster_pwm(const uint8_t *data)
         uint32_t tcc_value =
             (duty_cycle * (thrusters[thr].period + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
 
-        switch (thrusters[thr].tcc_num)
+        switch (thrusters[thr].instance)
         {
             case 0:
                 TCC0_PWM24bitDutySet(thrusters[thr].channel, tcc_value);
