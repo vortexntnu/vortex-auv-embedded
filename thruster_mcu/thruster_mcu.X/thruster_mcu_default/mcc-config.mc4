@@ -12,6 +12,7 @@ modules:
 - dfp
 - evsys
 - nvmctrl
+- pm
 - sercom0
 - sercom1
 - sercom2
@@ -23,7 +24,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: 46a76f30982d1ac4bb89f03106bbf5837dc2b8b26e95b27106a392a7e051e8f0
+  hash: b74c27e1fbd6c1a31fbdbcb57123dbe79db5b8c78aa5796ef874b4b422ebf62d
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -33,7 +34,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: 2b2ffc60f78d91c15174c1de1cb5155be621f2cc6fe26a05e9275a7442017994
+  hash: b28cdccef37aaa37e384a8dcfd11ab88f4f6229d3c5d2ac2dffdb113d1e3e3c9
 - file: ../src/config/default/interrupts.c
   hash: 5107f97bf8150a60f58ea9eaf7f90af2f7ece7dbac063f4461b58885c2a07dab
 - file: ../src/config/default/interrupts.h
@@ -66,6 +67,10 @@ generatedFileHashHistoryMap:
   hash: fba7a5e2b2b74c95065983f4c1c67d9e755d1f46d773e271c6904b13b395643a
 - file: ../src/config/default/peripheral/nvmctrl/plib_nvmctrl.h
   hash: fd7749dc74a885efd7c593394454abc74afc7cf184123f0315425a3600c26ac5
+- file: ../src/config/default/peripheral/pm/plib_pm.c
+  hash: 28c7f94ef55c8c3eec0e9c14a8d568c843f5b2beed3083000d87d548a1b8c0b4
+- file: ../src/config/default/peripheral/pm/plib_pm.h
+  hash: 1ca20c6f2ba543b9ab30691fe90c11c6f8ea37e4631019cd9db771dcd57cc6b1
 - file: ../src/config/default/peripheral/port/plib_port.c
   hash: 4cedcb28f082422cb2926a2b197fd4d252855ddfbb82c928604dcf9657489c26
 - file: ../src/config/default/peripheral/port/plib_port.h

@@ -26,6 +26,9 @@
             <logicalFolder name="nvmctrl" displayName="nvmctrl" projectFiles="true">
               <itemPath>../src/config/default/peripheral/nvmctrl/plib_nvmctrl.h</itemPath>
             </logicalFolder>
+            <logicalFolder name="pm" displayName="pm" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/pm/plib_pm.h</itemPath>
+            </logicalFolder>
             <logicalFolder name="port" displayName="port" projectFiles="true">
               <itemPath>../src/config/default/peripheral/port/plib_port.h</itemPath>
             </logicalFolder>
@@ -202,6 +205,7 @@
           <itemPath>thruster_mcu_default/components/stdio.yml</itemPath>
           <itemPath>thruster_mcu_default/components/sercom2.yml</itemPath>
           <itemPath>thruster_mcu_default/components/tcc1.yml</itemPath>
+          <itemPath>thruster_mcu_default/components/pm.yml</itemPath>
           <itemPath>thruster_mcu_default/components/evsys.yml</itemPath>
           <itemPath>thruster_mcu_default/components/tcc0.yml</itemPath>
           <itemPath>thruster_mcu_default/components/dfp.yml</itemPath>
@@ -253,6 +257,9 @@
             </logicalFolder>
             <logicalFolder name="nvmctrl" displayName="nvmctrl" projectFiles="true">
               <itemPath>../src/config/default/peripheral/nvmctrl/plib_nvmctrl.c</itemPath>
+            </logicalFolder>
+            <logicalFolder name="pm" displayName="pm" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/pm/plib_pm.c</itemPath>
             </logicalFolder>
             <logicalFolder name="port" displayName="port" projectFiles="true">
               <itemPath>../src/config/default/peripheral/port/plib_port.c</itemPath>
