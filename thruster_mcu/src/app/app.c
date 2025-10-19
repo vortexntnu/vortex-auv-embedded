@@ -5,12 +5,12 @@
 #include "app.h"
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD              = 74000U;
-static const uint32_t TCC1_PERIOD              = 74000U;
-static const uint32_t TCC2_PERIOD              = 18500U;
-static const uint32_t PWM_PERIOD_MICROSECONDS  = 20000U;
-static const uint32_t CAN_EVENT_ID_BASE        = 0x369U;
-static const uint8_t  MESSAGES_TO_READ         = 1U;
+static const uint32_t TCC0_PERIOD                       = 74000U;
+static const uint32_t TCC1_PERIOD                       = 74000U;
+static const uint32_t TCC2_PERIOD                       = 18500U;
+static const uint32_t THRUSTER_PWM_PERIOD_MICROSECONDS  = 20000U;
+static const uint32_t CAN_EVENT_ID_BASE                 = 0x369U;
+static const uint8_t  MESSAGES_TO_READ                  = 1U;
 
 /* --- Types --- */
 typedef struct {
@@ -122,7 +122,7 @@ static void set_thruster_pwm(const uint8_t *data)
 
         /* Map microsecond duty to TCC counter domain */
         uint32_t tcc_value =
-            (duty_cycle * (thrusters[thr].period + 1U)) / PWM_PERIOD_MICROSECONDS;
+            (duty_cycle * (thrusters[thr].period + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
 
         switch (thrusters[thr].tcc_num)
         {
