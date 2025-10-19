@@ -3,11 +3,12 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 
-// TCC
-const uint32_t tcc0_period = 74000U;
-const uint32_t tcc1_period = 74000U;
-const uint32_t tcc2_period = 18500U;
-const uint32_t pwm_period_microseconds = 20000U;
+/* --- Constants --- */
+static const uint32_t TCC0_PERIOD = 74000U;
+static const uint32_t TCC1_PERIOD = 74000U;
+static const uint32_t TCC2_PERIOD = 18500U;
+static const uint32_t PWM_PERIOD_MICROSECONDS = 20000U;
+static const uint32_t CAN_EVENT_ID_BASE = 0x369U;
 
 // CAN0
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
@@ -22,14 +23,14 @@ struct Thruster {
 };
 
 static const struct Thruster thrusters[8] = {
-    {0, 0, tcc0_period}, // TCC0_CHANNEL0
-    {0, 1, tcc0_period}, // TCC0_CHANNEL1
-    {0, 2, tcc0_period}, // TCC0_CHANNEL2
-    {0, 3, tcc0_period}, // TCC0_CHANNEL3
-    {0, 4, tcc0_period}, // TCC0_CHANNEL4
-    {0, 5, tcc0_period}, // TCC0_CHANNEL5
-    {1, 0, tcc1_period}, // TCC1_CHANNEL0
-    {1, 1, tcc1_period}  // TCC1_CHANNEL1 
+    {0, 0, TCC0_PERIOD}, // TCC0_CHANNEL0
+    {0, 1, TCC0_PERIOD}, // TCC0_CHANNEL1
+    {0, 2, TCC0_PERIOD}, // TCC0_CHANNEL2
+    {0, 3, TCC0_PERIOD}, // TCC0_CHANNEL3
+    {0, 4, TCC0_PERIOD}, // TCC0_CHANNEL4
+    {0, 5, TCC0_PERIOD}, // TCC0_CHANNEL5
+    {1, 0, TCC1_PERIOD}, // TCC1_CHANNEL0
+    {1, 1, TCC1_PERIOD}  // TCC1_CHANNEL1 
 };
 
 // MCU states
@@ -43,6 +44,13 @@ uint8_t messages_to_read = 1;
  * @param pData pointer to array containing dutycycle values
  */
 static void set_thruster_pwm(uint8_t *data);
+
+/*
+ * Handle a received CAN event frame 
+ * 
+ * @note Expects rx_buf to be populated prior to call
+ */
+static void message_handler(void);
 
 /*
  * Stop all thrusters
@@ -107,7 +115,7 @@ int main ( void ) {
 static void set_thruster_pwm(uint8_t *data) {
     for (size_t thr = 0; thr < 8; thr++) {
         uint16_t duty_cycle = (data[2*thr] << 8) | data[2*thr + 1];
-        uint32_t tcc_value = (duty_cycle * (thrusters[thr].period + 1)) / pwm_period_microseconds;
+        uint32_t tcc_value = (duty_cycle * (thrusters[thr].period + 1)) / PWM_PERIOD_MICROSECONDS;
         
         switch (thrusters[thr].tcc_num) {
             case 0:
@@ -130,7 +138,7 @@ static void set_thruster_pwm(uint8_t *data) {
 }
 
 static void message_handler(void) {
-    const uint8_t event = (uint8_t)(rx_buf.id - 0x369U);
+    const uint8_t event = (uint8_t)(rx_buf.id - CAN_EVENT_ID_BASE);
     const uint8_t *pData = rx_buf.data;
     
     switch (event) {
