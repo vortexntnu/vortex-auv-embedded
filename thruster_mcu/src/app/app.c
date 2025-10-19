@@ -97,7 +97,7 @@ static void message_handler(void)
 
         case RESET:
             /* Force a watchdog reset */
-            WDT_REGS->WDT_CLEAR = 0x0;
+            NVIC_SystemReset();
             break;
 
         case SET_PWM:
