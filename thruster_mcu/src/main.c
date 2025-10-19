@@ -32,6 +32,11 @@ static const struct Thruster thrusters[8] = {
     {1, 1, tcc1_period}  // TCC1_CHANNEL1 
 };
 
+// MCU states
+typedef enum {STOP, START, RESET, SET_PWM} STATES;
+
+uint8_t messages_to_read = 1;
+
 /*
  * Set thruster PWM dutycycle and reset watchdog timer 
  * 
@@ -80,15 +85,15 @@ int main ( void ) {
     // Clear rx_buf
     memset(&rx_buf, 0x00, sizeof(rx_buf)); 
     
-    uint8_t messages_to_read = 1;
-    
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, messages_to_read, &rx_buf);
 
     WDT_Enable();
     
     while ( true )
     {
+        // Wake up the CPU when any interrupt occurs
         PM_IdleModeEnter();
+        message_handler();
         
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
@@ -122,6 +127,30 @@ static void set_thruster_pwm(uint8_t *data) {
         }
     }
     WDT_Clear();
+}
+
+static void message_handler(void) {
+    const uint8_t event = (uint8_t)(rx_buf.id - 0x369U);
+    const uint8_t *pData = rx_buf.data;
+    
+    switch (event) {
+        case STOP:
+            stop_thrusters();
+            break;
+        case START:
+            start_thrusters();
+            break;
+        case RESET:
+            WDT_REGS->WDT_CLEAR = 0x0; // trigger watchdog reset
+            break;
+        case SET_PWM:
+            set_thruster_pwm(pData);
+            break;
+        default:
+            break;
+    }
+    
+    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, messages_to_read, &rx_buf);
 }
 
 static void stop_thrusters(void) {
