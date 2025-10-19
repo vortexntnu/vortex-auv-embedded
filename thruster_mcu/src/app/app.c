@@ -162,7 +162,7 @@ static void start_thrusters(void)
     /* TCC2_PWMStart(); // not used */
 }
 
-void CAN_Receive_Callback(uintptr_t context) {
+static void CAN_Receive_Callback(uintptr_t context) {
     /* Check CAN Status */
     can_status = CAN0_ErrorGet();
 
@@ -173,7 +173,7 @@ void CAN_Receive_Callback(uintptr_t context) {
     }
 }
 
-void CAN_Transmit_Callback(uintptr_t context) {
+static void CAN_Transmit_Callback(uintptr_t context) {
     /* Check CAN Status */
     can_status = CAN0_ErrorGet();
 
