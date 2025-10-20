@@ -83,7 +83,7 @@ void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
                              float32_t* out_i,
                              float32_t* out_q,
                              uint32_t n) {
-    arm_biquad_cascade_df2T_f32(&ctx->iir_i, io_i, out_q, n);
+    arm_biquad_cascade_df2T_f32(&ctx->iir_i, io_i, out_i, n);
     arm_biquad_cascade_df2T_f32(&ctx->iir_q, io_q, out_q, n);
 }
 
