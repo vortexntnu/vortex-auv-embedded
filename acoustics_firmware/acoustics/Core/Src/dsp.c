@@ -78,7 +78,7 @@ void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
     ctx->sin_p = sin_p;
 }
 
-void dsp_lpf_6th_butter(struct dsp_context* ctx,
+void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
                         float32_t* io_i,
                         float32_t* io_q,
                         uint32_t n) {
