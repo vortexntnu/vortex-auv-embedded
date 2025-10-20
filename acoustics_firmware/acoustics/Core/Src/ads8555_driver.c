@@ -38,12 +38,11 @@ static uint16_t pack_ctrl(const ADS8555_CtrlFields* c) {
 
 static inline uint32_t half_index(const ADS8555_Handle* dev,
                                   SPI_HandleTypeDef* hspi) {
-    (void)dev;
     if (hspi == dev->hspi_sdoA)
         return 0;
     if (hspi == dev->hspi_sdoB)
         return 1;
-    return 2; /* sdoC */
+    return 2; 
 }
 
 void ADS8555_SetControl(ADS8555_Handle* dev, const ADS8555_CtrlFields* ctrl) {
@@ -117,9 +116,9 @@ HAL_StatusTypeDef ADS8555_Start(ADS8555_Handle* dev) {
 }
 
 void ADS8555_Stop(ADS8555_Handle* dev) {
-    (void)HAL_SPI_DMAStop(dev->hspi_sdoA);
-    (void)HAL_SPI_DMAStop(dev->hspi_sdoB);
-    (void)HAL_SPI_DMAStop(dev->hspi_sdoC);
+    HAL_SPI_DMAStop(dev->hspi_sdoA);
+    HAL_SPI_DMAStop(dev->hspi_sdoB);
+    HAL_SPI_DMAStop(dev->hspi_sdoC);
 }
 
 void ADS8555_TriggerConversion(void) {
