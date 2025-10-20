@@ -53,7 +53,6 @@ void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
                              float32_t* out_i,
                              float32_t* out_q,
                              uint32_t n) {
-
     const float32_t S = 1.0f / 32768.0f;
 
     float32_t cos_p = ctx->cos_p;
@@ -79,11 +78,13 @@ void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
 }
 
 void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
-                        float32_t* io_i,
-                        float32_t* io_q,
-                        uint32_t n) {
-    arm_biquad_cascade_df2T_f32(&ctx->iir_i, io_i, io_i, n);
-    arm_biquad_cascade_df2T_f32(&ctx->iir_q, io_q, io_q, n);
+                             const float32_t* io_i,
+                             const float32_t* io_q,
+                             float32_t* out_i,
+                             float32_t* out_q,
+                             uint32_t n) {
+    arm_biquad_cascade_df2T_f32(&ctx->iir_i, io_i, out_q, n);
+    arm_biquad_cascade_df2T_f32(&ctx->iir_q, io_q, out_q, n);
 }
 
 uint32_t dsp_decimate_pickM(const float32_t* in_i,
@@ -119,10 +120,9 @@ uint32_t dsp_matched_filter(const struct dsp_context* ctx,
     uint32_t peak_idx = 0;
 
     for (uint32_t k = 0; k < out_len; ++k) {
-        const float32_t* xk = &in_iq[2u * k]; 
+        const float32_t* xk = &in_iq[2u * k];
         float32_t re, im;
-        arm_cmplx_dot_prod_f32(xk, ctx->mf_ref, L, &re,
-                               &im);  
+        arm_cmplx_dot_prod_f32(xk, ctx->mf_ref, L, &re, &im);
         float32_t p = re * re + im * im;
         out_corr[k] = p;
         if (p > peak) {
