@@ -1,13 +1,16 @@
 #include "multilateration.h"
-#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include "arm_math.h"
 
-static inline void vec3_normalize(const float32_t in[3], float32_t out[3]) {
-    float32_t n2 = in[0] * in[0] + in[1] * in[1] + in[2] * in[2];
+static inline void vec3_normalize_arm(const float32_t in[3], float32_t out[3]) {
+    float32_t n2;
+    arm_dot_prod_f32(in, in, 3, &n2);
     if (n2 > 0.0f) {
-        float32_t invn = 1.0f / sqrtf(n2);
-        out[0] = in[0] * invn;
-        out[1] = in[1] * invn;
-        out[2] = in[2] * invn;
+        float32_t n;
+        arm_sqrt_f32(n2, &n);
+        float32_t invn = 1.0f / n;
+        arm_scale_f32(in, invn, out, 3);
     } else {
         out[0] = 1.0f;
         out[1] = 0.0f;
@@ -15,65 +18,69 @@ static inline void vec3_normalize(const float32_t in[3], float32_t out[3]) {
     }
 }
 
-static inline void mat3_add_scaled(float32_t A[9],
-                                   const float32_t B[9],
-                                   float32_t w) {
+static inline void mat3_add_scaled_arm(float32_t A[9],
+                                       const float32_t B[9],
+                                       float32_t w) {
+    float32_t Bw[9];
+    arm_scale_f32(B, (w > 0.0f ? w : 1.0f), Bw, 9);
+    arm_add_f32(A, Bw, A, 9);
+}
+
+static inline void mat3_vec3_add_scaled_arm(float32_t b[3],
+                                            const float32_t M[9],
+                                            const float32_t v[3],
+                                            float32_t w) {
+    float32_t t[3];
+    arm_matrix_instance_f32 MM, vv, tt;
+    arm_mat_init_f32(&MM, 3, 3, (float32_t*)M);
+    arm_mat_init_f32(&vv, 3, 1, (float32_t*)v);
+    arm_mat_init_f32(&tt, 3, 1, t);
+    arm_mat_mult_f32(&MM, &vv, &tt);
+
+    arm_scale_f32(t, (w > 0.0f ? w : 1.0f), t, 3);
+    arm_add_f32(b, t, b, 3);
+}
+
+static inline void projector_from_u_arm(const float32_t u[3], float32_t P[9]) {
+    float32_t U[3] = {u[0], u[1], u[2]};
+    float32_t UT[3] = {u[0], u[1], u[2]};
+    float32_t UUT[9];
+    float32_t I[9] = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+
+    arm_matrix_instance_f32 Um, UTm, UUTm, Im, Pm;
+    arm_mat_init_f32(&Um, 3, 1, U);
+    arm_mat_init_f32(&UTm, 1, 3, UT);
+    arm_mat_init_f32(&UUTm, 3, 3, UUT);
+    arm_mat_init_f32(&Im, 3, 3, I);
+    arm_mat_init_f32(&Pm, 3, 3, P);
+
+    arm_mat_mult_f32(&Um, &UTm, &UUTm);
+    arm_mat_sub_f32(&Im, &UUTm, &Pm);
+}
+
+void ml_init(struct ml_accumulator* ml) {
     for (int i = 0; i < 9; i++)
-        A[i] += w * B[i];
+        ml->A[i] = 0.0f;
+    ml->b[0] = ml->b[1] = ml->b[2] = 0.0f;
+    ml->K = 0u;
 }
 
-static inline void mat3_vec3_add_scaled(float32_t b[3],
-                                        const float32_t M[9],
-                                        const float32_t v[3],
-                                        float32_t w) {
-    // b += w * (M v)
-    float32_t t0 = M[0] * v[0] + M[1] * v[1] + M[2] * v[2];
-    float32_t t1 = M[3] * v[0] + M[4] * v[1] + M[5] * v[2];
-    float32_t t2 = M[6] * v[0] + M[7] * v[1] + M[8] * v[2];
-    b[0] += w * t0;
-    b[1] += w * t1;
-    b[2] += w * t2;
-}
-
-// Build projector P = I - u u^T
-static inline void projector_from_u(const float32_t u[3], float32_t P[9]) {
-    float32_t ux = u[0], uy = u[1], uz = u[2];
-    float32_t uxx = ux * ux, uyy = uy * uy, uzz = uz * uz;
-    float32_t uxy = ux * uy, uxz = ux * uz, uyz = uy * uz;
-
-    // I - u u^T (row-major)
-    P[0] = 1.0f - uxx;
-    P[1] = -uxy;
-    P[2] = -uxz;
-    P[3] = -uxy;
-    P[4] = 1.0f - uyy;
-    P[5] = -uyz;
-    P[6] = -uxz;
-    P[7] = -uyz;
-    P[8] = 1.0f - uzz;
-}
-
-// --- public API ---
-
-void ml_add_ray(ml_accum_t* ml,
+void ml_add_ray(struct ml_accumulator* ml,
                 const float32_t p[3],
                 const float32_t u_in[3],
                 float32_t w) {
-    if (w < 0.0f)
-        w = 0.0f;
     float32_t u[3];
-    vec3_normalize(u_in, u);
+    vec3_normalize_arm(u_in, u);
 
     float32_t P[9];
-    projector_from_u(u, P);
+    projector_from_u_arm(u, P);
 
-    mat3_add_scaled(ml->A, P, w > 0.0f ? w : 1.0f);
-    mat3_vec3_add_scaled(ml->b, P, p, w > 0.0f ? w : 1.0f);
+    mat3_add_scaled_arm(ml->A, P, w);
+    mat3_vec3_add_scaled_arm(ml->b, P, p, w);
     ml->K++;
 }
 
-
-bool ml_solve(const ml_accum_t* ml, float32_t s_out[3]) {
+bool ml_solve(const struct ml_accumulator* ml, float32_t s_out[3]) {
     arm_matrix_instance_f32 A, Ainv, b, x;
     arm_mat_init_f32(&A, 3, 3, (float32_t*)ml->A);
     float32_t Ainv_buf[9];
@@ -81,21 +88,23 @@ bool ml_solve(const ml_accum_t* ml, float32_t s_out[3]) {
     float32_t x_buf[3];
     arm_mat_init_f32(&b, 3, 1, (float32_t*)ml->b);
     arm_mat_init_f32(&x, 3, 1, x_buf);
+
     if (arm_mat_inverse_f32(&A, &Ainv) != ARM_MATH_SUCCESS)
         return false;
     arm_mat_mult_f32(&Ainv, &b, &x);
+
     s_out[0] = x_buf[0];
     s_out[1] = x_buf[1];
     s_out[2] = x_buf[2];
     return true;
 }
 
-bool ml_solve_batch(const float32_t* poses,
-                    const float32_t* dirs,
-                    const float32_t* weights,
+bool ml_solve_batch(const float32_t* poses,    // K×3
+                    const float32_t* dirs,     // K×3
+                    const float32_t* weights,  // nullable
                     uint32_t K,
                     float32_t s_out[3]) {
-    ml_accum_t ml;
+    struct ml_accumulator ml;
     ml_init(&ml);
     for (uint32_t k = 0; k < K; k++) {
         const float32_t* p = &poses[3 * k];
