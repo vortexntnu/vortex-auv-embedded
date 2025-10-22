@@ -2177,6 +2177,61 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    MCLK_APBD_INITIAL_VALUE:
+      attributes:
+        id: MCLK_APBD_INITIAL_VALUE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x80'
+          type: Dynamic
+        type: Values
+      type: String
+    ADC0_CLOCK_FREQUENCY:
+      attributes:
+        id: ADC0_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '60000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_40_FREQ:
+      attributes:
+        id: GCLK_ID_40_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '60000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_40_CHEN:
+      attributes:
+        id: GCLK_ID_40_CHEN
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    ADC0_CLOCK_ENABLE:
+      attributes:
+        id: ADC0_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: adc0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData:
     children:
     - attributes:
