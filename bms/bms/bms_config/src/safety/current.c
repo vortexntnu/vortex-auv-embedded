@@ -7,6 +7,7 @@
 
 
 static int current_flags = 0;
+
 uint16_t adc_read_channel(uint8_t channel)
 {
     // 1. Select ADC input (MUXPOS)

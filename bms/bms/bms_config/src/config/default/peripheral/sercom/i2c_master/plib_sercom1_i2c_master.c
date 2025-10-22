@@ -105,6 +105,7 @@ void SERCOM1_I2C_Initialize(void)
     {
         /* Do nothing */
     }
+    
 
     /* Initial Bus State: IDLE */
     SERCOM1_REGS->I2CM.SERCOM_STATUS = (uint16_t)SERCOM_I2CM_STATUS_BUSSTATE(0x01UL);
@@ -351,11 +352,12 @@ bool SERCOM1_I2C_Write(uint16_t address, uint8_t* wrData, uint32_t wrLength)
     return SERCOM1_I2C_XferSetup(address, wrData, wrLength, NULL, 0, false, false);
 }
 
+
+
 bool SERCOM1_I2C_WriteRead(uint16_t address, uint8_t* wrData, uint32_t wrLength, uint8_t* rdData, uint32_t rdLength)
 {
     return SERCOM1_I2C_XferSetup(address, wrData, wrLength, rdData, rdLength, false, false);
 }
-
 
 bool SERCOM1_I2C_BusScan(uint16_t start_addr, uint16_t end_addr, void* pDevicesList, uint8_t* nDevicesFound)
 {
