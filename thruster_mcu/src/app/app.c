@@ -27,8 +27,8 @@ typedef struct {
 } Light;
 
 typedef enum {
-    STOP = 0,
-    START,
+    TURN_THRUSTERS_OFF,
+    TURN_LIGHTS_OFF,
     RESET,
     SET_THRUSTER_PWM,
     SET_LIGHT_PWM
@@ -57,8 +57,8 @@ static const Light lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
 static void set_thruster_pwm(const uint8_t *data);
 static void set_light_pwm(const uint8_t *data);
 static void message_handler(void);
-static void stop_thrusters(void);
-static void start_thrusters(void);
+static void turn_thrusters_off(void);
+static void turn_thrusters_on(void);
 static void turn_lights_off(void);
 static void turn_lights_on(void);
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
@@ -103,12 +103,12 @@ static void message_handler(void)
 
     switch (event)
     {
-        case STOP:
-            stop_thrusters();
+        case TURN_THRUSTERS_OFF:
+            turn_thrusters_off();
             break;
 
-        case START:
-            start_thrusters();
+        case TURN_LIGHTS_OFF:
+            turn_lights_off();
             break;
 
         case RESET:
@@ -168,7 +168,7 @@ static void set_light_pwm(const uint8_t *data)
     WDT_Clear();
 }
 
-static void stop_thrusters(void)
+static void turn_thrusters_off(void)
 {
     for (size_t thr = 0; thr < 8; thr++)
     {
@@ -179,7 +179,7 @@ static void stop_thrusters(void)
     WDT_Clear();
 }
 
-static void start_thrusters(void)
+static void turn_thrusters_on(void)
 {
     __NOP(); /* Might remove later */
 }
