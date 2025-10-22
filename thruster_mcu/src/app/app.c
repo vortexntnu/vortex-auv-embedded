@@ -171,7 +171,25 @@ static void set_light_pwm(const uint8_t *data)
     /* Map microsecond duty to TCC counter domain */
     uint32_t tcc_value = (duty_cycle * (light.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
-    TCC1_PWM24bitDutySet(light.channel, tcc_value);
+    /* Use switch statement in case we change the TCC instance for the lights*/
+    switch (light.instance)
+        {
+            case 0:
+                TCC0_PWM24bitDutySet(light.channel, tcc_value);
+                break;
+
+            case 1:
+                TCC1_PWM24bitDutySet(light.channel, tcc_value);
+                break;
+
+            case 2:
+                /* Not used with current mapping */
+                TCC2_PWM16bitDutySet(light.channel, (uint16_t)tcc_value);
+                break;
+
+            default:
+                break;
+        }
     
     /* Pet the watchdog after applying updates */
     WDT_Clear();
