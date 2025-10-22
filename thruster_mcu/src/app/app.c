@@ -165,10 +165,16 @@ static void set_thruster_pwm(const uint8_t *data)
 
 static void set_light_pwm(const uint8_t *data)
 {
+    /* data layout: uint16 for light */
     uint16_t duty_cycle = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
+    
+    /* Map microsecond duty to TCC counter domain */
     uint32_t tcc_value = (duty_cycle * (light.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
     TCC1_PWM24bitDutySet(light.channel, tcc_value);
+    
+    /* Pet the watchdog after applying updates */
+    WDT_Clear();
 }
 
 static void stop_thrusters(void)
