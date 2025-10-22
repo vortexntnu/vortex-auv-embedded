@@ -115,7 +115,7 @@ static void message_handler(void)
             set_thruster_pwm(pData);
             break;
 
-        case  SET_LIGHT_PWM:
+        case SET_LIGHT_PWM:
             set_light_pwm(pData);
             break;
             
