@@ -168,9 +168,13 @@ static void set_light_pwm(const uint8_t *data)
 
 static void stop_thrusters(void)
 {
-    TCC0_PWMStop();
-    TCC1_PWMStop();
-    /* TCC2_PWMStop(); // not used */
+    for (size_t thr = 0; thr < 8; thr++)
+    {
+        // Write neutral (1500?s) to each thrusters, keep modules running so ESC's stay armed
+        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, 1500, THRUSTER_PWM_PERIOD_US);
+        tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
+    }
+    WDT_Clear();
 }
 
 static void start_thrusters(void)
