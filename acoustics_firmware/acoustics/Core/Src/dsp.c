@@ -49,15 +49,6 @@ void dsp_init(struct dsp_context* ctx,
     arm_biquad_cascade_df2T_init_f32(&ctx->iir_q, ctx->num_biquads,
                                      ctx->biquad_coeffs, ctx->iir_state_q);
 
-    if (fir_num_taps > DSP_MAX_FIR_TAPS) {
-    }
-    if (block_size_in > DSP_MAX_BLOCK_SAMPLES) {
-        return;
-    }
-    if ((block_size_in % decim) != 0u) {
-        return;
-    }
-
     ctx->fir_coeffs = fir_coeffs;
     ctx->fir_num_taps = fir_num_taps;
     ctx->block_size_in = block_size_in;
