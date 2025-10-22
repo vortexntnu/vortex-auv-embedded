@@ -136,12 +136,12 @@ static void set_thruster_pwm(const uint8_t *data)
     for (size_t thr = 0; thr < 8; thr++)
     {
         /* data layout: uint16 per thruster */
-        uint16_t us = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
+        uint16_t pulse_us = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
         
         /* Thrusters take duty cycles in range 1000 - 2000 ?s*/
-        us = clamp(us, 1000, 2000);
+        pulse_us = clamp(pulse_us, 1000, 2000);
         
-        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, us, THRUSTER_PWM_PERIOD_US);
+        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, pulse_us, THRUSTER_PWM_PERIOD_US);
         
         tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
     }
@@ -153,12 +153,12 @@ static void set_thruster_pwm(const uint8_t *data)
 static void set_light_pwm(const uint8_t *data)
 {
     /* data layout: uint16 for light */
-    uint16_t us = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
+    uint16_t pulse_us = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
     /* Lights takes duty cycle in range 1100 - 1900 ?s */
-    us = clamp(us, 1100, 1900);
+    pulse_us = clamp(pulse_us, 1100, 1900);
     
-    uint32_t ticks = us_to_ticks(lights.period_ticks, us, LIGHT_PWM_PERIOD_US);
+    uint32_t ticks = us_to_ticks(lights.period_ticks, pulse_us, LIGHT_PWM_PERIOD_US);
     
     tcc_write(lights.instance, lights.channel, ticks);
     
@@ -195,9 +195,9 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks)
     }
 }
 
-static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us)
+static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uint32_t frame_us)
 {
-    return ((uint32_t)us * (period_ticks + 1U)) / frame_us;
+    return ((uint32_t)pulse_us * (period_ticks + 1U)) / frame_us;
 }
 
 static void CAN_Receive_Callback(uintptr_t context) {
