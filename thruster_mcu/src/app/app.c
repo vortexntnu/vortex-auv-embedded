@@ -17,13 +17,13 @@ static const uint8_t  MESSAGES_TO_READ                  = 1U;
 typedef struct {
     uint8_t  instance;
     uint8_t  channel;
-    uint32_t period;
+    uint32_t ticks;
 } Thruster;
 
 typedef struct {
     uint8_t instance;
     uint8_t channel;
-    uint32_t period;
+    uint32_t ticks;
 } Light;
 
 typedef enum {
@@ -60,7 +60,7 @@ static void message_handler(void);
 static void stop_thrusters(void);
 static void start_thrusters(void);
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
-static inline void tcc_write(uint8_t instance, uint8_t channel, uint8_t period);
+static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
 
 /* Callbacks */
 static void CAN_Receive_Callback(uintptr_t context);
@@ -135,16 +135,16 @@ static void set_thruster_pwm(const uint8_t *data)
     for (size_t thr = 0; thr < 8; thr++)
     {
         /* data layout: uint16 per thruster */
-        uint16_t duty_cycle = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
+        uint16_t us = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
         
         /* Thrusters take duty cycles in range 1000 - 2000 ?s*/
-        duty_cycle = clamp(duty_cycle, 1000, 2000);
+        us = clamp(us, 1000, 2000);
         
         /* Map microsecond duty to TCC counter domain */
-        uint32_t tcc_value =
-            (duty_cycle * (thrusters[thr].period + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
+        uint32_t ticks =
+            (us * (thrusters[thr].ticks + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
         
-        tcc_write(thrusters[thr].instance, thrusters[thr].channel, tcc_value);
+        tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
     }
 
     /* Pet the watchdog after applying updates */
@@ -154,15 +154,15 @@ static void set_thruster_pwm(const uint8_t *data)
 static void set_light_pwm(const uint8_t *data)
 {
     /* data layout: uint16 for light */
-    uint16_t duty_cycle = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
+    uint16_t us = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
     /* Lights takes duty cycle in range 1100 - 1900 ?s */
-    duty_cycle = clamp(duty_cycle, 1100, 1900);
+    us = clamp(us, 1100, 1900);
     
     /* Map microsecond duty to TCC counter domain */
-    uint32_t tcc_value = (duty_cycle * (lights.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
+    uint32_t ticks = (us * (lights.ticks + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
-    tcc_write(lights.instance, lights.channel, tcc_value);
+    tcc_write(lights.instance, lights.channel, ticks);
     
     /* Pet the watchdog after applying updates */
     WDT_Clear();
@@ -187,12 +187,12 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high)
     return (value < low) ? low : (value > high) ? high : value;
 }
 
-static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t period)
+static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks)
 {
     switch (instance) {
-        case 0: TCC0_PWM24bitDutySet(channel, period); break;
-        case 1: TCC1_PWM24bitDutySet(channel, period); break;
-        case 2: TCC2_PWM16bitDutySet(channel, (uint16_t)period); break; /* Not used with current mapping */
+        case 0: TCC0_PWM24bitDutySet(channel, ticks); break;
+        case 1: TCC1_PWM24bitDutySet(channel, ticks); break;
+        case 2: TCC2_PWM16bitDutySet(channel, (uint16_t)ticks); break; /* Not used with current mapping */
         default: break;
     }
 }
