@@ -156,34 +156,52 @@ static inline void deinterleave_cpu(const uint16_t* restrict src,
     }
 }
 
+static inline void deinterleave_3x2_to_5(const uint32_t* __restrict srcA,
+                                         const uint32_t* __restrict srcB,
+                                         const uint32_t* __restrict srcC,
+                                         uint32_t n_words,
+                                         int16_t* __restrict outA0,
+                                         int16_t* __restrict outA1,
+                                         int16_t* __restrict outB0,
+                                         int16_t* __restrict outB1,
+                                         int16_t* __restrict outC0) {
+    uint32_t i = 0;
 
-static inline void deinterleave_3x2_to_5(const uint32_t * restrict srcA,
-                                         const uint32_t * restrict srcB,
-                                         const uint32_t * restrict srcC,
-                                         uint32_t n_words,         // words per lane (each word has two 16-bit channels)
-                                         int16_t * restrict outA0,
-                                         int16_t * restrict outA1,
-                                         int16_t * restrict outB0,
-                                         int16_t * restrict outB1,
-                                         int16_t * restrict outC0)
-{
-    for (uint32_t i = 0; i < n_words; ++i) {
+    for (; i + 1u < n_words; i += 2u) {
+        uint32_t wa0 = *srcA++;
+        uint32_t wb0 = *srcB++;
+        uint32_t wc0 = *srcC++;
+
+        uint32_t wa1 = *srcA++;
+        uint32_t wb1 = *srcB++;
+        uint32_t wc1 = *srcC++;
+
+        // Iter 0
+        *outA0++ = (int16_t)(wa0 >> 16);
+        *outA1++ = (int16_t)(wa0);
+        *outB0++ = (int16_t)(wb0 >> 16);
+        *outB1++ = (int16_t)(wb0);
+        *outC0++ = (int16_t)(wc0 >> 16);
+
+        // Iter 1
+        *outA0++ = (int16_t)(wa1 >> 16);
+        *outA1++ = (int16_t)(wa1);
+        *outB0++ = (int16_t)(wb1 >> 16);
+        *outB1++ = (int16_t)(wb1);
+        *outC0++ = (int16_t)(wc1 >> 16);
+    }
+
+    // Tail
+    for (; i < n_words; ++i) {
         uint32_t wa = *srcA++;
         uint32_t wb = *srcB++;
         uint32_t wc = *srcC++;
 
-        int16_t a0 = (int16_t)(wa >> 16);
-        int16_t a1 = (int16_t)(wa & 0xFFFF);
-        int16_t b0 = (int16_t)(wb >> 16);
-        int16_t b1 = (int16_t)(wb & 0xFFFF);
-        int16_t c0 = (int16_t)(wc >> 16);
-        // int16_t c1 = (int16_t)(wc & 0xFFFF); // intentionally unused
-
-        *outA0++ = a0;
-        *outA1++ = a1;
-        *outB0++ = b0;
-        *outB1++ = b1;
-        *outC0++ = c0;  
+        *outA0++ = (int16_t)(wa >> 16);
+        *outA1++ = (int16_t)(wa);
+        *outB0++ = (int16_t)(wb >> 16);
+        *outB1++ = (int16_t)(wb);
+        *outC0++ = (int16_t)(wc >> 16);
     }
 }
 
