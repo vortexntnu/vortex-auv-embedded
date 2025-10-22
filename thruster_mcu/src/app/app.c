@@ -59,6 +59,7 @@ static void set_light_pwm(const uint8_t *data);
 static void message_handler(void);
 static void stop_thrusters(void);
 static void start_thrusters(void);
+static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
 
 /* Callbacks */
 static void CAN_Receive_Callback(uintptr_t context);
@@ -134,9 +135,11 @@ static void set_thruster_pwm(const uint8_t *data)
     {
         /* data layout: uint16 per thruster */
         uint16_t duty_cycle = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
-
+        
+        /* Thrusters take duty cycles in range 1000 - 2000 ?s*/
+        duty_cycle = clamp(duty_cycle, 1000, 2000);
+        
         /* Map microsecond duty to TCC counter domain */
-        /* TODO: Add clamping*/
         uint32_t tcc_value =
             (duty_cycle * (thrusters[thr].period + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
 
@@ -169,8 +172,10 @@ static void set_light_pwm(const uint8_t *data)
     /* data layout: uint16 for light */
     uint16_t duty_cycle = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
+    /* Lights takes duty cycle in range 1100 - 1900 ?s */
+    duty_cycle = clamp(duty_cycle, 1100, 1900);
+    
     /* Map microsecond duty to TCC counter domain */
-    /* TODO: Add clamping*/
     uint32_t tcc_value = (duty_cycle * (lights.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
     /* Use switch statement in case we change the TCC instance for the lights*/
@@ -209,6 +214,11 @@ static void start_thrusters(void)
     TCC0_PWMStart();
     TCC1_PWMStart();
     /* TCC2_PWMStart(); // not used */
+}
+
+static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) 
+{
+    return (value < low) ? low : (value > high) ? high : value;
 }
 
 static void CAN_Receive_Callback(uintptr_t context) {
