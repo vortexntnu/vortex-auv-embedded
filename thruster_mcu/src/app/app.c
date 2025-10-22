@@ -60,6 +60,7 @@ static void message_handler(void);
 static void stop_thrusters(void);
 static void start_thrusters(void);
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
+static inline void tcc_write(uint8_t instance, uint8_t channel, uint8_t period);
 
 /* Callbacks */
 static void CAN_Receive_Callback(uintptr_t context);
@@ -142,25 +143,8 @@ static void set_thruster_pwm(const uint8_t *data)
         /* Map microsecond duty to TCC counter domain */
         uint32_t tcc_value =
             (duty_cycle * (thrusters[thr].period + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
-
-        switch (thrusters[thr].instance)
-        {
-            case 0:
-                TCC0_PWM24bitDutySet(thrusters[thr].channel, tcc_value);
-                break;
-
-            case 1:
-                TCC1_PWM24bitDutySet(thrusters[thr].channel, tcc_value);
-                break;
-
-            case 2:
-                /* Not used with current mapping */
-                TCC2_PWM16bitDutySet(thrusters[thr].channel, (uint16_t)tcc_value);
-                break;
-
-            default:
-                break;
-        }
+        
+        tcc_write(thrusters[thr].instance, thrusters[thr].channel, tcc_value);
     }
 
     /* Pet the watchdog after applying updates */
@@ -178,25 +162,7 @@ static void set_light_pwm(const uint8_t *data)
     /* Map microsecond duty to TCC counter domain */
     uint32_t tcc_value = (duty_cycle * (lights.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
-    /* Use switch statement in case we change the TCC instance for the lights*/
-    switch (lights.instance)
-        {
-            case 0:
-                TCC0_PWM24bitDutySet(lights.channel, tcc_value);
-                break;
-
-            case 1:
-                TCC1_PWM24bitDutySet(lights.channel, tcc_value);
-                break;
-
-            case 2:
-                /* Not used with current mapping */
-                TCC2_PWM16bitDutySet(lights.channel, (uint16_t)tcc_value);
-                break;
-
-            default:
-                break;
-        }
+    tcc_write(lights.instance, lights.channel, tcc_value);
     
     /* Pet the watchdog after applying updates */
     WDT_Clear();
@@ -219,6 +185,16 @@ static void start_thrusters(void)
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) 
 {
     return (value < low) ? low : (value > high) ? high : value;
+}
+
+static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t period)
+{
+    switch (instance) {
+        case 0: TCC0_PWM24bitDutySet(channel, period); break;
+        case 1: TCC1_PWM24bitDutySet(channel, period); break;
+        case 2: TCC2_PWM16bitDutySet(channel, (uint16_t)period); break; /* Not used with current mapping */
+        default: break;
+    }
 }
 
 static void CAN_Receive_Callback(uintptr_t context) {
