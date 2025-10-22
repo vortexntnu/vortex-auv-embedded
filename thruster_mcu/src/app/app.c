@@ -138,7 +138,7 @@ static void set_thruster_pwm(const uint8_t *data)
         /* data layout: uint16 per thruster */
         uint16_t pulse_us = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
         
-        /* Thrusters take duty cycles in range 1000 - 2000 ?s*/
+        /* Thrusters take duty cycles in range 1000 - 2000 us*/
         pulse_us = clamp(pulse_us, 1000, 2000);
         
         uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, pulse_us, THRUSTER_PWM_PERIOD_US);
@@ -155,7 +155,7 @@ static void set_light_pwm(const uint8_t *data)
     /* data layout: uint16 for light */
     uint16_t pulse_us = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
-    /* Lights takes duty cycle in range 1100 - 1900 ?s */
+    /* Lights takes duty cycle in range 1100 - 1900 us */
     pulse_us = clamp(pulse_us, 1100, 1900);
     
     uint32_t ticks = us_to_ticks(lights.period_ticks, pulse_us, LIGHT_PWM_PERIOD_US);
@@ -170,7 +170,7 @@ static void stop_thrusters(void)
 {
     for (size_t thr = 0; thr < 8; thr++)
     {
-        // Write neutral (1500?s) to each thrusters, keep modules running so ESC's stay armed
+        // Write neutral (1500us) to each thrusters, keep modules running so ESC's stay armed
         uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, 1500, THRUSTER_PWM_PERIOD_US);
         tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
     }
