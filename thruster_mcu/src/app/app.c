@@ -12,6 +12,7 @@ static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 static const uint32_t CAN_EVENT_ID_BASE         = 0x369U;
 static const uint8_t  MESSAGES_TO_READ          = 1U;
+static const float    ADC_VREF                      = 3.3f;
 
 /* --- Types --- */
 typedef struct {
@@ -35,11 +36,17 @@ typedef enum {
 } STATES;
 
 /* --- Private states --- */
+/* CAN */
 static uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
 static CAN_RX_BUFFER rx_buf;
-
 static volatile uint32_t can_status = 0;
 
+/* ADC */
+static uint32_t adc_seq_regs[8] = {0x1804, 0x1805, 0x1806, 0x1807, 0x1808, 0x1809, 0x1810, 0x1811};
+static volatile uint16_t adc_res[8] = {0};
+static float input_voltage;
+
+/* Application */
 static const Thruster thrusters[8] = {
     {0, 0, TCC0_PERIOD}, // TCC0_CHANNEL0
     {0, 1, TCC0_PERIOD}, // TCC0_CHANNEL1
