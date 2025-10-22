@@ -136,6 +136,7 @@ static void set_thruster_pwm(const uint8_t *data)
         uint16_t duty_cycle = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
 
         /* Map microsecond duty to TCC counter domain */
+        /* TODO: Add clamping*/
         uint32_t tcc_value =
             (duty_cycle * (thrusters[thr].period + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
 
@@ -169,6 +170,7 @@ static void set_light_pwm(const uint8_t *data)
     uint16_t duty_cycle = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
     /* Map microsecond duty to TCC counter domain */
+    /* TODO: Add clamping*/
     uint32_t tcc_value = (duty_cycle * (lights.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
     /* Use switch statement in case we change the TCC instance for the lights*/
