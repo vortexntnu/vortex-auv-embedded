@@ -51,7 +51,7 @@ static const Thruster thrusters[8] = {
     {1, 1, TCC1_PERIOD}  // TCC1_CHANNEL1
 };
 
-static const Light light = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
+static const Light lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
 
 /* --- Private function prototypes --- */
 static void set_thruster_pwm(const uint8_t *data);
@@ -169,22 +169,22 @@ static void set_light_pwm(const uint8_t *data)
     uint16_t duty_cycle = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
     /* Map microsecond duty to TCC counter domain */
-    uint32_t tcc_value = (duty_cycle * (light.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
+    uint32_t tcc_value = (duty_cycle * (lights.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
     /* Use switch statement in case we change the TCC instance for the lights*/
-    switch (light.instance)
+    switch (lights.instance)
         {
             case 0:
-                TCC0_PWM24bitDutySet(light.channel, tcc_value);
+                TCC0_PWM24bitDutySet(lights.channel, tcc_value);
                 break;
 
             case 1:
-                TCC1_PWM24bitDutySet(light.channel, tcc_value);
+                TCC1_PWM24bitDutySet(lights.channel, tcc_value);
                 break;
 
             case 2:
                 /* Not used with current mapping */
-                TCC2_PWM16bitDutySet(light.channel, (uint16_t)tcc_value);
+                TCC2_PWM16bitDutySet(lights.channel, (uint16_t)tcc_value);
                 break;
 
             default:
