@@ -17,13 +17,13 @@ static const uint8_t  MESSAGES_TO_READ                  = 1U;
 typedef struct {
     uint8_t  instance;
     uint8_t  channel;
-    uint32_t ticks;
+    uint32_t period_ticks;
 } Thruster;
 
 typedef struct {
     uint8_t instance;
     uint8_t channel;
-    uint32_t ticks;
+    uint32_t period_ticks;
 } Light;
 
 typedef enum {
@@ -142,7 +142,7 @@ static void set_thruster_pwm(const uint8_t *data)
         
         /* Map microsecond duty to TCC counter domain */
         uint32_t ticks =
-            (us * (thrusters[thr].ticks + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
+            (us * (thrusters[thr].period_ticks + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
         
         tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
     }
@@ -160,7 +160,7 @@ static void set_light_pwm(const uint8_t *data)
     us = clamp(us, 1100, 1900);
     
     /* Map microsecond duty to TCC counter domain */
-    uint32_t ticks = (us * (lights.ticks + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
+    uint32_t ticks = (us * (lights.period_ticks + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
     
     tcc_write(lights.instance, lights.channel, ticks);
     
