@@ -1,9 +1,4 @@
 #include "dsp.h"
-#include <math.h>
-#include <stdint.h>
-#include <string.h>
-#include "arm_math_types.h"
-#include "dsp/filtering_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
 // SOS coeffs for CMSIS DF2T: {b0,b1,b2,a1,a2} per biquad.
@@ -17,27 +12,36 @@ static const float32_t BUTTER6_COEFFS_SOS[5 * DSP_MAX_BIQUADS] = {
     // Biquad 3
     1.00000000f, 2.00000000f, 1.00000000f, -1.99521656f, 0.99524618f};
 
+
 // ======= Init =======
+
 void dsp_init(struct dsp_context* ctx,
               float32_t fs_in,
               float32_t f0,
               float32_t fc_lp,
-              uint32_t decim,
+              uint32_t decim,               // M
+              const float32_t* fir_coeffs,  // FIR coeffs for decimator
+              uint32_t fir_num_taps,        // number of taps
+              uint32_t block_size_in,       // input block size used per call
               const float32_t* mf_ref,
               uint32_t mf_len) {
     memset(ctx, 0, sizeof(*ctx));
+
+    // Basic config
     ctx->fs_in = fs_in;
     ctx->f0 = f0;
     ctx->fc_lp = fc_lp;
-    ctx->decim = decim ? decim : DSP_DECIM_FACTOR;
+    ctx->decim = decim;
+    ctx->mf_ref = mf_ref;
+    ctx->mf_len = mf_len;
 
-    // NCO init (start at phase 0)
+    // NCO (start at phase 0)
     ctx->dphase = 2.0f * PI * (f0 / fs_in);
     arm_sin_cos_f32(ctx->dphase, &ctx->sin_d, &ctx->cos_d);
     ctx->cos_p = 1.0f;
     ctx->sin_p = 0.0f;
 
-    // LPF init (3 biquads)
+    // IIR LPF init (3 biquads)
     ctx->num_biquads = DSP_MAX_BIQUADS;
     memcpy(ctx->biquad_coeffs, BUTTER6_COEFFS_SOS, sizeof(BUTTER6_COEFFS_SOS));
     arm_biquad_cascade_df2T_init_f32(&ctx->iir_i, ctx->num_biquads,
@@ -45,9 +49,26 @@ void dsp_init(struct dsp_context* ctx,
     arm_biquad_cascade_df2T_init_f32(&ctx->iir_q, ctx->num_biquads,
                                      ctx->biquad_coeffs, ctx->iir_state_q);
 
-    // Matched filter replica
-    ctx->mf_ref = mf_ref;
-    ctx->mf_len = mf_len;
+    if (fir_num_taps > DSP_MAX_FIR_TAPS) {
+    }
+    if (block_size_in > DSP_MAX_BLOCK_SAMPLES) {
+        return;
+    }
+    if ((block_size_in % decim) != 0u) {
+        return;
+    }
+
+    ctx->fir_coeffs = fir_coeffs;
+    ctx->fir_num_taps = fir_num_taps;
+    ctx->block_size_in = block_size_in;
+
+    arm_fir_decimate_init_f32(&ctx->fir_i, (uint16_t)ctx->fir_num_taps,
+                              (uint8_t)ctx->decim, ctx->fir_coeffs,
+                              ctx->fir_state_i, ctx->block_size_in);
+
+    arm_fir_decimate_init_f32(&ctx->fir_q, (uint16_t)ctx->fir_num_taps,
+                              (uint8_t)ctx->decim, ctx->fir_coeffs,
+                              ctx->fir_state_q, ctx->block_size_in);
 }
 
 // ======= Mix int16 (Q15) to complex baseband float32 =======
@@ -63,12 +84,12 @@ void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
     const float32_t cos_d = ctx->cos_d;
     const float32_t sin_d = ctx->sin_d;
 
-    for (uint32_t k = 0; k < n; ++k) {
-        float32_t x = (float32_t)raw_samples[k] * S;
+    for (uint32_t k = 0; k < n; k++) {
+        float32_t x = (float32_t)*raw_samples++ * S;
 
         // Complex mix by e^{-j 2π f0 t}: I = x*cos, Q = x*(-sin)
-        out_i[k] = x * cos_p;
-        out_q[k] = x * -sin_p;
+        *out_i++ = x * cos_p;
+        *out_q++ = x * -sin_p;
 
         float32_t c = cos_p * cos_d - sin_p * sin_d;
         float32_t s = sin_p * cos_d + cos_p * sin_d;
@@ -90,27 +111,12 @@ void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
     arm_biquad_cascade_df2T_f32(&ctx->iir_q, io_q, out_q, n);
 }
 
-uint32_t dsp_decimate_pickM(const float32_t* in_i,
-                            const float32_t* in_q,
-                            float32_t* out_i,
-                            float32_t* out_q,
-                            uint32_t n,
-                            uint32_t M) {
-    if (M == 0)
-        return 0u;
-    uint32_t outN = n / M;
-    for (uint32_t m = 0, k = 0; m < outN; ++m, k += M) {
-        out_i[m] = in_i[k];
-        out_q[m] = in_q[k];
-    }
-    return outN;
-}
-
 void dsp_decimate(struct dsp_context* ctx,
                   const float32_t* in_i,
                   const float32_t* in_q,
                   float32_t* out_i,
-                  float32_t* out_q, uint32_t n) {
+                  float32_t* out_q,
+                  uint32_t n) {
     arm_fir_decimate_f32(&ctx->fir_i, in_i, out_i, n);
     arm_fir_decimate_f32(&ctx->fir_q, in_q, out_q, n);
 }

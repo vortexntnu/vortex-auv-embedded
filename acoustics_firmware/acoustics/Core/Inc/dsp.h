@@ -12,7 +12,17 @@ extern "C" {
 #endif
 
 #define DSP_MAX_BIQUADS (3)    // 6th-order IIR = 3 biquads
-#define DSP_DECIM_FACTOR (32)  // 192 kS/s -> 6 kS/s
+
+#ifndef DSP_MAX_BLOCK_SAMPLES
+#define DSP_MAX_BLOCK_SAMPLES 512u
+#endif
+
+// Maximum FIR length you plan to use
+#ifndef DSP_MAX_FIR_TAPS
+#define DSP_MAX_FIR_TAPS 128u
+#endif
+
+
 
 struct dsp_context {
     // Rates & frequency plan
@@ -28,26 +38,41 @@ struct dsp_context {
     // IIR lowpass (same chain for I and Q)
     arm_biquad_cascade_df2T_instance_f32 iir_i;
     arm_biquad_cascade_df2T_instance_f32 iir_q;
-    arm_fir_decimate_instance_f32 fir_i;
-    arm_fir_decimate_instance_f32 fir_q;
+
+    // FIR decimators (I and Q)
+    arm_fir_decimate_instance_f32        fir_i;
+    arm_fir_decimate_instance_f32        fir_q;
+
+    // IIR storage
     float32_t biquad_coeffs[5 * DSP_MAX_BIQUADS];
     float32_t iir_state_i[4 * DSP_MAX_BIQUADS];
     float32_t iir_state_q[4 * DSP_MAX_BIQUADS];
-    uint32_t num_biquads;
+    uint32_t  num_biquads;
+
+    // FIR decimator storage/config
+    uint32_t               decim;          // M (e.g., 32)
+    uint32_t               fir_num_taps;   // number of FIR taps
+    const float32_t*       fir_coeffs;     // points to coeffs (length = fir_num_taps)
+    uint32_t               block_size_in;  // input block size used to init FIR
+
+    // pState length must be (numTaps + blockSize - 1)
+    float32_t fir_state_i[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1];
+    float32_t fir_state_q[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1];
 
     // Matched filter reference (complex, interleaved [re,im,...])
     const float32_t* mf_ref;  // time-reversed + conjugated replica
-    uint32_t mf_len;          // in complex samples
-
-    // Decimation factor
-    uint32_t decim;  // e.g., 32
+    uint32_t         mf_len;  // in complex samples
 };
+
 
 void dsp_init(struct dsp_context* ctx,
               float32_t fs_in,
               float32_t f0,
               float32_t fc_lp,
-              uint32_t decim,
+              uint32_t decim,                     // M
+              const float32_t* fir_coeffs,        // FIR coeffs for decimator
+              uint32_t fir_num_taps,              // number of taps
+              uint32_t block_size_in,             // input block size used per call
               const float32_t* mf_ref,
               uint32_t mf_len);
 
