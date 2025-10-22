@@ -179,9 +179,7 @@ static void stop_thrusters(void)
 
 static void start_thrusters(void)
 {
-    TCC0_PWMStart();
-    TCC1_PWMStart();
-    /* TCC2_PWMStart(); // not used */
+    __NOP(); /* Might remove later */
 }
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) 
