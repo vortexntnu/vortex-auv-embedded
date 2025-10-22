@@ -30,7 +30,8 @@ typedef enum {
     STOP = 0,
     START,
     RESET,
-    SET_PWM
+    SET_THRUSTER_PWM,
+    SET_LIGHT_PWM
 } STATES;
 
 /* --- Private states --- */
@@ -110,10 +111,14 @@ static void message_handler(void)
             NVIC_SystemReset();
             break;
 
-        case SET_PWM:
+        case SET_THRUSTER_PWM:
             set_thruster_pwm(pData);
             break;
 
+        case  SET_LIGHT_PWM:
+            set_light_pwm(pData);
+            break;
+            
         default:
             /* Unknown event: ignore */
             break;
