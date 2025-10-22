@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "arm_math.h"
+#include "dsp/filtering_functions.h"
 #include "stm32h7xx_hal.h"
 
 #ifdef __cplusplus
@@ -27,6 +28,8 @@ struct dsp_context {
     // IIR lowpass (same chain for I and Q)
     arm_biquad_cascade_df2T_instance_f32 iir_i;
     arm_biquad_cascade_df2T_instance_f32 iir_q;
+    arm_fir_decimate_instance_f32 fir_i;
+    arm_fir_decimate_instance_f32 fir_q;
     float32_t biquad_coeffs[5 * DSP_MAX_BIQUADS];
     float32_t iir_state_i[4 * DSP_MAX_BIQUADS];
     float32_t iir_state_q[4 * DSP_MAX_BIQUADS];

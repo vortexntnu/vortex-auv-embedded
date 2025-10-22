@@ -1,6 +1,9 @@
 #include "dsp.h"
 #include <math.h>
+#include <stdint.h>
 #include <string.h>
+#include "arm_math_types.h"
+#include "dsp/filtering_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
 // SOS coeffs for CMSIS DF2T: {b0,b1,b2,a1,a2} per biquad.
@@ -101,6 +104,15 @@ uint32_t dsp_decimate_pickM(const float32_t* in_i,
         out_q[m] = in_q[k];
     }
     return outN;
+}
+
+void dsp_decimate(struct dsp_context* ctx,
+                  const float32_t* in_i,
+                  const float32_t* in_q,
+                  float32_t* out_i,
+                  float32_t* out_q, uint32_t n) {
+    arm_fir_decimate_f32(&ctx->fir_i, in_i, out_i, n);
+    arm_fir_decimate_f32(&ctx->fir_q, in_q, out_q, n);
 }
 
 uint32_t dsp_matched_filter(const struct dsp_context* ctx,
