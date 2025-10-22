@@ -20,6 +20,12 @@ typedef struct {
     uint32_t period;
 } Thruster;
 
+typedef struct {
+    uint8_t instance;
+    uint8_t channel;
+    uint32_t period;
+} Light;
+
 typedef enum {
     STOP = 0,
     START,
@@ -44,8 +50,11 @@ static const Thruster thrusters[8] = {
     {1, 1, TCC1_PERIOD}  // TCC1_CHANNEL1
 };
 
+static const Light light = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
+
 /* --- Private function prototypes --- */
 static void set_thruster_pwm(const uint8_t *data);
+static void set_light_pwm(const uint8_t *data);
 static void message_handler(void);
 static void stop_thrusters(void);
 static void start_thrusters(void);
@@ -147,6 +156,14 @@ static void set_thruster_pwm(const uint8_t *data)
 
     /* Pet the watchdog after applying updates */
     WDT_Clear();
+}
+
+static void set_light_pwm(const uint8_t *data)
+{
+    uint16_t duty_cycle = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
+    uint32_t tcc_value = (duty_cycle * (light.period + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
+    
+    TCC1_PWM24bitDutySet(light.channel, tcc_value);
 }
 
 static void stop_thrusters(void)
