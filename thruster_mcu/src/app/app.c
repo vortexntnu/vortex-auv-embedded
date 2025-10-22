@@ -8,8 +8,8 @@
 static const uint32_t TCC0_PERIOD                       = 74000U;
 static const uint32_t TCC1_PERIOD                       = 74000U;
 static const uint32_t TCC2_PERIOD                       = 18500U;
-static const uint32_t THRUSTER_PWM_PERIOD_MICROSECONDS  = 20000U;
-static const uint32_t LIGHT_PWM_PERIOD_MICROSECONDS     = 20000U;
+static const uint32_t THRUSTER_PWM_PERIOD_MICROSECONDS  = 20000U; // 50Hz
+static const uint32_t LIGHT_PWM_PERIOD_MICROSECONDS     = 20000U; // 50Hz
 static const uint32_t CAN_EVENT_ID_BASE                 = 0x369U;
 static const uint8_t  MESSAGES_TO_READ                  = 1U;
 
@@ -61,6 +61,7 @@ static void stop_thrusters(void);
 static void start_thrusters(void);
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
+static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us);
 
 /* Callbacks */
 static void CAN_Receive_Callback(uintptr_t context);
@@ -140,9 +141,7 @@ static void set_thruster_pwm(const uint8_t *data)
         /* Thrusters take duty cycles in range 1000 - 2000 ?s*/
         us = clamp(us, 1000, 2000);
         
-        /* Map microsecond duty to TCC counter domain */
-        uint32_t ticks =
-            (us * (thrusters[thr].period_ticks + 1U)) / THRUSTER_PWM_PERIOD_MICROSECONDS;
+        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, us, THRUSTER_PWM_PERIOD_MICROSECONDS);
         
         tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
     }
@@ -159,8 +158,7 @@ static void set_light_pwm(const uint8_t *data)
     /* Lights takes duty cycle in range 1100 - 1900 ?s */
     us = clamp(us, 1100, 1900);
     
-    /* Map microsecond duty to TCC counter domain */
-    uint32_t ticks = (us * (lights.period_ticks + 1U)) / LIGHT_PWM_PERIOD_MICROSECONDS;
+    uint32_t ticks = us_to_ticks(lights.period_ticks, us, LIGHT_PWM_PERIOD_MICROSECONDS);
     
     tcc_write(lights.instance, lights.channel, ticks);
     
@@ -195,6 +193,11 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks)
         case 2: TCC2_PWM16bitDutySet(channel, (uint16_t)ticks); break; /* Not used with current mapping */
         default: break;
     }
+}
+
+static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us)
+{
+    return ((uint32_t)us * (period_ticks + 1U)) / frame_us;
 }
 
 static void CAN_Receive_Callback(uintptr_t context) {
