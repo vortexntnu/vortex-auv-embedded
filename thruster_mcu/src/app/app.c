@@ -5,13 +5,13 @@
 #include "app.h"
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD                       = 74000U;
-static const uint32_t TCC1_PERIOD                       = 74000U;
-static const uint32_t TCC2_PERIOD                       = 18500U;
-static const uint32_t THRUSTER_PWM_PERIOD_MICROSECONDS  = 20000U; // 50Hz
-static const uint32_t LIGHT_PWM_PERIOD_MICROSECONDS     = 20000U; // 50Hz
-static const uint32_t CAN_EVENT_ID_BASE                 = 0x369U;
-static const uint8_t  MESSAGES_TO_READ                  = 1U;
+static const uint32_t TCC0_PERIOD               = 74000U;
+static const uint32_t TCC1_PERIOD               = 74000U;
+static const uint32_t TCC2_PERIOD               = 18500U;
+static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
+static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
+static const uint32_t CAN_EVENT_ID_BASE         = 0x369U;
+static const uint8_t  MESSAGES_TO_READ          = 1U;
 
 /* --- Types --- */
 typedef struct {
@@ -141,7 +141,7 @@ static void set_thruster_pwm(const uint8_t *data)
         /* Thrusters take duty cycles in range 1000 - 2000 ?s*/
         us = clamp(us, 1000, 2000);
         
-        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, us, THRUSTER_PWM_PERIOD_MICROSECONDS);
+        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, us, THRUSTER_PWM_PERIOD_US);
         
         tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
     }
@@ -158,7 +158,7 @@ static void set_light_pwm(const uint8_t *data)
     /* Lights takes duty cycle in range 1100 - 1900 ?s */
     us = clamp(us, 1100, 1900);
     
-    uint32_t ticks = us_to_ticks(lights.period_ticks, us, LIGHT_PWM_PERIOD_MICROSECONDS);
+    uint32_t ticks = us_to_ticks(lights.period_ticks, us, LIGHT_PWM_PERIOD_US);
     
     tcc_write(lights.instance, lights.channel, ticks);
     
