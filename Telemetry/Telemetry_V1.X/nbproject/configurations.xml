@@ -34,14 +34,18 @@
             </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
               <logicalFolder name="i2c_master" displayName="i2c_master" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom2_i2c_master.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom_i2c_master_common.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom3_i2c_master.h</itemPath>
               </logicalFolder>
               <logicalFolder name="spi_master" displayName="spi_master" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom_spi_master_common.h</itemPath>
+                <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom5_spi_master.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.h</itemPath>
               </logicalFolder>
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom3_usart.h</itemPath>
+                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.h</itemPath>
@@ -63,10 +67,10 @@
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
         <logicalFolder name="f1" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/include/ws2812_spi_enc.h</itemPath>
-          <itemPath>../drivers/ws2812/include/ws2812_port_sercom0_harmony.h</itemPath>
+          <itemPath>../drivers/ws2812/include/ws2812_port_sercom5_harmony.h</itemPath>
         </logicalFolder>
         <logicalFolder name="f2" displayName="wsen-pads" projectFiles="true">
-          <itemPath>../drivers/wsen-pads/include/wsen-pads_port_sercom2.h</itemPath>
+          <itemPath>../drivers/wsen-pads/include/wsen_pads_port_sercom3.h</itemPath>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="packs" displayName="packs" projectFiles="true">
@@ -182,8 +186,31 @@
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="true">
+      <logicalFolder name="Telemetry_V1_default"
+                     displayName="Telemetry_V1_default"
+                     projectFiles="true">
+        <logicalFolder name="components" displayName="components" projectFiles="true">
+          <itemPath>Telemetry_V1_default/components/can0.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom0.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/tc3.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/stdio.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom3.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/core.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/eic.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/nvmctrl.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/evsys.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/dfp.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom1.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/cmsis.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom2.yml</itemPath>
+        </logicalFolder>
+        <itemPath>Telemetry_V1_default/mcc-config.mc4</itemPath>
+      </logicalFolder>
       <itemPath>Makefile</itemPath>
-      <itemPath>Drivers.mc3</itemPath>
+    </logicalFolder>
+    <logicalFolder name="LibraryFiles"
+                   displayName="LibraryFiles"
+                   projectFiles="true">
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -226,12 +253,16 @@
             </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
               <logicalFolder name="i2c_master" displayName="i2c_master" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom2_i2c_master.c</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom3_i2c_master.c</itemPath>
               </logicalFolder>
               <logicalFolder name="spi_master" displayName="spi_master" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom5_spi_master.c</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.c</itemPath>
               </logicalFolder>
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom3_usart.c</itemPath>
+                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.c</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.c</itemPath>
               </logicalFolder>
@@ -253,10 +284,10 @@
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
         <logicalFolder name="f1" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/src/ws2812_spi_enc.c</itemPath>
-          <itemPath>../drivers/ws2812/src/ws2812_port_sercom0_harmony.c</itemPath>
+          <itemPath>../drivers/ws2812/src/ws2812_port_sercom5_harmony.c</itemPath>
         </logicalFolder>
         <logicalFolder name="f2" displayName="wsen-pads" projectFiles="true">
-          <itemPath>../drivers/wsen-pads/src/wsen-pads_port_sercom2.c</itemPath>
+          <itemPath>../drivers/wsen-pads/src/wsen_pads_port_sercom3.c</itemPath>
         </logicalFolder>
       </logicalFolder>
       <itemPath>../src/main.c</itemPath>
@@ -318,6 +349,7 @@
       <C32>
         <property key="additional-warnings" value="true"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="cast-align" value="false"/>
         <property key="code-model" value="default"/>
         <property key="const-model" value="default"/>
@@ -396,6 +428,7 @@
         <property key="additional-options-use-response-files" value="false"/>
         <property key="additional-options-write-sla" value="false"/>
         <property key="allocate-dinit" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="code-dinit" value="false"/>
         <property key="ebase-addr" value=""/>
         <property key="enable-check-sections" value="false"/>
@@ -441,6 +474,7 @@
       <C32CPP>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="check-new" value="false"/>
         <property key="eh-specs" value="true"/>
         <property key="enable-app-io" value="false"/>
@@ -489,11 +523,6 @@
         <property key="wpo-lto" value="false"/>
       </C32Global>
       <Simulator>
-<<<<<<< Updated upstream
-        <property key="W0106_SIM_PERIPH_PARTIAL_SUPPORT" value="report"/>
-        <property key="W2700_MPU_ILLEGAL_DREGION" value="report"/>
-      </Simulator>
-=======
         <property key="codecoverage.enabled" value="Disable"/>
         <property key="codecoverage.enableoutputtofile" value="false"/>
         <property key="codecoverage.outputfile" value=""/>
@@ -1449,7 +1478,6 @@
                   value=""/>
         <property key="warningmessagebreakoptions.warningmessages" value="holdstate"/>
       </Tool>
->>>>>>> Stashed changes
     </conf>
   </confs>
 </configurationDescriptor>

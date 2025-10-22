@@ -100,6 +100,9 @@
     /* External Interrupt Controller Pin 2 */
 #define    EIC_PIN_2   (2U)
 
+    /* External Interrupt Controller Pin 3 */
+#define    EIC_PIN_3   (3U)
+
 #define    EIC_PIN_MAX  (16U)
 
 typedef uint16_t EIC_PIN;
