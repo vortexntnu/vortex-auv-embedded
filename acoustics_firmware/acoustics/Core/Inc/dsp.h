@@ -57,8 +57,8 @@ struct dsp_context {
     float32_t fir_state_i[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1];
     float32_t fir_state_q[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1];
 
-    // Matched filter reference (complex, interleaved [re,im,...])
-    const float32_t* mf_ref;  // time-reversed + conjugated replica
+    const float32_t* mf_ref_i;  // time-reversed + conjugated replica
+    const float32_t* mf_ref_q;  // time-reversed + conjugated replica
     uint32_t mf_len;          // in complex samples
 };
 
@@ -70,7 +70,8 @@ void dsp_init(struct dsp_context* ctx,
               const float32_t* fir_coeffs,  // FIR coeffs for decimator
               uint32_t fir_num_taps,        // number of taps
               uint32_t block_size_in,       // input block size used per call
-              const float32_t* mf_ref,
+              const float32_t* mf_ref_i,
+              const float32_t* mf_ref_q,
               uint32_t mf_len);
 
 void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
