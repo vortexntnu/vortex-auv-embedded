@@ -266,6 +266,7 @@ static void read_current_draw(void)
         {
             // Overcurrent detected
             turn_thrusters_off();
+            break;
         }
         
     }
