@@ -2430,6 +2430,633 @@ data:
           type: Dynamic
         type: Values
       type: String
+    DMAC_0_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: DMAC_0_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_31_0_ENABLE:
+      attributes:
+        id: NVIC_31_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_0_INTERRUPT_ENABLE:
+      attributes:
+        id: DMAC_0_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_31_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_31_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_0_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: DMAC_0_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_31_0_HANDLER:
+      attributes:
+        id: NVIC_31_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_0_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_0_INTERRUPT_HANDLER:
+      attributes:
+        id: DMAC_0_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_0_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_1_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: DMAC_1_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_32_0_ENABLE:
+      attributes:
+        id: NVIC_32_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_1_INTERRUPT_ENABLE:
+      attributes:
+        id: DMAC_1_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_32_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_32_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_1_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: DMAC_1_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_32_0_HANDLER:
+      attributes:
+        id: NVIC_32_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_1_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_1_INTERRUPT_HANDLER:
+      attributes:
+        id: DMAC_1_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_1_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_2_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: DMAC_2_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_33_0_ENABLE:
+      attributes:
+        id: NVIC_33_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_2_INTERRUPT_ENABLE:
+      attributes:
+        id: DMAC_2_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_33_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_33_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_2_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: DMAC_2_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_33_0_HANDLER:
+      attributes:
+        id: NVIC_33_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_2_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_2_INTERRUPT_HANDLER:
+      attributes:
+        id: DMAC_2_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_2_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_3_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: DMAC_3_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_34_0_ENABLE:
+      attributes:
+        id: NVIC_34_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_3_INTERRUPT_ENABLE:
+      attributes:
+        id: DMAC_3_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_34_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_34_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_3_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: DMAC_3_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_34_0_HANDLER:
+      attributes:
+        id: NVIC_34_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_3_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_3_INTERRUPT_HANDLER:
+      attributes:
+        id: DMAC_3_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_3_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_OTHER_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: DMAC_OTHER_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_35_0_ENABLE:
+      attributes:
+        id: NVIC_35_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_OTHER_INTERRUPT_ENABLE:
+      attributes:
+        id: DMAC_OTHER_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_35_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_35_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_OTHER_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: DMAC_OTHER_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_35_0_HANDLER:
+      attributes:
+        id: NVIC_35_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_OTHER_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_OTHER_INTERRUPT_HANDLER:
+      attributes:
+        id: DMAC_OTHER_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: DMAC_OTHER_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    DMAC_HEADER:
+      attributes:
+        id: DMAC_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    DMAC_SOURCE:
+      attributes:
+        id: DMAC_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    DMAC_SYS_INIT:
+      attributes:
+        id: DMAC_SYS_INIT
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    DMAC_SYS_DEF:
+      attributes:
+        id: DMAC_SYS_DEF
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    DMAC_ENABLE_CH_0:
+      attributes:
+        id: DMAC_ENABLE_CH_0
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    DMAC_HIGHEST_CHANNEL:
+      attributes:
+        id: DMAC_HIGHEST_CHANNEL
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DMA_ENABLE:
+      attributes:
+        id: DMA_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DMAC_ENABLE_CH_1:
+      attributes:
+        id: DMAC_ENABLE_CH_1
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    DMAC_CHCTRLA_TRIGACT_CH_0:
+      attributes:
+        id: DMAC_CHCTRLA_TRIGACT_CH_0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1'
+          type: Dynamic
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DMAC_CHCTRLA_TRIGSRC_CH_0:
+      attributes:
+        id: DMAC_CHCTRLA_TRIGSRC_CH_0
+      children:
+      - children:
+        - attributes:
+            value: ADC0_SEQ
+          type: User
+        type: Values
+      type: Combo
+    DMAC_CHCTRLA_TRIGACT_CH_1:
+      attributes:
+        id: DMAC_CHCTRLA_TRIGACT_CH_1
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1'
+          type: Dynamic
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DMAC_BTCTRL_SRCINC_CH_1:
+      attributes:
+        id: DMAC_BTCTRL_SRCINC_CH_1
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1'
+          type: Dynamic
+        - attributes:
+            value: '0'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DMAC_CHCTRLA_TRIGSRC_CH_1_PERID_VAL:
+      attributes:
+        id: DMAC_CHCTRLA_TRIGSRC_CH_1_PERID_VAL
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '68'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DMAC_BTCTRL_DSTINC_CH_1:
+      attributes:
+        id: DMAC_BTCTRL_DSTINC_CH_1
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DMAC_BTCTRL_BEATSIZE_CH_1:
+      attributes:
+        id: DMAC_BTCTRL_BEATSIZE_CH_1
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DMAC_CHCTRLA_TRIGSRC_CH_1:
+      attributes:
+        id: DMAC_CHCTRLA_TRIGSRC_CH_1
+      children:
+      - children:
+        - attributes:
+            value: ADC0_RESRDY
+          type: User
+        type: Values
+      type: Combo
+    DMAC_BTCTRL_DSTINC_CH_0:
+      attributes:
+        id: DMAC_BTCTRL_DSTINC_CH_0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: KeyValueSet
+    DMAC_BTCTRL_SRCINC_CH_0:
+      attributes:
+        id: DMAC_BTCTRL_SRCINC_CH_0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1'
+          type: Dynamic
+        type: Values
+      type: KeyValueSet
+    DMAC_BTCTRL_BEATSIZE_CH_0:
+      attributes:
+        id: DMAC_BTCTRL_BEATSIZE_CH_0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DMAC_CHCTRLA_TRIGSRC_CH_0_PERID_VAL:
+      attributes:
+        id: DMAC_CHCTRLA_TRIGSRC_CH_0_PERID_VAL
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '69'
+          type: Dynamic
+        type: Values
+      type: Integer
   userData:
     children:
     - attributes:

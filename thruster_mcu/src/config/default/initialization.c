@@ -173,6 +173,8 @@ void SYS_Initialize ( void* data )
 
     EVSYS_Initialize();
 
+    DMAC_Initialize();
+
     PM_Initialize();
 
     CAN0_Initialize();

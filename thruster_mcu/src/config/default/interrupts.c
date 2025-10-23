@@ -78,7 +78,7 @@ void __attribute__((optimize("-O1"), long_call, noreturn, used))Dummy_Handler(vo
 }
 
 /* MISRAC 2012 deviation block start */
-/* MISRA C-2012 Rule 8.6 deviated 127 times.  Deviation record ID -  H3_MISRAC_2012_R_8_6_DR_1 */
+/* MISRA C-2012 Rule 8.6 deviated 125 times.  Deviation record ID -  H3_MISRAC_2012_R_8_6_DR_1 */
 /* Device vectors list dummy definition*/
 extern void SVCall_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void PendSV_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -114,8 +114,6 @@ extern void EIC_EXTINT_15_Handler      ( void ) __attribute__((weak, alias("Dumm
 extern void FREQM_Handler              ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void NVMCTRL_0_Handler          ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void NVMCTRL_1_Handler          ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
-extern void DMAC_0_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
-extern void DMAC_1_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void DMAC_2_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void DMAC_3_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void DMAC_OTHER_Handler         ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -262,8 +260,8 @@ const H3DeviceVectors exception_table=
     .pfnFREQM_Handler              = FREQM_Handler,
     .pfnNVMCTRL_0_Handler          = NVMCTRL_0_Handler,
     .pfnNVMCTRL_1_Handler          = NVMCTRL_1_Handler,
-    .pfnDMAC_0_Handler             = DMAC_0_Handler,
-    .pfnDMAC_1_Handler             = DMAC_1_Handler,
+    .pfnDMAC_0_Handler             = DMAC_0_InterruptHandler,
+    .pfnDMAC_1_Handler             = DMAC_1_InterruptHandler,
     .pfnDMAC_2_Handler             = DMAC_2_Handler,
     .pfnDMAC_3_Handler             = DMAC_3_Handler,
     .pfnDMAC_OTHER_Handler         = DMAC_OTHER_Handler,
