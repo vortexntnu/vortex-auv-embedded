@@ -1,4 +1,5 @@
 #include "dsp.h"
+#include "arm_math_types.h"
 #include "dsp/support_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
@@ -13,55 +14,40 @@ static const float32_t BUTTER6_COEFFS_SOS[5 * DSP_MAX_BIQUADS] = {
     // Biquad 3
     1.00000000f, 2.00000000f, 1.00000000f, -1.99521656f, 0.99524618f};
 
-// ======= Init =======
+
+static const float32_t FIR_CONSTANTS[1]; // TODO add constants
+
+
+
+
 
 void dsp_init(struct dsp_context* ctx,
-              float32_t fs_in,
-              float32_t f0,
-              float32_t fc_lp,
-              uint32_t decim,               // M
-              const float32_t* fir_coeffs,  // FIR coeffs for decimator
-              uint32_t fir_num_taps,        // number of taps
-              uint32_t block_size_in,       // input block size used per call
               const float32_t* mf_ref_i,
               const float32_t* mf_ref_q,
               uint32_t mf_len) {
     memset(ctx, 0, sizeof(*ctx));
 
-    // Basic config
-    ctx->fs_in = fs_in;
-    ctx->f0 = f0;
-    ctx->fc_lp = fc_lp;
-    ctx->decim = decim;
     ctx->mf_ref_i = mf_ref_i;
     ctx->mf_ref_q = mf_ref_q;
     ctx->mf_len = mf_len;
 
-    // NCO (start at phase 0)
-    ctx->dphase = 2.0f * PI * (f0 / fs_in);
+    ctx->dphase = 2.0f * PI * ((float) PINGER_FREQUENCY / SAMPLING_FREQUENCY);
     arm_sin_cos_f32(ctx->dphase, &ctx->sin_d, &ctx->cos_d);
     ctx->cos_p = 1.0f;
     ctx->sin_p = 0.0f;
 
-    // IIR LPF init (3 biquads)
-    ctx->num_biquads = DSP_MAX_BIQUADS;
-    memcpy(ctx->biquad_coeffs, BUTTER6_COEFFS_SOS, sizeof(BUTTER6_COEFFS_SOS));
-    arm_biquad_cascade_df2T_init_f32(&ctx->iir_i, ctx->num_biquads,
-                                     ctx->biquad_coeffs, ctx->iir_state_i);
-    arm_biquad_cascade_df2T_init_f32(&ctx->iir_q, ctx->num_biquads,
-                                     ctx->biquad_coeffs, ctx->iir_state_q);
+    arm_biquad_cascade_df2T_init_f32(&ctx->iir_i, DSP_MAX_BIQUADS,
+                                     BUTTER6_COEFFS_SOS, ctx->iir_state_i);
+    arm_biquad_cascade_df2T_init_f32(&ctx->iir_q, DSP_MAX_BIQUADS,
+                                     BUTTER6_COEFFS_SOS, ctx->iir_state_q);
 
-    ctx->fir_coeffs = fir_coeffs;
-    ctx->fir_num_taps = fir_num_taps;
-    ctx->block_size_in = block_size_in;
+    arm_fir_decimate_init_f32(&ctx->fir_i, (uint16_t)NUM_TAPS,
+                              (uint8_t)DECIMATE_FACTOR, FIR_CONSTANTS,
+                              ctx->fir_state_i, BLOCK_SIZE_IN);
 
-    arm_fir_decimate_init_f32(&ctx->fir_i, (uint16_t)ctx->fir_num_taps,
-                              (uint8_t)ctx->decim, ctx->fir_coeffs,
-                              ctx->fir_state_i, ctx->block_size_in);
-
-    arm_fir_decimate_init_f32(&ctx->fir_q, (uint16_t)ctx->fir_num_taps,
-                              (uint8_t)ctx->decim, ctx->fir_coeffs,
-                              ctx->fir_state_q, ctx->block_size_in);
+    arm_fir_decimate_init_f32(&ctx->fir_q, (uint16_t)NUM_TAPS,
+                              (uint8_t)DECIMATE_FACTOR, FIR_CONSTANTS,
+                              ctx->fir_state_q, BLOCK_SIZE_IN);
 }
 
 // ======= Mix int16 (Q15) to complex baseband float32 =======
