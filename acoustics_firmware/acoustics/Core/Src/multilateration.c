@@ -1,6 +1,7 @@
 #include "multilateration.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include "arm_math.h"
 
 static inline void vec3_normalize_arm(const float32_t in[3], float32_t out[3]) {
@@ -58,13 +59,6 @@ static inline void projector_from_u_arm(const float32_t u[3], float32_t P[9]) {
     arm_mat_sub_f32(&Im, &UUTm, &Pm);
 }
 
-void ml_init(struct ml_accumulator* ml) {
-    for (int i = 0; i < 9; i++)
-        ml->A[i] = 0.0f;
-    ml->b[0] = ml->b[1] = ml->b[2] = 0.0f;
-    ml->K = 0u;
-}
-
 void ml_add_ray(struct ml_accumulator* ml,
                 const float32_t p[3],
                 const float32_t u_in[3],
@@ -105,7 +99,7 @@ bool ml_solve_batch(const float32_t* poses,    // K×3
                     uint32_t K,
                     float32_t s_out[3]) {
     struct ml_accumulator ml;
-    ml_init(&ml);
+    memset(&ml, 0, sizeof(ml));
     for (uint32_t k = 0; k < K; k++) {
         const float32_t* p = &poses[3 * k];
         const float32_t* u = &dirs[3 * k];
