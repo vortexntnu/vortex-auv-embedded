@@ -45,7 +45,17 @@ static CAN_RX_BUFFER rx_buf;
 static volatile uint32_t can_status = 0;
 
 /* ADC */
-static uint32_t adc_seq_regs[8] = {0x1804, 0x1805, 0x1806, 0x1807, 0x1808, 0x1809, 0x1810, 0x1811};
+static const ADC_POSINPUT adc_seq_regs[8] = {
+    ADC_POSINPUT_AIN0, 
+    ADC_POSINPUT_AIN1, 
+    ADC_POSINPUT_AIN2, 
+    ADC_POSINPUT_AIN3, 
+    ADC_POSINPUT_AIN4, 
+    ADC_POSINPUT_AIN5, 
+    ADC_POSINPUT_AIN6, 
+    ADC_POSINPUT_AIN7
+};
+
 static volatile uint16_t adc_res[8] = {0};
 static float input_voltage;
 
@@ -73,6 +83,7 @@ static void turn_lights_off(void);
 static void turn_lights_on(void);
 static void read_current_draw(void);
 
+static inline uint16_t read_current_settled(ADC_POSINPUT pos);
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
 static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us);
@@ -218,7 +229,7 @@ static void read_current_draw(void)
 {
     for (size_t reg = 0; reg < 8; reg++) 
     {
-        ADC0_ChannelSelect(adc_seq_regs[reg], ADC_NEGINPUT_GND);
+        adc_res[reg] = read_current_settled(adc_seq_regs[reg]);
         
         input_voltage = (float)adc_res[reg] * ADC_VREF / 4095U; // 2^12 - 1 = 4095
         
@@ -233,6 +244,18 @@ static void read_current_draw(void)
         
     }
     
+}
+
+static inline uint16_t read_current_settled(ADC_POSINPUT pos)
+{
+    ADC0_ChannelSelect(pos, ADC_NEGINPUT_GND);
+    
+    /* Discard first read */
+    while (!ADC0_ConversionStatusGet()) {/* Wait */};
+    
+    while (!ADC0_ConversionStatusGet()) {/* Wait */};
+    
+    return ADC0_ConversionResultGet();
 }
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) 
