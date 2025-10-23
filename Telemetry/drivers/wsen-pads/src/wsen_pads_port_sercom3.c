@@ -1,3 +1,7 @@
+#include <plib_eic.h>
+#include <plib_port.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include "plib_sercom3_i2c_master.h"
 
 #define WSEN_PADS_ADDR 0x5D  // SAO = 1 (0x5C if SAO = 0)
@@ -11,6 +15,31 @@
 #define REG_DATA_T_L 0x2B
 
 #define EXPECTED_DEVICE_ID 0xB3
+
+typedef enum {
+    WSEN_IDLE = 0,
+    WSEN_KICK_PRESSURE,  // issue read of 3 bytes
+    WSEN_WAIT_PRESSURE,  // waiting for callback
+    WSEN_KICK_TEMP,      // issue read of 2 bytes
+    WSEN_WAIT_TEMP,      // waiting for callback
+    WSEN_DONE,
+    WSEN_ERROR
+} WsenState;
+
+typedef struct {
+    volatile WsenState state;
+    volatile bool done;
+    volatile SERCOM_I2C_ERROR err;
+
+    volatile float lastPressure;
+    volatile float lastTemp;
+
+    uint8_t reg;
+    uint8_t pBuf[3];
+    uint8_t tBuf[2];
+} WsenCycle;
+
+static WsenCycle cycle;
 
 int wsen_init(void) {
     uint8_t buf[2];
@@ -31,6 +60,7 @@ int wsen_init(void) {
     };
     return 0;
 }
+
 /**
  * @brief Can be used to check successful connection with wsen-pads
  */
@@ -46,6 +76,128 @@ int wsen_check_device_id(void) {
     } else {
         return -1;
     }
+}
+
+static bool kick_read(uint8_t reg, uint8_t* buf, uint32_t len) {
+    cycle.reg = reg;
+    return SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &cycle.reg, 1, buf, len);
+}
+
+static void sercom3I2cCb(uintptr_t context) {
+    (void)context;
+    cycle.err = SERCOM3_I2C_ErrorGet();
+
+    if (cycle.err != SERCOM_I2C_ERROR_NONE) {
+        cycle.state = WSEN_ERROR;
+        cycle.done = true;
+        return;
+    }
+
+    switch (cycle.state) {
+        case WSEN_WAIT_PRESSURE: {
+            int32_t raw = (int32_t)((cycle.pBuf[2] << 16) |
+                                    (cycle.pBuf[1] << 8) | cycle.pBuf[0]);
+            if (raw & 0x00800000)
+                raw |= 0xFF000000;
+            cycle.lastPressure = (float)raw / 40960.0f;
+            cycle.state = WSEN_KICK_TEMP;
+
+            if (!kick_read(REG_DATA_T_L, cycle.tBuf, 2)) {
+                // Bus busy; try again next tick
+                cycle.state = WSEN_KICK_TEMP;
+            } else {
+                cycle.state = WSEN_WAIT_TEMP;
+            }
+            break;
+        }
+
+        case WSEN_WAIT_TEMP: {
+            int16_t rawT = (int16_t)((cycle.tBuf[1] << 8) | cycle.tBuf[0]);
+            cycle.lastTemp = (float)rawT * 0.01f;  // 0.01 °C per LSB
+            cycle.state = WSEN_DONE;
+            cycle.done = true;
+            break;
+        }
+
+        default:
+            cycle.state = WSEN_ERROR;
+            cycle.done = true;
+            break;
+    }
+}
+
+static void i2c_init(void) {
+    SERCOM3_I2C_Initialize();
+    SERCOM3_I2C_CallbackRegister(sercom3I2cCb, 0);
+    cycle.state = WSEN_IDLE;
+    cycle.done = false;
+    cycle.err = SERCOM_I2C_ERROR_NONE;
+}
+
+void wsenCycleStart(void) {
+    if (cycle.state != WSEN_IDLE && cycle.state != WSEN_DONE &&
+        cycle.state != WSEN_ERROR) {
+        return;  // already running
+    }
+    cycle.done = false;
+    cycle.err = SERCOM_I2C_ERROR_NONE;
+    cycle.state = WSEN_KICK_PRESSURE;
+
+    if (!kick_read(REG_DATA_P_XL, cycle.pBuf, 3)) {
+        // If I²C was busy, we'll retry from main loop by calling
+        // wsenCycleTick()
+        cycle.state = WSEN_KICK_PRESSURE;
+    } else {
+        cycle.state = WSEN_WAIT_PRESSURE;
+    }
+}
+
+void wsenCycleTick(void) {
+    if (cycle.state == WSEN_KICK_PRESSURE) {
+        if (kick_read(REG_DATA_P_XL, cycle.pBuf, 3)) {
+            cycle.state = WSEN_WAIT_PRESSURE;
+        }
+    } else if (cycle.state == WSEN_KICK_TEMP) {
+        if (kick_read(REG_DATA_T_L, cycle.tBuf, 2)) {
+            cycle.state = WSEN_WAIT_TEMP;
+        }
+    }
+}
+
+bool wsenCycleDoneOk(float* kPa, float* degC) {
+    if (!cycle.done || cycle.state == WSEN_ERROR)
+        return false;
+    *kPa = cycle.lastPressure;
+    *degC = cycle.lastTemp;
+    return true;
+}
+
+bool wsenCycleFailed(SERCOM_I2C_ERROR* errOut) {
+    if (!cycle.done || cycle.state != WSEN_ERROR)
+        return false;
+    if (errOut)
+        *errOut = cycle.err;
+    return true;
+}
+
+void wsenReset(void) {
+    cycle.state = WSEN_IDLE;
+    cycle.done = false;
+}
+
+static void drdy_isr(uintptr_t context) {
+    (void)context;
+    wsenCycleStart();
+}
+
+void drdy_init(void) {
+    PORT_PinPeripheralFunctionConfig(PORT_PIN_PA19, PERIPHERAL_FUNCTION_A);
+
+    EIC_Initialize();
+    EIC_CallbackRegister(EIC_PIN_3, drdy_isr, 0);
+    EIC_InterruptEnable(EIC_PIN_3);
+
+    i2c_init();
 }
 
 int read_pressure(float* pressure) {
