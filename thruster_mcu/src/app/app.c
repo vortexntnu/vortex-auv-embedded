@@ -13,6 +13,9 @@ static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 static const uint32_t CAN_EVENT_ID_BASE         = 0x369U;
 static const uint8_t  MESSAGES_TO_READ          = 1U;
 static const float    ADC_VREF                  = 3.3f;
+static const float    R_SHUNT_OHMS              = 0.005f; // Placeholder for the actual shunt data
+static const float    INA_GAIN                  = 50.0f;  // Placeholder for the actual INA gain
+static const uint8_t  THRUSTER_RATED_CURRENT    = 15;     // From TSD7 datasheet  
 
 /* --- Types --- */
 typedef struct {
@@ -247,6 +250,26 @@ static void CAN_Transmit_Callback(uintptr_t context) {
         /* Optionally, queue next TX or debug */
 
     }
+}
+
+static void read_current_draw(void)
+{
+    for (size_t reg = 0; reg < 8; reg++) 
+    {
+        ADC0_ChannelSelect(adc_seq_regs[reg], ADC_NEGINPUT_GND);
+        
+        input_voltage = (float)adc_res[reg] * ADC_VREF / 4095U; // 2^12 - 1 = 4095
+        
+        float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
+        
+        if (amps > THRUSTER_RATED_CURRENT) 
+        {
+            // Overcurrent detected
+            turn_thrusters_off();
+        }
+        
+    }
+    
 }
 
 
