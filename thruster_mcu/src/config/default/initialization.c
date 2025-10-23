@@ -177,6 +177,8 @@ void SYS_Initialize ( void* data )
 
     CAN0_Initialize();
 
+    TC0_TimerInitialize();
+
     TCC1_PWMInitialize();
 
     TCC2_PWMInitialize();

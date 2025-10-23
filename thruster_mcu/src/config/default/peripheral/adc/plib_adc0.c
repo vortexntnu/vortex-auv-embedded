@@ -61,6 +61,7 @@
 // Section: Global Data
 // *****************************************************************************
 // *****************************************************************************
+static volatile ADC_CALLBACK_OBJ ADC0_CallbackObject;
 
 #define ADC0_BIASCOMP_POS     (2U)
 #define ADC0_BIASCOMP_Msk     (0x7U << ADC0_BIASCOMP_POS)
@@ -96,7 +97,7 @@ void ADC0_Initialize( void )
             | ADC_CALIB_BIASREFBUF(((*(uint32_t*)SW0_ADDR) & ADC0_BIASREFBUF_Msk)>> ADC0_BIASREFBUF_POS ));
 
     /* prescaler */
-    ADC0_REGS->ADC_CTRLA = ADC_CTRLA_PRESCALER_DIV8;
+    ADC0_REGS->ADC_CTRLA = ADC_CTRLA_PRESCALER_DIV4;
 
     /* Sampling length */
     ADC0_REGS->ADC_SAMPCTRL = (uint8_t)ADC_SAMPCTRL_SAMPLEN(3UL);
@@ -114,6 +115,8 @@ void ADC0_Initialize( void )
 
     /* Clear all interrupt flags */
     ADC0_REGS->ADC_INTFLAG = ADC_INTFLAG_Msk;
+    /* Enable interrupts */
+    ADC0_REGS->ADC_INTENSET = ADC_INTENSET_RESRDY_Msk;
 
     ADC0_REGS->ADC_CTRLA |= ADC_CTRLA_RUNSTDBY_Msk;
     while(ADC0_REGS->ADC_SYNCBUSY != 0U)
@@ -222,16 +225,23 @@ void ADC0_InterruptsDisable(ADC_STATUS interruptMask)
     ADC0_REGS->ADC_INTENCLR = interruptMask;
 }
 
-/* Check whether result is ready */
-bool ADC0_ConversionStatusGet( void )
+/* Register callback function */
+void ADC0_CallbackRegister( ADC_CALLBACK callback, uintptr_t context )
 {
-    bool status;
-    status =  (((ADC0_REGS->ADC_INTFLAG & ADC_INTFLAG_RESRDY_Msk) >> ADC_INTFLAG_RESRDY_Pos) != 0U);
-    if (status == true)
-    {
-        /* Clear interrupt flag */
-        ADC0_REGS->ADC_INTFLAG = ADC_INTFLAG_RESRDY_Msk;
-    }
-    return status;
+    ADC0_CallbackObject.callback = callback;
+
+    ADC0_CallbackObject.context = context;
 }
 
+void __attribute__((used)) ADC0_RESRDY_InterruptHandler( void )
+{
+    ADC_STATUS status;
+    status = (ADC_STATUS) (ADC0_REGS->ADC_INTFLAG & ADC_INTFLAG_RESRDY_Msk);
+    /* Clear interrupt flag */
+    ADC0_REGS->ADC_INTFLAG = ADC_INTFLAG_RESRDY_Msk;
+    if (ADC0_CallbackObject.callback != NULL)
+    {
+        uintptr_t context = ADC0_CallbackObject.context;
+        ADC0_CallbackObject.callback(status, context);
+    }
+}

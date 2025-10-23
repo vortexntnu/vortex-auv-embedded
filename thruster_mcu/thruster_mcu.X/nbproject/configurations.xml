@@ -47,6 +47,10 @@
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.h</itemPath>
               </logicalFolder>
             </logicalFolder>
+            <logicalFolder name="tc" displayName="tc" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/tc/plib_tc_common.h</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc0.h</itemPath>
+            </logicalFolder>
             <logicalFolder name="tcc" displayName="tcc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc1.h</itemPath>
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc_common.h</itemPath>
@@ -210,6 +214,7 @@
           <itemPath>thruster_mcu_default/components/stdio.yml</itemPath>
           <itemPath>thruster_mcu_default/components/sercom2.yml</itemPath>
           <itemPath>thruster_mcu_default/components/tcc1.yml</itemPath>
+          <itemPath>thruster_mcu_default/components/tc0.yml</itemPath>
           <itemPath>thruster_mcu_default/components/pm.yml</itemPath>
           <itemPath>thruster_mcu_default/components/evsys.yml</itemPath>
           <itemPath>thruster_mcu_default/components/tcc0.yml</itemPath>
@@ -281,6 +286,9 @@
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.c</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.c</itemPath>
               </logicalFolder>
+            </logicalFolder>
+            <logicalFolder name="tc" displayName="tc" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/tc/plib_tc0.c</itemPath>
             </logicalFolder>
             <logicalFolder name="tcc" displayName="tcc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc1.c</itemPath>

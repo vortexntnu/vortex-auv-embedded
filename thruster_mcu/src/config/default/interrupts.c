@@ -78,7 +78,7 @@ void __attribute__((optimize("-O1"), long_call, noreturn, used))Dummy_Handler(vo
 }
 
 /* MISRAC 2012 deviation block start */
-/* MISRA C-2012 Rule 8.6 deviated 128 times.  Deviation record ID -  H3_MISRAC_2012_R_8_6_DR_1 */
+/* MISRA C-2012 Rule 8.6 deviated 126 times.  Deviation record ID -  H3_MISRAC_2012_R_8_6_DR_1 */
 /* Device vectors list dummy definition*/
 extern void SVCall_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void PendSV_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -178,7 +178,6 @@ extern void TCC3_MC1_Handler           ( void ) __attribute__((weak, alias("Dumm
 extern void TCC4_OTHER_Handler         ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TCC4_MC0_Handler           ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TCC4_MC1_Handler           ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
-extern void TC0_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TC1_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TC2_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TC3_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -190,7 +189,6 @@ extern void PDEC_OTHER_Handler         ( void ) __attribute__((weak, alias("Dumm
 extern void PDEC_MC0_Handler           ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void PDEC_MC1_Handler           ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void ADC0_OTHER_Handler         ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
-extern void ADC0_RESRDY_Handler        ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void ADC1_OTHER_Handler         ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void ADC1_RESRDY_Handler        ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void AC_Handler                 ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -336,7 +334,7 @@ const H3DeviceVectors exception_table=
     .pfnTCC4_OTHER_Handler         = TCC4_OTHER_Handler,
     .pfnTCC4_MC0_Handler           = TCC4_MC0_Handler,
     .pfnTCC4_MC1_Handler           = TCC4_MC1_Handler,
-    .pfnTC0_Handler                = TC0_Handler,
+    .pfnTC0_Handler                = TC0_TimerInterruptHandler,
     .pfnTC1_Handler                = TC1_Handler,
     .pfnTC2_Handler                = TC2_Handler,
     .pfnTC3_Handler                = TC3_Handler,
@@ -348,7 +346,7 @@ const H3DeviceVectors exception_table=
     .pfnPDEC_MC0_Handler           = PDEC_MC0_Handler,
     .pfnPDEC_MC1_Handler           = PDEC_MC1_Handler,
     .pfnADC0_OTHER_Handler         = ADC0_OTHER_Handler,
-    .pfnADC0_RESRDY_Handler        = ADC0_RESRDY_Handler,
+    .pfnADC0_RESRDY_Handler        = ADC0_RESRDY_InterruptHandler,
     .pfnADC1_OTHER_Handler         = ADC1_OTHER_Handler,
     .pfnADC1_RESRDY_Handler        = ADC1_RESRDY_Handler,
     .pfnAC_Handler                 = AC_Handler,

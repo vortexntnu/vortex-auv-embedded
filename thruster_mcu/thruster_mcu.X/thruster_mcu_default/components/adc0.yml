@@ -230,8 +230,38 @@ data:
       children:
       - children:
         - attributes:
-            value: HW Event Trigger
+            value: SW Trigger
           type: User
         type: Values
       type: Combo
+    ADC_INTENSET_RESRDY:
+      attributes:
+        id: ADC_INTENSET_RESRDY
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_CTRLA_PRESCALER:
+      attributes:
+        id: ADC_CTRLA_PRESCALER
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    ADC_EVCTRL_RESRDYEO:
+      attributes:
+        id: ADC_EVCTRL_RESRDYEO
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

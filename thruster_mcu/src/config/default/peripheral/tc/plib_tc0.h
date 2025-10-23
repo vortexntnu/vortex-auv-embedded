@@ -1,17 +1,17 @@
 /*******************************************************************************
-  Analog-to-Digital Converter(ADC0) PLIB
+  Timer/Counter(TC0) PLIB
 
   Company
     Microchip Technology Inc.
 
   File Name
-    plib_adc0.h
+    plib_tc0.h
 
   Summary
-    ADC0 PLIB Header File.
+    TC0 PLIB Header File.
 
   Description
-    This file defines the interface to the ADC peripheral library. This
+    This file defines the interface to the TC peripheral library. This
     library provides access to and control of the associated peripheral
     instance.
 
@@ -45,8 +45,8 @@
 *******************************************************************************/
 // DOM-IGNORE-END
 
-#ifndef PLIB_ADC0_H      // Guards against multiple inclusion
-#define PLIB_ADC0_H
+#ifndef PLIB_TC0_H      // Guards against multiple inclusion
+#define PLIB_TC0_H
 
 // *****************************************************************************
 // *****************************************************************************
@@ -57,7 +57,7 @@
 */
 
 #include "device.h"
-#include "plib_adc_common.h"
+#include "plib_tc_common.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus // Provide C Compatibility
@@ -77,44 +77,40 @@
 */
 
 // *****************************************************************************
-
-
-// *****************************************************************************
 // *****************************************************************************
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
 /* The following functions make up the methods (set of possible operations) of
-    this interface.
+   this interface.
 */
 
-void ADC0_Initialize( void );
+// *****************************************************************************
 
-void ADC0_Enable( void );
+void TC0_TimerInitialize( void );
 
-void ADC0_Disable( void );
+void TC0_TimerStart( void );
 
-void ADC0_ChannelSelect( ADC_POSINPUT positiveInput, ADC_NEGINPUT negativeInput );
+void TC0_TimerStop( void );
 
-void ADC0_ConversionStart( void );
-
-uint16_t ADC0_ConversionResultGet( void );
-
-void ADC0_ComparisonWindowSet(uint16_t low_threshold, uint16_t high_threshold);
-
-void ADC0_WindowModeSet(ADC_WINMODE mode);
-
-uint16_t ADC0_LastConversionResultGet( void );
-
-void ADC0_InterruptsClear(ADC_STATUS interruptMask);
-
-void ADC0_InterruptsEnable(ADC_STATUS interruptMask);
-
-void ADC0_InterruptsDisable(ADC_STATUS interruptMask);
+uint32_t TC0_TimerFrequencyGet( void );
 
 
-void ADC0_CallbackRegister( ADC_CALLBACK callback, uintptr_t context );
+void TC0_Timer16bitPeriodSet( uint16_t period );
 
+uint16_t TC0_Timer16bitPeriodGet( void );
+
+uint16_t TC0_Timer16bitCounterGet( void );
+
+void TC0_Timer16bitCounterSet( uint16_t count );
+
+
+
+
+void TC0_TimerCallbackRegister( TC_TIMER_CALLBACK callback, uintptr_t context );
+
+
+void TC0_TimerCommandSet(TC_COMMAND command);
 
 
 // DOM-IGNORE-BEGIN
@@ -125,4 +121,4 @@ void ADC0_CallbackRegister( ADC_CALLBACK callback, uintptr_t context );
 #endif
 // DOM-IGNORE-END
 
-#endif /* PLIB_ADC0_H */
+#endif /* PLIB_TC0_H */

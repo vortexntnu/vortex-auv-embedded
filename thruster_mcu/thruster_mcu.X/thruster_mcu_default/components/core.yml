@@ -189,7 +189,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x37ff'
+            value: '0x77ff'
           type: Dynamic
         type: Values
       type: String
@@ -2232,6 +2232,204 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    TC0_CLOCK_FREQUENCY:
+      attributes:
+        id: TC0_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '60000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_9_FREQ:
+      attributes:
+        id: GCLK_ID_9_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '60000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_9_CHEN:
+      attributes:
+        id: GCLK_ID_9_CHEN
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC0_CLOCK_ENABLE:
+      attributes:
+        id: TC0_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC0_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: TC0_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_107_0_ENABLE:
+      attributes:
+        id: NVIC_107_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC0_INTERRUPT_ENABLE:
+      attributes:
+        id: TC0_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: tc0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_107_0_HANDLER:
+      attributes:
+        id: NVIC_107_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: TC0_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    TC0_INTERRUPT_HANDLER:
+      attributes:
+        id: TC0_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: tc0
+            value: TC0_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    NVIC_107_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_107_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC0_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: TC0_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: tc0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    ADC0_RESRDY_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: ADC0_RESRDY_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_119_0_ENABLE:
+      attributes:
+        id: NVIC_119_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    ADC0_RESRDY_INTERRUPT_ENABLE:
+      attributes:
+        id: ADC0_RESRDY_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: adc0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_119_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_119_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    ADC0_RESRDY_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: ADC0_RESRDY_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: adc0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_119_0_HANDLER:
+      attributes:
+        id: NVIC_119_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: ADC0_RESRDY_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    ADC0_RESRDY_INTERRUPT_HANDLER:
+      attributes:
+        id: ADC0_RESRDY_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: adc0
+            value: ADC0_RESRDY_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
   userData:
     children:
     - attributes:

@@ -61,6 +61,7 @@
 #include "peripheral/cmcc/plib_cmcc.h"
 #include "peripheral/pm/plib_pm.h"
 #include "peripheral/can/plib_can0.h"
+#include "peripheral/tc/plib_tc0.h"
 #include "peripheral/tcc/plib_tcc1.h"
 #include "peripheral/tcc/plib_tcc2.h"
 #include "peripheral/tcc/plib_tcc0.h"
