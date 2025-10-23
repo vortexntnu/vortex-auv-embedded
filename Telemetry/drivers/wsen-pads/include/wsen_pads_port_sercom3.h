@@ -11,6 +11,7 @@ extern "C" {
 
 int wsen_init(void);
 int wsen_check_device_id(void);
+void i2c_init(void);
 void drdy_init(void);
 void wsenCycleStart(void);
 void wsenCycleTick(void);

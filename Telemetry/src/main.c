@@ -22,13 +22,13 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stddef.h>                     // Defines NULL
-#include <stdbool.h>                    // Defines true
-#include <stdlib.h>                     // Defines EXIT_FAILURE
-#include "definitions.h"                // SYS function prototypes
+#include <stdbool.h>      // Defines true
+#include <stddef.h>       // Defines NULL
+#include <stdlib.h>       // Defines EXIT_FAILURE
+#include "definitions.h"  // SYS function prototypes
 
-#include "led_facade.h" 
-
+#include "led_facade.h"
+#include "wsen_pads_port_sercom3.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -36,26 +36,42 @@
 // *****************************************************************************
 // *****************************************************************************
 
-int main ( void )
-{
+int main(void) {
     // system init...
-    led_init();                              // calls ws_led_sercom5_init_2p4mhz(),
-                                             // ws2812enc_init(), and bind()
+    led_init();  // calls ws_led_sercom5_init_2p4mhz(),
+                 // ws2812enc_init(), and bind()
 
     led_set(0, 0x00, 0x10, 0x00);
     led_commit_async();
+
+    i2c_init();
+    wsen_init();
+    drdy_init();
+
+    float pressure = 0.0f;
+    float temp = 0.0f;
+
     while (1) {
         if (!led_busy()) {
             // update again if needed
         }
+
+        wsenCycleTick();
+        if (wsenCycleDoneOk(&pressure, &temp)) {
+            wsenReset();
+            // TODO: do something with pressure and temp
+        } else {
+            SERCOM_I2C_ERROR err;
+            if (wsenCycleFailed(&err)) {
+                wsenReset();
+            }
+        }
     }
     /* Execution should not come here during normal operation */
 
-    return ( EXIT_FAILURE );
+    return (EXIT_FAILURE);
 }
-
 
 /*******************************************************************************
  End of File
 */
-

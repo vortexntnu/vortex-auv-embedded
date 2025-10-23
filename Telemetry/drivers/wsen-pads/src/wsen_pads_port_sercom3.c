@@ -126,7 +126,7 @@ static void sercom3I2cCb(uintptr_t context) {
     }
 }
 
-static void i2c_init(void) {
+void i2c_init(void) {
     SERCOM3_I2C_Initialize();
     SERCOM3_I2C_CallbackRegister(sercom3I2cCb, 0);
     cycle.state = WSEN_IDLE;
@@ -196,8 +196,6 @@ void drdy_init(void) {
     EIC_Initialize();
     EIC_CallbackRegister(EIC_PIN_3, drdy_isr, 0);
     EIC_InterruptEnable(EIC_PIN_3);
-
-    i2c_init();
 }
 
 int read_pressure(float* pressure) {
