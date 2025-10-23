@@ -12,7 +12,7 @@ static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 static const uint32_t CAN_EVENT_ID_BASE         = 0x369U;
 static const uint8_t  MESSAGES_TO_READ          = 1U;
-static const float    ADC_VREF                      = 3.3f;
+static const float    ADC_VREF                  = 3.3f;
 
 /* --- Types --- */
 typedef struct {
@@ -90,6 +90,8 @@ void App_Init(void)
     memset(&rx_buf, 0x00, sizeof(rx_buf));
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 
+    ADC0_Enable();
+    
     /* Enable watchdog */
     WDT_Enable();
 }
