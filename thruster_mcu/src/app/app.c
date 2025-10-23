@@ -140,6 +140,8 @@ static void message_handler(void)
             /* Unknown event: ignore */
             break;
     }
+    
+    read_current_draw();
 
     /* Re-arm RX FIFO for next frame */
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
