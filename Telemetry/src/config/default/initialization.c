@@ -178,6 +178,8 @@ void SYS_Initialize ( void* data )
 
     SERCOM0_SPI_Initialize();
 
+    DMAC_Initialize();
+
     CAN0_Initialize();
 
     EIC_Initialize();

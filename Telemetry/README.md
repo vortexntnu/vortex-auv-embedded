@@ -56,10 +56,10 @@ Add header search paths so the compiler can find your module headers.
 2) Under **Conf: [your config] → XC32 (vX.Y.Z)**, select **xc32-gcc**.  
 3) Set **Option categories** = **Preprocessing and messages**.  
 4) **Include directories (-I)** → **…** → add (one per line):
-   - `app/include`
-   - `drivers/ws2812/include`
-   - `drivers/wsen_pads/include` *(add any other driver include paths)*
-   - `utils/include`
+   - `../app/include`
+   - `../drivers/ws2812/include`
+   - `../drivers/wsen_pads/include` *(add any other driver include paths)*
+   - `../utils/include`
 5) **OK** → **Apply**.
 
 **If you also build C++:** repeat under **xc32-g++**.

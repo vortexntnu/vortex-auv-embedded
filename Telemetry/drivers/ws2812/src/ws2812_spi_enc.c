@@ -1,8 +1,40 @@
-/*
- * ws2812_spi_enc.c  (non-blocking core)
+/*  
+ Source File
+ 
+ Platform:
+    ATSAMC21 
+
+ Company:
+    Vortex NTNU.
+
+ Author:
+    Markus Sandvik
+
+ File Name:
+    ws2812_spi_enc.c
+ 
+ Summary:
+    This file includes encoder to use SPI to control WS2812.
+ 
+ Description:
+ *  According to the datasheet of the WS2812, a bit is considered as 0 if the
+ *  signal remain high for 0.35us, and low for 0.9us. For 1, the signal remains
+ *  high for 0.9us and low for 0.35us. This is the ideal values, but in practice
+ *  the total time of 1.25us can be devided by three, making 0 = 0b100 and 
+ *  1 = 0b100 with a 2.4Mhz SPI.
+ *  This encoder converts color set bits (3*8bits/led) to the required bitstream.
+ * 
+ *  Formula for transfer time: n*24*1.25us+80us (80us latch to mark end if 
+ *  message).
  */
 
 #include "ws2812_spi_enc.h"
+#include <stdio.h>
+
+
+/* Symbols: MSB-first inside each 3-bit symbol */
+#define SYM0 0x4u /* 0b100 */
+#define SYM1 0x6u /* 0b110 */
 
 /* Internal LUT: each input byte expands to 24 bits = 3 output bytes */
 static uint8_t s_lut[256][3];
@@ -24,19 +56,11 @@ typedef struct {
 
 static void build_lut_3x(void)
 {
-    #define SYM0 0x4u /* 0b100 */
-    #define SYM1 0x6u /* 0b110 */
     for (unsigned v = 0; v < 256; ++v) {
-        uint32_t stream = 0;
-        int bitpos = 23;
+        uint32_t stream = 0;         // 24-bit MSB-first stream
         for (int b = 7; b >= 0; --b) {
-            unsigned in_bit = (v >> b) & 1u;
-            unsigned sym = in_bit ? SYM1 : SYM0;
-            for (int s = 2; s >= 0; --s) {
-                unsigned sb = (sym >> s) & 1u;
-                if (sb) stream |= (1u << bitpos);
-                --bitpos;
-            }
+            unsigned sym = ((v >> b) & 1u) ? SYM1 : SYM0;  // 3-bit symbol
+            stream = (stream << 3) | sym;                  // append MSB-first
         }
         s_lut[v][0] = (uint8_t)((stream >> 16) & 0xFF);
         s_lut[v][1] = (uint8_t)((stream >>  8) & 0xFF);
@@ -67,6 +91,11 @@ void ws2812enc_encode_grb(const ws2812_grb_t *in, size_t num_leds, uint8_t *out)
         out[w+3] = lr[0]; out[w+4] = lr[1]; out[w+5] = lr[2];
         out[w+6] = lb[0]; out[w+7] = lb[1]; out[w+8] = lb[2];
         w += WS2812_SPI_BYTES_PER_LED;
+        printf("w=%zu\r\n", w);
+        //printf("%d ", out[i]);
+    }
+    for (size_t i = 0; i < w; i++){
+        printf("%x ", out[i]);
     }
 }
 
@@ -83,6 +112,7 @@ void ws2812enc_encode_bytes_grb(const uint8_t *grb_bytes, size_t num_leds, uint8
         w     += WS2812_SPI_BYTES_PER_LED;
         in_idx += 3;
     }
+    
 }
 
 /* --- Async port binding --- */

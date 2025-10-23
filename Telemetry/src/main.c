@@ -2,7 +2,10 @@
   Main Source File
 
   Company:
-    Microchip Technology Inc.
+    Vortex NTNU.
+
+ Author:
+    Markus Sandvik
 
   File Name:
     main.c
@@ -13,7 +16,8 @@
   Description:
     This file contains the "main" function for a project.  The
     "main" function calls the "SYS_Initialize" function to initialize the state
-    machines of all modules in the system
+    machines of all generated modules in the system. It also needs to call
+    led_init() to initialize the LED facade before using any LED functions.
  *******************************************************************************/
 
 // *****************************************************************************
@@ -26,9 +30,8 @@
 #include <stdbool.h>                    // Defines true
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
-
-#include "led_facade.h" 
-
+#include "ws2812_spi_enc.h"      // gives WS2812_SPI_BYTES_PER_LED + encode API
+#include "led_facade.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -36,26 +39,42 @@
 // *****************************************************************************
 // *****************************************************************************
 
-int main ( void )
-{
-    // system init...
-    led_init();                              // calls ws_led_sercom5_init_2p4mhz(),
-                                             // ws2812enc_init(), and bind()
 
-    led_set(0, 0x00, 0x10, 0x00);
-    led_commit_async();
+/* ---------------Moved to led_facade.c----------------
+void led_clear_all(void)
+{
+    for (unsigned i = 0; i < 2; ++i)
+        led_set(i, 0, 0, 0);
+}*/
+/*
+void usart_clock_sanity(void)
+{
+    uint32_t f_periph = SERCOM4_USART_FrequencyGet();   // clock driving the baud generator
+    printf("SERCOM4 clock: %lu Hz\r\n", (unsigned long)f_periph);
+}*/
+
+int main(void)
+{
+    SYS_Initialize(NULL);
+    
+    led_init();
+    
+
     while (1) {
-        if (!led_busy()) {
-            // update again if needed
+        SYS_Tasks();
+        if(!led_busy()){
+            led_clear_all();
+            led_set(2,255,255,255);
+            led_commit_async();
         }
     }
-    /* Execution should not come here during normal operation */
-
-    return ( EXIT_FAILURE );
+    return (EXIT_FAILURE);
 }
+
 
 
 /*******************************************************************************
  End of File
 */
+
 
