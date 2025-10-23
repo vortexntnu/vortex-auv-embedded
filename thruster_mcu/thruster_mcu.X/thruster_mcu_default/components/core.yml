@@ -2283,7 +2283,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -2294,7 +2294,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -2305,7 +2305,7 @@ data:
       - children:
         - attributes:
             id: tc0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -2316,7 +2316,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: TC0_TimerInterruptHandler
+            value: TC0_Handler
           type: Dynamic
         type: Values
       type: String
@@ -2327,7 +2327,7 @@ data:
       - children:
         - attributes:
             id: tc0
-            value: TC0_TimerInterruptHandler
+            value: TC0_Handler
           type: Dynamic
         type: Values
       type: String
@@ -2338,7 +2338,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -2349,7 +2349,7 @@ data:
       - children:
         - attributes:
             id: tc0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
