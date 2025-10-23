@@ -25,7 +25,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: b809c2fe3d5111cc9b1c4113b552eac7bdd78aea13ce62864ef99863c1993196
+  hash: 85662d76c0a0976a84b51095a59af68eab86db2bd86e51f7f4c84e58b073cc43
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -35,7 +35,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: 4a07942db66584b511b7c7d6f50e23509e6c57023357b4ada3633506af3dd063
+  hash: 1350d7d3f654c915715535fe0550f6ce59877f9f7db7dc1d2a6744ae2f0215eb
 - file: ../src/config/default/interrupts.c
   hash: 5107f97bf8150a60f58ea9eaf7f90af2f7ece7dbac063f4461b58885c2a07dab
 - file: ../src/config/default/interrupts.h
@@ -43,7 +43,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/libc_syscalls.c
   hash: 88bb2e34c939601b5b7ad076556e3ee0fcedf388436b8cddb6d6fd3e9d07472f
 - file: ../src/config/default/peripheral/adc/plib_adc0.c
-  hash: ddf5e0b1ca8d396e7909d9a35359ccafd5dc6521cff0f672e6c577d517530a2c
+  hash: d6d348e48358884a7ce936de041529bf843ddbbbf9e3128a86e9e463e6a36d73
 - file: ../src/config/default/peripheral/adc/plib_adc0.h
   hash: 1a18fb701cbf598cb8d4b2d0db138b77c9fcdc614d8e12e1185dd7d39928b8e7
 - file: ../src/config/default/peripheral/adc/plib_adc_common.h

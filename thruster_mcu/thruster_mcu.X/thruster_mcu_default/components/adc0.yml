@@ -214,4 +214,24 @@ data:
           type: Dynamic
         type: Values
       type: String
+    ADC_SEQ_ENABLE:
+      attributes:
+        id: ADC_SEQ_ENABLE
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_CONV_TRIGGER:
+      attributes:
+        id: ADC_CONV_TRIGGER
+      children:
+      - children:
+        - attributes:
+            value: HW Event Trigger
+          type: User
+        type: Values
+      type: Combo
   userData: {}
