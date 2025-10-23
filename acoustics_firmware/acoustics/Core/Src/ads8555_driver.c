@@ -156,7 +156,7 @@ static inline void deinterleave_cpu(const uint16_t* restrict src,
     }
 }
 
-static inline void deinterleave_3x2_to_5(const uint32_t* __restrict srcA,
+static void deinterleave_3x2_to_5(const uint32_t* __restrict srcA,
                                          const uint32_t* __restrict srcB,
                                          const uint32_t* __restrict srcC,
                                          uint32_t n_words,

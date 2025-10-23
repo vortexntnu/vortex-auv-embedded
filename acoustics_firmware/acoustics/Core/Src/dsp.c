@@ -1,4 +1,5 @@
 #include "dsp.h"
+#include "dsp/support_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
 // SOS coeffs for CMSIS DF2T: {b0,b1,b2,a1,a2} per biquad.
@@ -113,13 +114,12 @@ void dsp_decimate(struct dsp_context* ctx,
     arm_fir_decimate_f32(&ctx->fir_q, in_q, out_q, n);
 }
 
-
-uint32_t dsp_matched_filter_sepB(const struct dsp_context* ctx,
-                                 const float32_t* restrict in_i,
-                                 const float32_t* restrict in_q,
-                                 uint32_t len_in,
-                                 float32_t* restrict out_corr,
-                                 float32_t* peak_val) {
+uint32_t dsp_matched_filter_sep(const struct dsp_context* ctx,
+                                const float32_t* restrict in_i,
+                                const float32_t* restrict in_q,
+                                uint32_t len_in,
+                                float32_t* restrict out_corr,
+                                float32_t* peak_val) {
     const uint32_t L = ctx->mf_len;
     if (L == 0u || len_in < L) {
         if (peak_val)
@@ -128,7 +128,7 @@ uint32_t dsp_matched_filter_sepB(const struct dsp_context* ctx,
     }
 
     const uint32_t out_len = len_in - L + 1u;
-    const float32_t* restrict hi = ctx->mf_ref_i;  
+    const float32_t* restrict hi = ctx->mf_ref_i;
     const float32_t* restrict hq = ctx->mf_ref_q;
 
     float32_t best = -FLT_MAX;
