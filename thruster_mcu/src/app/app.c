@@ -71,6 +71,8 @@ static void turn_thrusters_off(void);
 static void turn_thrusters_on(void);
 static void turn_lights_off(void);
 static void turn_lights_on(void);
+static void read_current_draw(void);
+
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
 static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us);
@@ -212,6 +214,27 @@ static void turn_lights_on(void)
     __NOP(); /* Might remove later */
 }
 
+static void read_current_draw(void)
+{
+    for (size_t reg = 0; reg < 8; reg++) 
+    {
+        ADC0_ChannelSelect(adc_seq_regs[reg], ADC_NEGINPUT_GND);
+        
+        input_voltage = (float)adc_res[reg] * ADC_VREF / 4095U; // 2^12 - 1 = 4095
+        
+        float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
+        
+        if (amps > THRUSTER_RATED_CURRENT) 
+        {
+            // Overcurrent detected
+            turn_thrusters_off();
+            break;
+        }
+        
+    }
+    
+}
+
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) 
 {
     return (value < low) ? low : (value > high) ? high : value;
@@ -252,27 +275,6 @@ static void CAN_Transmit_Callback(uintptr_t context) {
         /* Optionally, queue next TX or debug */
 
     }
-}
-
-static void read_current_draw(void)
-{
-    for (size_t reg = 0; reg < 8; reg++) 
-    {
-        ADC0_ChannelSelect(adc_seq_regs[reg], ADC_NEGINPUT_GND);
-        
-        input_voltage = (float)adc_res[reg] * ADC_VREF / 4095U; // 2^12 - 1 = 4095
-        
-        float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
-        
-        if (amps > THRUSTER_RATED_CURRENT) 
-        {
-            // Overcurrent detected
-            turn_thrusters_off();
-            break;
-        }
-        
-    }
-    
 }
 
 
