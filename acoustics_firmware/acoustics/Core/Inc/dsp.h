@@ -12,15 +12,8 @@ extern "C" {
 #endif
 
 #define DSP_MAX_BIQUADS (3)  // 6th-order IIR = 3 biquads
-
-#ifndef DSP_MAX_BLOCK_SAMPLES
 #define DSP_MAX_BLOCK_SAMPLES 512u
-#endif
-
-// Maximum FIR length you plan to use
-#ifndef DSP_MAX_FIR_TAPS
 #define DSP_MAX_FIR_TAPS 128u
-#endif
 
 #define SAMPLING_FREQUENCY 192000
 #define DECIMATE_FACTOR 24
@@ -65,21 +58,21 @@ void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
                              const int16_t* raw_samples,
                              float32_t* out_i,
                              float32_t* out_q,
-                             uint32_t n);
+                             uint32_t size);
 
 void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
                              const float32_t* io_i,
                              const float32_t* io_q,
                              float32_t* out_i,
                              float32_t* out_q,
-                             uint32_t n);
+                             uint32_t size);
 
 void dsp_decimate(struct dsp_context* ctx,
                   const float32_t* in_i,
                   const float32_t* in_q,
                   float32_t* out_i,
                   float32_t* out_q,
-                  uint32_t n);
+                  uint32_t size);
 
 uint32_t dsp_matched_filter(const struct dsp_context* ctx,
                             const float32_t* in_iq,

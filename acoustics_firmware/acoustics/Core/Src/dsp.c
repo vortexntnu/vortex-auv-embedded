@@ -1,6 +1,5 @@
 #include "dsp.h"
 #include "arm_math_types.h"
-#include "dsp/support_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
 // SOS coeffs for CMSIS DF2T: {b0,b1,b2,a1,a2} per biquad.
@@ -55,7 +54,7 @@ void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
                              const int16_t* raw_samples,
                              float32_t* out_i,
                              float32_t* out_q,
-                             uint32_t n) {
+                             uint32_t size) {
     const float32_t S = 1.0f / 32768.0f;
 
     float32_t cos_p = ctx->cos_p;
@@ -63,7 +62,7 @@ void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
     const float32_t cos_d = ctx->cos_d;
     const float32_t sin_d = ctx->sin_d;
 
-    for (uint32_t k = 0; k < n; k++) {
+    for (uint32_t k = 0; k < size; k++) {
         float32_t x = (float32_t)*raw_samples++ * S;
 
         // Complex mix by e^{-j 2π f0 t}: I = x*cos, Q = x*(-sin)
@@ -85,9 +84,9 @@ void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
                              const float32_t* restrict io_q,
                              float32_t* restrict out_i,
                              float32_t* restrict out_q,
-                             uint32_t n) {
-    arm_biquad_cascade_df2T_f32(&ctx->iir_i, io_i, out_i, n);
-    arm_biquad_cascade_df2T_f32(&ctx->iir_q, io_q, out_q, n);
+                             uint32_t size) {
+    arm_biquad_cascade_df2T_f32(&ctx->iir_i, io_i, out_i, size);
+    arm_biquad_cascade_df2T_f32(&ctx->iir_q, io_q, out_q, size);
 }
 
 void dsp_decimate(struct dsp_context* ctx,
@@ -95,9 +94,9 @@ void dsp_decimate(struct dsp_context* ctx,
                   const float32_t* in_q,
                   float32_t* out_i,
                   float32_t* out_q,
-                  uint32_t n) {
-    arm_fir_decimate_f32(&ctx->fir_i, in_i, out_i, n);
-    arm_fir_decimate_f32(&ctx->fir_q, in_q, out_q, n);
+                  uint32_t size) {
+    arm_fir_decimate_f32(&ctx->fir_i, in_i, out_i, size);
+    arm_fir_decimate_f32(&ctx->fir_q, in_q, out_q, size);
 }
 
 uint32_t dsp_matched_filter_sep(const struct dsp_context* ctx,
