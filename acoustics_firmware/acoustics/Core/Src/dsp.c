@@ -13,11 +13,33 @@ static const float32_t BUTTER6_COEFFS_SOS[5 * DSP_MAX_BIQUADS] = {
     // Biquad 3
     1.00000000f, 2.00000000f, 1.00000000f, -1.99521656f, 0.99524618f};
 
-
-static const float32_t FIR_CONSTANTS[1]; // TODO add constants
-
-
-
+static const float32_t FIR_DECIM48_TAPS_97[97] = {
+    1.6930365205e-04f, 2.5375194940e-04f, 3.5614954360e-04f, 4.7826088013e-04f, 
+    6.2183104041e-04f, 7.8856306358e-04f, 9.8009429196e-04f, 1.1979720207e-03f, 
+    1.4436287558e-03f, 1.7183574038e-03f, 2.0232867327e-03f, 2.3593574538e-03f, 
+    2.7272992800e-03f, 3.1276093156e-03f, 3.5605321306e-03f, 4.0260418568e-03f, 
+    4.5238266330e-03f, 5.0532757002e-03f, 5.6134694230e-03f, 6.2031724827e-03f, 
+    6.8208304491e-03f, 7.4645698997e-03f, 8.1322022096e-03f, 8.8212310896e-03f, 
+    9.5288638995e-03f, 1.0252026714e-02f, 1.0987383067e-02f, 1.1731356243e-02f, 
+    1.2480154943e-02f, 1.3229802100e-02f, 1.3976166549e-02f, 1.4714997269e-02f, 
+    1.5441959790e-02f, 1.6152674416e-02f, 1.6842755798e-02f, 1.7507853427e-02f, 
+    1.8143692572e-02f, 1.8746115163e-02f, 1.9311120145e-02f, 1.9834902811e-02f, 
+    2.0313892609e-02f, 2.0744788981e-02f, 2.1124594776e-02f, 2.1450646802e-02f, 
+    2.1720643155e-02f, 2.1932666961e-02f, 2.2085206228e-02f, 2.2177169559e-02f, 
+    2.2207897528e-02f, 2.2177169559e-02f, 2.2085206228e-02f, 2.1932666961e-02f, 
+    2.1720643155e-02f, 2.1450646802e-02f, 2.1124594776e-02f, 2.0744788981e-02f, 
+    2.0313892609e-02f, 1.9834902811e-02f, 1.9311120145e-02f, 1.8746115163e-02f, 
+    1.8143692572e-02f, 1.7507853427e-02f, 1.6842755798e-02f, 1.6152674416e-02f, 
+    1.5441959790e-02f, 1.4714997269e-02f, 1.3976166549e-02f, 1.3229802100e-02f, 
+    1.2480154943e-02f, 1.1731356243e-02f, 1.0987383067e-02f, 1.0252026714e-02f, 
+    9.5288638995e-03f, 8.8212310896e-03f, 8.1322022096e-03f, 7.4645698997e-03f, 
+    6.8208304491e-03f, 6.2031724827e-03f, 5.6134694230e-03f, 5.0532757002e-03f, 
+    4.5238266330e-03f, 4.0260418568e-03f, 3.5605321306e-03f, 3.1276093156e-03f, 
+    2.7272992800e-03f, 2.3593574538e-03f, 2.0232867327e-03f, 1.7183574038e-03f, 
+    1.4436287558e-03f, 1.1979720207e-03f, 9.8009429196e-04f, 7.8856306358e-04f, 
+    6.2183104041e-04f, 4.7826088013e-04f, 3.5614954360e-04f, 2.5375194940e-04f, 
+    1.6930365205e-04f
+};
 
 
 void dsp_init(struct dsp_context* ctx,
@@ -41,11 +63,11 @@ void dsp_init(struct dsp_context* ctx,
                                      BUTTER6_COEFFS_SOS, ctx->iir_state_q);
 
     arm_fir_decimate_init_f32(&ctx->fir_i, (uint16_t)NUM_TAPS,
-                              (uint8_t)DECIMATE_FACTOR, FIR_CONSTANTS,
+                              (uint8_t)DECIMATE_FACTOR, FIR_DECIM48_TAPS_97,
                               ctx->fir_state_i, BLOCK_SIZE_IN);
 
     arm_fir_decimate_init_f32(&ctx->fir_q, (uint16_t)NUM_TAPS,
-                              (uint8_t)DECIMATE_FACTOR, FIR_CONSTANTS,
+                              (uint8_t)DECIMATE_FACTOR, FIR_DECIM48_TAPS_97,
                               ctx->fir_state_q, BLOCK_SIZE_IN);
 }
 
@@ -90,8 +112,8 @@ void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
 }
 
 void dsp_decimate(struct dsp_context* ctx,
-                  const float32_t* in_i,
-                  const float32_t* in_q,
+                  const float32_t* restrict in_i,
+                  const float32_t* restrict in_q,
                   float32_t* out_i,
                   float32_t* out_q,
                   uint32_t size) {
