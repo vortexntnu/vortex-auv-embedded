@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "arm_math.h"
+#include "dsp/matrix_functions.h"
 
 static inline void vec3_normalize_arm(const float32_t in[3], float32_t out[3]) {
     float32_t n2;
@@ -75,21 +76,29 @@ void ml_add_ray(struct ml_accumulator* ml,
 }
 
 bool ml_solve(const struct ml_accumulator* ml, float32_t s_out[3]) {
-    arm_matrix_instance_f32 A, Ainv, b, x;
-    arm_mat_init_f32(&A, 3, 3, (float32_t*)ml->A);
-    float32_t Ainv_buf[9];
-    arm_mat_init_f32(&Ainv, 3, 3, Ainv_buf);
-    float32_t x_buf[3];
-    arm_mat_init_f32(&b, 3, 1, (float32_t*)ml->b);
-    arm_mat_init_f32(&x, 3, 1, x_buf);
+    float32_t A_buf[9];
+    float32_t b_buf[3];
+    memcpy(A_buf, ml->A, sizeof(A_buf));
+    memcpy(b_buf, ml->b, sizeof(b_buf));
 
-    if (arm_mat_inverse_f32(&A, &Ainv) != ARM_MATH_SUCCESS)
+    arm_matrix_instance_f32 A, b, x;
+    arm_mat_init_f32(&A, 3, 3, A_buf);
+    arm_mat_init_f32(&b, 3, 1, b_buf);
+    arm_mat_init_f32(&x, 3, 1, s_out);
+
+    const float32_t lambda = 1e-6f;
+    A_buf[0] += lambda;
+    A_buf[4] += lambda;
+    A_buf[8] += lambda;
+
+    arm_status status = arm_mat_cholesky_f32(&A, &A);
+    if (status != ARM_MATH_SUCCESS)
         return false;
-    arm_mat_mult_f32(&Ainv, &b, &x);
 
-    s_out[0] = x_buf[0];
-    s_out[1] = x_buf[1];
-    s_out[2] = x_buf[2];
+    arm_mat_solve_lower_triangular_f32(&A, &b, &x);
+    arm_mat_trans_f32(&A, &A);
+    arm_mat_solve_upper_triangular_f32(&A, &x, &x);
+
     return true;
 }
 
