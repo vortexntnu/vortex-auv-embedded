@@ -97,8 +97,7 @@ static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHa
 
 /* --- Public functions --- */
 
-void App_Init(void)
-{
+void App_Init(void) {
     /* Configure CAN RAM & callbacks */
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
@@ -120,8 +119,7 @@ void App_Init(void)
     WDT_Enable();
 }
 
-void App_Task(void)
-{   
+void App_Task(void) {   
     /* Check for overcurrent */
     check_overcurrent();
     /* Handle any message that arrived since last time */
@@ -130,14 +128,12 @@ void App_Task(void)
 
 /* --- Private helpers --- */
 
-static void message_handler(void)
-{
+static void message_handler(void) {
     /* Interpret event from CAN frame id */
     uint8_t event = (uint8_t)(rx_buf.id - CAN_EVENT_ID_BASE);
     const uint8_t *pData = rx_buf.data;
 
-    switch (event)
-    {
+    switch (event) {
         case TURN_THRUSTERS_OFF:
             turn_thrusters_off();
             break;
@@ -169,17 +165,14 @@ static void message_handler(void)
 }
 
 static void check_overcurrent(void) {
-    if (adc_dma_done)
-    {
+    if (adc_dma_done) {
         adc_dma_done = false;
 
-        for (size_t sample = 0; sample < 8; sample++)
-        {
+        for (size_t sample = 0; sample < 8; sample++) {
             float input_voltage = (float)adc_res[sample] * ADC_VREF / 4095.0f;
             float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
 
-            if (amps > THRUSTER_RATED_CURRENT)
-            {
+            if (amps > THRUSTER_RATED_CURRENT) {
                 overcurrent_fault = true;
                 break;
             }
@@ -192,10 +185,8 @@ static void check_overcurrent(void) {
     }
 }
 
-static void set_thruster_pwm(const uint8_t *data)
-{
-    for (size_t thr = 0; thr < 8; thr++)
-    {
+static void set_thruster_pwm(const uint8_t *data) {
+    for (size_t thr = 0; thr < 8; thr++) {
         /* data layout: uint16 per thruster */
         uint16_t pulse_us = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
         
@@ -211,8 +202,7 @@ static void set_thruster_pwm(const uint8_t *data)
     WDT_Clear();
 }
 
-static void set_light_pwm(const uint8_t *data)
-{
+static void set_light_pwm(const uint8_t *data) {
     /* data layout: uint16 for light */
     uint16_t pulse_us = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
@@ -227,10 +217,8 @@ static void set_light_pwm(const uint8_t *data)
     WDT_Clear();
 }
 
-static void turn_thrusters_off(void)
-{
-    for (size_t thr = 0; thr < 8; thr++)
-    {
+static void turn_thrusters_off(void) {
+    for (size_t thr = 0; thr < 8; thr++) {
         // Write neutral (1500us) to each thrusters, keep modules running so ESC's stay armed
         uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, 1500, THRUSTER_PWM_PERIOD_US);
         tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
@@ -238,13 +226,11 @@ static void turn_thrusters_off(void)
     WDT_Clear();
 }
 
-static void turn_thrusters_on(void)
-{
+static void turn_thrusters_on(void) {
     __NOP(); /* Might remove later */
 }
 
-static void turn_lights_off(void)
-{
+static void turn_lights_off(void) {
     /* Write neutral (1100us) to the lights*/
     uint32_t ticks = us_to_ticks(lights.period_ticks, 1100, LIGHT_PWM_PERIOD_US);
     tcc_write(lights.instance, lights.channel, ticks);
@@ -252,18 +238,15 @@ static void turn_lights_off(void)
     WDT_Clear();
 }
 
-static void turn_lights_on(void)
-{
+static void turn_lights_on(void) {
     __NOP(); /* Might remove later */
 }
 
-static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) 
-{
+static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
     return (value < low) ? low : (value > high) ? high : value;
 }
 
-static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks)
-{
+static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) {
     switch (instance) {
         case 0: TCC0_PWM24bitDutySet(channel, ticks); break;
         case 1: TCC1_PWM24bitDutySet(channel, ticks); break;
@@ -272,8 +255,7 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks)
     }
 }
 
-static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uint32_t frame_us)
-{
+static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uint32_t frame_us) {
     return ((uint32_t)pulse_us * (period_ticks + 1U)) / frame_us;
 }
 
