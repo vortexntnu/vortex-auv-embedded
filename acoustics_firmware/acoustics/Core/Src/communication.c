@@ -1,6 +1,7 @@
 
-#include "communcation.h"
+#include "communication.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #ifndef CAN_MAX_PAYLOAD
@@ -9,7 +10,7 @@
 
 // Pick an arbitration ID suitable for your app
 #ifndef CAN_DEFAULT_STD_ID
-#define CAN_DEFAULT_STD_ID 0x123
+#define CAN_DEFAULT_STD_ID 0x720
 #endif
 
 static uint32_t len_to_dlc(uint32_t n) {

@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include "stm32h7xx_hal.h"
+#include <stm32h7xx.h>
 
 #ifdef __cplusplus
 extern "C"{
