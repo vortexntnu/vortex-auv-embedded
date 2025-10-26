@@ -45,16 +45,7 @@ static CAN_RX_BUFFER rx_buf;
 static volatile uint32_t can_status = 0;
 
 /* ADC */
-static const ADC_POSINPUT adc_seq_regs[8] = {
-    ADC_POSINPUT_AIN0, 
-    ADC_POSINPUT_AIN1, 
-    ADC_POSINPUT_AIN2, 
-    ADC_POSINPUT_AIN3, 
-    ADC_POSINPUT_AIN4, 
-    ADC_POSINPUT_AIN5, 
-    ADC_POSINPUT_AIN6, 
-    ADC_POSINPUT_AIN7
-};
+static const uint32_t adc_seq_regs[8] = {0x1800, 0x1801, 0x1802, 0x1803, 0x1804, 0x1805, 0x1806, 0x1807};
 
 static volatile uint16_t adc_res[8] = {0};
 static volatile bool adc_dma_done = false;
