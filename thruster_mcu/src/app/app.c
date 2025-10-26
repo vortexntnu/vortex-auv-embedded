@@ -172,8 +172,10 @@ static void check_overcurrent(void) {
             float input_voltage = (float)adc_res[sample] * ADC_VREF / 4095.0f;
             float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
 
+            printf("\r\n Measured current = %d.%02d A \r\n\r\n");
             if (amps > THRUSTER_RATED_CURRENT) {
                 overcurrent_fault = true;
+                printf("\r\n Overcurrent flagged \r\n\r\n");
                 break;
             }
         }
