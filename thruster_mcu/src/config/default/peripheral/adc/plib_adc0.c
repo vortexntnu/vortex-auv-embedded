@@ -121,7 +121,6 @@ void ADC0_Initialize( void )
     /* Events configuration  */
     ADC0_REGS->ADC_EVCTRL = ADC_EVCTRL_STARTEI_Msk;
 
-    ADC0_REGS->ADC_CTRLA |= ADC_CTRLA_RUNSTDBY_Msk;
     while(ADC0_REGS->ADC_SYNCBUSY != 0U)
     {
         /* Wait for Synchronization */
