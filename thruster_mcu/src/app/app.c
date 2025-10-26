@@ -119,7 +119,7 @@ void App_Init(void)
 }
 
 void App_Task(void)
-{
+{   
     /* Handle any message that arrived since last time */
     message_handler();
 }
@@ -273,8 +273,18 @@ static void CAN_Transmit_Callback(uintptr_t context) {
 
 static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle) {
     
-    if (event == DMAC_TRANSFER_EVENT_COMPLETE) {
-        adc_dma_done = true;
+    if (event != DMAC_TRANSFER_EVENT_COMPLETE) return;
+    
+    for (size_t sample = 0; sample < 8; sample++) {
+        input_voltage = (float)adc_res[sample] * ADC_VREF / 4095; // 2^12 - 1 = 4095
+        float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
+        
+        if (amps > THRUSTER_RATED_CURRENT) {
+            // Overcurrent detected
+            turn_thrusters_off();
+            break;
+        }
+        
     }
 }
 
