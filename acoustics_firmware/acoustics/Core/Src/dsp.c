@@ -10,6 +10,16 @@ static const q15_t BUTTER6_COEFFS_SOS[5 * DSP_MAX_BIQUADS] = {0};
 
 static const q15_t FIR_Q15_TAPS[97] = {0};
 
+// float -> q15 with rounding & saturation
+static inline q15_t f32_to_q15(float x) {
+    if (x >= 0.999969f)
+        return 32767;
+    if (x <= -1.0f)
+        return -32768;
+    int32_t v = (int32_t)(x * 32768.0f + (x >= 0 ? 0.5f : -0.5f));
+    return (q15_t)v;
+}
+
 void dsp_init(struct dsp_context* ctx,
               const q15_t* mf_ref_i,
               const q15_t* mf_ref_q,
@@ -20,15 +30,24 @@ void dsp_init(struct dsp_context* ctx,
     ctx->mf_ref_q = mf_ref_q;
     ctx->mf_len = mf_len;
 
-    ctx->dphase = 2.0f * PI * ((float)PINGER_FREQUENCY / SAMPLING_FREQUENCY);
-    arm_sin_cos_f32(ctx->dphase, &ctx->sin_d, &ctx->cos_d);
-    ctx->cos_p = 1.0f;
-    ctx->sin_p = 0.0f;
+    ctx->dphase =
+        2.0f * PI * ((float)PINGER_FREQUENCY / (float)SAMPLING_FREQUENCY);
 
+    float s, c;
+    arm_sin_cos_f32(ctx->dphase, &s, &c);
+    ctx->sin_d = f32_to_q15(s);
+    ctx->cos_d = f32_to_q15(c);
+
+    ctx->cos_p = (q15_t)32767;
+    ctx->sin_p = (q15_t)0;
+
+    const int8_t IIR_POSTSHIFT = 1;
     arm_biquad_cascade_df1_init_q15(&ctx->iir_i, DSP_MAX_BIQUADS,
-                                    BUTTER6_COEFFS_SOS, ctx->iir_state_i, 0);
+                                    BUTTER6_COEFFS_SOS, ctx->iir_state_i,
+                                    IIR_POSTSHIFT);
     arm_biquad_cascade_df1_init_q15(&ctx->iir_q, DSP_MAX_BIQUADS,
-                                    BUTTER6_COEFFS_SOS, ctx->iir_state_q, 0);
+                                    BUTTER6_COEFFS_SOS, ctx->iir_state_q,
+                                    IIR_POSTSHIFT);
 
     arm_fir_decimate_init_q15(&ctx->fir_i, (uint16_t)NUM_TAPS,
                               (uint8_t)DECIMATE_FACTOR, FIR_Q15_TAPS,
@@ -39,42 +58,50 @@ void dsp_init(struct dsp_context* ctx,
                               ctx->fir_state_q, BLOCK_SIZE_IN);
 }
 
-// ======= Mix int16 (Q15) to complex baseband float32 =======
-void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
-                             const int16_t* raw_samples,
-                             float32_t* out_i,
-                             float32_t* out_q,
-                             uint32_t size) {
-    const float32_t S = 1.0f / 32768.0f;
-
-    float32_t cos_p = ctx->cos_p;
-    float32_t sin_p = ctx->sin_p;
-    const float32_t cos_d = ctx->cos_d;
-    const float32_t sin_d = ctx->sin_d;
-
-    for (uint32_t k = 0; k < size; k++) {
-        float32_t x = (float32_t)*raw_samples++ * S;
-
-        // Complex mix by e^{-j 2π f0 t}: I = x*cos, Q = x*(-sin)
-        *out_i++ = x * cos_p;
-        *out_q++ = x * -sin_p;
-
-        float32_t c = cos_p * cos_d - sin_p * sin_d;
-        float32_t s = sin_p * cos_d + cos_p * sin_d;
-        cos_p = c;
-        sin_p = s;
-    }
-
-    ctx->cos_p = cos_p;
-    ctx->sin_p = sin_p;
+static inline q15_t mul_q15(q15_t a, q15_t b) {
+    int32_t t = (int32_t)a * (int32_t)b; 
+    t = (t << 1);                       
+    t = t + (1 << 15);                 
+    return (q15_t)__SSAT(t >> 16, 16);   
 }
 
-void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
-                             const q15_t* restrict io_i,
-                             const q15_t* restrict io_q,
-                             q15_t* restrict out_i,
-                             q15_t* restrict out_q,
+void dsp_mix_to_baseband_q15(struct dsp_context* ctx,
+                             const q15_t* raw_samples,
+                             q15_t* out_i,
+                             q15_t* out_q,
                              uint32_t size) {
+    q15_t c = ctx->cos_p;
+    q15_t s = ctx->sin_p;
+    const q15_t cd = ctx->cos_d;
+    const q15_t sd = ctx->sin_d;
+
+    for (uint32_t k = 0; k < size; k++) {
+        q15_t x = *raw_samples++;
+
+        *out_i++ = mul_q15(x, c);
+        *out_q++ = mul_q15(x, (q15_t)(-s));
+
+        int32_t cs = __PKHBT((uint16_t)c, (uint16_t)s, 16);
+        int32_t sc = __PKHBT((uint16_t)s, (uint16_t)c, 16);
+        int32_t cdsd = __PKHBT((uint16_t)cd, (uint16_t)sd, 16);
+
+        int32_t c_q30 = __SMUSD(cs, cdsd);
+        int32_t s_q30 = __SMLAD(sc, cdsd, 0);
+
+        c = (q15_t)__SSAT(((c_q30 << 1) + (1 << 15)) >> 16, 16);
+        s = (q15_t)__SSAT(((s_q30 << 1) + (1 << 15)) >> 16, 16);
+    }
+
+    ctx->cos_p = c;
+    ctx->sin_p = s;
+}
+
+void dsp_lpf_6th_butterworth_q15(struct dsp_context* ctx,
+                                 const q15_t* restrict io_i,
+                                 const q15_t* restrict io_q,
+                                 q15_t* restrict out_i,
+                                 q15_t* restrict out_q,
+                                 uint32_t size) {
     arm_biquad_cascade_df1_fast_q15(&ctx->iir_i, io_i, out_i, size);
     arm_biquad_cascade_df1_fast_q15(&ctx->iir_q, io_q, out_q, size);
 }

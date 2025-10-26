@@ -27,8 +27,8 @@ extern "C" {
 struct dsp_context {
     // NCO (shared across all channels; keep in lockstep)
     float32_t dphase;        // 2*pi*f0/fs_in
-    float32_t cos_d, sin_d;  // cos/sin(dphase)
-    float32_t cos_p, sin_p;  // running oscillator state
+    q15_t cos_d, sin_d;  // cos/sin(dphase)
+    q15_t cos_p, sin_p;  // running oscillator state
 
     // IIR lowpass (same chain for I and Q)
     arm_biquad_casd_df1_inst_q15 iir_i;
@@ -55,14 +55,14 @@ void dsp_init(struct dsp_context* ctx,
               const q15_t* mf_ref_q,
               uint32_t mf_len);
 
-void dsp_mix_to_baseband_i16(struct dsp_context* ctx,
-                             const int16_t* raw_samples,
-                             float32_t* out_i,
-                             float32_t* out_q,
+void dsp_mix_to_baseband_q15(struct dsp_context* ctx,
+                             const q15_t* raw_samples,
+                             q15_t* out_i,
+                             q15_t* out_q,
                              uint32_t size);
 
 
-void dsp_lpf_6th_butterworth(struct dsp_context* ctx,
+void dsp_lpf_6th_butterworth_q15(struct dsp_context* ctx,
                              const q15_t* restrict io_i,
                              const q15_t* restrict io_q,
                              q15_t* restrict out_i,
