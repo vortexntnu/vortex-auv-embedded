@@ -173,9 +173,9 @@ static void check_overcurrent(void) {
     {
         adc_dma_done = false;
 
-        for (size_t i = 0; i < 8; i++)
+        for (size_t sample = 0; sample < 8; sample++)
         {
-            float input_voltage = (float)adc_res[i] * ADC_VREF / 4095.0f;
+            float input_voltage = (float)adc_res[sample] * ADC_VREF / 4095.0f;
             float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
 
             if (amps > THRUSTER_RATED_CURRENT)
