@@ -282,4 +282,22 @@ data:
           type: User
         type: Values
       type: Boolean
+    ADC_EVCTRL_START:
+      attributes:
+        id: ADC_EVCTRL_START
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData: {}

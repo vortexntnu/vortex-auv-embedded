@@ -118,6 +118,8 @@ void ADC0_Initialize( void )
     ADC0_REGS->ADC_INTFLAG = ADC_INTFLAG_Msk;
     /* Enable interrupts */
     ADC0_REGS->ADC_INTENSET = ADC_INTENSET_RESRDY_Msk;
+    /* Events configuration  */
+    ADC0_REGS->ADC_EVCTRL = ADC_EVCTRL_STARTEI_Msk;
 
     ADC0_REGS->ADC_CTRLA |= ADC_CTRLA_RUNSTDBY_Msk;
     while(ADC0_REGS->ADC_SYNCBUSY != 0U)
