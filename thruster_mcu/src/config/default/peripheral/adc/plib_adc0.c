@@ -114,6 +114,8 @@ void ADC0_Initialize( void )
     /* Resolution & Operation Mode */
     ADC0_REGS->ADC_CTRLB = ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_WINMODE(0U) ;
 
+    /* Averaging 1024 samples*/
+    ADC0_REGS->ADC_AVGCTRL = ADC_AVGCTRL_SAMPLENUM_1024 | ADC_AVGCTRL_ADJRES(6);
 
     /* Clear all interrupt flags */
     ADC0_REGS->ADC_INTFLAG = ADC_INTFLAG_Msk;
