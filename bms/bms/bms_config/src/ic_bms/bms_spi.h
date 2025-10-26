@@ -1,7 +1,13 @@
-#ifndef BQ76942_H
-#define BQ76942_H
+#ifndef BMS_SPI_H
+#define BMS_SPI_H
+
+#include<stdint.h>
+#include<stdbool.h>
+
+//Direct Commands
 
 #define BatteryStatus 0x12
+#define StackVoltage 0x34
 
 #define Cell1Voltage 0x14
 #define Cell2Voltage 0x16
@@ -24,7 +30,7 @@
 */ // 16 cell voltage readings avaliable 
 
 
-#define StackVoltage 0x34
+
 
 
 #define SWAP_COMM_MODE 0x29BC
@@ -34,8 +40,27 @@
 #define THERMISOR_TEMP 0x6A
 #define INTERNAL_TEMP 0x68
 
+//Command only (R)
+
+#define RESET 0x0012
+#define SHUTDOWN 0x0010
+
+
 /* Minimal driver: only SPI+CS bring-up */
 void BQ76942_Init(void);
+bool WriteReg(uint8_t regAddr, uint8_t value);
+bool ReadReg(uint8_t regAddr, uint8_t *value);
+bool BQ_DirectCommand(uint8_t command, uint16_t *data, char type);
+bool BQ_CommandOnly(uint16_t subcmd);
+bool BQ_DirectRead(uint8_t command, uint8_t *data, uint8_t count);
+bool BQ_DirectWrite(uint8_t command, const uint8_t *data, uint8_t count);
+bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length);
+bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
+
+
+
+
+
 
 
 
