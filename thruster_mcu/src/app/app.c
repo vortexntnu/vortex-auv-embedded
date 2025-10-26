@@ -103,7 +103,7 @@ void App_Init(void) {
     memset(&rx_buf, 0x00, sizeof(rx_buf));
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 
-    ADC0_Enable();
+    ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     TC0_TimerStart();
     
     /* Enable watchdog */
