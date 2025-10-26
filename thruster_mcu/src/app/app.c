@@ -57,7 +57,8 @@ static const ADC_POSINPUT adc_seq_regs[8] = {
 };
 
 static volatile uint16_t adc_res[8] = {0};
-static volatile adc_dma_done = 0;
+static volatile bool adc_dma_done = false;
+static volatile bool overcurrent_fault = false;
 static float input_voltage;
 
 /* Application */
@@ -78,6 +79,7 @@ static const Light lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
 static void set_thruster_pwm(const uint8_t *data);
 static void set_light_pwm(const uint8_t *data);
 static void message_handler(void);
+static void check_overcurrent(void);
 static void turn_thrusters_off(void);
 static void turn_thrusters_on(void);
 static void turn_lights_off(void);
@@ -120,6 +122,8 @@ void App_Init(void)
 
 void App_Task(void)
 {   
+    /* Check for overcurrent */
+    check_overcurrent();
     /* Handle any message that arrived since last time */
     message_handler();
 }
@@ -162,6 +166,30 @@ static void message_handler(void)
 
     /* Re-arm RX FIFO for next frame */
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
+}
+
+static void check_overcurrent(void) {
+    if (adc_dma_done)
+    {
+        adc_dma_done = false;
+
+        for (size_t i = 0; i < 8; i++)
+        {
+            float input_voltage = (float)adc_res[i] * ADC_VREF / 4095.0f;
+            float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
+
+            if (amps > THRUSTER_RATED_CURRENT)
+            {
+                overcurrent_fault = true;
+                break;
+            }
+        }
+    }
+    
+    if (overcurrent_fault) {
+        overcurrent_fault = false;
+        turn_thrusters_off();
+    }
 }
 
 static void set_thruster_pwm(const uint8_t *data)
@@ -273,18 +301,8 @@ static void CAN_Transmit_Callback(uintptr_t context) {
 
 static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle) {
     
-    if (event != DMAC_TRANSFER_EVENT_COMPLETE) return;
-    
-    for (size_t sample = 0; sample < 8; sample++) {
-        input_voltage = (float)adc_res[sample] * ADC_VREF / 4095; // 2^12 - 1 = 4095
-        float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
-        
-        if (amps > THRUSTER_RATED_CURRENT) {
-            // Overcurrent detected
-            turn_thrusters_off();
-            break;
-        }
-        
+    if (event == DMAC_TRANSFER_EVENT_COMPLETE) {
+        adc_dma_done = true;
     }
 }
 
