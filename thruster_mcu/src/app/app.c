@@ -15,7 +15,7 @@ static const uint8_t  MESSAGES_TO_READ          = 1U;
 static const float    ADC_VREF                  = 3.3f;
 static const float    R_SHUNT_OHMS              = 0.005f; // Placeholder for the actual shunt data
 static const float    INA_GAIN                  = 50.0f;  // Placeholder for the actual INA gain
-static const uint8_t  THRUSTER_RATED_CURRENT    = 15;     // From TSD7 datasheet  
+static const uint8_t  THRUSTER_RATED_CURRENT    = 15U;    // From TSD7 datasheet  
 
 /* --- Types --- */
 typedef struct {
