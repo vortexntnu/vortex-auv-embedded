@@ -200,7 +200,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x19a56'
+            value: '0x19ad6'
           type: Dynamic
         type: Values
       type: String
@@ -3057,6 +3057,50 @@ data:
           type: Dynamic
         type: Values
       type: Integer
+    EVSYS_0_CLOCK_FREQUENCY:
+      attributes:
+        id: EVSYS_0_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '60000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_11_FREQ:
+      attributes:
+        id: GCLK_ID_11_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '60000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_11_CHEN:
+      attributes:
+        id: GCLK_ID_11_CHEN
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    EVSYS_0_CLOCK_ENABLE:
+      attributes:
+        id: EVSYS_0_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: evsys
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData:
     children:
     - attributes:
