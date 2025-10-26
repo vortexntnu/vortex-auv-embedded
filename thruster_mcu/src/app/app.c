@@ -57,6 +57,7 @@ static const ADC_POSINPUT adc_seq_regs[8] = {
 };
 
 static volatile uint16_t adc_res[8] = {0};
+static volatile adc_dma_done = 0;
 static float input_voltage;
 
 /* Application */
@@ -81,9 +82,7 @@ static void turn_thrusters_off(void);
 static void turn_thrusters_on(void);
 static void turn_lights_off(void);
 static void turn_lights_on(void);
-static void read_current_draw(void);
 
-static inline uint16_t read_current_settled(ADC_POSINPUT pos);
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
 static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us);
@@ -92,6 +91,7 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t 
 static void CAN_Receive_Callback(uintptr_t context);
 static void CAN_Transmit_Callback(uintptr_t context);
 
+static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
 
 /* --- Public functions --- */
 
@@ -101,12 +101,18 @@ void App_Init(void)
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
     CAN0_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
-
+    
+    /* Configure DMA */
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_1, adc_sram_dma_callback, 0);
+    DMAC_ChannelTransfer(DMAC_CHANNEL_1, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_res, 16); // Each adc result is 16 bits=2 bytes. 8*2=16
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)adc_seq_regs, (const void *)&ADC0_REGS->ADC_DSEQDATA, 32); // DSEQDATA is 32 bits=4 bytes. 8 * 4 = 32
+    
     /* Clear RX buffer and prime the first receive */
     memset(&rx_buf, 0x00, sizeof(rx_buf));
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 
     ADC0_Enable();
+    TC0_TimerStart();
     
     /* Enable watchdog */
     WDT_Enable();
@@ -153,8 +159,6 @@ static void message_handler(void)
             /* Unknown event: ignore */
             break;
     }
-    
-    read_current_draw();
 
     /* Re-arm RX FIFO for next frame */
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
@@ -225,39 +229,6 @@ static void turn_lights_on(void)
     __NOP(); /* Might remove later */
 }
 
-static void read_current_draw(void)
-{
-    for (size_t reg = 0; reg < 8; reg++) 
-    {
-        adc_res[reg] = read_current_settled(adc_seq_regs[reg]);
-        
-        input_voltage = (float)adc_res[reg] * ADC_VREF / 4095U; // 2^12 - 1 = 4095
-        
-        float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
-        
-        if (amps > THRUSTER_RATED_CURRENT) 
-        {
-            // Overcurrent detected
-            turn_thrusters_off();
-            break;
-        }
-        
-    }
-    
-}
-
-static inline uint16_t read_current_settled(ADC_POSINPUT pos)
-{
-    ADC0_ChannelSelect(pos, ADC_NEGINPUT_GND);
-    
-    /* Discard first read */
-    while (!ADC0_ConversionStatusGet()) {/* Wait */};
-    
-    while (!ADC0_ConversionStatusGet()) {/* Wait */};
-    
-    return ADC0_ConversionResultGet();
-}
-
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) 
 {
     return (value < low) ? low : (value > high) ? high : value;
@@ -297,6 +268,13 @@ static void CAN_Transmit_Callback(uintptr_t context) {
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         /* Optionally, queue next TX or debug */
 
+    }
+}
+
+static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle) {
+    
+    if (event == DMAC_TRANSFER_EVENT_COMPLETE) {
+        adc_dma_done = true;
     }
 }
 
