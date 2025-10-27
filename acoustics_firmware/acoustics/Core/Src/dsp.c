@@ -3,6 +3,7 @@
 #include "arm_math_types.h"
 #include "cmsis_gcc.h"
 #include "dsp/filtering_functions.h"
+#include "dsp/support_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
 // SOS coeffs for CMSIS DF2T: {b0,b1,b2,a1,a2} per biquad.
@@ -67,9 +68,9 @@ static inline q15_t mul_q15(q15_t a, q15_t b) {
 }
 
 void dsp_mix_to_baseband_q15(struct dsp_context* ctx,
-                             const q15_t* raw_samples,
-                             q15_t* out_i,
-                             q15_t* out_q,
+                             const q15_t* restrict raw_samples,
+                             q15_t* restrict out_i,
+                             q15_t* restrict out_q,
                              uint32_t size) {
     q15_t c = ctx->cos_p;
     q15_t s = ctx->sin_p;
@@ -107,7 +108,7 @@ void dsp_lpf_6th_butterworth_q15(struct dsp_context* ctx,
     arm_biquad_cascade_df1_fast_q15(&ctx->iir_q, io_q, out_q, size);
 }
 
-void dsp_decimate_q15(struct dsp_context* ctx,
+void dsp_fir_decimate_q15(struct dsp_context* ctx,
                       const q15_t* restrict in_i,
                       const q15_t* restrict in_q,
                       q15_t* restrict out_i,
@@ -123,13 +124,7 @@ static inline q15_t q30_to_q15_sat(int32_t x_q30) {
     return (q15_t)__SSAT(r, 16);
 }
 
-/**
- * Complex matched filter (Q15).
- * Computes: y = sum_{k=0..N-1}  (xi[k] + j xq[k]) * (hi[k] + j hq[k])
- * Assume (hi,hq) is already time-reversed AND conjugated replica.
- * Returns I/Q in Q15. Uses 64-bit accumulators for safety.
- */
-void matched_filter_q15(
+void dsp_matched_filter_q15(
     const q15_t* restrict xi,  // input I window, length N
     const q15_t* restrict xq,  // input Q window, length N
     const q15_t* restrict hi,  // replica I (time-rev + conj), length N
