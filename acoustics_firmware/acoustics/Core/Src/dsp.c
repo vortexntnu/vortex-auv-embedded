@@ -1,6 +1,7 @@
 #include "dsp.h"
 #include <stdint.h>
 #include "arm_math_types.h"
+#include "cmsis_gcc.h"
 #include "dsp/filtering_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
@@ -59,10 +60,10 @@ void dsp_init(struct dsp_context* ctx,
 }
 
 static inline q15_t mul_q15(q15_t a, q15_t b) {
-    int32_t t = (int32_t)a * (int32_t)b; 
-    t = (t << 1);                       
-    t = t + (1 << 15);                 
-    return (q15_t)__SSAT(t >> 16, 16);   
+    int32_t t = (int32_t)a * (int32_t)b;
+    t = (t << 1);
+    t = t + (1 << 15);
+    return (q15_t)__SSAT(t >> 16, 16);
 }
 
 void dsp_mix_to_baseband_q15(struct dsp_context* ctx,
@@ -116,168 +117,68 @@ void dsp_decimate_q15(struct dsp_context* ctx,
     arm_fir_decimate_q15(&ctx->fir_q, in_q, out_q, size);
 }
 
-uint32_t dsp_matched_filter_q15(const struct dsp_context* ctx,
-                                const q15_t* restrict in_i,
-                                const q15_t* restrict in_q,
-                                uint32_t len_in,
-                                q15_t* restrict out_corr,
-                                q15_t* peak_val,
-                                q15_t* opt_peak_re,
-                                q15_t* opt_peak_im) {
-    const uint32_t L = ctx->mf_len;
-    if (L == 0u || len_in < L) {
-        if (peak_val)
-            *peak_val = 0.0f;
-        return 0u;
-    }
-
-    const uint32_t out_len = len_in - L + 1u;
-    const q15_t* restrict hi = ctx->mf_ref_i;
-    const q15_t* restrict hq = ctx->mf_ref_q;
-
-    float32_t best = -FLT_MAX;
-    uint32_t best_k = 0u;
-    float32_t best_re = 0.0f, best_im = 0.0f;
-
-    float32_t xr0;
-    float32_t xq0;
-    float32_t hr0;
-    float32_t hq0;
-    float32_t xr1;
-    float32_t xq1;
-    float32_t hr1;
-    float32_t hq1;
-
-    for (uint32_t k = 0; k < out_len; ++k) {
-        float32_t acc_re = 0.0f, acc_im = 0.0f;
-
-        uint32_t n = 0;
-        for (; n + 1u < L; n += 2u) {
-            // n
-            xr0 = in_i[k + n];
-            xq0 = in_q[k + n];
-            hr0 = hi[n];
-            hq0 = hq[n];
-            acc_re += xr0 * hr0 - xq0 * hq0;
-            acc_im += xr0 * hq0 + xq0 * hr0;
-            // n+1
-            xr1 = in_i[k + n + 1];
-            xq1 = in_q[k + n + 1];
-            hr1 = hi[n + 1];
-            hq1 = hq[n + 1];
-            acc_re += xr1 * hr1 - xq1 * hq1;
-            acc_im += xr1 * hq1 + xq1 * hr1;
-        }
-        for (; n < L; ++n) {
-            float32_t xr = in_i[k + n];
-            float32_t xqv = in_q[k + n];
-            float32_t hr = hi[n];
-            float32_t hqv = hq[n];
-            acc_re += xr * hr - xqv * hqv;
-            acc_im += xr * hqv + xqv * hr;
-        }
-
-        float32_t p = acc_re * acc_re + acc_im * acc_im;
-
-        if (out_corr)
-            out_corr[k] = p;
-
-        if (p > best) {
-            best = p;
-            best_k = k;
-            best_re = acc_re;
-            best_im = acc_im;
-        }
-    }
-
-    if (peak_val)
-        *peak_val = best;
-    if (opt_peak_re)
-        *opt_peak_re = best_re;
-    if (opt_peak_im)
-        *opt_peak_im = best_im;
-    return best_k;
+// Round+shift Q30 -> Q15 with saturation
+static inline q15_t q30_to_q15_sat(int32_t x_q30) {
+    int32_t r = (x_q30 + (1 << 14)) >> 15;  // round-to-nearest
+    return (q15_t)__SSAT(r, 16);
 }
 
-// uint32_t dsp_matched_filter(const struct dsp_context* ctx,
-//                             const float32_t* restrict in_i,
-//                             const float32_t* restrict in_q,
-//                             uint32_t len_in,
-//                             float32_t* restrict out_corr,
-//                             float32_t* peak_val,
-//                             float32_t* opt_peak_re,
-//                             float32_t* opt_peak_im) {
-//     const uint32_t L = ctx->mf_len;
-//     if (L == 0u || len_in < L) {
-//         if (peak_val)
-//             *peak_val = 0.0f;
-//         return 0u;
-//     }
-//
-//     const uint32_t out_len = len_in - L + 1u;
-//     const float32_t* restrict hi = ctx->mf_ref_i;
-//     const float32_t* restrict hq = ctx->mf_ref_q;
-//
-//     float32_t best = -FLT_MAX;
-//     uint32_t best_k = 0u;
-//     float32_t best_re = 0.0f, best_im = 0.0f;
-//
-//     float32_t xr0;
-//     float32_t xq0;
-//     float32_t hr0;
-//     float32_t hq0;
-//     float32_t xr1;
-//     float32_t xq1;
-//     float32_t hr1;
-//     float32_t hq1;
-//
-//     for (uint32_t k = 0; k < out_len; ++k) {
-//         float32_t acc_re = 0.0f, acc_im = 0.0f;
-//
-//         uint32_t n = 0;
-//         for (; n + 1u < L; n += 2u) {
-//             // n
-//             xr0 = in_i[k + n];
-//             xq0 = in_q[k + n];
-//             hr0 = hi[n];
-//             hq0 = hq[n];
-//             acc_re += xr0 * hr0 - xq0 * hq0;
-//             acc_im += xr0 * hq0 + xq0 * hr0;
-//             // n+1
-//             xr1 = in_i[k + n + 1];
-//             xq1 = in_q[k + n + 1];
-//             hr1 = hi[n + 1];
-//             hq1 = hq[n + 1];
-//             acc_re += xr1 * hr1 - xq1 * hq1;
-//             acc_im += xr1 * hq1 + xq1 * hr1;
-//         }
-//         for (; n < L; ++n) {
-//             float32_t xr = in_i[k + n];
-//             float32_t xqv = in_q[k + n];
-//             float32_t hr = hi[n];
-//             float32_t hqv = hq[n];
-//             acc_re += xr * hr - xqv * hqv;
-//             acc_im += xr * hqv + xqv * hr;
-//         }
-//
-//         float32_t p = acc_re * acc_re + acc_im * acc_im;
-//
-//         if (out_corr)
-//             out_corr[k] = p;
-//
-//         if (p > best) {
-//             best = p;
-//             best_k = k;
-//             best_re = acc_re;
-//             best_im = acc_im;
-//         }
-//     }
-//
-//     if (peak_val)
-//         *peak_val = best;
-//     if (opt_peak_re)
-//         *opt_peak_re = best_re;
-//     if (opt_peak_im)
-//         *opt_peak_im = best_im;
-//     return best_k;
-// }
+/**
+ * Complex matched filter (Q15).
+ * Computes: y = sum_{k=0..N-1}  (xi[k] + j xq[k]) * (hi[k] + j hq[k])
+ * Assume (hi,hq) is already time-reversed AND conjugated replica.
+ * Returns I/Q in Q15. Uses 64-bit accumulators for safety.
+ */
+void matched_filter_q15(
+    const q15_t* restrict xi,  // input I window, length N
+    const q15_t* restrict xq,  // input Q window, length N
+    const q15_t* restrict hi,  // replica I (time-rev + conj), length N
+    const q15_t* restrict hq,  // replica Q (time-rev + conj), length N
+    uint32_t N,
+    q15_t* outI,
+    q15_t* outQ) {
+    // We’ll accumulate the four partial sums in 64-bit, then combine:
+    // re = sum(xi*hi)  - sum(xq*hq)
+    // im = sum(xi*hq)  + sum(xq*hi)
+    int64_t acc_xi_hi = 0;
+    int64_t acc_xq_hq = 0;
+    int64_t acc_xi_hq = 0;
+    int64_t acc_xq_hi = 0;
+    int32_t xi2;
+    int32_t xq2;
+    int32_t hi2;
+    int32_t hq2;
+
+    uint32_t n2 = N >> 1;
+    for (uint32_t i = 0; i < n2; ++i) {
+        xi2 = __PKHBT((uint16_t)xi[2 * i], (uint16_t)xi[2 * i + 1], 16);
+        xq2 = __PKHBT((uint16_t)xq[2 * i], (uint16_t)xq[2 * i + 1], 16);
+        hi2 = __PKHBT((uint16_t)hi[2 * i], (uint16_t)hi[2 * i + 1], 16);
+        hq2 = __PKHBT((uint16_t)hq[2 * i], (uint16_t)hq[2 * i + 1], 16);
+
+        // Dual 16x16 → 64-bit accumulate (Q15*Q15 → Q30 per lane, summed)
+        acc_xi_hi = __SMLALD(xi2, hi2, acc_xi_hi);  // sum(xi*hi)
+        acc_xq_hq = __SMLALD(xq2, hq2, acc_xq_hq);  // sum(xq*hq)
+        acc_xi_hq = __SMLALD(xi2, hq2, acc_xi_hq);  // sum(xi*hq)
+        acc_xq_hi = __SMLALD(xq2, hi2, acc_xq_hi);  // sum(xq*hi)
+    }
+
+    if (N & 1) {
+        uint32_t k = N - 1;
+        acc_xi_hi += (int32_t)xi[k] * (int32_t)hi[k];
+        acc_xq_hq += (int32_t)xq[k] * (int32_t)hq[k];
+        acc_xi_hq += (int32_t)xi[k] * (int32_t)hq[k];
+        acc_xq_hi += (int32_t)xq[k] * (int32_t)hi[k];
+    }
+
+    int64_t re_q30_64 = acc_xi_hi - acc_xq_hq;
+    int64_t im_q30_64 = acc_xi_hq + acc_xq_hi;
+
+    // Convert Q30 → Q15 (round) with saturation
+    // We downshift in 64-bit first to avoid intermediate overflow.
+    int32_t re_q30_32 = (int32_t)re_q30_64;  // safe after >> if you prefer
+    int32_t im_q30_32 = (int32_t)im_q30_64;
+
+    *outI = q30_to_q15_sat(re_q30_32);
+    *outQ = q30_to_q15_sat(im_q30_32);
+}
