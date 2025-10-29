@@ -56,14 +56,14 @@ int main(void) {
             // update again if needed
         }
 
-        wsenCycleTick();
-        if (wsenCycleDoneOk(&pressure, &temp)) {
-            wsenReset();
+        wsen_cycle_tick();
+        if (wsen_cycle_done_ok(&pressure, &temp)) {
+            wsen_reset();
             // TODO: do something with pressure and temp
         } else {
             SERCOM_I2C_ERROR err;
-            if (wsenCycleFailed(&err)) {
-                wsenReset();
+            if (wsen_cycle_failed(&err)) {
+                wsen_reset();
             }
         }
     }

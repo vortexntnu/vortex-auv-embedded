@@ -83,7 +83,7 @@ static bool kick_read(uint8_t reg, uint8_t* buf, uint32_t len) {
     return SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &cycle.reg, 1, buf, len);
 }
 
-static void sercom3I2cCb(uintptr_t context) {
+static void sercom3I2c_cb(uintptr_t context) {
     (void)context;
     cycle.err = SERCOM3_I2C_ErrorGet();
 
@@ -128,13 +128,13 @@ static void sercom3I2cCb(uintptr_t context) {
 
 void i2c_init(void) {
     SERCOM3_I2C_Initialize();
-    SERCOM3_I2C_CallbackRegister(sercom3I2cCb, 0);
+    SERCOM3_I2C_CallbackRegister(sercom3I2c_cb, 0);
     cycle.state = WSEN_IDLE;
     cycle.done = false;
     cycle.err = SERCOM_I2C_ERROR_NONE;
 }
 
-void wsenCycleStart(void) {
+void wsen_cycle_start(void) {
     if (cycle.state != WSEN_IDLE && cycle.state != WSEN_DONE &&
         cycle.state != WSEN_ERROR) {
         return;  // already running
@@ -152,7 +152,7 @@ void wsenCycleStart(void) {
     }
 }
 
-void wsenCycleTick(void) {
+void wsen_cycle_tick(void) {
     if (cycle.state == WSEN_KICK_PRESSURE) {
         if (kick_read(REG_DATA_P_XL, cycle.pBuf, 3)) {
             cycle.state = WSEN_WAIT_PRESSURE;
@@ -164,7 +164,7 @@ void wsenCycleTick(void) {
     }
 }
 
-bool wsenCycleDoneOk(float* kPa, float* degC) {
+bool wsen_cycle_done_ok(float* kPa, float* degC) {
     if (!cycle.done || cycle.state == WSEN_ERROR)
         return false;
     *kPa = cycle.lastPressure;
@@ -172,7 +172,7 @@ bool wsenCycleDoneOk(float* kPa, float* degC) {
     return true;
 }
 
-bool wsenCycleFailed(SERCOM_I2C_ERROR* errOut) {
+bool wsen_cycle_failed(SERCOM_I2C_ERROR* errOut) {
     if (!cycle.done || cycle.state != WSEN_ERROR)
         return false;
     if (errOut)
@@ -180,7 +180,7 @@ bool wsenCycleFailed(SERCOM_I2C_ERROR* errOut) {
     return true;
 }
 
-void wsenReset(void) {
+void wsen_reset(void) {
     cycle.state = WSEN_IDLE;
     cycle.done = false;
 }
