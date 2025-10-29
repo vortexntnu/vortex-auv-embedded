@@ -76,22 +76,26 @@ void dsp_mix_to_baseband_q15(struct dsp_context* ctx,
     q15_t s = ctx->sin_p;
     const q15_t cd = ctx->cos_d;
     const q15_t sd = ctx->sin_d;
+    const q31_t cdsd = __PKHBT((uint16_t)cd, (uint16_t)sd, 16);
+    q31_t cs, sc;
+    q31_t c_q31, s_q31;
+    q15_t* restrict oi = out_i;
+    q15_t* restrict oq = out_q;
 
     for (uint32_t k = 0; k < size; k++) {
-        q15_t x = *raw_samples++;
+        const q15_t x = *raw_samples++;
 
-        *out_i++ = mul_q15(x, c);
-        *out_q++ = mul_q15(x, (q15_t)(-s));
+        *oi++ = mul_q15(x, c);
+        *oq++ = mul_q15(x, (q15_t)(-s));
 
-        int32_t cs = __PKHBT((uint16_t)c, (uint16_t)s, 16);
-        int32_t sc = __PKHBT((uint16_t)s, (uint16_t)c, 16);
-        int32_t cdsd = __PKHBT((uint16_t)cd, (uint16_t)sd, 16);
+        cs = __PKHBT((uint16_t)c, (uint16_t)s, 16);
+        sc = __PKHBT((uint16_t)s, (uint16_t)c, 16);
 
-        int32_t c_q30 = __SMUSD(cs, cdsd);
-        int32_t s_q30 = __SMLAD(sc, cdsd, 0);
+        c_q31 = __SMUSD(cs, cdsd);
+        s_q31 = __SMLAD(sc, cdsd, 0);
 
-        c = (q15_t)__SSAT(((c_q30 << 1) + (1 << 15)) >> 16, 16);
-        s = (q15_t)__SSAT(((s_q30 << 1) + (1 << 15)) >> 16, 16);
+        c = (q15_t)__SSAT(((c_q31 << 1) + (1 << 15)) >> 16, 16);
+        s = (q15_t)__SSAT(((s_q31 << 1) + (1 << 15)) >> 16, 16);
     }
 
     ctx->cos_p = c;
