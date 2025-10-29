@@ -50,7 +50,6 @@ static const uint32_t adc_seq_regs[8] = {0x1800, 0x1801, 0x1802, 0x1803, 0x1804,
 static volatile uint16_t adc_res[8] = {0};
 static volatile bool adc_dma_done = false;
 static volatile bool overcurrent_fault = false;
-static float input_voltage;
 
 /* Application */
 static const Thruster thrusters[8] = {
