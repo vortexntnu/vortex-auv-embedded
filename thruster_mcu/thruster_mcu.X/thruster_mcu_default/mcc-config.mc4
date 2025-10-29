@@ -1,9 +1,8 @@
 configVersion: 1.0.0
-coreVersion: 5.8.2
-spaHostVersion: 1.0.0
+coreVersion: 5.8.3
+spaHostVersion: 1.2.0
 device: ATSAME54P20A
-deviceLibrary:
-  className: null
+deviceLibrary: {}
 groupModules: []
 modules:
 - adc0
@@ -26,7 +25,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: ceda46e45243b50c5908f2e7ca54b062862dccfcc400d59f306a518c42c8ca50
+  hash: 60cbcc9aaada92fa31f418378842b07e8a32bdc2a40233dc7728028841f21739
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -36,7 +35,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: 0a1b448841801e7b2592b1ec4abd975630c6d707191bdb70c0490e54ff686dfa
+  hash: 9833f9c9afb1ffb8ea31c3ee1899fe1b0fc86bfbcf293e7c8e6f02e30cb9d7a6
 - file: ../src/config/default/interrupts.c
   hash: 94195b2e56a46a528bd69886cc3efce8d7551f299665b91f3a19937a71df6244
 - file: ../src/config/default/interrupts.h
@@ -84,7 +83,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/pm/plib_pm.h
   hash: 1ca20c6f2ba543b9ab30691fe90c11c6f8ea37e4631019cd9db771dcd57cc6b1
 - file: ../src/config/default/peripheral/port/plib_port.c
-  hash: 4cedcb28f082422cb2926a2b197fd4d252855ddfbb82c928604dcf9657489c26
+  hash: 31c747b33cb35785d21cc19e5928179555a14502a393f7105a3405d0d76ea825
 - file: ../src/config/default/peripheral/port/plib_port.h
   hash: bd4b3257c12b2240ab8dc2225d4fbb47663a617410bee20db44b60417e499be3
 - file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c
@@ -128,7 +127,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/wdt/plib_wdt.h
   hash: d4bb429b750e4e2970fe12d9c4eea02d2e0b1f1d30279577033555379f94e1a0
 - file: ../src/config/default/pin_configurations.csv
-  hash: 67fbc3bd07b3485ceabd943f2f70831bfc128d801501f38c7231fca0e414788c
+  hash: ee3bae5fbaa4e65402caacf09800b37d2a1573b60788ab7030c84a83b3b5148d
 - file: ../src/config/default/startup_xc32.c
   hash: f374b97d65f92553f1b75d8c9239b8b0f8581c710f78ea47b02c7f6fa6f74c74
 - file: ../src/config/default/stdio/xc32_monitor.c

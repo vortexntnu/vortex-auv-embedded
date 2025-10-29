@@ -45,7 +45,7 @@ static CAN_RX_BUFFER rx_buf;
 static volatile uint32_t can_status = 0;
 
 /* ADC */
-static const uint32_t adc_seq_regs[8] = {0x1800, 0x1801, 0x1802, 0x1803, 0x1804, 0x1805, 0x1806, 0x1807};
+static const uint32_t adc_seq_regs[8] = {0x1801, 0x1802, 0x1803, 0x1805, 0x1806, 0x1807, 0x1812, 0x1813};
 
 static volatile uint16_t adc_res[8] = {0};
 static volatile bool adc_dma_done = false;
