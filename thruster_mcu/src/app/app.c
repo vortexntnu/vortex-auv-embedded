@@ -89,27 +89,43 @@ static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHa
 
 void App_Init(void) {
     /* Configure CAN RAM & callbacks */
+    printf("\r\n App_Init called\r\n\r\n");
+    
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
     CAN0_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
+    
+    printf("\r\n CAN0 Successfully configured!\r\n\r\n");
     
     /* Configure DMA */
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_1, adc_sram_dma_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_1, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_res, 16); // Each adc result is 16 bits=2 bytes. 8*2=16
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)adc_seq_regs, (const void *)&ADC0_REGS->ADC_DSEQDATA, 32); // DSEQDATA is 32 bits=4 bytes. 8 * 4 = 32
     
+    printf("\r\n DMAC Successfully configured!\r\n\r\n");
+    
     /* Clear RX buffer and prime the first receive */
+    
+
+    
     memset(&rx_buf, 0x00, sizeof(rx_buf));
     CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 
+    printf("\r\n CAN0 armed to read\r\n\r\n");
+    
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
+    //printf("\r\n ADC0 Successfully configured!\r\n\r\n");
+    
     TC0_TimerStart();
+    //printf("\r\n TC0 Successfully configured!\r\n\r\n");
     
     /* Enable watchdog */
     WDT_Enable();
+    //printf("\r\n WDT Successfully configured!\r\n\r\n");
 }
 
 void App_Task(void) {   
+    printf("\r\n App_task called\r\n\r\n");
     /* Check for overcurrent */
     check_overcurrent();
     /* Handle any message that arrived since last time */
@@ -155,6 +171,7 @@ static void message_handler(void) {
 }
 
 static void check_overcurrent(void) {
+    printf("\r\n Entered overcurrent check\r\n\r\n");
     if (adc_dma_done) {
         adc_dma_done = false;
 
