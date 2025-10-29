@@ -13,8 +13,8 @@ static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 static const uint32_t CAN_EVENT_ID_BASE         = 0x369U;
 static const uint8_t  MESSAGES_TO_READ          = 1U;
 static const float    ADC_VREF                  = 3.3f;
-static const float    R_SHUNT_OHMS              = 0.005f; // Placeholder for the actual shunt data
-static const float    INA_GAIN                  = 50.0f;  // Placeholder for the actual INA gain
+static const float    G_IMON                    = 18.18e-6f; // Amplifier gain 18.18 uA/A -> in A/A
+static const float    R_IMON                    = 2550.0f;   // 2.55 kilo ohms resistor
 static const uint8_t  THRUSTER_RATED_CURRENT    = 15U;    // From TSD7 datasheet  
 
 /* --- Types --- */
@@ -159,11 +159,11 @@ static void check_overcurrent(void) {
         adc_dma_done = false;
 
         for (size_t sample = 0; sample < 8; sample++) {
-            float input_voltage = (float)adc_res[sample] * ADC_VREF / 4095.0f;
-            float amps = (input_voltage / INA_GAIN) / R_SHUNT_OHMS;
+            float V_Imon = (float)adc_res[sample] * ADC_VREF / 4095.0f;
+            float I_out = V_Imon / (G_IMON * R_IMON);
 
-            printf("\r\n Measured current = %.2f A \r\n\r\n", (double)amps);
-            if (amps > THRUSTER_RATED_CURRENT) {
+            printf("\r\n Measured current = %.2f A \r\n\r\n", (double)I_out);
+            if (I_out > THRUSTER_RATED_CURRENT) {
                 overcurrent_fault = true;
                 printf("\r\n Overcurrent flagged \r\n\r\n");
                 break;
