@@ -12,11 +12,9 @@ int main ( void ) {
     
     while ( true )
     {
-        printf("\r\n Inside while true loop in main.c\r\n\r\n");
         /* Sleep until an interrupt occurs*/
         PM_IdleModeEnter();
         
-        printf("\r\n Beyond PM_IdleModeEnter() \r\n\r\n");
         /* Run application logic */
         App_Task();
         

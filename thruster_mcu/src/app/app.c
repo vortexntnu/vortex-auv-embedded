@@ -89,52 +89,56 @@ static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHa
 
 void App_Init(void) {
     /* Configure CAN RAM & callbacks */
-    printf("\r\n App_Init called\r\n\r\n");
+    printf("App Init called\r\n");
+    printf("---------------\r\n");
     
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
     CAN0_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
     
-    printf("\r\n CAN0 Successfully configured!\r\n\r\n");
+    printf("CAN0 Successfully configured!\r\n");
     
     /* Configure DMA */
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_1, adc_sram_dma_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_1, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_res, 16); // Each adc result is 16 bits=2 bytes. 8*2=16
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)adc_seq_regs, (const void *)&ADC0_REGS->ADC_DSEQDATA, 32); // DSEQDATA is 32 bits=4 bytes. 8 * 4 = 32
     
-    printf("\r\n DMAC Successfully configured!\r\n\r\n");
+    printf("DMAC Successfully configured!\r\n");
     
-    /* Clear RX buffer and prime the first receive */
+    /* Clear RX buffer and prime the first receive */  
+    // TODO: Fix this
     
+    //memset(rxFifo0, 0x00, sizeof(rx_buf));
+    //CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 
-    
-    memset(&rx_buf, 0x00, sizeof(rx_buf));
-    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
-
-    printf("\r\n CAN0 armed to read\r\n\r\n");
+    printf("CAN0 not armed to read yet!\r\n");
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
-    //printf("\r\n ADC0 Successfully configured!\r\n\r\n");
+    printf("ADC0 Successfully configured!\r\n");
     
     TC0_TimerStart();
-    //printf("\r\n TC0 Successfully configured!\r\n\r\n");
+    printf("TC0 Successfully configured!\r\n");
     
     /* Enable watchdog */
     WDT_Enable();
-    //printf("\r\n WDT Successfully configured!\r\n\r\n");
+    printf("WDT Successfully configured!\r\n\r\n");
 }
 
-void App_Task(void) {   
-    printf("\r\n App_task called\r\n\r\n");
+void App_Task(void) {
+    printf("App Task called\r\n");
+    printf("---------------\r\n");
     /* Check for overcurrent */
+    // TODO: Only necessary to check this after adc results are ready
     check_overcurrent();
     /* Handle any message that arrived since last time */
     message_handler();
+    printf("\r\n\r\n");
 }
 
 /* --- Private helpers --- */
 
 static void message_handler(void) {
+    printf("Message Handler called!\r\n");
     /* Interpret event from CAN frame id */
     uint8_t event = (uint8_t)(rx_buf.id - CAN_EVENT_ID_BASE);
     const uint8_t *pData = rx_buf.data;
@@ -167,23 +171,25 @@ static void message_handler(void) {
     }
 
     /* Re-arm RX FIFO for next frame */
-    CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
+    //CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 }
 
 static void check_overcurrent(void) {
-    printf("\r\n Entered overcurrent check\r\n\r\n");
+    printf("Entered overcurrent check\r\n");
     if (adc_dma_done) {
+        printf("ADC DMA transmission done -- Monitoring data\r\n\r\n");
         adc_dma_done = false;
 
         for (size_t sample = 0; sample < 8; sample++) {
             float V_Imon = (float)adc_res[sample] * ADC_VREF / 4095.0f;
             float I_out = V_Imon / (G_IMON * R_IMON);
 
-            printf("\r\n Measured current = %.2f A \r\n\r\n", (double)I_out);
+            printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
+            //printf("\r\n Measured current = %.2f A \r\n\r\n", (double)I_out);
             if (I_out > THRUSTER_RATED_CURRENT) {
                 overcurrent_fault = true;
-                printf("\r\n Overcurrent flagged \r\n\r\n");
-                break;
+                printf("Overcurrent flagged \r\n\r\n");
+                // break;
             }
         }
     }
@@ -300,6 +306,7 @@ static void CAN_Transmit_Callback(uintptr_t context) {
 static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle) {
     
     if (event == DMAC_TRANSFER_EVENT_COMPLETE) {
+        printf("Callback triggered: DMAC_TRANSFER_EVENT_COMPLETE event recorded \r\n\r\n");
         adc_dma_done = true;
     }
 }
