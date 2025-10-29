@@ -236,7 +236,14 @@ static void turn_lights_on(void) {
 }
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
-    return (value < low) ? low : (value > high) ? high : value;
+    if (value < low) {
+        return low;
+    } else if (value > high) {
+        return high;
+    } else {
+        return value;
+    }
+    
 }
 
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) {
