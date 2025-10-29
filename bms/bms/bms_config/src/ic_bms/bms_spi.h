@@ -4,6 +4,8 @@
 #include<stdint.h>
 #include<stdbool.h>
 
+
+
 //Direct Commands
 
 #define BatteryStatus 0x12
@@ -29,7 +31,11 @@
 
 */ // 16 cell voltage readings avaliable 
 
+#define BQ_CS_GROUP   (0U)          
+#define BQ_CS_MASK    (1UL << 18)   
 
+#define R 0 // Read; Used in DirectCommands and Subcommands functions
+#define W 1 // Write; Used in DirectCommands and Subcommands functions
 
 
 
@@ -45,6 +51,23 @@
 #define RESET 0x0012
 #define SHUTDOWN 0x0010
 
+// Thresholds and Delays values (TBC)
+
+#define COV_THRESHOLD_MV   4250
+#define COV_DELAY_MS       200
+#define CUV_THRESHOLD_MV   3000
+#define CUV_DELAY_MS       300
+
+// Addresses
+#define COV_THRESHOLD_ADDR 0x9278
+#define COV_DELAY_ADDR     0x9279
+#define CUV_THRESHOLD_ADDR 0x9275
+#define CUV_DELAY_ADDR     0x9276
+
+//Config Mode
+#define ENTER_CONFIG_UPDATE 0x0090
+#define EXIT_CONFIG_UPDATE  0x0092
+
 
 /* Minimal driver: only SPI+CS bring-up */
 void BQ76942_Init(void);
@@ -55,7 +78,8 @@ bool BQ_CommandOnly(uint16_t subcmd);
 bool BQ_DirectRead(uint8_t command, uint8_t *data, uint8_t count);
 bool BQ_DirectWrite(uint8_t command, const uint8_t *data, uint8_t count);
 bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length);
-bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
+bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length);
+void BMS_SetProtectionThresholds(void);
 
 
 

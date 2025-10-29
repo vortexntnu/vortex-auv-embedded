@@ -3,19 +3,8 @@
 #include <sys/types.h>
 #include "peripheral/sercom/spi_master/plib_sercom_spi_master_common.h"
 #include "peripheral/sercom/spi_master/plib_sercom0_spi_master.h"
-#include "peripheral/sercom/spi_master/plib_sercom_spi_master_common.h"
 #include "definitions.h"
 #include "bms_spi.h"
-
-
-
-
-
-#define BQ_CS_GROUP   (0U)          
-#define BQ_CS_MASK    (1UL << 18)   
-
-#define R 0 // Read; Used in DirectCommands and Subcommands functions
-#define W 1 // Write; Used in DirectCommands and Subcommands functions
 
 
 static inline void BQ_CS_Low(void)  { PORT_REGS->GROUP[BQ_CS_GROUP].PORT_OUTCLR = BQ_CS_MASK; }
@@ -162,6 +151,8 @@ bool BQ_CommandOnly(uint16_t subcmd){
         return false;
     _delay(20000);
 
+    return true;
+
 }
 /*
     example of BQ_commandOnly usage:
@@ -197,7 +188,7 @@ bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length)
         }
     }
     _delay(2000);
-    return ok;
+    return true;
 }
 
 bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
@@ -214,26 +205,62 @@ bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
         return false;
     if (!WriteReg(0x3F, msb))
         return false;
-    
+
     for (uint8_t i=0; i<length; i++){
         if (!WriteReg(0x40+i,data[i]))
             return false;
+        sum += data[i];  // Move this inside the loop
     }
 
-    sum = lsb + msb;
-    for (uint8_t i=0; i<length; i++){
-        sum += data[i];
+    sum += lsb + msb;
     checksum=(uint8_t)(0xff -(sum & 0xFF));
 
     if (!WriteReg(0x60, checksum))
         return false;
     if(!WriteReg(0x61, length))
         return false;
+    
     _delay(20000);
-
     return true;
-
 }
+
+   
+void BMS_SetProtectionThresholds(void)
+{
+    
+    BQ_CommandOnly(ENTER_CONFIG_UPDATE);
+
+
+    uint8_t cov_val = (uint8_t)(COV_THRESHOLD_MV / 50.6f + 0.5f);
+    if (cov_val < 20)  cov_val = 20;
+    if (cov_val > 110) cov_val = 110;
+    BQ_WriteSubCommand(COV_THRESHOLD_ADDR, &cov_val, 1);
+
+    uint16_t cov_delay_ticks = (uint16_t)(COV_DELAY_MS / 3.3f + 0.5f);
+    uint8_t cov_delay_bytes[2] = {
+        (uint8_t)(cov_delay_ticks & 0xFF),
+        (uint8_t)((cov_delay_ticks >> 8) & 0xFF)
+    };
+    BQ_WriteSubCommand(COV_DELAY_ADDR, cov_delay_bytes, 2);
+
+    
+    uint8_t cuv_val = (uint8_t)(CUV_THRESHOLD_MV / 50.6f + 0.5f);
+    if (cuv_val < 20)  cuv_val = 20;
+    if (cuv_val > 110) cuv_val = 110;
+    BQ_WriteSubCommand(CUV_THRESHOLD_ADDR, &cuv_val, 1);
+
+    uint16_t cuv_delay_ticks = (uint16_t)(CUV_DELAY_MS / 3.3f + 0.5f);
+    uint8_t cuv_delay_bytes[2] = {
+        (uint8_t)(cuv_delay_ticks & 0xFF),
+        (uint8_t)((cuv_delay_ticks >> 8) & 0xFF)
+    };
+    BQ_WriteSubCommand(CUV_DELAY_ADDR, cuv_delay_bytes, 2);
+
+
+    BQ_CommandOnly(EXIT_CONFIG_UPDATE);
+}
+
+
     
 
 
