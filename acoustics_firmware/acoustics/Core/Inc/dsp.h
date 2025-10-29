@@ -24,30 +24,41 @@ extern "C" {
 
 #define PINGER_FREQUENCY 30000
 
+/**
+ * @brief DSP processing context for mix → IIR → FIR/decimate → matched filter.
+ *
+ * Holds oscillator state, IIR/FIR instances and their state buffers, and the
+ * preprocessed matched-filter reference. Initialize once (e.g., in dsp_init)
+ * before using the dsp functions.
+ */
 struct dsp_context {
-    // NCO (shared across all channels; keep in lockstep)
-    float32_t dphase;    // 2*pi*f0/fs_in
-    q15_t cos_d, sin_d;  // cos/sin(dphase)
-    q15_t cos_p, sin_p;  // running oscillator state
+    /* --- NCO (shared across I/Q) --- */
+    float32_t dphase; /**< NCO phase step (rad/sample), e.g. 2*pi*f0/fs_in. */
+    q15_t cos_d;      /**< Q15 cos(dphase) precompute for oscillator update. */
+    q15_t sin_d;      /**< Q15 sin(dphase) precompute for oscillator update. */
+    q15_t cos_p;      /**< Q15 running oscillator cos(phase). */
+    q15_t sin_p;      /**< Q15 running oscillator sin(phase). */
 
-    // IIR lowpass (same chain for I and Q)
-    arm_biquad_casd_df1_inst_q15 iir_i;
-    arm_biquad_casd_df1_inst_q15 iir_q;
+    /* --- IIR low-pass (separate chains for I and Q) --- */
+    arm_biquad_casd_df1_inst_q15 iir_i; /**< CMSIS biquad DF1 instance for I. */
+    arm_biquad_casd_df1_inst_q15 iir_q; /**< CMSIS biquad DF1 instance for Q. */
 
-    // FIR decimators (I and Q)
-    arm_fir_decimate_instance_q15 fir_i;
-    arm_fir_decimate_instance_q15 fir_q;
+    /* --- FIR decimators (I and Q) --- */
+    arm_fir_decimate_instance_q15 fir_i; /**< CMSIS FIR decimator instance for I. */
+    arm_fir_decimate_instance_q15 fir_q; /**< CMSIS FIR decimator instance for Q. */
 
-    q15_t iir_state_i[4 * DSP_MAX_BIQUADS];
-    q15_t iir_state_q[4 * DSP_MAX_BIQUADS];
+    /* --- IIR state (4 samples per biquad section, per CMSIS) --- */
+    q15_t iir_state_i[4 * DSP_MAX_BIQUADS]; /**< I state buffer; zero on init. */
+    q15_t iir_state_q[4 * DSP_MAX_BIQUADS]; /**< Q state buffer; zero on init. */
 
-    // pState length must be (numTaps + blockSize - 1)
-    q15_t fir_state_i[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1];
-    q15_t fir_state_q[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1];
+    /* --- FIR decimator state (per CMSIS: numTaps + blockSize - 1) --- */
+    q15_t fir_state_i[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1]; /**< I FIR state. */
+    q15_t fir_state_q[DSP_MAX_FIR_TAPS + DSP_MAX_BLOCK_SAMPLES - 1]; /**< Q FIR state. */
 
-    const q15_t* mf_ref_i;  // time-reversed + conjugated replica
-    const q15_t* mf_ref_q;  // time-reversed + conjugated replica
-    uint32_t mf_len;        // in complex samples
+    /* --- Matched filter reference (time-reversed + conjugated) --- */
+    const q15_t* mf_ref_i; /**< Q15 I part of replica (reversed & conj). */
+    const q15_t* mf_ref_q; /**< Q15 Q part of replica (reversed & conj). */
+    uint32_t mf_len;       /**< Replica length in complex samples. */
 };
 
 /**
@@ -56,8 +67,10 @@ struct dsp_context {
  * Sets up internal state and stores the time-reversed reference signal.
  *
  * @param[out] ctx       Pointer to DSP context to initialize.
- * @param[in]  mf_ref_i  Pointer to Q15 I (real) part of the time-reversed reference.
- * @param[in]  mf_ref_q  Pointer to Q15 Q (imag) part of the time-reversed reference.
+ * @param[in]  mf_ref_i  Pointer to Q15 I (real) part of the time-reversed
+ * reference.
+ * @param[in]  mf_ref_q  Pointer to Q15 Q (imag) part of the time-reversed
+ * reference.
  * @param[in]  mf_len    Number of samples in the reference.
  */
 void dsp_init(struct dsp_context* ctx,
@@ -82,7 +95,7 @@ void dsp_mix_to_baseband_q15(struct dsp_context* ctx,
 
 /**
  * TODO: add documentation
- * However since we the FIR decimate might decimate 
+ * However since we the FIR decimate might decimate
  * in the same step, this filter might not be used
  */
 void dsp_lpf_6th_butterworth_q15(struct dsp_context* ctx,
