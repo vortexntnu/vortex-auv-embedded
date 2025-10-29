@@ -1,9 +1,9 @@
 #include "dsp.h"
 #include <stdint.h>
+#include "arm_math_memory.h"
 #include "arm_math_types.h"
 #include "cmsis_gcc.h"
 #include "dsp/filtering_functions.h"
-#include "dsp/support_functions.h"
 
 // ======= 6th-order Butterworth LPF @ fs=192k, fc=450 Hz =======
 // SOS coeffs for CMSIS DF2T: {b0,b1,b2,a1,a2} per biquad.
@@ -109,19 +109,28 @@ void dsp_lpf_6th_butterworth_q15(struct dsp_context* ctx,
 }
 
 void dsp_fir_decimate_q15(struct dsp_context* ctx,
-                      const q15_t* restrict in_i,
-                      const q15_t* restrict in_q,
-                      q15_t* restrict out_i,
-                      q15_t* restrict out_q,
-                      uint32_t size) {
+                          const q15_t* restrict in_i,
+                          const q15_t* restrict in_q,
+                          q15_t* restrict out_i,
+                          q15_t* restrict out_q,
+                          uint32_t size) {
     arm_fir_decimate_q15(&ctx->fir_i, in_i, out_i, size);
     arm_fir_decimate_q15(&ctx->fir_q, in_q, out_q, size);
 }
 
-// Round+shift Q30 -> Q15 with saturation
-static inline q15_t q30_to_q15_sat(int32_t x_q30) {
-    int32_t r = (x_q30 + (1 << 14)) >> 15;  // round-to-nearest
-    return (q15_t)__SSAT(r, 16);
+// Round + shift Q30 → Q15 with saturation (symmetric rounding)
+// Works safely for large 64-bit accumulators.
+static inline q15_t q30_to_q15_sat64(int64_t x_q30) {
+    // symmetric round-to-nearest: +bias for ≥0, -bias for <0
+    x_q30 += (x_q30 >= 0) ? (1LL << 14) : -(1LL << 14);
+    int64_t r = x_q30 >> 15;  // arithmetic shift
+
+    // saturate to Q15 without narrowing overflow
+    if (r > 32767)
+        return (q15_t)32767;
+    if (r < -32768)
+        return (q15_t)-32768;
+    return (q15_t)r;
 }
 
 void dsp_matched_filter_q15(
@@ -129,27 +138,31 @@ void dsp_matched_filter_q15(
     const q15_t* restrict xq,  // input Q window, length N
     const q15_t* restrict hi,  // replica I (time-rev + conj), length N
     const q15_t* restrict hq,  // replica Q (time-rev + conj), length N
-    uint32_t N,
-    q15_t* outI,
-    q15_t* outQ) {
+    uint32_t size,
+    q15_t* restrict outI,
+    q15_t* restrict outQ) {
     // We’ll accumulate the four partial sums in 64-bit, then combine:
     // re = sum(xi*hi)  - sum(xq*hq)
     // im = sum(xi*hq)  + sum(xq*hi)
-    int64_t acc_xi_hi = 0;
-    int64_t acc_xq_hq = 0;
-    int64_t acc_xi_hq = 0;
-    int64_t acc_xq_hi = 0;
-    int32_t xi2;
-    int32_t xq2;
-    int32_t hi2;
-    int32_t hq2;
+    const q15_t* restrict xi_p = xi;
+    const q15_t* restrict xq_p = xq;
+    const q15_t* restrict hi_p = hi;
+    const q15_t* restrict hq_p = hq;
+    q63_t acc_xi_hi = 0;
+    q63_t acc_xq_hq = 0;
+    q63_t acc_xi_hq = 0;
+    q63_t acc_xq_hi = 0;
+    q31_t xi2;
+    q31_t xq2;
+    q31_t hi2;
+    q31_t hq2;
 
-    uint32_t n2 = N >> 1;
+    uint32_t n2 = size >> 1;
     for (uint32_t i = 0; i < n2; ++i) {
-        xi2 = __PKHBT((uint16_t)xi[2 * i], (uint16_t)xi[2 * i + 1], 16);
-        xq2 = __PKHBT((uint16_t)xq[2 * i], (uint16_t)xq[2 * i + 1], 16);
-        hi2 = __PKHBT((uint16_t)hi[2 * i], (uint16_t)hi[2 * i + 1], 16);
-        hq2 = __PKHBT((uint16_t)hq[2 * i], (uint16_t)hq[2 * i + 1], 16);
+        xi2 = read_q15x2_ia(&xi_p);
+        xq2 = read_q15x2_ia(&xq_p);
+        hi2 = read_q15x2_ia(&hi_p);
+        hq2 = read_q15x2_ia(&hq_p);
 
         // Dual 16x16 → 64-bit accumulate (Q15*Q15 → Q30 per lane, summed)
         acc_xi_hi = __SMLALD(xi2, hi2, acc_xi_hi);  // sum(xi*hi)
@@ -158,22 +171,17 @@ void dsp_matched_filter_q15(
         acc_xq_hi = __SMLALD(xq2, hi2, acc_xq_hi);  // sum(xq*hi)
     }
 
-    if (N & 1) {
-        uint32_t k = N - 1;
-        acc_xi_hi += (int32_t)xi[k] * (int32_t)hi[k];
-        acc_xq_hq += (int32_t)xq[k] * (int32_t)hq[k];
-        acc_xi_hq += (int32_t)xi[k] * (int32_t)hq[k];
-        acc_xq_hi += (int32_t)xq[k] * (int32_t)hi[k];
+    if (size & 1) {
+        uint32_t k = size - 1;
+        acc_xi_hi += (q31_t)xi[k] * (q31_t)hi[k];
+        acc_xq_hq += (q31_t)xq[k] * (q31_t)hq[k];
+        acc_xi_hq += (q31_t)xi[k] * (q31_t)hq[k];
+        acc_xq_hi += (q31_t)xq[k] * (q31_t)hi[k];
     }
 
-    int64_t re_q30_64 = acc_xi_hi - acc_xq_hq;
-    int64_t im_q30_64 = acc_xi_hq + acc_xq_hi;
+    q63_t re_q30_64 = acc_xi_hi - acc_xq_hq;
+    q63_t im_q30_64 = acc_xi_hq + acc_xq_hi;
 
-    // Convert Q30 → Q15 (round) with saturation
-    // We downshift in 64-bit first to avoid intermediate overflow.
-    int32_t re_q30_32 = (int32_t)re_q30_64;  // safe after >> if you prefer
-    int32_t im_q30_32 = (int32_t)im_q30_64;
-
-    *outI = q30_to_q15_sat(re_q30_32);
-    *outQ = q30_to_q15_sat(im_q30_32);
+    *outI = q30_to_q15_sat64(re_q30_64);
+    *outQ = q30_to_q15_sat64(im_q30_64);
 }

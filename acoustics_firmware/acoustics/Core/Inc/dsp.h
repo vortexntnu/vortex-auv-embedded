@@ -138,7 +138,7 @@ void dsp_fir_decimate_q15(struct dsp_context* ctx,
  * length N.
  * @param[in]  hq    Pointer to Q15 Q part of pre-reversed & conjugated replica,
  * length N.
- * @param[in]  N     Number of samples in the input window and replica.
+ * @param[in]  size     Number of samples in the input window and replica.
  * @param[out] outI  Pointer to single Q15 output for the real (I) part of y.
  * @param[out] outQ  Pointer to single Q15 output for the imag (Q) part of y.
  */
@@ -146,7 +146,7 @@ void dsp_matched_filter_q15(const q15_t* restrict xi,
                             const q15_t* restrict xq,
                             const q15_t* restrict hi,
                             const q15_t* restrict hq,
-                            uint32_t N,
+                            uint32_t size,
                             q15_t* outI,
                             q15_t* outQ);
 
