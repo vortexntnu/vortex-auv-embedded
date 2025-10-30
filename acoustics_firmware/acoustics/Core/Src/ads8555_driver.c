@@ -146,64 +146,6 @@ bool ADS8555_WaitBusy(uint32_t timeout_us) {
 #endif
 }
 
-static inline void deinterleave_cpu(const uint16_t* restrict src,
-                                    uint16_t* restrict out1,
-                                    uint16_t* restrict out2,
-                                    size_t size) {
-    for (size_t i = 0; i < size; i++) {
-        *out1++ = *src++;
-        *out2++ = *src++;
-    }
-}
-
-static void deinterleave_3x2_to_5(const uint32_t* __restrict srcA,
-                                         const uint32_t* __restrict srcB,
-                                         const uint32_t* __restrict srcC,
-                                         uint32_t n_words,
-                                         int16_t* __restrict outA0,
-                                         int16_t* __restrict outA1,
-                                         int16_t* __restrict outB0,
-                                         int16_t* __restrict outB1,
-                                         int16_t* __restrict outC0) {
-    uint32_t i = 0;
-
-    for (; i + 1u < n_words; i += 2u) {
-        uint32_t wa0 = *srcA++;
-        uint32_t wb0 = *srcB++;
-        uint32_t wc0 = *srcC++;
-
-        uint32_t wa1 = *srcA++;
-        uint32_t wb1 = *srcB++;
-        uint32_t wc1 = *srcC++;
-
-        // Iter 0
-        *outA0++ = (int16_t)(wa0 >> 16);
-        *outA1++ = (int16_t)(wa0);
-        *outB0++ = (int16_t)(wb0 >> 16);
-        *outB1++ = (int16_t)(wb0);
-        *outC0++ = (int16_t)(wc0 >> 16);
-
-        // Iter 1
-        *outA0++ = (int16_t)(wa1 >> 16);
-        *outA1++ = (int16_t)(wa1);
-        *outB0++ = (int16_t)(wb1 >> 16);
-        *outB1++ = (int16_t)(wb1);
-        *outC0++ = (int16_t)(wc1 >> 16);
-    }
-
-    // Tail
-    for (; i < n_words; ++i) {
-        uint32_t wa = *srcA++;
-        uint32_t wb = *srcB++;
-        uint32_t wc = *srcC++;
-
-        *outA0++ = (int16_t)(wa >> 16);
-        *outA1++ = (int16_t)(wa);
-        *outB0++ = (int16_t)(wb >> 16);
-        *outB1++ = (int16_t)(wb);
-        *outC0++ = (int16_t)(wc >> 16);
-    }
-}
 
 void ADS8555_OnSpiHalfCplt(ADS8555_Handle* dev, SPI_HandleTypeDef* hspi) {
     uint8_t b = 1u << half_index(dev, hspi);
