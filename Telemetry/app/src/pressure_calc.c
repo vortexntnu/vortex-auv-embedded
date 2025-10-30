@@ -1,1 +1,377 @@
 #include "wsen_pads_port_sercom3.h"
+// Leak detection with *only* internal absolute pressure P and internal
+// temperature T. Model: r' = dP/P - dT/T; estimate slow background b (hull
+// compliance/depth drift), residual e = r' - b ~ dn/n, then Shewhart + CUSUM on
+// e.
+//
+// Compile: cc -O3 -std=c11 leak_detector_pt_only.c -o leakdet
+#include <math.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// ---------- Tunables (start here) ----------
+typedef struct {
+    // Sampling + filters
+    float sample_hz;  // e.g., 5.0 Hz
+    float lp_tau_s;   // low-pass time constant for P,T (e.g., 8 s)
+    float b_tau_s;    // slow background EWMA time constant (e.g., 20*60 s)
+    // Rolling stats for sigma_e
+    float sigma_window_s;  // e.g., 20*60 s
+    // Thresholds
+    float shewhart_k;           // z-threshold (e.g., 4.0)
+    float shewhart_min_hold_s;  // require sustain (e.g., 3 s)
+    float cusum_k_sigma;        // reference k in units of sigma (e.g., 0.5)
+    float cusum_h_sigma;        // decision h in units of sigma (e.g., 5.0)
+    float slow_alarm_min_s;     // persistence for slow alarm (e.g., 300 s)
+    // Guards
+    float tprime_mask_abs;  // ignore decisions when |t'| exceeds (e.g., 0.01
+                            // 1/s ~= 0.6 %/min)
+    float mask_relax_s;     // duration to relax thresholds after mask event
+                            // (e.g., 20 s)
+    // Hard rate backstop (optional; set <=0 to disable)
+    float hard_e_abs;  // absolute e backstop in 1/s (e.g., 0.0005 -> 0.05%/s)
+} LeakConf;
+
+// Reasonable defaults
+static inline LeakConf leakconf_defaults(void) {
+    LeakConf c = {
+        .sample_hz = 5.0,
+        .lp_tau_s = 8.0,
+        .b_tau_s = 1200.0,         // 20 min
+        .sigma_window_s = 1200.0,  // 20 min
+        .shewhart_k = 4.0,
+        .shewhart_min_hold_s = 3.0,
+        .cusum_k_sigma = 0.5,
+        .cusum_h_sigma = 5.0,
+        .slow_alarm_min_s = 300.0,  // 5 min
+        .tprime_mask_abs = 0.01,  // 1%/s in normalized terms would be 0.01 1/s
+        .mask_relax_s = 20.0,
+        .hard_e_abs = 0.0};
+    return c;
+}
+
+// ---------- Internal ring buffer for rolling sigma ----------
+typedef struct {
+    float* buf;
+    size_t cap;
+    size_t head;
+    size_t count;
+    float sum;
+    float sumsq;
+} RingStats;
+
+static bool ring_init(RingStats* r, size_t cap) {
+    r->buf = (float*)calloc(cap, sizeof(float));
+    if (!r->buf)
+        return false;
+    r->cap = cap;
+    r->head = 0;
+    r->count = 0;
+    r->sum = 0.0;
+    r->sumsq = 0.0;
+    return true;
+}
+static void ring_free(RingStats* r) {
+    free(r->buf);
+    memset(r, 0, sizeof(*r));
+}
+
+static void ring_push(RingStats* r, float x) {
+    if (r->count < r->cap) {
+        r->buf[r->head++] = x;
+        r->sum += x;
+        r->sumsq += x * x;
+        r->count++;
+        if (r->head == r->cap)
+            r->head = 0;
+    } else {
+        // overwrite oldest
+        size_t idx = r->head;
+        float old = r->buf[idx];
+        r->buf[idx] = x;
+        r->sum += x - old;
+        r->sumsq += x * x - old * old;
+        r->head = (r->head + 1) % r->cap;
+    }
+}
+static float ring_mean(const RingStats* r) {
+    return (r->count ? r->sum / (float)r->count : 0.0);
+}
+static float ring_std(const RingStats* r) {
+    if (r->count < 2)
+        return 0.0;
+    float n = (float)r->count;
+    float mu = r->sum / n;
+    float var = fmax(0.0, (r->sumsq - n * mu * mu) / (n - 1.0));
+    return sqrt(var);
+}
+
+// ---------- Detector state ----------
+typedef struct {
+    LeakConf cfg;
+
+    // Filters
+    float alpha_lp;  // EMA coeff for P,T
+    float alpha_b;   // EWMA coeff for background b
+    float dt;        // 1/sample_hz
+
+    // State
+    bool inited;
+    float P_lp, T_lp;  // low-pass filtered P,T
+    float P_prev, T_prev;
+    float b;            // slow background estimate
+    RingStats e_stats;  // rolling stats for sigma_e
+
+    // Derivative / residuals (latest)
+    float pprime, tprime, rprime, e, sigma_e, z;
+
+    // Shewhart
+    int shewhart_hold_needed;  // samples required to sustain
+    int shewhart_hold_count;
+
+    // CUSUM
+    float cusum_k;  // absolute (k = cfg.cusum_k_sigma * sigma_e)
+    float cusum_h;  // absolute (h = cfg.cusum_h_sigma * sigma_e)
+    float Cplus, Cminus;
+    int slow_alarm_persist_needed;  // samples
+    int slow_alarm_persist_count;
+
+    // Masking
+    int relax_countdown;  // samples left to relax after |t'| spike
+
+    // Outputs
+    bool fast_leak_alarm;
+    bool slow_leak_alarm;
+} LeakDet;
+
+// Utility for EMA alpha given tau and dt
+static inline float ema_alpha(float tau_s, float dt_s) {
+    // matched to first-order RC: alpha = dt/(tau+dt)
+    if (tau_s <= 0.0)
+        return 1.0;  // no filtering
+    return dt_s / (tau_s + dt_s);
+}
+
+int leakdet_init(LeakDet* ld, LeakConf* config) {
+    LeakConf cfg = (config ? *config : leakconf_defaults());
+    memset(ld, 0, sizeof(*ld));
+    ld->cfg = cfg;
+    ld->dt = 1.0 / cfg.sample_hz;
+    ld->alpha_lp = ema_alpha(cfg.lp_tau_s, ld->dt);
+    ld->alpha_b = ema_alpha(cfg.b_tau_s, ld->dt);
+    ld->shewhart_hold_needed =
+        (int)ceil(cfg.shewhart_min_hold_s * cfg.sample_hz);
+    ld->slow_alarm_persist_needed =
+        (int)ceil(cfg.slow_alarm_min_s * cfg.sample_hz);
+
+    size_t cap = (size_t)fmax(10.0, ceil(cfg.sigma_window_s * cfg.sample_hz));
+    if (!ring_init(&ld->e_stats, cap))
+        return -1;
+
+    ld->inited = false;
+    return 0;
+}
+
+static void leakdet_free(LeakDet* ld) {
+    ring_free(&ld->e_stats);
+}
+
+// One update step with new raw samples
+// Inputs expected: P in kPa and T in degC (°C). Internally this function
+// converts P->Pa and T->K before performing calculations. dt is implicit
+// from cfg.sample_hz. Returns alarms via out params (may be NULL).
+static void leakdet_update(LeakDet* ld,
+                           float P,
+                           float T,
+                           bool* fast_alarm,
+                           bool* slow_alarm) {
+    /* Convert input units to internal units used by the detector */
+    /* Pressure: kPa -> Pa */
+    P = P * 1000.0f;
+    /* Temperature: degC -> K */
+    T = T + 273.15f;
+
+    if (!ld->inited) {
+        ld->P_lp = P;
+        ld->T_lp = T;
+        ld->P_prev = P;
+        ld->T_prev = T;
+        ld->b = 0.0;
+        ld->sigma_e = 1e-6;  // small non-zero to start
+        ld->cusum_k = ld->cfg.cusum_k_sigma * ld->sigma_e;
+        ld->cusum_h = ld->cfg.cusum_h_sigma * ld->sigma_e;
+        ld->Cplus = ld->Cminus = 0.0;
+        ld->shewhart_hold_count = 0;
+        ld->slow_alarm_persist_count = 0;
+        ld->relax_countdown = 0;
+        ld->inited = true;
+        if (fast_alarm)
+            *fast_alarm = false;
+        if (slow_alarm)
+            *slow_alarm = false;
+        return;
+    }
+
+    const float dt = ld->dt;
+
+    // --- EMA low-pass
+    ld->P_lp = ld->P_lp + ld->alpha_lp * (P - ld->P_lp);
+    ld->T_lp = ld->T_lp + ld->alpha_lp * (T - ld->T_lp);
+
+    // --- Derivatives (first-order difference on filtered signal)
+    float dP = (ld->P_lp - ld->P_prev) / dt;
+    float dT = (ld->T_lp - ld->T_prev) / dt;
+    ld->P_prev = ld->P_lp;
+    ld->T_prev = ld->T_lp;
+
+    // Guard: avoid division by zero
+    float P_for_norm = (fabs(ld->P_lp) < 1e-6 ? 1e-6 : ld->P_lp);
+    float T_for_norm = (fabs(ld->T_lp) < 1e-6 ? 1e-6 : ld->T_lp);
+
+    // --- Normalized rates
+    ld->pprime = dP / P_for_norm;  // 1/s
+    ld->tprime = dT / T_for_norm;  // 1/s
+    ld->rprime = ld->pprime - ld->tprime;
+
+    // --- Background follower b (very slow EWMA of r')
+    ld->b = (1.0 - ld->alpha_b) * ld->b + ld->alpha_b * ld->rprime;
+
+    // --- Residual ~ leak term
+    ld->e = ld->rprime - ld->b;
+
+    // --- Rolling sigma_e
+    ring_push(&ld->e_stats, ld->e);
+    ld->sigma_e = ring_std(&ld->e_stats);
+    if (ld->sigma_e < 1e-9)
+        ld->sigma_e = 1e-9;  // floor
+
+    // Update CUSUM thresholds based on *current* sigma
+    ld->cusum_k = ld->cfg.cusum_k_sigma * ld->sigma_e;
+    ld->cusum_h = ld->cfg.cusum_h_sigma * ld->sigma_e;
+
+    // Z-score for Shewhart
+    ld->z = ld->e / ld->sigma_e;
+
+    // --- Masking around big thermal transients
+    bool masked = false;
+    if (fabs(ld->tprime) > ld->cfg.tprime_mask_abs) {
+        ld->relax_countdown =
+            (int)ceil(ld->cfg.mask_relax_s * ld->cfg.sample_hz);
+    }
+    if (ld->relax_countdown > 0) {
+        masked = true;
+        ld->relax_countdown--;
+    }
+
+    // --- Shewhart (fast)
+    bool fast = false;
+    if (!masked) {
+        bool cond = fabs(ld->z) >= ld->cfg.shewhart_k;
+        if (ld->cfg.hard_e_abs > 0.0)
+            cond = cond || (fabs(ld->e) >= ld->cfg.hard_e_abs);
+        if (cond) {
+            if (++ld->shewhart_hold_count >= ld->shewhart_hold_needed) {
+                fast = true;
+            }
+        } else {
+            ld->shewhart_hold_count = 0;
+        }
+    } else {
+        // While masked, do not accumulate hold
+        ld->shewhart_hold_count = 0;
+    }
+
+    // --- CUSUM (slow)
+    bool slow = false;
+    if (!masked) {
+        // one-sided CUSUMs
+        ld->Cplus = fmax(0.0, ld->Cplus + (ld->e - ld->cusum_k));
+        ld->Cminus = fmax(0.0, ld->Cminus - (ld->e + ld->cusum_k));
+
+        bool trip = (ld->Cplus >= ld->cusum_h) || (ld->Cminus >= ld->cusum_h);
+        if (trip) {
+            if (++ld->slow_alarm_persist_count >=
+                ld->slow_alarm_persist_needed) {
+                slow = true;
+            }
+        } else {
+            // decay persistence when below threshold
+            if (ld->slow_alarm_persist_count > 0)
+                ld->slow_alarm_persist_count--;
+            // optional: small leakage of CUSUM over long time to avoid latching
+            float leak =
+                0.0;  // set e.g. to 0.001*cusum_h per sample if desired
+            if (ld->Cplus > 0.0)
+                ld->Cplus = fmax(0.0, ld->Cplus - leak);
+            if (ld->Cminus > 0.0)
+                ld->Cminus = fmax(0.0, ld->Cminus - leak);
+        }
+    } else {
+        // During mask, don't accumulate CUSUM
+        // (Optionally, you could still run but widen k/h.)
+    }
+
+    ld->fast_leak_alarm = fast;
+    ld->slow_leak_alarm = slow;
+    if (fast_alarm)
+        *fast_alarm = fast;
+    if (slow_alarm)
+        *slow_alarm = slow;
+}
+
+// --------- Minimal demo harness (replace with your I/O) ----------
+#ifdef DEMO_MAIN
+int main(void) {
+    LeakConf cfg = leakconf_defaults();
+    LeakDet det;
+    if (!leakdet_init(&det, cfg)) {
+        fprintf(stderr, "init failed\n");
+        return 1;
+    }
+
+    // Synthetic stream: constant depth, small warming, then inject leak bias in
+    // e.
+    float P = 101325.0;                       // Pa
+    float T = 293.15;                         // K
+    float leak_bias = 0.0;                    // 1/s applied to e (sim)
+    int total = (int)(cfg.sample_hz * 1800);  // 30 min
+    for (int i = 0; i < total; ++i) {
+        float t = i / cfg.sample_hz;
+
+        // Sim: gentle temp ramp first 10 min (+2 K)
+        if (t < 600.0)
+            T += (2.0 / 600.0) / cfg.sample_hz;
+
+        // Ideal-gas coupling (approx): P tracks T a bit (toy sim)
+        P *= (1.0 + 0.2 * ((T - 293.15) / 293.15) / cfg.sample_hz);
+
+        // Inject leak after 15 min: e ~ dn/n ~ +3e-4 1/s
+        if (fabs(t - 900.0) < 1e-9 || t > 900.0)
+            leak_bias = 3e-4;
+        // Convert leak_bias into extra pressure drift (very rough sim):
+        P *= (1.0 + leak_bias / cfg.sample_hz);
+
+        bool fast = false, slow = false;
+        leakdet_update(&det, P, T, &fast, &slow);
+
+        if (fast || slow) {
+            printf(
+                "t=%.1fs  FAST=%d SLOW=%d  e=%.3e  sigma=%.3e  z=%.2f  C+=%.2e "
+                "C-=%.2e\n",
+                t, fast, slow, det.e, det.sigma_e, det.z, det.Cplus,
+                det.Cminus);
+            if (fast)
+                break;  // stop demo on first trip
+        }
+    }
+
+    leakdet_free(&det);
+    return 0;
+}
+#endif

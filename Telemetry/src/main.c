@@ -27,8 +27,12 @@
 #include <stdlib.h>       // Defines EXIT_FAILURE
 #include "definitions.h"  // SYS function prototypes
 
+#include "leak_update_tc2.h"
 #include "led_facade.h"
+#include "pressure_calc.h"
 #include "wsen_pads_port_sercom3.h"
+
+extern volatile bool leakdet_tick;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -48,8 +52,14 @@ int main(void) {
     wsen_init();
     drdy_init();
 
-    float pressure = 0.0f;
-    float temp = 0.0f;
+    struct LeakDet* leak_detector;
+    leakdet_init(leak_detector, NULL);
+
+    float pressure = 0.0f;  // kPa
+    float temp = 0.0f;      // °C
+    float pressure_sum = 0.0f;
+    float temp_sum = 0.0f;
+    uint32_t samples = 0;
 
     while (1) {
         if (!led_busy()) {
@@ -59,19 +69,44 @@ int main(void) {
         wsen_cycle_tick();
         if (wsen_cycle_done_ok(&pressure, &temp)) {
             wsen_reset();
-            // TODO: do something with pressure and temp
+
+            pressure_sum += pressure;
+            temp_sum += temp;
+            samples++;
         } else {
             SERCOM_I2C_ERROR err;
             if (wsen_cycle_failed(&err)) {
                 wsen_reset();
             }
         }
+        if (leakdet_tick) {
+            leakdet_tick = false;
+
+            float pressure_avg = pressure, temp_avg = temp;
+            if (samples > 0) {
+                const float invN = 1.0 / (float)samples;
+                pressure_avg = pressure_sum / samples;
+                temp_avg = temp_sum / samples;
+            }
+            pressure_sum = 0.0;
+            temp_sum = 0.0;
+            samples = 0;
+
+            bool fast = false, slow = false;
+            leakdet_update(leak_detector, pressure_avg, temp_avg, &fast, &slow);
+
+            if (fast) {
+                // handle fast leak
+            }
+            if (slow) {
+                // handle slow leak
+            }
+        }
+        /* Execution should not come here during normal operation */
+
+        return (EXIT_FAILURE);
     }
-    /* Execution should not come here during normal operation */
 
-    return (EXIT_FAILURE);
-}
-
-/*******************************************************************************
- End of File
-*/
+    /*******************************************************************************
+     End of File
+    */

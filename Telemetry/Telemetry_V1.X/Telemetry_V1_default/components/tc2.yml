@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: dfp
+componentName: tc2
 coreVersion: 5.8.2
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: dfp
+  name: tc2
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,9 +21,9 @@ data:
     children:
     - children:
       - attributes:
-          id: dfp
-          x: '440'
-          y: '20'
+          id: tc2
+          x: '477'
+          y: '308'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph

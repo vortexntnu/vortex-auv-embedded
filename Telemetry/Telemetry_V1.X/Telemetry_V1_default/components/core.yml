@@ -9,10 +9,6 @@ dependency:
   type: module
   version: ''
 - dependencyPackage: ''
-  name: CMSIS_5
-  type: package
-  version: 5.9.0
-- dependencyPackage: ''
   name: csp
   type: package
   version: v3.23.0
@@ -401,7 +397,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x801e'
+            value: '0xc01e'
           type: Dynamic
         type: Values
       type: String
@@ -2403,6 +2399,105 @@ data:
       - children:
         - attributes:
             id: tc3
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC2_CLOCK_FREQUENCY:
+      attributes:
+        id: TC2_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TC2_CLOCK_ENABLE:
+      attributes:
+        id: TC2_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC2_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: TC2_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_22_0_ENABLE:
+      attributes:
+        id: NVIC_22_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC2_INTERRUPT_ENABLE:
+      attributes:
+        id: TC2_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: tc2
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_22_0_HANDLER:
+      attributes:
+        id: NVIC_22_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: TC2_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    TC2_INTERRUPT_HANDLER:
+      attributes:
+        id: TC2_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: tc2
+            value: TC2_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    NVIC_22_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_22_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC2_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: TC2_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: tc2
             value: 'true'
           type: Dynamic
         type: Values
