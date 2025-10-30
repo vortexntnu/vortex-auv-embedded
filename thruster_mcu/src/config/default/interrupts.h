@@ -68,6 +68,7 @@ void DMAC_1_InterruptHandler (void);
 void SERCOM0_USART_InterruptHandler (void);
 void SERCOM1_I2C_InterruptHandler (void);
 void CAN0_InterruptHandler (void);
+void CAN1_InterruptHandler (void);
 void ADC0_RESRDY_InterruptHandler (void);
 
 

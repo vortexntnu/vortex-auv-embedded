@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: can0
+componentName: can1
 coreVersion: 5.8.3
 device: ATSAME54P20A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: can0
+  name: can1
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,23 +21,13 @@ data:
     children:
     - children:
       - attributes:
-          id: can0
-          x: '15'
+          id: can1
+          x: '181'
           y: '174'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
   symbols:
-    AUTO_DATA_BIT_TIMING_CALCULATION:
-      attributes:
-        id: AUTO_DATA_BIT_TIMING_CALCULATION
-      children:
-      - children:
-        - attributes:
-            value: 'true'
-          type: User
-        type: Values
-      type: Boolean
     AUTO_NOMINAL_BIT_TIMING_CALCULATION:
       attributes:
         id: AUTO_NOMINAL_BIT_TIMING_CALCULATION
@@ -54,8 +44,8 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
-            value: '2000'
+            id: can1
+            value: '1224'
           type: Dynamic
         type: Values
       type: Integer
@@ -65,8 +55,8 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
-            value: '0.000'
+            id: can1
+            value: '144.898'
           type: Dynamic
         type: Values
       type: String
@@ -76,7 +66,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '500'
           type: Dynamic
         type: Values
@@ -87,7 +77,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '0.000'
           type: Dynamic
         type: Values
@@ -102,73 +92,25 @@ data:
           type: User
         type: Values
       type: Combo
-    DATA_BITRATE:
-      attributes:
-        id: DATA_BITRATE
-      children:
-      - children:
-        - attributes:
-            value: '2000'
-          type: User
-        type: Values
-      type: Integer
-    DATA_SAMPLE_POINT:
-      attributes:
-        id: DATA_SAMPLE_POINT
-      children:
-      - children:
-        - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            id: can0
-            value: '96.666664'
-          type: Dynamic
-        type: Values
-      type: Float
     DATA_TIME_QUANTA_PERIOD:
       attributes:
         id: DATA_TIME_QUANTA_PERIOD
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '16.667'
           type: Dynamic
         type: Values
       type: String
-    DBTP_DBRP:
-      attributes:
-        id: DBTP_DBRP
-      children:
-      - children:
-        - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            id: can0
-            value: '0'
-          type: Dynamic
-        type: Values
-      type: Integer
     DBTP_DSJW:
       attributes:
         id: DBTP_DSJW
       children:
       - children:
         - attributes:
-            id: can0
-            value: '1'
+            id: can1
+            value: '8'
           type: Dynamic
         type: Values
       type: Integer
@@ -178,8 +120,8 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
-            value: '28'
+            id: can1
+            value: '89'
           type: Dynamic
         type: Values
       type: Integer
@@ -189,8 +131,8 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
-            value: '1'
+            id: can1
+            value: '30'
           type: Dynamic
         type: Values
       type: Integer
@@ -200,8 +142,8 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
-            value: '30'
+            id: can1
+            value: '49'
           type: Dynamic
         type: Values
       type: Integer
@@ -229,7 +171,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '0'
           type: Dynamic
         type: Values
@@ -240,7 +182,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '1'
           type: Dynamic
         type: Values
@@ -251,7 +193,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '118'
           type: Dynamic
         type: Values
@@ -262,7 +204,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '1'
           type: Dynamic
         type: Values
@@ -273,7 +215,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '120'
           type: Dynamic
         type: Values
@@ -292,7 +234,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '99.166664'
           type: Dynamic
         type: Values
@@ -303,7 +245,7 @@ data:
       children:
       - children:
         - attributes:
-            id: can0
+            id: can1
             value: '16.667'
           type: Dynamic
         type: Values
@@ -334,58 +276,4 @@ data:
           type: String
         type: Attributes
       type: File
-    RXF0_BYTES_CFG:
-      attributes:
-        id: RXF0_BYTES_CFG
-      children:
-      - children:
-        - attributes:
-            id: visible
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            value: '7'
-          type: User
-        type: Values
-      type: KeyValueSet
-    RXF1_BYTES_CFG:
-      attributes:
-        id: RXF1_BYTES_CFG
-      children:
-      - children:
-        - attributes:
-            id: visible
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            value: '7'
-          type: User
-        type: Values
-      type: KeyValueSet
-    TX_FIFO_BYTES_CFG:
-      attributes:
-        id: TX_FIFO_BYTES_CFG
-      children:
-      - children:
-        - attributes:
-            id: visible
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            value: '7'
-          type: User
-        type: Values
-      type: KeyValueSet
   userData: {}

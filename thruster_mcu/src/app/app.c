@@ -41,7 +41,11 @@ typedef enum {
 /* --- Private states --- */
 /* CAN */
 static uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
-static CAN_RX_BUFFER rx_buf;
+//static CAN_RX_BUFFER rx_buf;
+static uint8_t txFiFo[CAN0_TX_FIFO_BUFFER_SIZE];
+static uint8_t rxFiFo0[CAN0_RX_FIFO0_SIZE];
+static uint8_t rxFiFo1[CAN0_RX_FIFO1_SIZE];
+//static uint8_t rxBuffer[CAN0_RX_FIFO_BUFFER_SIZE];
 static volatile uint32_t can_status = 0;
 
 /* ADC */
@@ -91,6 +95,8 @@ void App_Init(void) {
     /* Configure CAN RAM & callbacks */
     printf("App Init called\r\n");
     printf("---------------\r\n");
+    
+    CAN_TX_BUFFER *txBuffer = NULL;
     
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
     CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);

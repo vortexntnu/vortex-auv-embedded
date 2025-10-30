@@ -78,7 +78,7 @@ void __attribute__((optimize("-O1"), long_call, noreturn, used))Dummy_Handler(vo
 }
 
 /* MISRAC 2012 deviation block start */
-/* MISRA C-2012 Rule 8.6 deviated 125 times.  Deviation record ID -  H3_MISRAC_2012_R_8_6_DR_1 */
+/* MISRA C-2012 Rule 8.6 deviated 124 times.  Deviation record ID -  H3_MISRAC_2012_R_8_6_DR_1 */
 /* Device vectors list dummy definition*/
 extern void SVCall_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void PendSV_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -148,7 +148,6 @@ extern void SERCOM7_0_Handler          ( void ) __attribute__((weak, alias("Dumm
 extern void SERCOM7_1_Handler          ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void SERCOM7_2_Handler          ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void SERCOM7_OTHER_Handler      ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
-extern void CAN1_Handler               ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void USB_OTHER_Handler          ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void USB_SOF_HSOF_Handler       ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void USB_TRCPT0_Handler         ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -305,7 +304,7 @@ const H3DeviceVectors exception_table=
     .pfnSERCOM7_2_Handler          = SERCOM7_2_Handler,
     .pfnSERCOM7_OTHER_Handler      = SERCOM7_OTHER_Handler,
     .pfnCAN0_Handler               = CAN0_InterruptHandler,
-    .pfnCAN1_Handler               = CAN1_Handler,
+    .pfnCAN1_Handler               = CAN1_InterruptHandler,
     .pfnUSB_OTHER_Handler          = USB_OTHER_Handler,
     .pfnUSB_SOF_HSOF_Handler       = USB_SOF_HSOF_Handler,
     .pfnUSB_TRCPT0_Handler         = USB_TRCPT0_Handler,
