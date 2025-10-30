@@ -40,13 +40,31 @@ typedef enum {
 
 /* --- Private states --- */
 /* CAN */
-static uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
-//static CAN_RX_BUFFER rx_buf;
-static uint8_t txFiFo[CAN0_TX_FIFO_BUFFER_SIZE];
-static uint8_t rxFiFo0[CAN0_RX_FIFO0_SIZE];
-static uint8_t rxFiFo1[CAN0_RX_FIFO1_SIZE];
-//static uint8_t rxBuffer[CAN0_RX_FIFO_BUFFER_SIZE];
-static volatile uint32_t can_status = 0;
+static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
+
+#define WRITE_ID(id) (id << 18)
+#define READ_ID(id) (id >> 18)
+
+typedef enum {
+    APP_STATE_CAN_RECEIVE,
+    APP_STATE_CAN_TRANSMIT,
+    APP_STATE_CAN_IDLE,
+    APP_STATE_CAN_XFER_SUCCESSFUL,
+    APP_STATE_CAN_XFER_ERROR,
+    APP_STATE_CAN_USER_INPUT
+} APP_CAN_STATES;
+
+static uint32_t can_status = 0;
+static uint32_t xferContext = 0;
+
+static uint8_t loop_count = 0;
+static uint8_t user_input = 0;
+
+/* Variable to save CAN application state*/
+volatile static APP_CAN_STATES state = APP_STATE_CAN_USER_INPUT;
+
+static uint8_t txFiFo[CAN1_TX_FIFO_BUFFER_SIZE];
+static uint8_t rxFiFo0[CAN1_RX_FIFO0_SIZE];
 
 /* ADC */
 static const uint32_t adc_seq_regs[8] = {0x1801, 0x1802, 0x1803, 0x1805, 0x1806, 0x1807, 0x1812, 0x1813};
@@ -78,6 +96,10 @@ static void turn_thrusters_off(void);
 static void turn_thrusters_on(void);
 static void turn_lights_off(void);
 static void turn_lights_on(void);
+static uint8_t CANLengthToDlcGet(uint8_t length);
+static uint8_t CANDlcToLengthGet(uint8_t dlc);
+static void display_menu(void);
+
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
@@ -261,6 +283,63 @@ static void turn_lights_off(void) {
 
 static void turn_lights_on(void) {
     __NOP(); /* Might remove later */
+}
+
+/* Message Length to Data length code */
+static uint8_t CANLengthToDlcGet(uint8_t length) {
+    uint8_t dlc = 0;
+
+    if (length <= 8U)
+    {
+        dlc = length;
+    }
+    else if (length <= 12U)
+    {
+        dlc = 0x9U;
+    }
+    else if (length <= 16U)
+    {
+        dlc = 0xAU;
+    }
+    else if (length <= 20U)
+    {
+        dlc = 0xBU;
+    }
+    else if (length <= 24U)
+    {
+        dlc = 0xCU;
+    }
+    else if (length <= 32U)
+    {
+        dlc = 0xDU;
+    }
+    else if (length <= 48U)
+    {
+        dlc = 0xEU;
+    }
+    else
+    {
+        dlc = 0xFU;
+    }
+    return dlc;
+}
+
+/* Data length code to Message Length */
+static uint8_t CANDlcToLengthGet(uint8_t dlc) {
+    uint8_t msgLength[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
+    return msgLength[dlc];
+}
+
+/* Menu */
+static void display_menu(void) {
+	printf("Menu :\r\n"
+	       "  -- Select the action:\r\n"
+	       "  0: Send FD standard message with ID: 0x45A and 64 byte data 0 to 63. \r\n"
+	       "  1: Send FD standard message with ID: 0x469 and 64 byte data 128 to 191. \r\n"
+	       "  2: Send FD extended message with ID: 0x100000A5 and 64 byte data 0 to 63. \r\n"
+	       "  3: Send FD extended message with ID: 0x10000096 and 64 byte data 128 to 191. \r\n"
+	       "  4: Send normal standard message with ID: 0x469 and 8 byte data 0 to 7. \r\n"
+	       "  m: Display menu \r\n\r\n");
 }
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
