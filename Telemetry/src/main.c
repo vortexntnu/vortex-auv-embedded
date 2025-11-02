@@ -55,6 +55,9 @@ int main(void) {
     struct LeakDet* leak_detector;
     leakdet_init(leak_detector, NULL);
 
+    timing_tc2_init_5hz();  // TODO: don't start timer until pressure+temp
+                            // measurements have started
+
     float pressure = 0.0f;  // kPa
     float temp = 0.0f;      // °C
     float pressure_sum = 0.0f;
@@ -84,22 +87,21 @@ int main(void) {
 
             float pressure_avg = pressure, temp_avg = temp;
             if (samples > 0) {
-                const float invN = 1.0 / (float)samples;
                 pressure_avg = pressure_sum / samples;
                 temp_avg = temp_sum / samples;
             }
-            pressure_sum = 0.0;
-            temp_sum = 0.0;
+            pressure_sum = 0.0f;
+            temp_sum = 0.0f;
             samples = 0;
 
             bool fast = false, slow = false;
             leakdet_update(leak_detector, pressure_avg, temp_avg, &fast, &slow);
 
             if (fast) {
-                // handle fast leak
+                // TODO: handle fast leak
             }
             if (slow) {
-                // handle slow leak
+                // TODO: handle slow leak
             }
         }
         /* Execution should not come here during normal operation */

@@ -83,13 +83,13 @@ void TC2_TimerInitialize( void )
     }
 
     /* Configure counter mode & prescaler */
-    TC2_REGS->COUNT16.TC_CTRLA = TC_CTRLA_MODE_COUNT16 | TC_CTRLA_PRESCALER_DIV1 | TC_CTRLA_PRESCSYNC_PRESC ;
+    TC2_REGS->COUNT16.TC_CTRLA = TC_CTRLA_MODE_COUNT16 | TC_CTRLA_PRESCALER_DIV256 | TC_CTRLA_PRESCSYNC_PRESC ;
 
     /* Configure in Match Frequency Mode */
     TC2_REGS->COUNT16.TC_WAVE = (uint8_t)TC_WAVE_WAVEGEN_MPWM;
 
     /* Configure timer period */
-    TC2_REGS->COUNT16.TC_CC[0U] = 47999U;
+    TC2_REGS->COUNT16.TC_CC[0U] = 37499U;
 
     /* Clear all interrupt flags */
     TC2_REGS->COUNT16.TC_INTFLAG = (uint8_t)TC_INTFLAG_Msk;
@@ -127,7 +127,7 @@ void TC2_TimerStop( void )
 
 uint32_t TC2_TimerFrequencyGet( void )
 {
-    return (uint32_t)(48000000U);
+    return (uint32_t)(187500U);
 }
 
 void TC2_TimerCommandSet(TC_COMMAND command)
