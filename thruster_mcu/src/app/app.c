@@ -174,6 +174,12 @@ static void message_handler(void) {
     
     printf("Received CAN message with ID: 0x%lx\r\n", (unsigned long)id);
     
+    /* Check if this is one of our command IDs */
+    if (id < CAN_EVENT_ID_BASE || id >= (CAN_EVENT_ID_BASE + 5)) {
+        printf("Unknown CAN ID, ignoring\r\n");
+        return;
+    }
+    
     uint8_t event = (uint8_t)(id - CAN_EVENT_ID_BASE);
     const uint8_t *pData = rxBuf->data;
 
