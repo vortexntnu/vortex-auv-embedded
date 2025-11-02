@@ -120,9 +120,9 @@ void App_Init(void) {
     
     CAN_TX_BUFFER *txBuffer = NULL;
     
-    CAN0_MessageRAMConfigSet(Can0MessageRAM);
-    CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
-    CAN0_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
+    CAN1_MessageRAMConfigSet(Can1MessageRAM);
+    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
+    CAN1_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
     
     printf("CAN0 Successfully configured!\r\n");
     
@@ -168,8 +168,14 @@ void App_Task(void) {
 static void message_handler(void) {
     printf("Message Handler called!\r\n");
     /* Interpret event from CAN frame id */
-    uint8_t event = (uint8_t)(rx_buf.id - CAN_EVENT_ID_BASE);
-    const uint8_t *pData = rx_buf.data;
+    CAN_RX_BUFFER *rxBuf = (CAN_RX_BUFFER *)rxFiFo0;
+    
+    uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
+    
+    printf("Received CAN message with ID: 0x%lx\r\n", (unsigned long)id);
+    
+    uint8_t event = (uint8_t)(id - CAN_EVENT_ID_BASE);
+    const uint8_t *pData = rxBuf->data;
 
     switch (event) {
         case TURN_THRUSTERS_OFF:
