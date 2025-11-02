@@ -89,9 +89,7 @@ static void set_light_pwm(const uint8_t *data);
 static void message_handler(void);
 static void check_overcurrent(void);
 static void turn_thrusters_off(void);
-static void turn_thrusters_on(void);
 static void turn_lights_off(void);
-static void turn_lights_on(void);
 
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
@@ -261,20 +259,12 @@ static void turn_thrusters_off(void) {
     WDT_Clear();
 }
 
-static void turn_thrusters_on(void) {
-    __NOP(); /* Might remove later */
-}
-
 static void turn_lights_off(void) {
     /* Write neutral (1100us) to the lights*/
     uint32_t ticks = us_to_ticks(lights.period_ticks, 1100, LIGHT_PWM_PERIOD_US);
     tcc_write(lights.instance, lights.channel, ticks);
     
     WDT_Clear();
-}
-
-static void turn_lights_on(void) {
-    __NOP(); /* Might remove later */
 }
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
