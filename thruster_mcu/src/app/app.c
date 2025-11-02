@@ -5,8 +5,8 @@
 #include "app.h"
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD               = 74000U;
-static const uint32_t TCC1_PERIOD               = 74000U;
+static const uint32_t TCC0_PERIOD               = 75000U;
+static const uint32_t TCC1_PERIOD               = 75000U;
 static const uint32_t TCC2_PERIOD               = 18500U;
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz

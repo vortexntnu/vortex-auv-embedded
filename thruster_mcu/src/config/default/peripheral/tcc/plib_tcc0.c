@@ -83,7 +83,7 @@ void TCC0_PWMInitialize(void)
     TCC0_REGS->TCC_CC[3] = 0U;
     TCC0_REGS->TCC_CC[4] = 0U;
     TCC0_REGS->TCC_CC[5] = 0U;
-    TCC0_REGS->TCC_PER = 74000U;
+    TCC0_REGS->TCC_PER = 75000U;
 
 
 

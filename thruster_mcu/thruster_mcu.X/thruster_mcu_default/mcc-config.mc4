@@ -114,11 +114,11 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/tc/plib_tc_common.h
   hash: 487b4f489229b8e16b24ab48ddc1f414b095585439f0e10d53b2285fc3979f63
 - file: ../src/config/default/peripheral/tcc/plib_tcc0.c
-  hash: 4dde1eedd3520e889153b1cf8512ef8181577adafae6fd0e89af0cdd5b91bfb5
+  hash: 1e368cff88282d077776a025d4fa9ce403f3c0375b5f3e4736048242dcd6136e
 - file: ../src/config/default/peripheral/tcc/plib_tcc0.h
   hash: f1653904453b3cfe5c18fc5e8ae4e057f055f3f33f98676a10eef493e5c1d464
 - file: ../src/config/default/peripheral/tcc/plib_tcc1.c
-  hash: fcb652ff29299ce23975a1cfe417425ad9715ed279eb76dea4471eb0a591e660
+  hash: df0c9167fb1d54d6a8b838b9c180b2dfecb04d18cb93c85ad5cde789447f88c4
 - file: ../src/config/default/peripheral/tcc/plib_tcc1.h
   hash: fc503af48c8d870ec1f97bfe34604c638c30e595bffcf0029d44e6a3be76bfea
 - file: ../src/config/default/peripheral/tcc/plib_tcc2.c
