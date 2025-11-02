@@ -106,9 +106,6 @@ static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHa
 
 void App_Init(void) {
     /* Configure CAN RAM & callbacks */
-    printf("App Init called\r\n");
-    printf("---------------\r\n");
-    
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
     CAN1_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
@@ -140,14 +137,14 @@ void App_Init(void) {
 }
 
 void App_Task(void) {
-    printf("App Task called\r\n");
-    printf("---------------\r\n");
-    /* Check for overcurrent */
+    // Check for overcurrent
     // TODO: Only necessary to check this after adc results are ready
     check_overcurrent();
-    /* Handle any message that arrived since last time */
-    message_handler();
-    printf("\r\n\r\n");
+    // Handle any message that arrived since last time
+    if (can_message_received) {
+        can_message_received = false;
+        message_handler();
+    }
 }
 
 /* --- Private helpers --- */
