@@ -26,7 +26,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: 0c604001fac901dea3d213c2c052ea04ee84fe92731fd6f73daa52eed8065f74
+  hash: ebe74939e96ce5cd4982ead492560ac698ac1bc64189a39fcf5cd72e6bd200fb
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -36,7 +36,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: 1036c101c6bb42f9abb50d5db213f1f973eb64b4d6d23e41c232fd8c45131c7c
+  hash: d199c5ad35735549f62a61b030e0e462fd5e1a3925b7f4f87a79ddf607aa9670
 - file: ../src/config/default/interrupts.c
   hash: caf8920ed5af2990f99372e980ac47eae2e56b8ccc857c6591ca3458e243944f
 - file: ../src/config/default/interrupts.h

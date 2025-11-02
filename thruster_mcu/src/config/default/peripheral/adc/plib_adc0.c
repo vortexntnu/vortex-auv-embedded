@@ -114,6 +114,7 @@ void ADC0_Initialize( void )
     /* Resolution & Operation Mode */
     ADC0_REGS->ADC_CTRLB = ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_WINMODE(0U) ;
 
+
     /* Clear all interrupt flags */
     ADC0_REGS->ADC_INTFLAG = ADC_INTFLAG_Msk;
     /* Enable interrupts */

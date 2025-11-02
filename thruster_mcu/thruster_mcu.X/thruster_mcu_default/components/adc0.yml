@@ -336,4 +336,22 @@ data:
           type: User
         type: Values
       type: Boolean
+    ADC_SEQCTRL_SEQ7:
+      attributes:
+        id: ADC_SEQCTRL_SEQ7
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}
