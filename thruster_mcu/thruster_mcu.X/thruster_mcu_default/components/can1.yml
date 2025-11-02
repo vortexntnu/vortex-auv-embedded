@@ -45,7 +45,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '1224'
+            value: '2000'
           type: Dynamic
         type: Values
       type: Integer
@@ -56,7 +56,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '144.898'
+            value: '0.000'
           type: Dynamic
         type: Values
       type: String
@@ -110,7 +110,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '8'
+            value: '1'
           type: Dynamic
         type: Values
       type: Integer
@@ -121,7 +121,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '89'
+            value: '28'
           type: Dynamic
         type: Values
       type: Integer
@@ -132,7 +132,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '30'
+            value: '1'
           type: Dynamic
         type: Values
       type: Integer
@@ -143,7 +143,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '49'
+            value: '30'
           type: Dynamic
         type: Values
       type: Integer
@@ -276,4 +276,116 @@ data:
           type: String
         type: Attributes
       type: File
+    RXF0_BYTES_CFG:
+      attributes:
+        id: RXF0_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
+    RXF1_BYTES_CFG:
+      attributes:
+        id: RXF1_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
+    TX_FIFO_BYTES_CFG:
+      attributes:
+        id: TX_FIFO_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DBTP_DBRP:
+      attributes:
+        id: DBTP_DBRP
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can1
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DATA_SAMPLE_POINT:
+      attributes:
+        id: DATA_SAMPLE_POINT
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can1
+            value: '96.666664'
+          type: Dynamic
+        type: Values
+      type: Float
+    AUTO_DATA_BIT_TIMING_CALCULATION:
+      attributes:
+        id: AUTO_DATA_BIT_TIMING_CALCULATION
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    DATA_BITRATE:
+      attributes:
+        id: DATA_BITRATE
+      children:
+      - children:
+        - attributes:
+            value: '2000'
+          type: User
+        type: Values
+      type: Integer
   userData: {}

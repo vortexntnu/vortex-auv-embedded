@@ -26,7 +26,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: ebe74939e96ce5cd4982ead492560ac698ac1bc64189a39fcf5cd72e6bd200fb
+  hash: 0c604001fac901dea3d213c2c052ea04ee84fe92731fd6f73daa52eed8065f74
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -36,7 +36,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: d199c5ad35735549f62a61b030e0e462fd5e1a3925b7f4f87a79ddf607aa9670
+  hash: 1036c101c6bb42f9abb50d5db213f1f973eb64b4d6d23e41c232fd8c45131c7c
 - file: ../src/config/default/interrupts.c
   hash: caf8920ed5af2990f99372e980ac47eae2e56b8ccc857c6591ca3458e243944f
 - file: ../src/config/default/interrupts.h
@@ -54,9 +54,9 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/can/plib_can0.h
   hash: 7b13b1a960a68010b3474faccd7d46c3000e3e8e9c5b1eb12e1bfe2ca9e45b93
 - file: ../src/config/default/peripheral/can/plib_can1.c
-  hash: a9f8be2170f328babac4eeb79835f6a0ba8db051dd21fda08938db7ec146110b
+  hash: 84f2a9d57c8aa506b33e86a00d675f9dd4d94c114ffc4e05ad509388ef414547
 - file: ../src/config/default/peripheral/can/plib_can1.h
-  hash: 167de729963ff02d3b0fd1cbd75d4c54dd81c4fd56067136d0b984ec3d911c41
+  hash: 3e8e8df739f368d481dc3062312f8632bd8e89feb2e833bfba601dc3451f3147
 - file: ../src/config/default/peripheral/can/plib_can_common.h
   hash: e0e3b54f69be9d8811bbe507f91daa443ae7bff5dc724ac51baebc160097b2d6
 - file: ../src/config/default/peripheral/clock/plib_clock.c

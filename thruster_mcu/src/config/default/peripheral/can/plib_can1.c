@@ -109,15 +109,15 @@ void CAN1_Initialize(void)
     CAN1_REGS->CAN_CCCR |= CAN_CCCR_CCE_Msk;
 
     /* Set Data Bit Timing and Prescaler Register */
-    CAN1_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(15UL) | CAN_DBTP_DTSEG1(31UL) | CAN_DBTP_DBRP(0UL) | CAN_DBTP_DSJW(7UL);
+    CAN1_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(0UL) | CAN_DBTP_DTSEG1(27UL) | CAN_DBTP_DBRP(0UL) | CAN_DBTP_DSJW(0UL);
 
     /* Set Nominal Bit timing and Prescaler Register */
     CAN1_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(117UL) | CAN_NBTP_NBRP(0UL) | CAN_NBTP_NSJW(0UL);
 
     /* Receive Buffer / FIFO Element Size Configuration Register */
-    CAN1_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(0UL) | CAN_RXESC_F1DS(0UL);
+    CAN1_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(7UL) | CAN_RXESC_F1DS(7UL);
     /* Transmit Buffer/FIFO Element Size Configuration Register */
-    CAN1_REGS->CAN_TXESC = CAN_TXESC_TBDS(0UL);
+    CAN1_REGS->CAN_TXESC = CAN_TXESC_TBDS(7UL);
 
     /* Global Filter Configuration Register */
     CAN1_REGS->CAN_GFC = CAN_GFC_ANFS_REJECT | CAN_GFC_ANFE_REJECT;

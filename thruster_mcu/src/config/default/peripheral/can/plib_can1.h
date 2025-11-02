@@ -76,17 +76,17 @@
 #define CAN1_CLOCK_FREQUENCY    60000000U
 
 /* CAN1 Message RAM Configuration Size */
-#define CAN1_RX_FIFO0_ELEMENT_SIZE       16U
-#define CAN1_RX_FIFO0_SIZE               16U
-#define CAN1_RX_FIFO1_ELEMENT_SIZE       16U
-#define CAN1_RX_FIFO1_SIZE               16U
-#define CAN1_TX_FIFO_BUFFER_ELEMENT_SIZE 16U
-#define CAN1_TX_FIFO_BUFFER_SIZE         16U
+#define CAN1_RX_FIFO0_ELEMENT_SIZE       72U
+#define CAN1_RX_FIFO0_SIZE               72U
+#define CAN1_RX_FIFO1_ELEMENT_SIZE       72U
+#define CAN1_RX_FIFO1_SIZE               72U
+#define CAN1_TX_FIFO_BUFFER_ELEMENT_SIZE 72U
+#define CAN1_TX_FIFO_BUFFER_SIZE         72U
 #define CAN1_TX_EVENT_FIFO_SIZE          8U
 
 /* CAN1_MESSAGE_RAM_CONFIG_SIZE to be used by application or driver
    for allocating buffer from non-cached contiguous memory */
-#define CAN1_MESSAGE_RAM_CONFIG_SIZE     56U
+#define CAN1_MESSAGE_RAM_CONFIG_SIZE     224U
 
 // *****************************************************************************
 // *****************************************************************************
