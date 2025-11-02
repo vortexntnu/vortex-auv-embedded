@@ -5,9 +5,8 @@
  * Created on January 19, 2025, 4:28 PM
  */
 
-#include "sam.h"
 #include "system_init.h"
-#include "samc21e17a.h"
+#include "tc1.h"
 
 static void gpio_init(void) {
 
@@ -92,6 +91,9 @@ static void nvic_init(void) {
     NVIC_SetPriority(DMAC_IRQn, 3);
     NVIC_EnableIRQ(DMAC_IRQn);
 
+    NVIC_SetPriority(TC0_IRQn, 3);
+    NVIC_EnableIRQ(TC0_IRQn);
+
     __DMB();
     __enable_irq();
 }
@@ -119,11 +121,15 @@ void system_init(void){
     nvmctrl_init();
     TCC1_PWMInitialize();
     TCC0_PWMInitialize();
+    TC0_TimerInitialize();
+    TC1_TimerInitialize();
     CAN0_Initialize();
     // SERCOM0_I2C_Initialize();  // I2C 3
     SERCOM1_I2C_Initialize();  // I2C 2
 
+#ifdef DEBUG
     SERCOM0_USART_Initialize();  // USART for Debugging
+#endif
 
     SERCOM3_SLAVE_I2C_Initialize();
 

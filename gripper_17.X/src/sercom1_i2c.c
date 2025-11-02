@@ -8,7 +8,6 @@
  */
 
 #include "sercom1_i2c.h"
-#include <stdio.h>
 #include "sam.h"
 
 #define SERCOM1_I2CM_BAUD_VALUE (0x34U)

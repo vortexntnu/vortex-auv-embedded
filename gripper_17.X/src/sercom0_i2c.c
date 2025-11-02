@@ -6,7 +6,6 @@
  * Created on January 19, 2025, 4:21 PM
  */
 
-#include <stdio.h>
 #include "sercom0_i2c.h"
 
 #define SERCOM0_I2CM_BAUD_VALUE (0x34U)
