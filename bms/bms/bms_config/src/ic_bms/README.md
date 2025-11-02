@@ -4,8 +4,8 @@ Overview
 The goal of this work is to implement and understand the Texas Instruments BQ76942 battery management IC for use in Vortex NTNU’s AUV power system.
 The IC manages 3–10 lithium cells, providing voltage, current, and temperature protection as well as cell balancing and fault monitoring.
 
-[!NOTE]
-All firmware is written in bare-metal C for the Microchip SAMC21 microcontroller. Communication between the MCU and the BQ76942 uses SPI.
+> [!NOTE]
+> All firmware is written in bare-metal C for the Microchip SAMC21 microcontroller. Communication between the MCU and the BQ76942 uses SPI.
 
 🧠 What Has Been Done
 1. IC Initialization & Configuration
@@ -20,8 +20,8 @@ Discharge and Charge FET control
 
 Protections and alert handling
 
-[!TIP]
-Using the TI register map, thresholds are calculated based on cell voltage divided by 50.6 mV per bit, giving accurate programmable limits.
+> [!TIP]
+> Using the TI register map, thresholds are calculated based on cell voltage divided by 50.6 mV per bit, giving accurate programmable limits.
 
 2. Power Mode Handling
 
@@ -41,8 +41,8 @@ Confirmed ALERT pin triggers correctly when thresholds are crossed.
 
 Observed autonomous recovery works after voltage returns to safe range.
 
-[!IMPORTANT]
-The BQ76942 protection system runs independently from the host MCU, meaning faults are handled even if communication is lost.
+> [!IMPORTANT]
+> The BQ76942 protection system runs independently from the host MCU, meaning faults are handled even if communication is lost.
 
 4. Communication & Command Structure
 
@@ -64,6 +64,6 @@ REG1/REG2 LDOs can power external logic (3.3 V or 5 V), reducing component count
 
 OTP memory stores permanent configuration — useful for final production calibration.
 
-[!NOTE]
-The system now successfully reads live cell voltages, controls protection FETs, and reports alerts over SPI.
+> [!NOTE]
+> The system now successfully reads live cell voltages, controls protection FETs, and reports alerts over SPI.
 Next focus: integrate fault reporting over CAN and test full pack balancing.
