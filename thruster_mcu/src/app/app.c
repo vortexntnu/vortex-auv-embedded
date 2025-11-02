@@ -123,6 +123,10 @@ void App_Init(void) {
     TCC1_PWMStart();
     //TCC2_PWMStart();
     
+    // Set all thrusters and lights to neutral on startup
+    turn_thrusters_off(); 
+    turn_lights_off();
+    
     printf("PMW Started!\r\n");
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
@@ -201,7 +205,6 @@ static void message_handler(void) {
 }
 
 static void check_overcurrent(void) {
-    printf("Entered overcurrent check\r\n");
     if (adc_dma_done) {
         printf("ADC DMA transmission done -- Monitoring data\r\n\r\n");
         adc_dma_done = false;
