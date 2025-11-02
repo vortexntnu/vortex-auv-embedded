@@ -115,7 +115,7 @@ void App_Init(void) {
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
     CAN1_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
     
-    printf("CAN0 Successfully configured!\r\n");
+    printf("CAN1 Successfully configured!\r\n");
     
     /* Configure DMA */
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_1, adc_sram_dma_callback, 0);
@@ -123,14 +123,6 @@ void App_Init(void) {
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)adc_seq_regs, (const void *)&ADC0_REGS->ADC_DSEQDATA, 32); // DSEQDATA is 32 bits=4 bytes. 8 * 4 = 32
     
     printf("DMAC Successfully configured!\r\n");
-    
-    /* Clear RX buffer and prime the first receive */  
-    // TODO: Fix this
-    
-    //memset(rxFifo0, 0x00, sizeof(rx_buf));
-    //CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
-
-    printf("CAN0 not armed to read yet!\r\n");
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     printf("ADC0 Successfully configured!\r\n");
@@ -200,9 +192,6 @@ static void message_handler(void) {
             /* Unknown event: ignore */
             break;
     }
-
-    /* Re-arm RX FIFO for next frame */
-    //CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, MESSAGES_TO_READ, &rx_buf);
 }
 
 static void check_overcurrent(void) {
