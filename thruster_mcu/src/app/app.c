@@ -54,11 +54,8 @@ typedef enum {
     APP_STATE_CAN_USER_INPUT
 } APP_CAN_STATES;
 
-static uint32_t can_status = 0;
-static uint32_t xferContext = 0;
-
-static uint8_t loop_count = 0;
-static uint8_t user_input = 0;
+static volatile uint32_t can_status = 0;
+static volatile bool can_message_received = false;
 
 /* Variable to save CAN application state*/
 volatile static APP_CAN_STATES state = APP_STATE_CAN_USER_INPUT;
@@ -106,7 +103,7 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
 static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us);
 
 /* Callbacks */
-static void CAN_Receive_Callback(uintptr_t context);
+static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context);
 static void CAN_Transmit_Callback(uintptr_t context);
 
 static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
@@ -117,8 +114,6 @@ void App_Init(void) {
     /* Configure CAN RAM & callbacks */
     printf("App Init called\r\n");
     printf("---------------\r\n");
-    
-    CAN_TX_BUFFER *txBuffer = NULL;
     
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
@@ -378,20 +373,30 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
     return ((uint32_t)pulse_us * (period_ticks + 1U)) / frame_us;
 }
 
-static void CAN_Receive_Callback(uintptr_t context) {
+static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context) {
     /* Check CAN Status */
-    can_status = CAN0_ErrorGet();
+    can_status = CAN1_ErrorGet();
 
     // If no new error, handle CAN frame
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        /* Optionally, debug/log here */
+        
+        memset(rxFiFo0, 0x00, (numberOfMessage * CAN1_RX_FIFO0_ELEMENT_SIZE));
+        if (CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, numberOfMessage, (CAN_RX_BUFFER *)rxFiFo0) == true) {
+            can_message_received = true;
+            // Optionally print can frame
+            printf("CAN Message received in callback\r\n");
+        } else {
+            printf("CAN1_MessageReceiveFifo failed!\r\n");
+        } 
+    } else {
+        printf("CAN error detected: 0x%lx\r\n", (unsigned long)can_status);
     }
 }
 
 static void CAN_Transmit_Callback(uintptr_t context) {
     /* Check CAN Status */
-    can_status = CAN0_ErrorGet();
+    can_status = CAN1_ErrorGet();
 
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
