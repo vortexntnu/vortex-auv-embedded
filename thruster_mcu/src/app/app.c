@@ -150,7 +150,6 @@ void App_Task(void) {
 /* --- Private helpers --- */
 
 static void message_handler(void) {
-    printf("Message Handler called!\r\n");
     /* Interpret event from CAN frame id */
     CAN_RX_BUFFER *rxBuf = (CAN_RX_BUFFER *)rxFiFo0;
     
@@ -169,28 +168,34 @@ static void message_handler(void) {
 
     switch (event) {
         case TURN_THRUSTERS_OFF:
+            printf("Command: TURN_THRUSTERS_OFF\r\n");
             turn_thrusters_off();
             break;
 
         case TURN_LIGHTS_OFF:
+            printf("Command: TURN_LIGHTS_OFF\r\n");
             turn_lights_off();
             break;
 
         case RESET:
+            printf("Command: RESET - Resetting system...\r\n");
             /* Force a watchdog reset */
             NVIC_SystemReset();
             break;
 
         case SET_THRUSTER_PWM:
+            printf("Command: SET_THRUSTER_PWM\r\n");
             set_thruster_pwm(pData);
             break;
 
         case SET_LIGHT_PWM:
+            printf("Command: SET_LIGHT_PWM\r\n");
             set_light_pwm(pData);
             break;
             
         default:
             /* Unknown event: ignore */
+            printf("Unknown event: %u\r\n", event);
             break;
     }
 }
