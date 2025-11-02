@@ -122,6 +122,12 @@ void App_Init(void) {
     
     printf("DMAC Successfully configured!\r\n");
     
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    //TCC2_PWMStart();
+    
+    printf("PMW Started!\r\n");
+    
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     printf("ADC0 Successfully configured!\r\n");
     
