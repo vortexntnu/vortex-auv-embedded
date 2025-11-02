@@ -1,10 +1,8 @@
 #include "wsen_pads_port_sercom3.h"
-// Leak detection with *only* internal absolute pressure P and internal
 // temperature T. Model: r' = dP/P - dT/T; estimate slow background b (hull
 // compliance/depth drift), residual e = r' - b ~ dn/n, then Shewhart + CUSUM on
 // e.
-//
-// Compile: cc -O3 -std=c11 leak_detector_pt_only.c -o leakdet
+
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,7 +13,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// ---------- Tunables (start here) ----------
 typedef struct {
     // Sampling + filters
     float sample_hz;  // e.g., 5.0 Hz
@@ -324,54 +321,3 @@ static void leakdet_update(LeakDet* ld,
     if (slow_alarm)
         *slow_alarm = slow;
 }
-
-// --------- Minimal demo harness (replace with your I/O) ----------
-#ifdef DEMO_MAIN
-int main(void) {
-    LeakConf cfg = leakconf_defaults();
-    LeakDet det;
-    if (!leakdet_init(&det, cfg)) {
-        fprintf(stderr, "init failed\n");
-        return 1;
-    }
-
-    // Synthetic stream: constant depth, small warming, then inject leak bias in
-    // e.
-    float P = 101325.0;                       // Pa
-    float T = 293.15;                         // K
-    float leak_bias = 0.0;                    // 1/s applied to e (sim)
-    int total = (int)(cfg.sample_hz * 1800);  // 30 min
-    for (int i = 0; i < total; ++i) {
-        float t = i / cfg.sample_hz;
-
-        // Sim: gentle temp ramp first 10 min (+2 K)
-        if (t < 600.0)
-            T += (2.0 / 600.0) / cfg.sample_hz;
-
-        // Ideal-gas coupling (approx): P tracks T a bit (toy sim)
-        P *= (1.0 + 0.2 * ((T - 293.15) / 293.15) / cfg.sample_hz);
-
-        // Inject leak after 15 min: e ~ dn/n ~ +3e-4 1/s
-        if (fabs(t - 900.0) < 1e-9 || t > 900.0)
-            leak_bias = 3e-4;
-        // Convert leak_bias into extra pressure drift (very rough sim):
-        P *= (1.0 + leak_bias / cfg.sample_hz);
-
-        bool fast = false, slow = false;
-        leakdet_update(&det, P, T, &fast, &slow);
-
-        if (fast || slow) {
-            printf(
-                "t=%.1fs  FAST=%d SLOW=%d  e=%.3e  sigma=%.3e  z=%.2f  C+=%.2e "
-                "C-=%.2e\n",
-                t, fast, slow, det.e, det.sigma_e, det.z, det.Cplus,
-                det.Cminus);
-            if (fast)
-                break;  // stop demo on first trip
-        }
-    }
-
-    leakdet_free(&det);
-    return 0;
-}
-#endif

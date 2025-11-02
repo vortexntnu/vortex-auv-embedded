@@ -6,9 +6,6 @@ volatile bool leakdet_tick = false;
 
 static void tc2_cb(TC_TIMER_STATUS status, uintptr_t context) {
     (void)context;
-    if ((status & TC_INTFLAG_OVF_Msk) == 0U)
-        return;
-
     leakdet_tick = true;
 }
 

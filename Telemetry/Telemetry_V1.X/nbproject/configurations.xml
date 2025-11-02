@@ -6,6 +6,7 @@
                    projectFiles="true">
       <logicalFolder name="f2" displayName="app" projectFiles="true">
         <itemPath>../app/include/led_facade.h</itemPath>
+        <itemPath>../app/include/pressure_calc.h</itemPath>
       </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
@@ -66,6 +67,9 @@
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
+        <logicalFolder name="f3" displayName="timers" projectFiles="true">
+          <itemPath>../drivers/timers/include/leak_update_tc2.h</itemPath>
+        </logicalFolder>
         <logicalFolder name="f1" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/include/ws2812_spi_enc.h</itemPath>
           <itemPath>../drivers/ws2812/include/ws2812_port_sercom5_harmony.h</itemPath>
@@ -228,6 +232,7 @@
                    projectFiles="true">
       <logicalFolder name="f2" displayName="app" projectFiles="true">
         <itemPath>../app/src/led_facade.c</itemPath>
+        <itemPath>../app/src/pressure_calc.c</itemPath>
       </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
@@ -285,6 +290,9 @@
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
+        <logicalFolder name="f3" displayName="timers" projectFiles="true">
+          <itemPath>../drivers/timers/src/leak_update_tc2.c</itemPath>
+        </logicalFolder>
         <logicalFolder name="f1" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/src/ws2812_spi_enc.c</itemPath>
           <itemPath>../drivers/ws2812/src/ws2812_port_sercom5_harmony.c</itemPath>
@@ -304,6 +312,8 @@
     <Elem>../app/src</Elem>
     <Elem>../drivers/wsen-pads/include</Elem>
     <Elem>../drivers/wsen-pads/src</Elem>
+    <Elem>../drivers/timers/src</Elem>
+    <Elem>../drivers/timers/include</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
