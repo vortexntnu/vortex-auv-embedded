@@ -400,8 +400,9 @@ static void CAN_Transmit_Callback(uintptr_t context) {
 
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        /* Optionally, queue next TX or debug */
-
+        printf("CAN TX successful\r\n");
+    } else {
+        printf("CAN TX error: 0x%lx\r\n", (unsigned long)can_status);
     }
 }
 
