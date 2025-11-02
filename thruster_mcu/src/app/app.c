@@ -105,19 +105,15 @@ static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHa
 /* --- Public functions --- */
 
 void App_Init(void) {
-    /* Configure CAN RAM & callbacks */
+    // Configure CAN RAM & callbacks 
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
     CAN1_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
     
-    printf("CAN1 Successfully configured!\r\n");
-    
-    /* Configure DMA */
+    // Configure DMA
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_1, adc_sram_dma_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_1, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_res, 16); // Each adc result is 16 bits=2 bytes. 8*2=16
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)adc_seq_regs, (const void *)&ADC0_REGS->ADC_DSEQDATA, 32); // DSEQDATA is 32 bits=4 bytes. 8 * 4 = 32
-    
-    printf("DMAC Successfully configured!\r\n");
     
     TCC0_PWMStart();
     TCC1_PWMStart();
@@ -127,24 +123,22 @@ void App_Init(void) {
     turn_thrusters_off(); 
     turn_lights_off();
     
-    printf("PMW Started!\r\n");
-    
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
-    printf("ADC0 Successfully configured!\r\n");
     
     TC0_TimerStart();
-    printf("TC0 Successfully configured!\r\n");
     
-    /* Enable watchdog */
+    // Enable watchdog
     WDT_Enable();
-    printf("WDT Successfully configured!\r\n\r\n");
+    
+    printf("System successfully initialized!\r\n\r\n");
 }
 
 void App_Task(void) {
-    // Check for overcurrent
-    // TODO: Only necessary to check this after adc results are ready
-    check_overcurrent();
-    // Handle any message that arrived since last time
+    if (adc_dma_done) {
+        adc_dma_done = false;
+        check_overcurrent();
+    }
+    
     if (can_message_received) {
         can_message_received = false;
         message_handler();
@@ -154,14 +148,13 @@ void App_Task(void) {
 /* --- Private helpers --- */
 
 static void message_handler(void) {
-    /* Interpret event from CAN frame id */
+    // Interpret event from CAN frame id
     CAN_RX_BUFFER *rxBuf = (CAN_RX_BUFFER *)rxFiFo0;
     
     uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
     
     printf("Received CAN message with ID: 0x%lx\r\n", (unsigned long)id);
     
-    /* Check if this is one of our command IDs */
     if (id < CAN_EVENT_ID_BASE || id >= (CAN_EVENT_ID_BASE + 5)) {
         printf("Unknown CAN ID, ignoring\r\n");
         return;
@@ -205,23 +198,19 @@ static void message_handler(void) {
 }
 
 static void check_overcurrent(void) {
-    if (adc_dma_done) {
-        printf("ADC DMA transmission done -- Monitoring data\r\n\r\n");
-        adc_dma_done = false;
+    for (size_t sample = 0; sample < 8; sample++) {
+        float V_Imon = (float)adc_res[sample] * ADC_VREF / 4095.0f;
+        float I_out = V_Imon / (G_IMON * R_IMON);
 
-        for (size_t sample = 0; sample < 8; sample++) {
-            float V_Imon = (float)adc_res[sample] * ADC_VREF / 4095.0f;
-            float I_out = V_Imon / (G_IMON * R_IMON);
-
-            printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
-            //printf("\r\n Measured current = %.2f A \r\n\r\n", (double)I_out);
-            if (I_out > THRUSTER_RATED_CURRENT) {
-                overcurrent_fault = true;
-                printf("Overcurrent flagged \r\n\r\n");
-                // break;
-            }
+        printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
+        //printf("\r\n Measured current = %.2f A \r\n\r\n", (double)I_out);
+        if (I_out > THRUSTER_RATED_CURRENT) {
+            overcurrent_fault = true;
+            printf("Overcurrent flagged \r\n\r\n");
+            break;
         }
     }
+    
     
     if (overcurrent_fault) {
         overcurrent_fault = false;
@@ -231,10 +220,10 @@ static void check_overcurrent(void) {
 
 static void set_thruster_pwm(const uint8_t *data) {
     for (size_t thr = 0; thr < 8; thr++) {
-        /* data layout: uint16 per thruster */
+        // data layout is uint16 per thruster
         uint16_t pulse_us = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
         
-        /* Thrusters take duty cycles in range 1000 - 2000 us*/
+        // Thrusters take duty cycles in range 1000 - 2000 us
         pulse_us = clamp(pulse_us, 1000, 2000);
         
         uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, pulse_us, THRUSTER_PWM_PERIOD_US);
@@ -242,22 +231,22 @@ static void set_thruster_pwm(const uint8_t *data) {
         tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
     }
 
-    /* Pet the watchdog after applying updates */
+    // Pet the watchdog after applying updates 
     WDT_Clear();
 }
 
 static void set_light_pwm(const uint8_t *data) {
-    /* data layout: uint16 for light */
+    // data layout is uint16 for light
     uint16_t pulse_us = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
     
-    /* Lights takes duty cycle in range 1100 - 1900 us */
+    // Lights takes duty cycle in range 1100 - 1900 us
     pulse_us = clamp(pulse_us, 1100, 1900);
     
     uint32_t ticks = us_to_ticks(lights.period_ticks, pulse_us, LIGHT_PWM_PERIOD_US);
     
     tcc_write(lights.instance, lights.channel, ticks);
     
-    /* Pet the watchdog after applying updates */
+    // Pet the watchdog after applying updates
     WDT_Clear();
 }
 
@@ -271,7 +260,7 @@ static void turn_thrusters_off(void) {
 }
 
 static void turn_lights_off(void) {
-    /* Write neutral (1100us) to the lights*/
+    // Write neutral (1100us) to the lights
     uint32_t ticks = us_to_ticks(lights.period_ticks, 1100, LIGHT_PWM_PERIOD_US);
     tcc_write(lights.instance, lights.channel, ticks);
     
@@ -293,7 +282,7 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) 
     switch (instance) {
         case 0: TCC0_PWM24bitDutySet(channel, ticks); break;
         case 1: TCC1_PWM24bitDutySet(channel, ticks); break;
-        case 2: TCC2_PWM16bitDutySet(channel, (uint16_t)ticks); break; /* Not used with current mapping */
+        case 2: TCC2_PWM16bitDutySet(channel, (uint16_t)ticks); break; // Not used with current mapping
         default: break;
     }
 }
@@ -303,7 +292,7 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 }
 
 static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context) {
-    /* Check CAN Status */
+    // Check CAN Status
     can_status = CAN1_ErrorGet();
 
     // If no new error, handle CAN frame
@@ -324,7 +313,7 @@ static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context) {
 }
 
 static void CAN_Transmit_Callback(uintptr_t context) {
-    /* Check CAN Status */
+    // Check CAN Status
     can_status = CAN1_ErrorGet();
 
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
