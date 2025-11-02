@@ -8,15 +8,17 @@
 
 //Direct Commands
 
-#define BatteryStatus 0x12
-#define StackVoltage 0x34
+#define BATTERYSTATUS 0x12
+#define STACKVOLTAGE 0x34
 
-#define Cell1Voltage 0x14
-#define Cell2Voltage 0x16
-#define Cell3Voltage 0x18
-#define Cell4Voltage 0x1A
-#define Cell5Voltage 0x1C
-#define Cell6Voltage 0x1E
+#define CELL1VOLTAGE 0x14
+#define CELL2VOLTAGE 0x16
+#define CELL3VOLTAGE 0x18
+#define CELL4VOLTAGE 0x1A
+#define CELL5VOLTAGE 0x1C
+#define CELL6VOLTAGE 0x1E
+
+
 /*
 #define Cell7Voltage 0x20
 #define Cell8Voltage 0x22
@@ -67,6 +69,8 @@
 //Config Mode
 #define ENTER_CONFIG_UPDATE 0x0090
 #define EXIT_CONFIG_UPDATE  0x0092
+
+#define FET_STATUS 0x7F
 
 
 /* Minimal driver: only SPI+CS bring-up */

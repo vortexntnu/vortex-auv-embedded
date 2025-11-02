@@ -5,6 +5,8 @@
 #include "peripheral/sercom/spi_master/plib_sercom0_spi_master.h"
 #include "definitions.h"
 #include "bms_spi.h"
+#
+
 
 
 static inline void BQ_CS_Low(void)  { PORT_REGS->GROUP[BQ_CS_GROUP].PORT_OUTCLR = BQ_CS_MASK; }
@@ -135,9 +137,10 @@ bool BQ_DirectCommand(uint8_t command, uint16_t *data, char type)
         *data = (uint16_t)(buf[0] | (buf[1] << 8)); // Little endian
     }
 
-    _delay(2000); // short pause between frames (~few hundred µs)
+    _delay(2000); 
     return ok;
 }
+
 
 bool BQ_CommandOnly(uint16_t subcmd){
 
@@ -165,7 +168,7 @@ bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length)
     uint8_t lsb = (uint8_t)(subcmd & 0xFF);
     uint8_t msb = (uint8_t)((subcmd >> 8) & 0xFF);
     uint8_t check_lsb=0, check_msb=0;
-    bool ok = true;
+    
 
 
     if (!WriteReg(0x3E, lsb))
@@ -183,7 +186,7 @@ bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length)
 
         if(!ReadReg(0x40+i,&data[i]))
         {
-            ok=false;
+            false;
             break;
         }
     }
@@ -258,6 +261,35 @@ void BMS_SetProtectionThresholds(void)
 
 
     BQ_CommandOnly(EXIT_CONFIG_UPDATE);
+}
+
+void BMS_BATTERY_STATUS(void){
+
+    uint8_t fetReg=0;
+
+    if(!BQ_DirectRead(FET_STATUS, &fetReg, 1)){
+        printf("Failed to read FET status\n");
+        return;
+    }
+
+    bool chg_on  = (fetReg & (1 << 0));  // CHG_FET bit
+    bool pchg_on = (fetReg & (1 << 1));  // PCHG_FET bit
+    bool dsg_on  = (fetReg & (1 << 2));  // DSG_FET bit
+
+
+    if (pchg_on)
+        printf("Battery in precharge mode\n");
+    else if (chg_on && !dsg_on) 
+        printf("Battery is charging\n");
+    else if (dsg_on && !chg_on)
+        printf("Battery is discharging\n");
+    else if (!chg_on && !dsg_on)
+        printf("Battery is idle\n");
+    else
+        printf("Both CHG_FET and DSG_FET ACTIVE (transition)\n");
+
+
+
 }
 
 
