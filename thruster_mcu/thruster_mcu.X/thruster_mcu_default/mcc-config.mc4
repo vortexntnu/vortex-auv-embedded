@@ -26,7 +26,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: 55f2588fc651ef843b170d0cf4731c76abafb66d6100da0292d12773daf7a256
+  hash: ebe74939e96ce5cd4982ead492560ac698ac1bc64189a39fcf5cd72e6bd200fb
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -36,7 +36,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: de00e84d46e0d8933ee2fae9d699e08456443d4f80ac78f87edada9c35a9d15f
 - file: ../src/config/default/initialization.c
-  hash: 1036c101c6bb42f9abb50d5db213f1f973eb64b4d6d23e41c232fd8c45131c7c
+  hash: d199c5ad35735549f62a61b030e0e462fd5e1a3925b7f4f87a79ddf607aa9670
 - file: ../src/config/default/interrupts.c
   hash: caf8920ed5af2990f99372e980ac47eae2e56b8ccc857c6591ca3458e243944f
 - file: ../src/config/default/interrupts.h
@@ -88,7 +88,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/pm/plib_pm.h
   hash: 1ca20c6f2ba543b9ab30691fe90c11c6f8ea37e4631019cd9db771dcd57cc6b1
 - file: ../src/config/default/peripheral/port/plib_port.c
-  hash: 31c747b33cb35785d21cc19e5928179555a14502a393f7105a3405d0d76ea825
+  hash: 4cf5497509f12c4855e8a4911ae4353a32e3196b312481938ecb2ed0def376f2
 - file: ../src/config/default/peripheral/port/plib_port.h
   hash: bd4b3257c12b2240ab8dc2225d4fbb47663a617410bee20db44b60417e499be3
 - file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c
@@ -132,7 +132,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/wdt/plib_wdt.h
   hash: d4bb429b750e4e2970fe12d9c4eea02d2e0b1f1d30279577033555379f94e1a0
 - file: ../src/config/default/pin_configurations.csv
-  hash: ee3bae5fbaa4e65402caacf09800b37d2a1573b60788ab7030c84a83b3b5148d
+  hash: 2ee3da8004cbaacefafa3ee3067f96335267187a7fd6703532e9e54eaa07f678
 - file: ../src/config/default/startup_xc32.c
   hash: f374b97d65f92553f1b75d8c9239b8b0f8581c710f78ea47b02c7f6fa6f74c74
 - file: ../src/config/default/stdio/xc32_monitor.c
