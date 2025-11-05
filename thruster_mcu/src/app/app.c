@@ -231,6 +231,7 @@ static void check_overcurrent(void) {
         //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
         if (I_out > THRUSTER_RATED_CURRENT) {
             set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
+            // TODO: Transmit CAN frame      
             break;
         }
     }
