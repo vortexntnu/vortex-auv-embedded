@@ -57,31 +57,24 @@ static struct pwm_output thrusters[8] = {
     {1, 1, TCC1_PERIOD}  // TCC1_CHANNEL1
 };
 
-static struct pwm_output lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
+static struct pwm_output lights[1] = {{1, 2, TCC1_PERIOD}}; // TCC1_CHANNEL2
 
 /* --- Private function prototypes --- */
 
 /**
- * @brief Sets PWM pulse widths for all 8 thrusters.
+ * @brief Sets PWM pulse widths for multiple PWM outputs (e.g Thrusters and/or lights).
  * 
- * Parses the data buffer containing 8 pulse width values,
- * clamps each to the valid range (1000-2000 us), and updates the corresponding
- * PWM channels.
+ * Parses the data buffer containing pulse width values,
+ * clamps each to the valid range, and updates the corresponding PWM channels.
  * 
- * @param data Pointer to 16-byte buffer containing 8 pulse widths in microseconds (format: [MSB, LSB] per thruster)
+ * @param data Pointer to buffer containing pulse widths in microseconds (format: [MSB, LSB] per output)
+ * @param outputs Pointer to array of pwm_output structs
+ * @param count Number of outputs to set
+ * @param min_us Minimum pulse width in microseconds
+ * @param max_us Maximum pulse width in microseconds
+ * @param frame_us Total PWM frame duration in microseconds
  */
-static void set_thruster_pwm(const uint8_t *data);
-
-/**
- * @brief Sets PWM pulse width for the light output
- * 
- * Parses the data buffer containing a single pulse width value,
- * clamps it to the valid range (1100-1900 us), and updates the light PWM channel.
- * 
- * @param data Pointer to 16-byte buffer containing pulse width in microseconds. 
- *             The pulse width for the light output are stored in the 2 first bytes (format: [MSB, LSB])
- */
-static void set_light_pwm(const uint8_t *data);
+static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count, uint16_t min_us, uint16_t max_us, uint32_t frame_us);
 
 /**
  * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
@@ -204,11 +197,11 @@ static void message_handler(void) {
             break;
 
         case SET_THRUSTER_PWM:
-            set_thruster_pwm(pData);
+            set_pwm_outputs(pData, thrusters, 8, 1000, 2000, THRUSTER_PWM_PERIOD_US);
             break;
 
         case SET_LIGHT_PWM:
-            set_light_pwm(pData);
+            set_pwm_outputs(pData, lights, 1, 1100, 1900, LIGHT_PWM_PERIOD_US);
             break;
             
         default:
@@ -235,35 +228,18 @@ static void check_overcurrent(void) {
     }
 }
 
-static void set_thruster_pwm(const uint8_t *data) {
-    for (size_t thr = 0; thr < 8; thr++) {
-        // data layout is uint16 per thruster
-        uint16_t pulse_us = ((uint16_t)data[2U * thr] << 8) | (uint16_t)data[2U * thr + 1U];
+static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count, uint16_t min_us, uint16_t max_us, uint32_t frame_us) {
+    for (size_t i = 0; i < count; i++) {
+        uint16_t pulse_us = ((uint16_t)data[2U * i] << 8) | (uint16_t)data[2U * i + 1U];
         
-        // Thrusters take duty cycles in range 1000 - 2000 us
-        pulse_us = clamp(pulse_us, 1000, 2000);
+        pulse_us = clamp(pulse_us, min_us, max_us);
         
-        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, pulse_us, THRUSTER_PWM_PERIOD_US);
+        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, frame_us);
         
-        tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
+        tcc_write(outputs[i].instance, outputs[i].channel, ticks);
     }
-
+    
     // Pet the watchdog after applying updates 
-    WDT_Clear();
-}
-
-static void set_light_pwm(const uint8_t *data) {
-    // data layout is uint16 for light
-    uint16_t pulse_us = ((uint16_t)data[0] << 8) | (uint16_t)data[1U];
-    
-    // Lights takes duty cycle in range 1100 - 1900 us
-    pulse_us = clamp(pulse_us, 1100, 1900);
-    
-    uint32_t ticks = us_to_ticks(lights.period_ticks, pulse_us, LIGHT_PWM_PERIOD_US);
-    
-    tcc_write(lights.instance, lights.channel, ticks);
-    
-    // Pet the watchdog after applying updates
     WDT_Clear();
 }
 
@@ -278,8 +254,8 @@ static void turn_thrusters_off(void) {
 
 static void turn_lights_off(void) {
     // Write neutral (1100us) to the lights
-    uint32_t ticks = us_to_ticks(lights.period_ticks, 1100, LIGHT_PWM_PERIOD_US);
-    tcc_write(lights.instance, lights.channel, ticks);
+    uint32_t ticks = us_to_ticks(lights[0].period_ticks, 1100, LIGHT_PWM_PERIOD_US);
+    tcc_write(lights[0].instance, lights[0].channel, ticks);
     
     WDT_Clear();
 }
