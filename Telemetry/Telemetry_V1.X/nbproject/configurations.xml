@@ -67,6 +67,9 @@
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
+        <logicalFolder name="f4" displayName="leakage-sensor" projectFiles="true">
+          <itemPath>../drivers/leakage-sensor/include/leak_sensor_eic.h</itemPath>
+        </logicalFolder>
         <logicalFolder name="f3" displayName="timers" projectFiles="true">
           <itemPath>../drivers/timers/include/leak_update_tc2.h</itemPath>
         </logicalFolder>
@@ -290,6 +293,9 @@
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f1" displayName="drivers" projectFiles="true">
+        <logicalFolder name="f4" displayName="leakage-sensor" projectFiles="true">
+          <itemPath>../drivers/leakage-sensor/src/leak_sensor_eic.c</itemPath>
+        </logicalFolder>
         <logicalFolder name="f3" displayName="timers" projectFiles="true">
           <itemPath>../drivers/timers/src/leak_update_tc2.c</itemPath>
         </logicalFolder>
@@ -314,6 +320,8 @@
     <Elem>../drivers/wsen-pads/src</Elem>
     <Elem>../drivers/timers/src</Elem>
     <Elem>../drivers/timers/include</Elem>
+    <Elem>../drivers/leakage-sensor/src</Elem>
+    <Elem>../drivers/leakage-sensor/include</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
