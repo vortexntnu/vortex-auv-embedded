@@ -273,10 +273,20 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
 
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) {
     switch (instance) {
-        case 0: TCC0_PWM24bitDutySet(channel, ticks); break;
-        case 1: TCC1_PWM24bitDutySet(channel, ticks); break;
-        case 2: TCC2_PWM16bitDutySet(channel, (uint16_t)ticks); break; // Not used with current mapping
-        default: break;
+        case 0: 
+            TCC0_PWM24bitDutySet(channel, ticks);
+            break;
+            
+        case 1: 
+            TCC1_PWM24bitDutySet(channel, ticks);
+            break;
+            
+        case 2: 
+            TCC2_PWM16bitDutySet(channel, (uint16_t)ticks);
+            break; // Not used with current mapping
+            
+        default: 
+            break;
     }
 }
 
