@@ -89,8 +89,15 @@ static void message_handler(void);
  */
 static void check_overcurrent(void);
 
-static void turn_thrusters_off(void);
-static void turn_lights_off(void);
+/**
+ * @brief Sets PWM outputs to their neutral/off position
+ * 
+ * @param outputs Pointer to array of pwm_output structs
+ * @param count Number of outputs to set
+ * @param neutral_us Neutral pulse width in microseconds
+ * @param frame_us Total PWM frame duration in microseconds
+ */
+static void set_pwm_neutral(struct pwm_output *outputs, size_t count, uint16_t neutral_us, uint32_t frame_us);
 
 /**
  * @brief Clamps a value between a minimum and maximum bound.
@@ -150,8 +157,9 @@ void app_init(void) {
     //TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
-    turn_thrusters_off(); 
-    turn_lights_off();
+    set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
+    set_pwm_neutral(lights, 1, 1100, LIGHT_PWM_PERIOD_US);
+
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     
@@ -184,11 +192,11 @@ static void message_handler(void) {
 
     switch (id) {
         case TURN_THRUSTERS_OFF:
-            turn_thrusters_off();
+            set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
             break;
 
         case TURN_LIGHTS_OFF:
-            turn_lights_off();
+            set_pwm_neutral(lights, 1, 1100, LIGHT_PWM_PERIOD_US);
             break;
 
         case RESET:
@@ -222,7 +230,7 @@ static void check_overcurrent(void) {
 
         //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
         if (I_out > THRUSTER_RATED_CURRENT) {
-            turn_thrusters_off();
+            set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
             break;
         }
     }
@@ -243,20 +251,12 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
     WDT_Clear();
 }
 
-static void turn_thrusters_off(void) {
-    for (size_t thr = 0; thr < 8; thr++) {
-        // Write neutral (1500us) to each thrusters, keep modules running so ESC's stay armed
-        uint32_t ticks = us_to_ticks(thrusters[thr].period_ticks, 1500, THRUSTER_PWM_PERIOD_US);
-        tcc_write(thrusters[thr].instance, thrusters[thr].channel, ticks);
+static void set_pwm_neutral(struct pwm_output *outputs, size_t count, uint16_t neutral_us, uint32_t frame_us) {
+    for (size_t i = 0; i < count; i++) {
+        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, neutral_us, frame_us);
+        tcc_write(outputs[i].instance, outputs[i].channel, ticks);
+        
     }
-    WDT_Clear();
-}
-
-static void turn_lights_off(void) {
-    // Write neutral (1100us) to the lights
-    uint32_t ticks = us_to_ticks(lights[0].period_ticks, 1100, LIGHT_PWM_PERIOD_US);
-    tcc_write(lights[0].instance, lights[0].channel, ticks);
-    
     WDT_Clear();
 }
 
