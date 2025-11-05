@@ -1,5 +1,9 @@
-⚡ Battery Management System (BMS) — TI BQ76942
+Battery Management System (BMS) — TI BQ76942
 Overview
+
+> [!NOTE]
+> Pages about Direct commands and subcommands is on page (13-14) and Data Memory settings on page (125) in BQ-TI datasheet:
+> https://www.ti.com/lit/ug/sluuby1b/sluuby1b.pdf?ts=1761234036230&ref_url=https%253A%252F%252Fcopilot.microsoft.com%252F
 
 The goal of this work is to implement and understand the Texas Instruments BQ76942 battery management IC for use in Vortex NTNU’s AUV power system.
 The IC manages 3–10 lithium cells, providing voltage, current, and temperature protection as well as cell balancing and fault monitoring.
@@ -7,7 +11,7 @@ The IC manages 3–10 lithium cells, providing voltage, current, and temperature
 > [!NOTE]
 > All firmware is written in bare-metal C for the Microchip SAMC21 microcontroller. Communication between the MCU and the BQ76942 uses SPI.
 
-🧠 What Has Been Done
+What Has Been Done
 1. IC Initialization & Configuration
 
 Implemented routines to enter CONFIG_UPDATE mode for safe parameter editing.
