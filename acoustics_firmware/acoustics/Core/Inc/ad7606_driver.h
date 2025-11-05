@@ -3,8 +3,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <cstdint>
+#include <sys/types.h>
 #include "stm32h7xx_hal.h"
+
+
+#define AD7606_CONFIG_ADDRESS 0x02
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,6 +56,7 @@ struct ad7606_config {
 };
 
 struct ad7606_register {
+    uint8_t config_address;
     uint8_t config;
     uint8_t channel_range[4];
     uint8_t bandwith;
@@ -90,7 +94,8 @@ void ad7606_set_registers(struct ad7606_register* registers,
                           uint8_t* channel_range,
                           uint8_t* channel_gain,
                           uint8_t* channel_offset,
-                          uint8_t* channel_phase); 
+                          uint8_t* channel_phase,
+                          uint8_t num_channels); 
 
 #ifdef __cplusplus
 }
