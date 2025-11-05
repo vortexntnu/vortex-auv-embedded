@@ -27,6 +27,7 @@
 #include <stdlib.h>       // Defines EXIT_FAILURE
 #include "definitions.h"  // SYS function prototypes
 
+#include "leak_sensor_eic.h"
 #include "leak_update_tc2.h"
 #include "led_facade.h"
 #include "pressure_calc.h"
@@ -51,6 +52,7 @@ int main(void) {
     i2c_init();
     wsen_init();
     drdy_init();
+    leak_sensor_init();
 
     struct LeakDet* leak_detector;
     leakdet_init(leak_detector, NULL);

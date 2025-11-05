@@ -193,7 +193,7 @@ static void drdy_isr(uintptr_t context) {
 void drdy_init(void) {
     PORT_PinPeripheralFunctionConfig(PORT_PIN_PA19, PERIPHERAL_FUNCTION_A);
 
-    EIC_Initialize();
+    EIC_Initialize();  // do this somewhere else?
     EIC_CallbackRegister(EIC_PIN_3, drdy_isr, 0);
     EIC_InterruptEnable(EIC_PIN_3);
 }

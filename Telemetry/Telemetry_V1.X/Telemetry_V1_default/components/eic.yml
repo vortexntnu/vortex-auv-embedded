@@ -45,7 +45,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -105,7 +105,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: '12'
+            value: '264'
           type: Dynamic
         type: Values
       type: Hex
@@ -129,4 +129,34 @@ data:
           type: User
         type: Values
       type: Boolean
+    EIC_CHAN_8:
+      attributes:
+        id: EIC_CHAN_8
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_8:
+      attributes:
+        id: EIC_INT_8
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CONFIG_SENSE_8:
+      attributes:
+        id: EIC_CONFIG_SENSE_8
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData: {}
