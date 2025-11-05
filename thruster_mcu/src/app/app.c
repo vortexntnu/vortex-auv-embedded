@@ -67,7 +67,6 @@ static const uint32_t adc_seq_regs[8] = {0x1801, 0x1802, 0x1803, 0x1805, 0x1806,
 
 static volatile uint16_t adc_res[8] = {0};
 static volatile bool adc_dma_done = false;
-static volatile bool overcurrent_fault = false;
 
 /* Application */
 static const Thruster thrusters[8] = {
@@ -205,16 +204,10 @@ static void check_overcurrent(void) {
         printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
         //printf("\r\n Measured current = %.2f A \r\n\r\n", (double)I_out);
         if (I_out > THRUSTER_RATED_CURRENT) {
-            overcurrent_fault = true;
             printf("Overcurrent flagged \r\n\r\n");
+            turn_thrusters_off();
             break;
         }
-    }
-    
-    
-    if (overcurrent_fault) {
-        overcurrent_fault = false;
-        turn_thrusters_off();
     }
 }
 
