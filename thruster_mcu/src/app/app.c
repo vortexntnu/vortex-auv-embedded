@@ -5,9 +5,9 @@
 #include "app.h"
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD               = TCC0_PWM24bitPeriodGet();
-static const uint32_t TCC1_PERIOD               = TCC1_PWM24bitPeriodGet();
-static const uint32_t TCC2_PERIOD               = TCC2_PWM16bitPeriodGet();
+static const uint32_t TCC0_PERIOD               = 75000U;
+static const uint32_t TCC1_PERIOD               = 75000U;
+static const uint32_t TCC2_PERIOD               = 18500U;
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 static const uint32_t CAN_EVENT_ID_BASE         = 0x369U;
