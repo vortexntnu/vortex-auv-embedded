@@ -16,6 +16,7 @@ static inline void _delay(uint32_t cycles){
 
     for (volatile uint32_t i=0; i<cycles; i++);
 }
+    
 
 //SPI + set CS high 
 void BQ76942_Init(void)
@@ -37,7 +38,7 @@ bool Spi_TransferBytes(uint8_t *tx, uint8_t *rx, uint8_t length)
     bool ok = SERCOM0_SPI_WriteRead(tx, length, rx, length);
     BQ_CS_High();
 
-    _delay(100);
+   
     
 
     return ok;
@@ -60,7 +61,7 @@ bool WriteReg(uint8_t regAddr, uint8_t value)
     bool ok = SERCOM0_SPI_Write(tx, 2U);
     BQ_CS_High();
 
-    _delay(2000);
+    
 
     return ok;
 }
@@ -81,7 +82,7 @@ bool ReadReg(uint8_t regAddr, uint8_t *value)
     if (ok)
         *value = rx[1];
 
-    _delay(2000);
+    
     return ok;
 }
 
@@ -163,6 +164,8 @@ bool BQ_CommandOnly(uint16_t subcmd){
     Reset the BQ76942
     BQ_CommandOnly(RESET);
 */
+
+/*
 bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length)
 {
     uint8_t lsb = (uint8_t)(subcmd & 0xFF);
@@ -193,6 +196,54 @@ bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length)
     _delay(2000);
     return true;
 }
+*/
+
+bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length) //added
+{
+    uint8_t lsb=(uint8_t)(subcmd & 0xFF);
+    uint8_t msb=(uint8_t)(subcmd >> 8);
+    uint8_t echo_l = 0xFF, echo_h = 0xFF;
+
+    if (!WriteReg(0x3E, lsb))
+        return false;
+    if (!WriteReg(0x3F, msb))
+        return false;
+
+    uint32_t tries = 0;
+    do{
+        if (!ReadReg(0x3E,&echo_l))
+            return false;
+        if (!ReadReg(0x3F,&echo_h))
+            return false;
+        if (++tries > BQ_SUBCMD_MAX_POLLS)
+            return false;
+    } while ((echo_l == 0xFF && echo_h == 0xFF) || (echo_l != lsb) || (echo_h != msb));
+
+    uint8_t buf[34];
+    for (uint8_t off = 0; off<=(0x61 - 0x40); off++){
+        if(!ReadReg((uint8_t)(0x40 + off), &buf[off]))
+            return false;
+    }
+
+    uint8_t len_total=buf[0x61-0x40];
+    if(len_total < 4)
+        return false;
+    uint8_t buf_len = (uint8_t)(len_total - 4);
+    if (buf_len > 32)
+        buf_len = 32;
+    uint8_t to_copy = (buf_len < length) ? buf_len : length;
+
+    for (uint8_t i=0; i<to_copy; i++){
+        data[i] = buf[i];
+    }
+    uint8_t sum = (uint8_t)(lsb + msb);
+    for (uint8_t i=0; i<buf_len; i++)
+        sum = (uint8_t)(sum + buf[i]);
+    uint8_t ck_calc = (uint8_t)(0xFF- (sum & 0xFF));
+    uint8_t ck_read = buf[0x60-0x40];
+    return (ck_read == ck_calc);
+
+}
 
 bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
 {
@@ -201,30 +252,28 @@ bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
 
     uint8_t lsb=(uint8_t)(subcmd & 0xFF);
     uint8_t msb=(uint8_t)((subcmd >> 8) & 0xFF);
-    uint8_t checksum=0;
-    uint16_t sum = 0;
+   
 
     if (!WriteReg(0x3E, lsb))
         return false;
     if (!WriteReg(0x3F, msb))
         return false;
 
+    uint8_t sum = (uint8_t)(lsb + msb);
     for (uint8_t i=0; i<length; i++){
-        if (!WriteReg(0x40+i,data[i]))
+        if (!WriteReg((uint8_t)(0x40 + i),data[i]))
             return false;
-        sum += data[i];  // Move this inside the loop
+        sum= (uint8_t)(sum+ data[i]);
     }
 
-    sum += lsb + msb;
-    checksum=(uint8_t)(0xff -(sum & 0xFF));
+    uint8_t checksum= (uint8_t)(0xFF- (sum & 0xFF));
+    if(!WriteReg(0x60,checksum))
+        return false;
+    if(!WriteReg(0x61,(uint8_t)(4 + length)))
+        return false;
 
-    if (!WriteReg(0x60, checksum))
-        return false;
-    if(!WriteReg(0x61, length))
-        return false;
-    
-    _delay(20000);
     return true;
+
 }
 
    
@@ -278,7 +327,7 @@ void BMS_BATTERY_STATUS(void){
 
 
     if (pchg_on)
-        printf("Battery in precharge mode\n");
+        printf("Battery in precharge mode\n");  //maybe not printf
     else if (chg_on && !dsg_on) 
         printf("Battery is charging\n");
     else if (dsg_on && !chg_on)
@@ -292,7 +341,30 @@ void BMS_BATTERY_STATUS(void){
 
 }
 
+void Read_Cells_1to6(){
 
+    const uint8_t CellVoltageAddr[6]={CELL_1_VOLTAGE, CELL_2_VOLTAGE, CELL_3_VOLTAGE, CELL_4_VOLTAGE, CELL_5_VOLTAGE, CELL_6_VOLTAGE};
+    uint16_t raw = 0;
+    float voltage = 0.0f;
+    uint8_t i = 0;
+  
+    for (i=0; i<6; i++){
+      if (BQ_DirectCommand(CellVoltageAddr[i], &raw , R))
+      {
+        voltage = raw*0.001f; // Convert mV to V
+        printf("Cell %u Voltage: %.3f V\n", i+1, voltage);
+      }
+      else {
+      {
+        printf("Failed to read Cell %u Voltage\n", i+1);  
+      }
+      }
+  
+  
+    }
+  
+  }
+  
     
 
 

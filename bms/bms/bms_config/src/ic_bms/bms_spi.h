@@ -8,15 +8,15 @@
 
 //Direct Commands
 
-#define BATTERYSTATUS 0x12
-#define STACKVOLTAGE 0x34
+#define BATTERY_STATUS 0x12
+#define STACK_VOLTAGE 0x34
 
-#define CELL1VOLTAGE 0x14
-#define CELL2VOLTAGE 0x16
-#define CELL3VOLTAGE 0x18
-#define CELL4VOLTAGE 0x1A
-#define CELL5VOLTAGE 0x1C
-#define CELL6VOLTAGE 0x1E
+#define CELL_1_VOLTAGE 0x14
+#define CELL_2_VOLTAGE 0x16
+#define CELL_3_VOLTAGE 0x18
+#define CELL_4_VOLTAGE 0x1A
+#define CELL_5_VOLTAGE 0x1C
+#define CELL_6_VOLTAGE 0x1E
 
 
 /*
@@ -38,7 +38,7 @@
 
 #define R 0 // Read; Used in DirectCommands and Subcommands functions
 #define W 1 // Write; Used in DirectCommands and Subcommands functions
-
+#define BQ_SUBCMD_MAX_POLLS 2000u
 
 
 #define SWAP_COMM_MODE 0x29BC
@@ -74,6 +74,7 @@
 
 
 /* Minimal driver: only SPI+CS bring-up */
+
 void BQ76942_Init(void);
 bool WriteReg(uint8_t regAddr, uint8_t value);
 bool ReadReg(uint8_t regAddr, uint8_t *value);
@@ -84,6 +85,8 @@ bool BQ_DirectWrite(uint8_t command, const uint8_t *data, uint8_t count);
 bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length);
 bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length);
 void BMS_SetProtectionThresholds(void);
+void BMS_BATTERY_STATUS(void);
+void Read_Cells_1to6(void);
 
 
 
