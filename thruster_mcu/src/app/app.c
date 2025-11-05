@@ -44,20 +44,8 @@ static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE] __attribute__((align
 #define WRITE_ID(id) (id << 18)
 #define READ_ID(id) (id >> 18)
 
-typedef enum {
-    APP_STATE_CAN_RECEIVE,
-    APP_STATE_CAN_TRANSMIT,
-    APP_STATE_CAN_IDLE,
-    APP_STATE_CAN_XFER_SUCCESSFUL,
-    APP_STATE_CAN_XFER_ERROR,
-    APP_STATE_CAN_USER_INPUT
-} APP_CAN_STATES;
-
 static volatile uint32_t can_status = 0;
 static volatile bool can_message_received = false;
-
-/* Variable to save CAN application state*/
-volatile static APP_CAN_STATES state = APP_STATE_CAN_USER_INPUT;
 
 static uint8_t txFiFo[CAN1_TX_FIFO_BUFFER_SIZE];
 static uint8_t rxFiFo0[CAN1_RX_FIFO0_SIZE];
