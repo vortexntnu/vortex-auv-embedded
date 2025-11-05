@@ -4,6 +4,9 @@
 #include "definitions.h"
 #include "app.h"
 
+#define WRITE_ID(id) (id << 18)
+#define READ_ID(id) (id >> 18)
+
 /* --- Constants --- */
 static const uint32_t TCC0_PERIOD               = 75000U;
 static const uint32_t TCC1_PERIOD               = 75000U;
@@ -35,9 +38,6 @@ enum can_events {
 /* --- Private states --- */
 /* CAN */
 static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
-
-#define WRITE_ID(id) (id << 18)
-#define READ_ID(id) (id >> 18)
 
 static volatile uint32_t can_status = 0;
 static volatile bool can_message_received = false;
