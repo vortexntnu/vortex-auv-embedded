@@ -10,7 +10,6 @@ static const uint32_t TCC1_PERIOD               = 75000U;
 static const uint32_t TCC2_PERIOD               = 18500U;
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
-static const uint32_t CAN_EVENT_ID_BASE         = 0x369U;
 static const float    ADC_VREF                  = 3.3f;
 static const float    G_IMON                    = 18.18e-6f; // Amplifier gain 18.18 uA/A -> in A/A
 static const float    R_IMON                    = 2550.0f;   // 2.55 kilo ohms resistor
@@ -30,11 +29,11 @@ typedef struct {
 } Light;
 
 typedef enum {
-    TURN_THRUSTERS_OFF,
-    TURN_LIGHTS_OFF,
-    RESET,
-    SET_THRUSTER_PWM,
-    SET_LIGHT_PWM
+    TURN_THRUSTERS_OFF = 0x369,
+    TURN_LIGHTS_OFF    = 0x36A,
+    RESET              = 0x36B,
+    SET_THRUSTER_PWM   = 0x36C,
+    SET_LIGHT_PWM      = 0x36D
 } STATES;
 
 /* --- Private states --- */
@@ -137,11 +136,9 @@ static void message_handler(void) {
     CAN_RX_BUFFER *rxBuf = (CAN_RX_BUFFER *)rxFiFo0;
     
     uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
-    
-    uint8_t event = (uint8_t)(id - CAN_EVENT_ID_BASE);
     const uint8_t *pData = rxBuf->data;
 
-    switch (event) {
+    switch (id) {
         case TURN_THRUSTERS_OFF:
             turn_thrusters_off();
             break;
