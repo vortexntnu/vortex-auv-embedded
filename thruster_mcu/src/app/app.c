@@ -15,15 +15,9 @@ static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 
 /* --- Types --- */
-struct thruster {
+struct pwm_output {
     uint8_t  instance;
     uint8_t  channel;
-    uint32_t period_ticks;
-};
-
-struct light {
-    uint8_t instance;
-    uint8_t channel;
     uint32_t period_ticks;
 };
 
@@ -52,7 +46,7 @@ static volatile uint16_t adc_res[8] = {0};
 static volatile bool adc_dma_done = false;
 
 /* Application */
-static struct thruster thrusters[8] = {
+static struct pwm_output thrusters[8] = {
     {0, 0, TCC0_PERIOD}, // TCC0_CHANNEL0
     {0, 1, TCC0_PERIOD}, // TCC0_CHANNEL1
     {0, 2, TCC0_PERIOD}, // TCC0_CHANNEL2
@@ -63,7 +57,7 @@ static struct thruster thrusters[8] = {
     {1, 1, TCC1_PERIOD}  // TCC1_CHANNEL1
 };
 
-static struct light lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
+static struct pwm_output lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
 
 /* --- Private function prototypes --- */
 
