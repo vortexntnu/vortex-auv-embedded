@@ -148,7 +148,7 @@ static void message_handler(void) {
             break;
 
         case RESET:
-            /* Force a watchdog reset */
+            /* Force a system reset */
             NVIC_SystemReset();
             break;
 
