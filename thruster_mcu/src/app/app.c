@@ -128,8 +128,6 @@ void App_Init(void) {
     
     // Enable watchdog
     WDT_Enable();
-    
-    printf("System successfully initialized!\r\n\r\n");
 }
 
 void App_Task(void) {
@@ -152,10 +150,7 @@ static void message_handler(void) {
     
     uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
     
-    printf("Received CAN message with ID: 0x%lx\r\n", (unsigned long)id);
-    
     if (id < CAN_EVENT_ID_BASE || id >= (CAN_EVENT_ID_BASE + 5)) {
-        printf("Unknown CAN ID, ignoring\r\n");
         return;
     }
     
@@ -164,34 +159,28 @@ static void message_handler(void) {
 
     switch (event) {
         case TURN_THRUSTERS_OFF:
-            printf("Command: TURN_THRUSTERS_OFF\r\n");
             turn_thrusters_off();
             break;
 
         case TURN_LIGHTS_OFF:
-            printf("Command: TURN_LIGHTS_OFF\r\n");
             turn_lights_off();
             break;
 
         case RESET:
-            printf("Command: RESET - Resetting system...\r\n");
             /* Force a watchdog reset */
             NVIC_SystemReset();
             break;
 
         case SET_THRUSTER_PWM:
-            printf("Command: SET_THRUSTER_PWM\r\n");
             set_thruster_pwm(pData);
             break;
 
         case SET_LIGHT_PWM:
-            printf("Command: SET_LIGHT_PWM\r\n");
             set_light_pwm(pData);
             break;
             
         default:
             /* Unknown event: ignore */
-            printf("Unknown event: %u\r\n", event);
             break;
     }
 }
@@ -201,10 +190,8 @@ static void check_overcurrent(void) {
         float V_Imon = (float)adc_res[sample] * ADC_VREF / 4095.0f;
         float I_out = V_Imon / (G_IMON * R_IMON);
 
-        printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
-        //printf("\r\n Measured current = %.2f A \r\n\r\n", (double)I_out);
+        //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
         if (I_out > THRUSTER_RATED_CURRENT) {
-            printf("Overcurrent flagged \r\n\r\n");
             turn_thrusters_off();
             break;
         }
@@ -306,13 +293,8 @@ static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context) {
         if (CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, numberOfMessage, (CAN_RX_BUFFER *)rxFiFo0) == true) {
             can_message_received = true;
             // Optionally print can frame
-            printf("CAN Message received in callback\r\n");
-        } else {
-            printf("CAN1_MessageReceiveFifo failed!\r\n");
         } 
-    } else {
-        printf("CAN error detected: 0x%lx\r\n", (unsigned long)can_status);
-    }
+    } 
 }
 
 static void CAN_Transmit_Callback(uintptr_t context) {
@@ -321,16 +303,13 @@ static void CAN_Transmit_Callback(uintptr_t context) {
 
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        printf("CAN TX successful\r\n");
-    } else {
-        printf("CAN TX error: 0x%lx\r\n", (unsigned long)can_status);
-    }
+        //printf("CAN TX successful\r\n");
+    } 
 }
 
 static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle) {
     
     if (event == DMAC_TRANSFER_EVENT_COMPLETE) {
-        printf("Callback triggered: DMAC_TRANSFER_EVENT_COMPLETE event recorded \r\n\r\n");
         adc_dma_done = true;
     }
 }
