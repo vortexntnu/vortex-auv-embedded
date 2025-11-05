@@ -144,18 +144,18 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
 static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uint32_t frame_us);
 
 /* Callbacks */
-static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context);
-static void CAN_Transmit_Callback(uintptr_t context);
+static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
+static void can_transmit_callback(uintptr_t context);
 
 static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
 
 /* --- Public functions --- */
 
-void App_Init(void) {
+void app_init(void) {
     // Configure CAN RAM & callbacks 
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
-    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, CAN_Receive_Callback, (uintptr_t)NULL);
-    CAN1_TxFifoCallbackRegister(CAN_Transmit_Callback, (uintptr_t)NULL);
+    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
+    CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
     // Configure DMA
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_1, adc_sram_dma_callback, 0);
@@ -178,7 +178,7 @@ void App_Init(void) {
     WDT_Enable();
 }
 
-void App_Task(void) {
+void app_task(void) {
     if (adc_dma_done) {
         adc_dma_done = false;
         check_overcurrent();
@@ -323,7 +323,7 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
     return ((uint32_t)pulse_us * (period_ticks + 1U)) / frame_us;
 }
 
-static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context) {
+static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context) {
     // Check CAN Status
     can_status = CAN1_ErrorGet();
 
@@ -339,7 +339,7 @@ static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context) {
     } 
 }
 
-static void CAN_Transmit_Callback(uintptr_t context) {
+static void can_transmit_callback(uintptr_t context) {
     // Check CAN Status
     can_status = CAN1_ErrorGet();
 

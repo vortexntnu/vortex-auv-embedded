@@ -8,7 +8,7 @@ int main ( void ) {
     SYS_Initialize ( NULL );
 
     /* Initialize application logic */
-    App_Init();
+    app_init();
     
     while ( true )
     {
@@ -16,7 +16,7 @@ int main ( void ) {
         PM_IdleModeEnter();
         
         /* Run application logic */
-        App_Task();
+        app_task();
     }
 
     /* Execution should not come here during normal operation */

@@ -10,10 +10,10 @@ extern "C" {
 #endif
 
 /* One-time initialization for this module */
-void App_Init(void);
+void app_init(void);
 
 /* Handle incoming frames and actions */
-void App_Task(void);
+void app_task(void);
 
    
 #ifdef __cplusplus
