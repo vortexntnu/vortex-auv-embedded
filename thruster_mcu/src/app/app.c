@@ -16,25 +16,25 @@ static const float    R_IMON                    = 2550.0f;   // 2.55 kilo ohms r
 static const uint8_t  THRUSTER_RATED_CURRENT    = 15U;    // From TSD7 datasheet  
 
 /* --- Types --- */
-typedef struct {
+struct thruster {
     uint8_t  instance;
     uint8_t  channel;
     uint32_t period_ticks;
-} Thruster;
+};
 
-typedef struct {
+struct light {
     uint8_t instance;
     uint8_t channel;
     uint32_t period_ticks;
-} Light;
+};
 
-typedef enum {
+enum can_events {
     TURN_THRUSTERS_OFF = 0x369,
     TURN_LIGHTS_OFF    = 0x36A,
     RESET              = 0x36B,
     SET_THRUSTER_PWM   = 0x36C,
     SET_LIGHT_PWM      = 0x36D
-} STATES;
+};
 
 /* --- Private states --- */
 /* CAN */
@@ -56,7 +56,7 @@ static volatile uint16_t adc_res[8] = {0};
 static volatile bool adc_dma_done = false;
 
 /* Application */
-static const Thruster thrusters[8] = {
+static struct thruster thrusters[8] = {
     {0, 0, TCC0_PERIOD}, // TCC0_CHANNEL0
     {0, 1, TCC0_PERIOD}, // TCC0_CHANNEL1
     {0, 2, TCC0_PERIOD}, // TCC0_CHANNEL2
@@ -67,7 +67,7 @@ static const Thruster thrusters[8] = {
     {1, 1, TCC1_PERIOD}  // TCC1_CHANNEL1
 };
 
-static const Light lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
+static struct light lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
 
 /* --- Private function prototypes --- */
 static void set_thruster_pwm(const uint8_t *data);
