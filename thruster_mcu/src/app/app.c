@@ -10,10 +10,6 @@ static const uint32_t TCC1_PERIOD               = 75000U;
 static const uint32_t TCC2_PERIOD               = 18500U;
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
-static const float    ADC_VREF                  = 3.3f;
-static const float    G_IMON                    = 18.18e-6f; // Amplifier gain 18.18 uA/A -> in A/A
-static const float    R_IMON                    = 2550.0f;   // 2.55 kilo ohms resistor
-static const uint8_t  THRUSTER_RATED_CURRENT    = 15U;    // From TSD7 datasheet  
 
 /* --- Types --- */
 struct thruster {
@@ -228,6 +224,11 @@ static void message_handler(void) {
 }
 
 static void check_overcurrent(void) {
+    const float    ADC_VREF                  = 3.3f;
+    const float    G_IMON                    = 18.18e-6f; // Amplifier gain 18.18 uA/A -> in A/A
+    const float    R_IMON                    = 2550.0f;   // 2.55 kilo ohms resistor
+    const uint8_t  THRUSTER_RATED_CURRENT    = 15U;       // From TSD7 datasheet  
+    
     for (size_t sample = 0; sample < 8; sample++) {
         float V_Imon = (float)adc_res[sample] * ADC_VREF / 4095.0f;
         float I_out = V_Imon / (G_IMON * R_IMON);
