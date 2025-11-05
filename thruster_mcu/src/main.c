@@ -17,9 +17,6 @@ int main ( void ) {
         
         /* Run application logic */
         App_Task();
-        
-        /* Maintain state machines of all polled MPLAB Harmony modules. */
-        SYS_Tasks ( );
     }
 
     /* Execution should not come here during normal operation */
