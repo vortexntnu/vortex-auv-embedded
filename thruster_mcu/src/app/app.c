@@ -70,17 +70,78 @@ static struct thruster thrusters[8] = {
 static struct light lights = {1, 2, TCC1_PERIOD}; // TCC1_CHANNEL2
 
 /* --- Private function prototypes --- */
+
+/**
+ * @brief Sets PWM pulse widths for all 8 thrusters.
+ * 
+ * Parses the data buffer containing 8 pulse width values,
+ * clamps each to the valid range (1000-2000 us), and updates the corresponding
+ * PWM channels.
+ * 
+ * @param data Pointer to 16-byte buffer containing 8 pulse widths in microseconds (format: [MSB, LSB] per thruster)
+ */
 static void set_thruster_pwm(const uint8_t *data);
+
+/**
+ * @brief Sets PWM pulse width for the light output
+ * 
+ * Parses the data buffer containing a single pulse width value,
+ * clamps it to the valid range (1100-1900 us), and updates the light PWM channel.
+ * 
+ * @param data Pointer to 16-byte buffer containing pulse width in microseconds. 
+ *             The pulse width for the light output are stored in the 2 first bytes (format: [MSB, LSB])
+ */
 static void set_light_pwm(const uint8_t *data);
+
+/**
+ * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
+ */
 static void message_handler(void);
+
+/**
+ * @brief Monitors thruster current draw and shuts down on overcurrent condition.
+ * 
+ * Reads ADC samples for all 8 thruster channels, calculates output current from
+ * the voltage, and disables all thrusters if any channel exceeds the rated current limit.
+ */
 static void check_overcurrent(void);
+
 static void turn_thrusters_off(void);
 static void turn_lights_off(void);
 
-
+/**
+ * @brief Clamps a value between a minimum and maximum bound.
+ * 
+ * @param value The value to clamp
+ * @param low The lower bound (inclusive)
+ * @param high The higher bound (inclusive)
+ * @return The clamped value: low if value < low, high if value > high, otherwise value
+ */
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high);
+
+/**
+ * @brief Write PWM duty cycle to the specified TCC instance and channel.
+ * 
+ * Routes the PWM write to the appropriate TCC peripheral based on instance number.
+ * 
+ * @param instance TCC instance number (0, 1 or 2)
+ * @param channel PWM channel number within the instance
+ * @param ticks Duty cycle value in timer ticks
+ */
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
-static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t us, uint32_t frame_us);
+
+/**
+ * @brief Converts a pulse width in microseconds to timer ticks.
+ * 
+ * Calculates the timer tick count needed to produce a specific pulse width
+ * based on the timer's period and the PWM frame duration.
+ * 
+ * @param period_ticks Timer period in ticks 
+ * @param pulse_us Desired pulse width in microseconds
+ * @param frame_us Total PWM frame duration in microseconds
+ * @return Number of timer ticks corresponding to the pulse width
+ */
+static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uint32_t frame_us);
 
 /* Callbacks */
 static void CAN_Receive_Callback(uint8_t numberOfMessage, uintptr_t context);
