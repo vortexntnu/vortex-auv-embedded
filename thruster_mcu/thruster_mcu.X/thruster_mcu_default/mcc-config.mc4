@@ -26,7 +26,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAME54P20A.ld
   hash: ba1b5ba1b9c97c94416b0198dc30e928c5a66c926c3ad7695f9bbe3b798adaba
 - file: ../src/config/default/definitions.h
-  hash: ebe74939e96ce5cd4982ead492560ac698ac1bc64189a39fcf5cd72e6bd200fb
+  hash: e954c69d5909ceade3e1143bf90cc3e253ad6f7bb6323444e51c37f35a54f401
 - file: ../src/config/default/device.h
   hash: b8fdcc4ed83daa65a6f38614a689c97d414774be19ae106e6da07556c50a2c82
 - file: ../src/config/default/device_cache.h
@@ -50,13 +50,13 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/adc/plib_adc_common.h
   hash: b6100059702feb5d6031f6c694dc636b0871d6d256ca47a73f991cb418209500
 - file: ../src/config/default/peripheral/can/plib_can0.c
-  hash: d0737551587cc8e44ef6f8404992fffda0e82d6ea878eb4c14e574d456232929
+  hash: 6a223a8bef67dce3b0c875b533c6abcbe3720f47de3ae0d1de4a92739eb5efe6
 - file: ../src/config/default/peripheral/can/plib_can0.h
-  hash: 7b13b1a960a68010b3474faccd7d46c3000e3e8e9c5b1eb12e1bfe2ca9e45b93
+  hash: 578686883021fb424def6b7f368af5bc679ed2f3cde9345cc65f51272d1b2fa9
 - file: ../src/config/default/peripheral/can/plib_can1.c
-  hash: 84f2a9d57c8aa506b33e86a00d675f9dd4d94c114ffc4e05ad509388ef414547
+  hash: b7d7c59ada1a293d431ee21e0ed5b113d2bdf77fdee2be9c148ab34092a7684b
 - file: ../src/config/default/peripheral/can/plib_can1.h
-  hash: 3e8e8df739f368d481dc3062312f8632bd8e89feb2e833bfba601dc3451f3147
+  hash: dd23a2402bfdbb6f203e82ee2865a4428fe5e405bf1ea495d4dde39478abdd8a
 - file: ../src/config/default/peripheral/can/plib_can_common.h
   hash: e0e3b54f69be9d8811bbe507f91daa443ae7bff5dc724ac51baebc160097b2d6
 - file: ../src/config/default/peripheral/clock/plib_clock.c

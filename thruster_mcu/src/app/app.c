@@ -138,10 +138,6 @@ static void message_handler(void) {
     
     uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
     
-    if (id < CAN_EVENT_ID_BASE || id >= (CAN_EVENT_ID_BASE + 5)) {
-        return;
-    }
-    
     uint8_t event = (uint8_t)(id - CAN_EVENT_ID_BASE);
     const uint8_t *pData = rxBuf->data;
 

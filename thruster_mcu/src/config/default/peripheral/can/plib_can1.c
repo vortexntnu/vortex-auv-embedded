@@ -66,6 +66,16 @@ static volatile CAN_RX_FIFO_CALLBACK_OBJ can1RxFifoCallbackObj[2];
 static volatile CAN_CALLBACK_OBJ can1CallbackObj;
 static volatile CAN_OBJ can1Obj;
 
+static const can_sidfe_registers_t can1StdFilter[] =
+{
+    {
+        .CAN_SIDFE_0 = CAN_SIDFE_0_SFT(0UL) |
+                  CAN_SIDFE_0_SFID1(0x369UL) |
+                  CAN_SIDFE_0_SFID2(0x36dUL) |
+                  CAN_SIDFE_0_SFEC(1UL)
+    },
+};
+
 static inline void CAN1_ZeroInitialize(volatile void* pData, size_t dataSize)
 {
     volatile uint8_t* data = (volatile uint8_t*)pData;
@@ -120,7 +130,7 @@ void CAN1_Initialize(void)
     CAN1_REGS->CAN_TXESC = CAN_TXESC_TBDS(7UL);
 
     /* Global Filter Configuration Register */
-    CAN1_REGS->CAN_GFC = CAN_GFC_ANFS_REJECT | CAN_GFC_ANFE_REJECT;
+    CAN1_REGS->CAN_GFC = CAN_GFC_ANFS_REJECT | CAN_GFC_ANFE_REJECT | CAN_GFC_RRFS_Msk;
 
     /* Set the operation mode */
     CAN1_REGS->CAN_CCCR |= CAN_CCCR_FDOE_Msk | CAN_CCCR_BRSE_Msk;
@@ -479,7 +489,7 @@ void CAN1_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount)
    Returns:
     None
 */
-/* MISRA C-2012 Rule 11.3 violated 4 times below. Deviation record ID - H3_MISRAC_2012_R_11_3_DR_1*/
+/* MISRA C-2012 Rule 11.3 violated 5 times below. Deviation record ID - H3_MISRAC_2012_R_11_3_DR_1*/
 void CAN1_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress)
 {
     uint32_t offset = 0U;
@@ -521,6 +531,15 @@ void CAN1_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress)
     CAN1_REGS->CAN_TXEFC = CAN_TXEFC_EFWM(0UL) | CAN_TXEFC_EFS(1UL) |
             CAN_TXEFC_EFSA((uint32_t)can1Obj.msgRAMConfig.txEventFIFOAddress);
 
+    can1Obj.msgRAMConfig.stdMsgIDFilterAddress = (can_sidfe_registers_t *)(msgRAMConfigBaseAddr + offset);
+    (void) memcpy((void*)can1Obj.msgRAMConfig.stdMsgIDFilterAddress,
+           (const void*)can1StdFilter,
+           CAN1_STD_MSG_ID_FILTER_SIZE);
+    offset += CAN1_STD_MSG_ID_FILTER_SIZE;
+    /* Standard ID Filter Configuration Register */
+    CAN1_REGS->CAN_SIDFC = CAN_SIDFC_LSS(1UL) |
+            CAN_SIDFC_FLSSA((uint32_t)can1Obj.msgRAMConfig.stdMsgIDFilterAddress);
+
 
     /* Reference offset variable once to remove warning about the variable not being used after increment */
     (void)offset;
@@ -535,6 +554,67 @@ void CAN1_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress)
 /* MISRAC 2012 deviation block end for Rule 11.3*/
 
 
+// *****************************************************************************
+/* Function:
+    bool CAN1_StandardFilterElementSet(uint8_t filterNumber, can_sidfe_registers_t *stdMsgIDFilterElement)
+
+   Summary:
+    Set a standard filter element configuration.
+
+   Precondition:
+    CAN1_Initialize and CAN1_MessageRAMConfigSet must have been called
+    for the associated CAN instance.
+
+   Parameters:
+    filterNumber          - Standard Filter number to be configured.
+    stdMsgIDFilterElement - Pointer to Standard Filter Element configuration to be set on specific filterNumber.
+
+   Returns:
+    Request status.
+    true  - Request was successful.
+    false - Request has failed.
+*/
+bool CAN1_StandardFilterElementSet(uint8_t filterNumber, can_sidfe_registers_t *stdMsgIDFilterElement)
+{
+    bool retval = false;
+    if (!((filterNumber > 1U) || (stdMsgIDFilterElement == NULL)))
+    {
+        can1Obj.msgRAMConfig.stdMsgIDFilterAddress[filterNumber - 1U].CAN_SIDFE_0 = stdMsgIDFilterElement->CAN_SIDFE_0;
+        retval = true;
+    }
+    return retval;
+}
+
+// *****************************************************************************
+/* Function:
+    bool CAN1_StandardFilterElementGet(uint8_t filterNumber, can_sidfe_registers_t *stdMsgIDFilterElement)
+
+   Summary:
+    Get a standard filter element configuration.
+
+   Precondition:
+    CAN1_Initialize and CAN1_MessageRAMConfigSet must have been called
+    for the associated CAN instance.
+
+   Parameters:
+    filterNumber          - Standard Filter number to get filter configuration.
+    stdMsgIDFilterElement - Pointer to Standard Filter Element configuration for storing filter configuration.
+
+   Returns:
+    Request status.
+    true  - Request was successful.
+    false - Request has failed.
+*/
+bool CAN1_StandardFilterElementGet(uint8_t filterNumber, can_sidfe_registers_t *stdMsgIDFilterElement)
+{
+    bool retval = false;
+    if (!((filterNumber > 1U) || (stdMsgIDFilterElement == NULL)))
+    {
+        stdMsgIDFilterElement->CAN_SIDFE_0 = can1Obj.msgRAMConfig.stdMsgIDFilterAddress[filterNumber - 1U].CAN_SIDFE_0;
+        retval = true;
+    }
+    return retval;
+}
 
 
 void CAN1_SleepModeEnter(void)

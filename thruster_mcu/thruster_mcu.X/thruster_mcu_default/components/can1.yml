@@ -388,4 +388,63 @@ data:
           type: User
         type: Values
       type: Integer
+    CAN1_STD_FILTER1:
+      attributes:
+        id: CAN1_STD_FILTER1
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: Menu
+    FILTERS_STD:
+      attributes:
+        id: FILTERS_STD
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: Integer
+    CAN1_STD_FILTER1_SFID1:
+      attributes:
+        id: CAN1_STD_FILTER1_SFID1
+      children:
+      - children:
+        - attributes:
+            value: '873'
+          type: User
+        type: Values
+      type: Hex
+    CAN1_STD_FILTER1_SFID2:
+      attributes:
+        id: CAN1_STD_FILTER1_SFID2
+      children:
+      - children:
+        - attributes:
+            value: '877'
+          type: User
+        type: Values
+      type: Hex
+    FILTERS_STD_REJECT:
+      attributes:
+        id: FILTERS_STD_REJECT
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}
