@@ -28,17 +28,17 @@ typedef enum {
     OPERATON_SHUTDOWN,
 } OPERATION_MODE;
 
-typedef enum  {
-    RANGE_SE_PM_2_5V ,     // ±2.5 V single-ended
-    RAGNE_SE_PM_5V ,       // ±5 V single-ended
-    RANGE_SE_PM_6_25V ,    // ±6.25 V single-ended
-    RANGE_SE_PM_10V ,      // ±10 V single-ended
-    RANGE_SE_PM_12_5V ,    // ±12.5 V single-ended
-    RANGE_SE_0_TO_5V ,     // 0 to 5 V single-ended
-    RANGE_SE_0_TO_10V ,    // 0 to 10 V single-ended
-    RANGE_SE_0_TO_12_5V ,  // 0 to 12.5 V single-ended
+typedef enum {
+    RANGE_SE_PM_2_5V,     // ±2.5 V single-ended
+    RAGNE_SE_PM_5V,       // ±5 V single-ended
+    RANGE_SE_PM_6_25V,    // ±6.25 V single-ended
+    RANGE_SE_PM_10V,      // ±10 V single-ended
+    RANGE_SE_PM_12_5V,    // ±12.5 V single-ended
+    RANGE_SE_0_TO_5V,     // 0 to 5 V single-ended
+    RANGE_SE_0_TO_10V,    // 0 to 10 V single-ended
+    RANGE_SE_0_TO_12_5V,  // 0 to 12.5 V single-ended
 
-    RANGE_DIFF_PM_5V ,     // ±5 V differential
+    RANGE_DIFF_PM_5V,     // ±5 V differential
     RANGE_DIFF_PM_10V,    // ±10 V differential
     RANGE_DIFF_PM_12_5V,  // ±12.5 V differential
     RANGE_DIFF_PM_20V,    // ±20 V differential
@@ -62,7 +62,6 @@ struct ad7606_register {
     uint8_t channel_phase[8];
 };
 
-
 struct ad7606_device {
     SPI_HandleTypeDef* hspi_master; /* SPI6: master, half‑duplex TX‑only */
     SPI_HandleTypeDef* hspi_sdo_1;  /* SPI1: slave full‑duplex (RX DMA used) */
@@ -77,7 +76,6 @@ struct ad7606_device {
 };
 
 void ad7606_init(struct ad7606_device* dev,
-                 struct ad7606_config* cfg,
                  SPI_HandleTypeDef* hspi_master,
                  SPI_HandleTypeDef* hspi_sdo_1,
                  SPI_HandleTypeDef* hspi_sdo_2,
@@ -86,6 +84,13 @@ void ad7606_init(struct ad7606_device* dev,
                  SPI_HandleTypeDef* hspi_sdo_5);
 
 void ad7606_set_config(struct ad7606_config* cfg, uint8_t* config);
+
+void ad7606_set_registers(struct ad7606_register* registers,
+                          struct ad7606_config* config,
+                          uint8_t* channel_range,
+                          uint8_t* channel_gain,
+                          uint8_t* channel_offset,
+                          uint8_t* channel_phase); 
 
 #ifdef __cplusplus
 }
