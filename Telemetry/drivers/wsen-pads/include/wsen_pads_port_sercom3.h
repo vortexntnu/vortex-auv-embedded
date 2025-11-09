@@ -7,7 +7,6 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-//#include "plib_sercom_i2c_master_common.h"
 #include "definitions.h"
 
 int wsen_init(void);

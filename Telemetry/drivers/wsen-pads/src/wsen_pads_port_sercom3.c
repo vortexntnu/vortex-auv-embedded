@@ -17,7 +17,7 @@
 typedef enum {
     WSEN_IDLE = 0,
     WSEN_START,  // initiate read of 5 bytes (pressure + temp)
-    WSEN_WAIT,   // waiting for callback (when the read is finished)
+    WSEN_WAIT,   // waiting for callback (when the WriteRead is finished)
     WSEN_DONE,
     WSEN_ERROR
 } WSEN_STATE;
@@ -27,10 +27,9 @@ struct wsen_cycle {
     volatile bool done;
     volatile SERCOM_I2C_ERROR err;
 
-    volatile float lastPressure;
-    volatile float lastTemp;
+    volatile float last_pressure;
+    volatile float last_temp;
 
-    uint8_t reg;
     uint8_t read_buf[5];
 };
 
@@ -73,12 +72,14 @@ int wsen_check_device_id(void) {
     }
 }
 
-static bool kick_read(uint8_t reg, uint8_t* buf, uint32_t len) {
-    cycle.reg = reg;
-    return SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &cycle.reg, 1, buf, len);
+// Helper function that reads the 5 wsen-pads registers containing the pressure
+// and temperature data.
+static bool read_measurements() {
+    uint8_t reg = REG_DATA_P_XL;
+    return SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, cycle.read_buf, 5);
 }
 
-static void sercom3I2c_cb(uintptr_t context) {
+static void sercom3_i2c_cb(uintptr_t context) {
     (void)context;
     cycle.err = SERCOM3_I2C_ErrorGet();
 
@@ -95,11 +96,11 @@ static void sercom3I2c_cb(uintptr_t context) {
                           cycle.read_buf[0]);
             if (raw_p & 0x00800000)
                 raw_p |= 0xFF000000;
-            cycle.lastPressure = (float)raw_p / 40960.0f;
+            cycle.last_pressure = (float)raw_p / 40960.0f;
 
             int16_t raw_t =
                 (int16_t)((cycle.read_buf[4] << 8) | cycle.read_buf[3]);
-            cycle.lastTemp = (float)raw_t * 0.01f;  // 0.01 °C per LSB
+            cycle.last_temp = (float)raw_t * 0.01f;  // 0.01 °C per LSB
 
             cycle.state = WSEN_DONE;
             cycle.done = true;
@@ -114,7 +115,7 @@ static void sercom3I2c_cb(uintptr_t context) {
 }
 
 void i2c_init(void) {
-    SERCOM3_I2C_CallbackRegister(sercom3I2c_cb, 0);
+    SERCOM3_I2C_CallbackRegister(sercom3_i2c_cb, 0);
     cycle.state = WSEN_IDLE;
     cycle.done = false;
     cycle.err = SERCOM_I2C_ERROR_NONE;
@@ -129,7 +130,7 @@ void wsen_cycle_start(void) {
     cycle.err = SERCOM_I2C_ERROR_NONE;
     cycle.state = WSEN_START;
 
-    if (!kick_read(REG_DATA_P_XL, cycle.read_buf, 5)) {
+    if (!read_measurements()) {
         // If I²C was busy, we'll retry from main loop by calling
         // wsen_cycle_tick()
         cycle.state = WSEN_START;
@@ -140,7 +141,7 @@ void wsen_cycle_start(void) {
 
 void wsen_cycle_tick(void) {
     if (cycle.state == WSEN_START) {
-        if (kick_read(REG_DATA_P_XL, cycle.read_buf, 5)) {
+        if (read_measurements()) {
             cycle.state = WSEN_WAIT;
         }
     }
@@ -149,8 +150,8 @@ void wsen_cycle_tick(void) {
 bool wsen_cycle_done_ok(float* kPa, float* degC) {
     if (!cycle.done || cycle.state == WSEN_ERROR)
         return false;
-    *kPa = cycle.lastPressure;
-    *degC = cycle.lastTemp;
+    *kPa = cycle.last_pressure;
+    *degC = cycle.last_temp;
     return true;
 }
 
