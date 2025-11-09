@@ -6,7 +6,7 @@ Overview
 > https://www.ti.com/lit/ug/sluuby1b/sluuby1b.pdf?ts=1761234036230&ref_url=https%253A%252F%252Fcopilot.microsoft.com%252F
 
 The goal of this work is to implement and understand the Texas Instruments BQ76942 battery management IC for use in Vortex NTNU’s AUV power system.
-The IC manages 3–10 lithium cells, providing voltage, current, and temperature protection as well as cell balancing and fault monitoring.
+The IC manages various lithium cells, providing voltage, current, and temperature protection as well as cell balancing and fault monitoring.
 
 > [!NOTE]
 > All firmware is written in bare-metal C for the Microchip SAMC21 microcontroller. Communication between the MCU and the BQ76942 uses SPI.
@@ -22,6 +22,10 @@ Overvoltage (COV) and Undervoltage (CUV) thresholds
 
 Discharge and Charge FET control
 
+Battery Status
+
+Read cell voltages
+
 Protections and alert handling
 
 > [!TIP]
@@ -29,7 +33,7 @@ Protections and alert handling
 
 2. Power Mode Handling
 
-Verified the IC’s transition between:
+Need to verify the IC’s transition between:
 
 NORMAL → SLEEP → DEEPSLEEP → SHUTDOWN
 
