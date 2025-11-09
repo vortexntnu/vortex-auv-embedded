@@ -1,9 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
-// #include "plib_eic.h"
 #include "definitions.h"
-// #include "plib_port.h"
-// #include "plib_sercom3_i2c_master.h"
 
 #define WSEN_PADS_ADDR 0x5D  // SAO = 1 (0x5C if SAO = 0)
 
@@ -19,10 +16,8 @@
 
 typedef enum {
     WSEN_IDLE = 0,
-    WSEN_KICK_PRESSURE,  // issue read of 3 bytes
-    WSEN_WAIT_PRESSURE,  // waiting for callback
-    WSEN_KICK_TEMP,      // issue read of 2 bytes
-    WSEN_WAIT_TEMP,      // waiting for callback
+    WSEN_START,  // initiate read of 5 bytes (pressure + temp)
+    WSEN_WAIT,   // waiting for callback (when the read is finished)
     WSEN_DONE,
     WSEN_ERROR
 } WSEN_STATE;
@@ -36,8 +31,7 @@ struct wsen_cycle {
     volatile float lastTemp;
 
     uint8_t reg;
-    uint8_t pBuf[3];
-    uint8_t tBuf[2];
+    uint8_t read_buf[5];
 };
 
 static struct wsen_cycle cycle;
@@ -95,26 +89,18 @@ static void sercom3I2c_cb(uintptr_t context) {
     }
 
     switch (cycle.state) {
-        case WSEN_WAIT_PRESSURE: {
-            int32_t raw = (int32_t)((cycle.pBuf[2] << 16) |
-                                    (cycle.pBuf[1] << 8) | cycle.pBuf[0]);
-            if (raw & 0x00800000)
-                raw |= 0xFF000000;
-            cycle.lastPressure = (float)raw / 40960.0f;
-            cycle.state = WSEN_KICK_TEMP;
+        case WSEN_WAIT: {
+            int32_t raw_p =
+                (int32_t)((cycle.read_buf[2] << 16) | (cycle.read_buf[1] << 8) |
+                          cycle.read_buf[0]);
+            if (raw_p & 0x00800000)
+                raw_p |= 0xFF000000;
+            cycle.lastPressure = (float)raw_p / 40960.0f;
 
-            if (!kick_read(REG_DATA_T_L, cycle.tBuf, 2)) {
-                // Bus busy; try again next tick
-                cycle.state = WSEN_KICK_TEMP;
-            } else {
-                cycle.state = WSEN_WAIT_TEMP;
-            }
-            break;
-        }
+            int16_t raw_t =
+                (int16_t)((cycle.read_buf[4] << 8) | cycle.read_buf[3]);
+            cycle.lastTemp = (float)raw_t * 0.01f;  // 0.01 °C per LSB
 
-        case WSEN_WAIT_TEMP: {
-            int16_t rawT = (int16_t)((cycle.tBuf[1] << 8) | cycle.tBuf[0]);
-            cycle.lastTemp = (float)rawT * 0.01f;  // 0.01 °C per LSB
             cycle.state = WSEN_DONE;
             cycle.done = true;
             break;
@@ -128,7 +114,6 @@ static void sercom3I2c_cb(uintptr_t context) {
 }
 
 void i2c_init(void) {
-    SERCOM3_I2C_Initialize();
     SERCOM3_I2C_CallbackRegister(sercom3I2c_cb, 0);
     cycle.state = WSEN_IDLE;
     cycle.done = false;
@@ -142,25 +127,21 @@ void wsen_cycle_start(void) {
     }
     cycle.done = false;
     cycle.err = SERCOM_I2C_ERROR_NONE;
-    cycle.state = WSEN_KICK_PRESSURE;
+    cycle.state = WSEN_START;
 
-    if (!kick_read(REG_DATA_P_XL, cycle.pBuf, 3)) {
+    if (!kick_read(REG_DATA_P_XL, cycle.read_buf, 5)) {
         // If I²C was busy, we'll retry from main loop by calling
-        // wsenCycleTick()
-        cycle.state = WSEN_KICK_PRESSURE;
+        // wsen_cycle_tick()
+        cycle.state = WSEN_START;
     } else {
-        cycle.state = WSEN_WAIT_PRESSURE;
+        cycle.state = WSEN_WAIT;
     }
 }
 
 void wsen_cycle_tick(void) {
-    if (cycle.state == WSEN_KICK_PRESSURE) {
-        if (kick_read(REG_DATA_P_XL, cycle.pBuf, 3)) {
-            cycle.state = WSEN_WAIT_PRESSURE;
-        }
-    } else if (cycle.state == WSEN_KICK_TEMP) {
-        if (kick_read(REG_DATA_T_L, cycle.tBuf, 2)) {
-            cycle.state = WSEN_WAIT_TEMP;
+    if (cycle.state == WSEN_START) {
+        if (kick_read(REG_DATA_P_XL, cycle.read_buf, 5)) {
+            cycle.state = WSEN_WAIT;
         }
     }
 }
@@ -199,7 +180,7 @@ void drdy_init(void) {
 }
 
 // This function uses polling to check if the pressure data is ready before
-// reading. It is not currently used in the code as we use the interrupt pin
+// reading. It is currently not used in the code as we use the interrupt pin
 // instead.
 int read_pressure(float* pressure) {
     uint8_t status = 0;
@@ -232,7 +213,7 @@ int read_pressure(float* pressure) {
 }
 
 // This function uses polling to check if the temperature data is ready before
-// reading. It is not currently used in the code as we use the interrupt pin
+// reading. It is currently not used in the code as we use the interrupt pin
 // instead.
 int read_temp(float* temp) {
     uint8_t status = 0;
