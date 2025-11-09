@@ -1,8 +1,9 @@
-#include <plib_eic.h>
-#include <plib_port.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "plib_sercom3_i2c_master.h"
+// #include "plib_eic.h"
+#include "definitions.h"
+// #include "plib_port.h"
+// #include "plib_sercom3_i2c_master.h"
 
 #define WSEN_PADS_ADDR 0x5D  // SAO = 1 (0x5C if SAO = 0)
 
@@ -24,10 +25,10 @@ typedef enum {
     WSEN_WAIT_TEMP,      // waiting for callback
     WSEN_DONE,
     WSEN_ERROR
-} WsenState;
+} WSEN_STATE;
 
-typedef struct {
-    volatile WsenState state;
+struct wsen_cycle {
+    volatile WSEN_STATE state;
     volatile bool done;
     volatile SERCOM_I2C_ERROR err;
 
@@ -37,9 +38,9 @@ typedef struct {
     uint8_t reg;
     uint8_t pBuf[3];
     uint8_t tBuf[2];
-} WsenCycle;
+};
 
-static WsenCycle cycle;
+static struct wsen_cycle cycle;
 
 int wsen_init(void) {
     uint8_t buf[2];
@@ -187,17 +188,19 @@ void wsen_reset(void) {
 
 static void drdy_isr(uintptr_t context) {
     (void)context;
-    wsenCycleStart();
+    wsen_cycle_start();
 }
 
 void drdy_init(void) {
     PORT_PinPeripheralFunctionConfig(PORT_PIN_PA19, PERIPHERAL_FUNCTION_A);
 
-    EIC_Initialize();  // do this somewhere else?
     EIC_CallbackRegister(EIC_PIN_3, drdy_isr, 0);
     EIC_InterruptEnable(EIC_PIN_3);
 }
 
+// This function uses polling to check if the pressure data is ready before
+// reading. It is not currently used in the code as we use the interrupt pin
+// instead.
 int read_pressure(float* pressure) {
     uint8_t status = 0;
     uint8_t rawData[3];
@@ -211,7 +214,7 @@ int read_pressure(float* pressure) {
 
     // Read the 3 pressure registers (XL, L, H)
     reg = REG_DATA_P_XL;
-    if (!SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, &rawData, 3)) {
+    if (!SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, rawData, 3)) {
         return -1;
     };
 
@@ -228,6 +231,9 @@ int read_pressure(float* pressure) {
     return 0;
 }
 
+// This function uses polling to check if the temperature data is ready before
+// reading. It is not currently used in the code as we use the interrupt pin
+// instead.
 int read_temp(float* temp) {
     uint8_t status = 0;
     uint8_t rawData[2];
@@ -241,7 +247,7 @@ int read_temp(float* temp) {
 
     reg = REG_DATA_T_L;
     // Read 2 temperature bytes: L, H
-    if (!SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, &rawData, 2)) {
+    if (!SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, rawData, 2)) {
         return -1;
     };
 

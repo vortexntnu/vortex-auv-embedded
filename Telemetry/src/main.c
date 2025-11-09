@@ -33,8 +33,6 @@
 #include "pressure_calc.h"
 #include "wsen_pads_port_sercom3.h"
 
-extern volatile bool leakdet_tick;
-
 // *****************************************************************************
 // *****************************************************************************
 // Section: Main Entry Point
@@ -54,8 +52,8 @@ int main(void) {
     drdy_init();
     leak_sensor_init();
 
-    struct LeakDet* leak_detector;
-    leakdet_init(leak_detector, NULL);
+    struct leak_det leak_detector;
+    leakdet_init(&leak_detector, NULL);
 
     timing_tc2_init_5hz();  // TODO: don't start timer until pressure+temp
                             // measurements have started
@@ -97,7 +95,8 @@ int main(void) {
             samples = 0;
 
             bool fast = false, slow = false;
-            leakdet_update(leak_detector, pressure_avg, temp_avg, &fast, &slow);
+            leakdet_update(&leak_detector, pressure_avg, temp_avg, &fast,
+                           &slow);
 
             if (fast) {
                 // TODO: handle fast leak
@@ -110,7 +109,8 @@ int main(void) {
 
         return (EXIT_FAILURE);
     }
+}
 
-    /*******************************************************************************
-     End of File
-    */
+/*******************************************************************************
+ End of File
+*/

@@ -1,8 +1,9 @@
-#include "wsen_pads_port_sercom3.h"
-// temperature T. Model: r' = dP/P - dT/T; estimate slow background b (hull
-// compliance/depth drift), residual e = r' - b ~ dn/n, then Shewhart + CUSUM on
-// e.
+// #include "wsen_pads_port_sercom3.h"
+//  temperature T. Model: r' = dP/P - dT/T; estimate slow background b (hull
+//  compliance/depth drift), residual e = r' - b ~ dn/n, then Shewhart + CUSUM
+//  on e.
 
+#include "pressure_calc.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -13,31 +14,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-typedef struct {
-    // Sampling + filters
-    float sample_hz;  // e.g., 5.0 Hz
-    float lp_tau_s;   // low-pass time constant for P,T (e.g., 8 s)
-    float b_tau_s;    // slow background EWMA time constant (e.g., 20*60 s)
-    // Rolling stats for sigma_e
-    float sigma_window_s;  // e.g., 20*60 s
-    // Thresholds
-    float shewhart_k;           // z-threshold (e.g., 4.0)
-    float shewhart_min_hold_s;  // require sustain (e.g., 3 s)
-    float cusum_k_sigma;        // reference k in units of sigma (e.g., 0.5)
-    float cusum_h_sigma;        // decision h in units of sigma (e.g., 5.0)
-    float slow_alarm_min_s;     // persistence for slow alarm (e.g., 300 s)
-    // Guards
-    float tprime_mask_abs;  // ignore decisions when |t'| exceeds (e.g., 0.01
-                            // 1/s ~= 0.6 %/min)
-    float mask_relax_s;     // duration to relax thresholds after mask event
-                            // (e.g., 20 s)
-    // Hard rate backstop (optional; set <=0 to disable)
-    float hard_e_abs;  // absolute e backstop in 1/s (e.g., 0.0005 -> 0.05%/s)
-} LeakConf;
-
 // Reasonable defaults
-static inline LeakConf leakconf_defaults(void) {
-    LeakConf c = {
+static inline struct leak_conf leak_conf_defaults(void) {
+    struct leak_conf c = {
         .sample_hz = 5.0,
         .lp_tau_s = 8.0,
         .b_tau_s = 1200.0,         // 20 min
@@ -53,17 +32,7 @@ static inline LeakConf leakconf_defaults(void) {
     return c;
 }
 
-// ---------- Internal ring buffer for rolling sigma ----------
-typedef struct {
-    float* buf;
-    size_t cap;
-    size_t head;
-    size_t count;
-    float sum;
-    float sumsq;
-} RingStats;
-
-static bool ring_init(RingStats* r, size_t cap) {
+static bool ring_init(struct ring_stats* r, size_t cap) {
     r->buf = (float*)calloc(cap, sizeof(float));
     if (!r->buf)
         return false;
@@ -74,12 +43,8 @@ static bool ring_init(RingStats* r, size_t cap) {
     r->sumsq = 0.0;
     return true;
 }
-static void ring_free(RingStats* r) {
-    free(r->buf);
-    memset(r, 0, sizeof(*r));
-}
 
-static void ring_push(RingStats* r, float x) {
+static void ring_push(struct ring_stats* r, float x) {
     if (r->count < r->cap) {
         r->buf[r->head++] = x;
         r->sum += x;
@@ -97,10 +62,8 @@ static void ring_push(RingStats* r, float x) {
         r->head = (r->head + 1) % r->cap;
     }
 }
-static float ring_mean(const RingStats* r) {
-    return (r->count ? r->sum / (float)r->count : 0.0);
-}
-static float ring_std(const RingStats* r) {
+
+static float ring_std(const struct ring_stats* r) {
     if (r->count < 2)
         return 0.0;
     float n = (float)r->count;
@@ -108,44 +71,6 @@ static float ring_std(const RingStats* r) {
     float var = fmax(0.0, (r->sumsq - n * mu * mu) / (n - 1.0));
     return sqrt(var);
 }
-
-// ---------- Detector state ----------
-typedef struct {
-    LeakConf cfg;
-
-    // Filters
-    float alpha_lp;  // EMA coeff for P,T
-    float alpha_b;   // EWMA coeff for background b
-    float dt;        // 1/sample_hz
-
-    // State
-    bool inited;
-    float P_lp, T_lp;  // low-pass filtered P,T
-    float P_prev, T_prev;
-    float b;            // slow background estimate
-    RingStats e_stats;  // rolling stats for sigma_e
-
-    // Derivative / residuals (latest)
-    float pprime, tprime, rprime, e, sigma_e, z;
-
-    // Shewhart
-    int shewhart_hold_needed;  // samples required to sustain
-    int shewhart_hold_count;
-
-    // CUSUM
-    float cusum_k;  // absolute (k = cfg.cusum_k_sigma * sigma_e)
-    float cusum_h;  // absolute (h = cfg.cusum_h_sigma * sigma_e)
-    float Cplus, Cminus;
-    int slow_alarm_persist_needed;  // samples
-    int slow_alarm_persist_count;
-
-    // Masking
-    int relax_countdown;  // samples left to relax after |t'| spike
-
-    // Outputs
-    bool fast_leak_alarm;
-    bool slow_leak_alarm;
-} LeakDet;
 
 // Utility for EMA alpha given tau and dt
 static inline float ema_alpha(float tau_s, float dt_s) {
@@ -155,8 +80,8 @@ static inline float ema_alpha(float tau_s, float dt_s) {
     return dt_s / (tau_s + dt_s);
 }
 
-int leakdet_init(LeakDet* ld, LeakConf* config) {
-    LeakConf cfg = (config ? *config : leakconf_defaults());
+int leakdet_init(struct leak_det* ld, struct leak_conf* config) {
+    struct leak_conf cfg = (config ? *config : leak_conf_defaults());
     memset(ld, 0, sizeof(*ld));
     ld->cfg = cfg;
     ld->dt = 1.0 / cfg.sample_hz;
@@ -175,19 +100,15 @@ int leakdet_init(LeakDet* ld, LeakConf* config) {
     return 0;
 }
 
-static void leakdet_free(LeakDet* ld) {
-    ring_free(&ld->e_stats);
-}
-
 // One update step with new raw samples
-// Inputs expected: P in kPa and T in degC (°C). Internally this function
+// Inputs expected: P in kPa and T in degC (�C). Internally this function
 // converts P->Pa and T->K before performing calculations. dt is implicit
 // from cfg.sample_hz. Returns alarms via out params (may be NULL).
-static void leakdet_update(LeakDet* ld,
-                           float P,
-                           float T,
-                           bool* fast_alarm,
-                           bool* slow_alarm) {
+void leakdet_update(struct leak_det* ld,
+                    float P,
+                    float T,
+                    bool* fast_alarm,
+                    bool* slow_alarm) {
     /* Convert input units to internal units used by the detector */
     /* Pressure: kPa -> Pa */
     P = P * 1000.0f;

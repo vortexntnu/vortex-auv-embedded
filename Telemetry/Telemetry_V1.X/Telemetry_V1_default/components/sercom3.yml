@@ -158,4 +158,143 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    SERCOM_USART_HEADER:
+      attributes:
+        id: SERCOM_USART_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_USART_SOURCE:
+      attributes:
+        id: SERCOM_USART_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_USART_COMMON_HEADER:
+      attributes:
+        id: SERCOM_USART_COMMON_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_I2CM_SOURCE:
+      attributes:
+        id: SERCOM_I2CM_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_I2CM_HEADER:
+      attributes:
+        id: SERCOM_I2CM_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_I2CM_MASTER_HEADER:
+      attributes:
+        id: SERCOM_I2CM_MASTER_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_SPIM_SOURCE:
+      attributes:
+        id: SERCOM_SPIM_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_SPIM_HEADER:
+      attributes:
+        id: SERCOM_SPIM_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    SERCOM_SPIM_COMMON_HEADER:
+      attributes:
+        id: SERCOM_SPIM_COMMON_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    I2C_SCLSM:
+      attributes:
+        id: I2C_SCLSM
+      children:
+      - children:
+        - attributes:
+            id: sercom3
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    I2C_CLOCK_SPEED_HZ:
+      attributes:
+        id: I2C_CLOCK_SPEED_HZ
+      children:
+      - children:
+        - attributes:
+            id: sercom3
+            value: '100000'
+          type: Dynamic
+        type: Values
+      type: Integer
   userData: {}

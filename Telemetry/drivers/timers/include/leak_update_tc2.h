@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdbool.h>
 
-volatile bool leakdet_tick;
+extern volatile bool leakdet_tick;
 void timing_tc2_init_5hz(void);
 
 #ifdef __cplusplus
