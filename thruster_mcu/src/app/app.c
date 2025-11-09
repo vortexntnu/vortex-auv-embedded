@@ -90,6 +90,18 @@ static void message_handler(void);
 static void check_overcurrent(void);
 
 /**
+ * @brief Sends an overcurrent fault message over CAN
+ * 
+ * Constructs and transmits a 7-byte CAN FD fault message containing diagnostic information about the fault condition. 
+ * 
+ * @param thruster_id Thruster identifier (0-7)
+ * @param current Measured current value in Amperes
+ * @param adc_raw Raw ADC reading 
+ * @return true if message was transmitted successfully, false if not
+ */
+static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc_raw);
+
+/**
  * @brief Sets PWM outputs to their neutral/off position
  * 
  * @param outputs Pointer to array of pwm_output structs
@@ -231,11 +243,31 @@ static void check_overcurrent(void) {
         //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
         if (I_out > THRUSTER_RATED_CURRENT) {
             set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
-            // TODO: Transmit CAN frame      
+            
+            if (!send_thruster_fault(sample, I_out, adc_res[sample])) {
+                // Handle retransmission?
+            }
             break;
         }
     }
 }
+
+static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc_raw) {
+    CAN_TX_BUFFER *txBuffer = NULL;
+    
+    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    txBuffer->id = WRITE_ID(0x45A); // Just a random ID
+    txBuffer->dlc = 0x7U;           // DLC 7 -> 7 Byte Payload
+    txBuffer->fdf = 1;
+    txBuffer->brs = 1;
+    
+    txBuffer->data[0] = thruster_id; 
+    memcpy(&txBuffer->data[1], &current, sizeof(float)); 
+    memcpy(&txBuffer->data[5], &adc_raw, sizeof(uint16_t));
+    
+    return CAN1_MessageTransmitFifo(1, txBuffer);
+}
+
 
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count, uint16_t min_us, uint16_t max_us, uint32_t frame_us) {
     for (size_t i = 0; i < count; i++) {
