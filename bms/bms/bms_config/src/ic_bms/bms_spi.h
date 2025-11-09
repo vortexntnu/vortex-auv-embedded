@@ -6,7 +6,7 @@
 
 
 
-//Direct Commands
+//direct commands
 
 #define BATTERY_STATUS 0x12
 #define STACK_VOLTAGE 0x34
@@ -33,11 +33,11 @@
 
 */ // 16 cell voltage readings avaliable 
 
-#define BQ_CS_GROUP   (0U)          
-#define BQ_CS_MASK    (1UL << 18)   
+#define bq_cs_group   (0U)          
+#define bq_cs_mask    (1UL << 18)   
 
-#define R 0 // Read; Used in DirectCommands and Subcommands functions
-#define W 1 // Write; Used in DirectCommands and Subcommands functions
+#define R 0 // Read; Used in directcommands and Subcommands functions
+#define W 1 // Write; Used in directcommands and Subcommands functions
 #define BQ_SUBCMD_MAX_POLLS 2000u
 
 
@@ -48,7 +48,7 @@
 #define THERMISOR_TEMP 0x6A
 #define INTERNAL_TEMP 0x68
 
-//Command only (R)
+//command only (R)
 
 #define RESET 0x0012
 #define SHUTDOWN 0x0010
@@ -75,18 +75,18 @@
 
 /* Minimal driver: only SPI+CS bring-up */
 
-void BQ76942_Init(void);
-bool WriteReg(uint8_t regAddr, uint8_t value);
-bool ReadReg(uint8_t regAddr, uint8_t *value);
-bool BQ_DirectCommand(uint8_t command, uint16_t *data, char type);
-bool BQ_CommandOnly(uint16_t subcmd);
-bool BQ_DirectRead(uint8_t command, uint8_t *data, uint8_t count);
-bool BQ_DirectWrite(uint8_t command, const uint8_t *data, uint8_t count);
-bool BQ_ReadSubCommand(uint16_t subcmd, uint8_t *data, uint8_t length);
-bool BQ_WriteSubCommand(uint16_t subcmd, const uint8_t *data, uint8_t length);
-void BMS_SetProtectionThresholds(void);
-void BMS_BATTERY_STATUS(void);
-void Read_Cells_1to6(void);
+void bq76942_init(void);
+bool write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length);
+bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length);
+bool bq_direct_command(uint8_t command, uint16_t *data, char type);
+bool bq_command_only(uint16_t subcmd);
+bool bq_direct_read(uint8_t command, uint8_t *data, uint8_t count);
+bool bq_direct_write(uint8_t command, const uint8_t *data, uint8_t count);
+bool bq_read_subcommand(uint16_t subcmd, uint8_t *data, uint8_t length);
+bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length);
+void bms_set_protection_threshold(void);
+void bms_battery_status(void);
+void read_cells_1to6(void);
 
 
 
@@ -95,4 +95,4 @@ void Read_Cells_1to6(void);
 
 
 
-#endif /* BQ76942_H */
+#endif /* bq76942_H */

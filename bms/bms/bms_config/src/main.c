@@ -50,11 +50,10 @@ int main ( void )
     /* Initialize all modules */
     SYS_Initialize ( NULL );
 
-    BQ76942_Init();
-    BMS_SetProtectionThresholds();
-
-    Read_Cells_1to6();
-    BMS_BATTERY_STATUS();
+    bq76942_init();
+    bms_set_protection_threshold();
+    read_cells_1to6();
+    bms_battery_status();
     _delay(10000); //wait 1 second  
     
 
