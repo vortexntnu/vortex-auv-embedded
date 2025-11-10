@@ -132,6 +132,9 @@ void CAN0_Initialize(void)
     /* Global Filter Configuration Register */
     CAN0_REGS->CAN_GFC = CAN_GFC_ANFS_REJECT | CAN_GFC_ANFE_REJECT | CAN_GFC_RRFS_Msk;
 
+    /* Timestamp Counter Configuration Register */
+    CAN0_REGS->CAN_TSCC = CAN_TSCC_TCP(0UL) | CAN_TSCC_TSS_INC;
+
     /* Set the operation mode */
     CAN0_REGS->CAN_CCCR |= CAN_CCCR_FDOE_Msk | CAN_CCCR_BRSE_Msk;
 
@@ -151,7 +154,7 @@ void CAN0_Initialize(void)
     /* Enable CAN interrupts */
     CAN0_REGS->CAN_IE = CAN_IE_BOE_Msk | CAN_IE_ARAE_Msk | CAN_IE_PEDE_Msk | CAN_IE_PEAE_Msk | CAN_IE_WDIE_Msk
                                       | CAN_IE_EWE_Msk | CAN_IE_EPE_Msk | CAN_IE_ELOE_Msk | CAN_IE_BEUE_Msk | CAN_IE_BECE_Msk
-                                       | CAN_IE_TFEE_Msk
+                                       | CAN_IE_TSWE_Msk | CAN_IE_TFEE_Msk
                                        | CAN_IE_TEFNE_Msk | CAN_IE_TEFLE_Msk | CAN_IE_TEFFE_Msk | CAN_IE_TCFE_Msk | CAN_IE_HPME_Msk
                                        | CAN_IE_RF0NE_Msk | CAN_IE_RF0LE_Msk | CAN_IE_RF0FE_Msk
                                        | CAN_IE_RF1NE_Msk | CAN_IE_RF1LE_Msk | CAN_IE_RF1FE_Msk

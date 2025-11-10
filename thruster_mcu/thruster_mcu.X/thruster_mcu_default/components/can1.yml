@@ -447,4 +447,14 @@ data:
           type: User
         type: Values
       type: Boolean
+    TIMESTAMP_ENABLE:
+      attributes:
+        id: TIMESTAMP_ENABLE
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

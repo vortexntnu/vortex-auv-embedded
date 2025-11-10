@@ -50,11 +50,11 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/adc/plib_adc_common.h
   hash: b6100059702feb5d6031f6c694dc636b0871d6d256ca47a73f991cb418209500
 - file: ../src/config/default/peripheral/can/plib_can0.c
-  hash: 6a223a8bef67dce3b0c875b533c6abcbe3720f47de3ae0d1de4a92739eb5efe6
+  hash: 5c927ca415da1cb39c34e6d7840f9fc6e3ce5939ee4745b8cea8d6d9e3dcd5d6
 - file: ../src/config/default/peripheral/can/plib_can0.h
   hash: 578686883021fb424def6b7f368af5bc679ed2f3cde9345cc65f51272d1b2fa9
 - file: ../src/config/default/peripheral/can/plib_can1.c
-  hash: b7d7c59ada1a293d431ee21e0ed5b113d2bdf77fdee2be9c148ab34092a7684b
+  hash: 5524d5821aa19b4b0b6d67ead8fac285678c16d798fb064388b6d8c9baab4225
 - file: ../src/config/default/peripheral/can/plib_can1.h
   hash: dd23a2402bfdbb6f203e82ee2865a4428fe5e405bf1ea495d4dde39478abdd8a
 - file: ../src/config/default/peripheral/can/plib_can_common.h
