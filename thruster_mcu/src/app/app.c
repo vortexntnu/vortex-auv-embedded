@@ -256,6 +256,8 @@ static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc
     CAN_TX_BUFFER *txBuffer = NULL;
     
     memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    txBuffer = (CAN_TX_BUFFER*)txFiFo;
+    
     txBuffer->id = WRITE_ID(0x45A); // Just a random ID
     txBuffer->dlc = 0x7U;           // DLC 7 -> 7 Byte Payload
     txBuffer->fdf = 1;
