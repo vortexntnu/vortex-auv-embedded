@@ -268,7 +268,12 @@ static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc
     memcpy(&txBuffer->data[2], &current, sizeof(float)); 
     memcpy(&txBuffer->data[6], &adc_raw, sizeof(uint16_t));
     
-    return CAN1_MessageTransmitFifo(1, txBuffer);
+    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    if (!result) {
+        printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
+    }
+    
+    return result;
 }
 
 
