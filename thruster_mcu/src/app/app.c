@@ -278,8 +278,10 @@ static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc
 
 
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count, uint16_t min_us, uint16_t max_us, uint32_t frame_us) {
+    const uint16_t *pulse_data = (const uint16_t *)data;
     for (size_t i = 0; i < count; i++) {
-        uint16_t pulse_us = ((uint16_t)data[2U * i] << 8) | (uint16_t)data[2U * i + 1U];
+        
+        uint16_t pulse_us = pulse_data[i];
         
         pulse_us = clamp(pulse_us, min_us, max_us);
         
