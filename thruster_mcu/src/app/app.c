@@ -19,6 +19,10 @@ struct pwm_output {
     uint8_t  instance;
     uint8_t  channel;
     uint32_t period_ticks;
+    uint16_t min_us;
+    uint16_t max_us;
+    uint16_t neutral_us;
+    uint32_t frame_us;
 };
 
 enum can_events {
@@ -47,17 +51,17 @@ static volatile bool adc_dma_done = false;
 
 /* Application */
 static struct pwm_output thrusters[8] = {
-    {0, 0, TCC0_PERIOD}, // TCC0_CHANNEL0
-    {0, 1, TCC0_PERIOD}, // TCC0_CHANNEL1
-    {0, 2, TCC0_PERIOD}, // TCC0_CHANNEL2
-    {0, 3, TCC0_PERIOD}, // TCC0_CHANNEL3
-    {0, 4, TCC0_PERIOD}, // TCC0_CHANNEL4
-    {0, 5, TCC0_PERIOD}, // TCC0_CHANNEL5
-    {1, 0, TCC1_PERIOD}, // TCC1_CHANNEL0
-    {1, 1, TCC1_PERIOD}  // TCC1_CHANNEL1
+    {0, 0, TCC0_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CHANNEL0
+    {0, 1, TCC0_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CHANNEL1
+    {0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CHANNEL2
+    {0, 3, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CHANNEL3
+    {0, 4, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CHANNEL4
+    {0, 5, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CHANNEL5
+    {1, 0, TCC1_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CHANNEL0
+    {1, 1, TCC1_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}  // TCC1_CHANNEL1
 };
 
-static struct pwm_output lights[1] = {{1, 2, TCC1_PERIOD}}; // TCC1_CHANNEL2
+static struct pwm_output lights[1] = {{1, 2, TCC1_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TCC1_CHANNEL2
 
 /* --- Private function prototypes --- */
 
@@ -70,11 +74,8 @@ static struct pwm_output lights[1] = {{1, 2, TCC1_PERIOD}}; // TCC1_CHANNEL2
  * @param data Pointer to buffer containing pulse widths in microseconds (format: [MSB, LSB] per output)
  * @param outputs Pointer to array of pwm_output structs
  * @param count Number of outputs to set
- * @param min_us Minimum pulse width in microseconds
- * @param max_us Maximum pulse width in microseconds
- * @param frame_us Total PWM frame duration in microseconds
  */
-static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count, uint16_t min_us, uint16_t max_us, uint32_t frame_us);
+static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count);
 
 /**
  * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
@@ -106,10 +107,8 @@ static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc
  * 
  * @param outputs Pointer to array of pwm_output structs
  * @param count Number of outputs to set
- * @param neutral_us Neutral pulse width in microseconds
- * @param frame_us Total PWM frame duration in microseconds
  */
-static void set_pwm_neutral(struct pwm_output *outputs, size_t count, uint16_t neutral_us, uint32_t frame_us);
+static void set_pwm_neutral(struct pwm_output *outputs, size_t count);
 
 /**
  * @brief Clamps a value between a minimum and maximum bound.
@@ -169,8 +168,8 @@ void app_init(void) {
     //TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
-    set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
-    set_pwm_neutral(lights, 1, 1100, LIGHT_PWM_PERIOD_US);
+    set_pwm_neutral(thrusters, 8);
+    set_pwm_neutral(lights, 1);
 
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
@@ -204,11 +203,11 @@ static void message_handler(void) {
 
     switch (id) {
         case TURN_THRUSTERS_OFF:
-            set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
+            set_pwm_neutral(thrusters, 8);
             break;
 
         case TURN_LIGHTS_OFF:
-            set_pwm_neutral(lights, 1, 1100, LIGHT_PWM_PERIOD_US);
+            set_pwm_neutral(lights, 1);
             break;
 
         case RESET:
@@ -217,11 +216,11 @@ static void message_handler(void) {
             break;
 
         case SET_THRUSTER_PWM:
-            set_pwm_outputs(pData, thrusters, 8, 1000, 2000, THRUSTER_PWM_PERIOD_US);
+            set_pwm_outputs(pData, thrusters, 8);
             break;
 
         case SET_LIGHT_PWM:
-            set_pwm_outputs(pData, lights, 1, 1100, 1900, LIGHT_PWM_PERIOD_US);
+            set_pwm_outputs(pData, lights, 1);
             break;
             
         default:
@@ -242,7 +241,7 @@ static void check_overcurrent(void) {
 
         //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
         if (I_out > THRUSTER_RATED_CURRENT) {
-            set_pwm_neutral(thrusters, 8, 1500, THRUSTER_PWM_PERIOD_US);
+            set_pwm_neutral(thrusters, 8);
             
             if (!send_thruster_fault(sample, I_out, adc_res[sample])) {
                 // Handle retransmission?
@@ -277,15 +276,15 @@ static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc
 }
 
 
-static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count, uint16_t min_us, uint16_t max_us, uint32_t frame_us) {
+static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
     const uint16_t *pulse_data = (const uint16_t *)data;
     for (size_t i = 0; i < count; i++) {
         
         uint16_t pulse_us = pulse_data[i];
         
-        pulse_us = clamp(pulse_us, min_us, max_us);
+        pulse_us = clamp(pulse_us, outputs[i].min_us, outputs[i].max_us);
         
-        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, frame_us);
+        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, outputs[i].frame_us);
         
         tcc_write(outputs[i].instance, outputs[i].channel, ticks);
     }
@@ -294,9 +293,9 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
     WDT_Clear();
 }
 
-static void set_pwm_neutral(struct pwm_output *outputs, size_t count, uint16_t neutral_us, uint32_t frame_us) {
+static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
     for (size_t i = 0; i < count; i++) {
-        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, neutral_us, frame_us);
+        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, outputs[i].neutral_us, outputs[i].frame_us);
         tcc_write(outputs[i].instance, outputs[i].channel, ticks);
         
     }
