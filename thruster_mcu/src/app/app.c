@@ -259,13 +259,14 @@ static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
     txBuffer->id = WRITE_ID(0x45A); // Just a random ID
-    txBuffer->dlc = 0x7U;           // DLC 7 -> 7 Byte Payload
+    txBuffer->dlc = 15;           // DLC 15 -> 64 Byte Payload
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
     
-    txBuffer->data[0] = thruster_id; 
-    memcpy(&txBuffer->data[1], &current, sizeof(float)); 
-    memcpy(&txBuffer->data[5], &adc_raw, sizeof(uint16_t));
+    txBuffer->data[0] = thruster_id;
+    txBuffer->data[1] = 0x00;
+    memcpy(&txBuffer->data[2], &current, sizeof(float)); 
+    memcpy(&txBuffer->data[6], &adc_raw, sizeof(uint16_t));
     
     return CAN1_MessageTransmitFifo(1, txBuffer);
 }
