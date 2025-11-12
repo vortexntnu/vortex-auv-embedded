@@ -161,13 +161,13 @@ void app_init(void) {
     
     // Configure external interrupts 
     EIC_CallbackRegister(EIC_PIN_0, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_3, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_4, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_6, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 1);
+    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 2);
+    EIC_CallbackRegister(EIC_PIN_3, eic_pin_flt_thruster, 3);
+    EIC_CallbackRegister(EIC_PIN_4, eic_pin_flt_thruster, 4);
+    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 5);
+    EIC_CallbackRegister(EIC_PIN_6, eic_pin_flt_thruster, 6);
+    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 7);
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     
@@ -194,7 +194,7 @@ void app_init(void) {
 void app_task(void) {
     if (adc_dma_done) {
         adc_dma_done = false;
-        //check_overcurrent();
+        check_overcurrent();
     }
     
     if (can_message_received) {
@@ -240,7 +240,7 @@ static void message_handler(void) {
     }
 }
 
-/*
+
 static void check_overcurrent(void) {
     const float    ADC_VREF                  = 3.3f;
     const float    G_IMON                    = 18.18e-6f; // Amplifier gain 18.18 uA/A -> in A/A
@@ -261,7 +261,7 @@ static void check_overcurrent(void) {
             break;
         }
     }
-}*/
+}
 
 static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc_raw) {
     CAN_TX_BUFFER *txBuffer = NULL;
@@ -386,7 +386,11 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
 }
 
 static void eic_pin_flt_thruster(uintptr_t context) {
+    uint8_t thruster_id = (uint8_t)context;
+    
     set_pwm_neutral(thrusters, 8);
+    
+    // TODO: Send CAN fault message (I don't have the current available so send_thruster_fault() can't be used)
 }
 
 
