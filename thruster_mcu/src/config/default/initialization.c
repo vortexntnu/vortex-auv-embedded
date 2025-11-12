@@ -179,6 +179,8 @@ void SYS_Initialize ( void* data )
 
     CAN1_Initialize();
 
+    DMAC_Initialize();
+
     CAN0_Initialize();
 
     TC0_TimerInitialize();
