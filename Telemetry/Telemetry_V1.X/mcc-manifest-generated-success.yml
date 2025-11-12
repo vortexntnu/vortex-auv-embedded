@@ -2,13 +2,13 @@
 
 manifest_file_version: 1.0.0
 project: Telemetry_V1
-creation_date: 2025-10-23T14:33:46.405+02:00[Europe/Berlin]
-operating_system: Windows 10
+creation_date: 2025-10-29T11:29:05.682+01:00[Europe/Berlin]
+operating_system: Windows 11
 mcc_mode: IDE
-mcc_mode_version: v6.20
+mcc_mode_version: v6.25
 device_name: ATSAMC21J18A
 compiler: XC32 4.45
-mcc_version: 5.5.0
+mcc_version: 5.5.2
 mcc_core_version: 5.7.0
 content_manager_version: 5.0.1
 is_mcc_offline: false

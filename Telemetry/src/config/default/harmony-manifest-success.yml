@@ -4,12 +4,12 @@
 
 
 project: Telemetry
-creation_date: 2025-10-23T14:33:46.460+02:00[Europe/Berlin]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
-operating_system: Windows 10
+creation_date: 2025-10-29T11:29:05.739+01:00[Europe/Berlin]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+operating_system: Windows 11
 mcc_mode: IDE            # [IDE|Standalone|Headless]
-mcc_version: v5.5.0
+mcc_version: v5.5.2
 mcc_core_version: v5.7.0
-mplabx_version: v6.20        # if MPLAB X plugin only
+mplabx_version: v6.25        # if MPLAB X plugin only
 harmony_version: v1.5.5
 compiler: XC32 4.45
 

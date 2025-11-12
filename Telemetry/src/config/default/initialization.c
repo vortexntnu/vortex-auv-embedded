@@ -168,8 +168,6 @@ void SYS_Initialize ( void* data )
 
     SERCOM3_I2C_Initialize();
 
-    SERCOM2_USART_Initialize();
-
     NVMCTRL_Initialize( );
 
     SERCOM1_USART_Initialize();
@@ -181,6 +179,8 @@ void SYS_Initialize ( void* data )
     DMAC_Initialize();
 
     CAN0_Initialize();
+
+    SERCOM4_USART_Initialize();
 
     EIC_Initialize();
 
