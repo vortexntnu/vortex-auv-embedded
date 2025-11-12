@@ -44,7 +44,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/libc_syscalls.c
   hash: 88bb2e34c939601b5b7ad076556e3ee0fcedf388436b8cddb6d6fd3e9d07472f
 - file: ../src/config/default/peripheral/adc/plib_adc0.c
-  hash: 97e0370da93131079b5f5b8e5e90d7b11c5a499e106a7285f2e279df530ac081
+  hash: 776d3ac61f9355f41fb979fef9c707bfd5d6870a3bf8d07bdaddf5a2da7c4a40
 - file: ../src/config/default/peripheral/adc/plib_adc0.h
   hash: 455edd30331ed774b8482fc08f26c2f37b03372bd1b5c2ab54592fb86a8c57fb
 - file: ../src/config/default/peripheral/adc/plib_adc_common.h

@@ -100,7 +100,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'false'
+            value: 'true'
           type: User
         type: Values
       type: Boolean
@@ -270,15 +270,7 @@ data:
       children:
       - children:
         - attributes:
-            id: visible
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
