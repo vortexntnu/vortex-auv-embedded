@@ -354,7 +354,7 @@ data:
       - children:
         - attributes:
             id: evsys
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -795,4 +795,48 @@ data:
           type: User
         type: Values
       type: KeyValueSet
+    GENERATOR_DMAC_CH_0_ACTIVE:
+      attributes:
+        id: GENERATOR_DMAC_CH_0_ACTIVE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    USER_DMAC_CH_0_READY:
+      attributes:
+        id: USER_DMAC_CH_0_READY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    GENERATOR_DMAC_CH_1_ACTIVE:
+      attributes:
+        id: GENERATOR_DMAC_CH_1_ACTIVE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    USER_DMAC_CH_1_READY:
+      attributes:
+        id: USER_DMAC_CH_1_READY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData: {}

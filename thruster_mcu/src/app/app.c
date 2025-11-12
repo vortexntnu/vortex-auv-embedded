@@ -148,8 +148,6 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
 static void can_transmit_callback(uintptr_t context);
 
-static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
-
 /* --- Public functions --- */
 
 void app_init(void) {
@@ -159,9 +157,7 @@ void app_init(void) {
     CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
     // Configure DMA
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_1, adc_sram_dma_callback, 0);
-    DMAC_ChannelTransfer(DMAC_CHANNEL_1, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_res, 16); // Each adc result is 16 bits=2 bytes. 8*2=16
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)adc_seq_regs, (const void *)&ADC0_REGS->ADC_DSEQDATA, 32); // DSEQDATA is 32 bits=4 bytes. 8 * 4 = 32
+    
     
     TCC0_PWMStart();
     TCC1_PWMStart();
@@ -360,13 +356,6 @@ static void can_transmit_callback(uintptr_t context) {
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         //printf("CAN TX successful\r\n");
     } 
-}
-
-static void adc_sram_dma_callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle) {
-    
-    if (event == DMAC_TRANSFER_EVENT_COMPLETE) {
-        adc_dma_done = true;
-    }
 }
 
 

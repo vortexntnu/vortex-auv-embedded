@@ -52,6 +52,9 @@
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc2.h</itemPath>
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc0.h</itemPath>
             </logicalFolder>
+            <logicalFolder name="wdt" displayName="wdt" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/wdt/plib_wdt.h</itemPath>
+            </logicalFolder>
           </logicalFolder>
           <itemPath>../src/config/default/device_cache.h</itemPath>
           <itemPath>../src/config/default/toolchain_specifics.h</itemPath>
@@ -260,6 +263,9 @@
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc1.c</itemPath>
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc2.c</itemPath>
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc0.c</itemPath>
+            </logicalFolder>
+            <logicalFolder name="wdt" displayName="wdt" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/wdt/plib_wdt.c</itemPath>
             </logicalFolder>
           </logicalFolder>
           <logicalFolder name="stdio" displayName="stdio" projectFiles="true">
