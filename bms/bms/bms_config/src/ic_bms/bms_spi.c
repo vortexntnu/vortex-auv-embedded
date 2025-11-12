@@ -19,16 +19,25 @@ static inline void _delay(uint32_t cycles){
 }
     
 
-//SPI + set CS high 
-void bq76942_init(void)
+void bq76942_Init(void)
 {
-    // init SPI 
-    SERCOM0_SPI_Initialize();
-
-    // configure CS pin as output and set HIGH (inactive) 
+    // --- Chip select pin setup ---
     PORT_REGS->GROUP[bq_cs_group].PORT_DIRSET = bq_cs_mask;
-    PORT_REGS->GROUP[bq_cs_group].PORT_OUTSET = bq_cs_mask;
+    PORT_REGS->GROUP[bq_cs_group].PORT_OUTSET = bq_cs_mask; // Set HIGH (inactive)
+
+    // --- IC configuration sequence ---
+    bq_command_only(ENTER_CONFIG_UPDATE);
+    bms_set_protection_threshold();
+    bq_command_only(EXIT_CONFIG_UPDATE);
+
+    // Status check
+    uint8_t status = 0;
+    if (bq_direct_read(0x12, &status, 1))
+        printf("BQ76942 communication OK\n");
+    else
+        printf("BQ76942 communication failed\n");
 }
+
 
 bool Spi_TransferBytes(uint8_t *tx, uint8_t *rx, uint8_t length)
 {
@@ -42,49 +51,106 @@ bool Spi_TransferBytes(uint8_t *tx, uint8_t *rx, uint8_t length)
     return ok;
 }
 
+static uint8_t bq_crc8_calc(const uint8_t *data, uint8_t len)
+{
+    uint8_t crc = 0x00;              // init
+
+    for (uint8_t i = 0; i < len; i++) {
+        
+        crc ^= data[i];              // XOR in next byte
+        for (uint8_t b = 0; b < 8; b++) {
+            if (crc & 0x80)          // test MSB
+                crc = (uint8_t)((crc << 1) ^ 0x07);
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
+}
+
+
 bool write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
 {
     
 
     if (SERCOM0_SPI_IsBusy())
         return false;
+    if (length == 0)
+        return true;
 
-    uint8_t tx[length + 1];
-    tx[0] = 0x80 | (regAddr & 0x7F);  // Write flag + address
-    memcpy(&tx[1], data, length); //(memcpy (dest, src, length))
-    
-    bq_cs_low();
-    bool ok = SERCOM0_SPI_Write(tx,length +1);
-    bq_cs_high();
+    // Pack back-to-back 24-bit frames: [cmd, data_byte, crc] * length
+    uint8_t tx_bytes[3 * length];
 
+    for (uint8_t i=0;i<length; i++)
+    {
+
+        uint8_t cmd   = (uint8_t)(0x80 | ((regAddr + i) & 0x7F)); // WRITE + addr+i
+        uint8_t byte  = data[i];
+
+        // CRC is computed over the first two bytes only: [cmd, byte]
+        uint8_t pair[2] = { cmd, byte };
+        uint8_t crc     = bq_crc8_calc(pair, 2);
+
+        // Store this mini-frame at position i
+        tx_bytes[3*i + 0] = cmd;
+        tx_bytes[3*i + 1] = byte;
+        tx_bytes[3*i + 2] = crc;
+        
+    }
+
+     // Single SPI transfer with CS held low across all frames
+     bq_cs_low();
+     bool ok = SERCOM0_SPI_Write(tx_bytes, sizeof tx_bytes);
+     bq_cs_high();
+ 
     return ok;
 }
 
 
 bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length)
 {
-    
-    if (SERCOM0_SPI_IsBusy())
+    if (SERCOM0_SPI_IsBusy()) 
         return false;
+    if (length == 0)
+        return true;
 
-    uint8_t tx[length + 1];
-    uint8_t rx[length + 1];
-    tx[0] = (regAddr & 0x7F);
-    memset(&tx[1], 0x00, length);
+    const uint8_t frames = (uint8_t)(length + 1);
+    uint8_t tx[3 * frames];
+    uint8_t rx[3 * frames];
+
+    // Frame 0: issue read for regAddr + 0 (second byte = dummy 0x00)
+    {
+        uint8_t pair[2] = { (uint8_t)(regAddr & 0x7F), 0x00 };
+        tx[0] = pair[0]; tx[1] = pair[1]; tx[2] = bq_crc8_calc(pair, 2);
+    }
+
+    // Frames 1..(frames-2): issue reads for subsequent addresses; last is dummy flush
+    for (uint8_t i = 1; i < frames; i++) {
+        uint8_t cmd  = (i < frames - 1) ? (uint8_t)((regAddr + i) & 0x7F) : 0x00;
+        uint8_t pair[2] = { cmd, 0x00 };
+        tx[3*i + 0] = pair[0];
+        tx[3*i + 1] = pair[1];
+        tx[3*i + 2] = bq_crc8_calc(pair, 2);
+    }
 
     bq_cs_low();
-    bool ok = SERCOM0_SPI_WriteRead(tx, length+1, rx, length+1);
+    bool ok = SERCOM0_SPI_WriteRead(tx, sizeof tx, rx, sizeof rx);
     bq_cs_high();
+    if (!ok) return false;
 
-    if (ok)
-        memcpy(&tx[1],0x00,length);
-    return ok;
+    // Parse: chunk j (1..length) is the response for regAddr + (j-1)
+    for (uint8_t j = 1; j <= length; j++) {
+        uint8_t *chunk = &rx[3 * j];
+        if (bq_crc8_calc(chunk, 2) != chunk[2]) return false; // CRC check
+        data[j - 1] = chunk[1];
+    }
 
+    return true;
 }
 
 bool bq_direct_read(uint8_t command, uint8_t *data, uint8_t count)
 {
-   return read_reg(command,data,count);
+   return read_reg(command, data,count);
 }
 
 bool bq_direct_write(uint8_t command, const uint8_t *data, uint8_t count)
@@ -215,8 +281,8 @@ bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
 }
 
 
-   
-void bms_set_protection_thresholds(void)
+
+void bms_set_protection_threshold(void)
 {
     
     bq_command_only(ENTER_CONFIG_UPDATE);
@@ -250,6 +316,7 @@ void bms_set_protection_thresholds(void)
 
     bq_command_only(EXIT_CONFIG_UPDATE);
 }
+
 
 void bms_battery_status(void){
 

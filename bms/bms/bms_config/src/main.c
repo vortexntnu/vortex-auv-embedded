@@ -54,7 +54,8 @@ int main ( void )
     bms_set_protection_threshold();
     read_cells_1to6();
     bms_battery_status();
-    _delay(10000); //wait 1 second  
+    
+    
     
 
 
