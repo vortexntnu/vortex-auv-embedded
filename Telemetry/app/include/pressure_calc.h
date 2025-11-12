@@ -84,6 +84,9 @@ void leakdet_update(struct leak_det* ld,
                     bool* fast_alarm,
                     bool* slow_alarm);
 
+extern volatile bool leakdet_tick;
+void timing_tc2_init_5hz(void);
+
 #ifdef __cplusplus
 }
 #endif
