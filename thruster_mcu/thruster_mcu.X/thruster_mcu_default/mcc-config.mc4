@@ -11,6 +11,7 @@ modules:
 - cmsis
 - core
 - dfp
+- eic
 - evsys
 - nvmctrl
 - pm
@@ -26,7 +27,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAMC21J18A.ld
   hash: 3fc7dbb63ae72ecd9b52572e4dd84ed79cbd37feb6064cb6d4df6fca301d09af
 - file: ../src/config/default/definitions.h
-  hash: efc5c7feca035e17fd65afd5145d3b67554b9424eb61345abbaf3f63be49eac2
+  hash: 1971ddbd228fdc56fafeaa7c156119d7ccb9c43d7523fdb7e5d2c80ee32ae83d
 - file: ../src/config/default/device.h
   hash: e539bb402fa4783d95ccf06235458b2e1fe01207c83c0e046a853e0385d0b6f4
 - file: ../src/config/default/device_cache.h
@@ -36,7 +37,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: 42f9da2668e04ccb3473d45b149683a00f80072c6883c7918d6ce93997cd6987
 - file: ../src/config/default/initialization.c
-  hash: e2a441def916179548a21cc76423d9a91b68f9ad0a79fa28452ed0e205ccb919
+  hash: ab2c8f66f48969d42542c8b770af15d1181c2c9f706171e4cf237cdec9c339cd
 - file: ../src/config/default/interrupts.c
   hash: c4f4a5f1d6d9542074fad12050151b5feee12b49a61bea26d33d28efb71456d8
 - file: ../src/config/default/interrupts.h
@@ -60,13 +61,17 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/can/plib_can_common.h
   hash: e0e3b54f69be9d8811bbe507f91daa443ae7bff5dc724ac51baebc160097b2d6
 - file: ../src/config/default/peripheral/clock/plib_clock.c
-  hash: 4467aa1aa0d7bd3a119e13fbcfd1191324b001ecc3996cd0edc90f34925e12b8
+  hash: 664944e353aa336bc5a1561c6b8634b7753a33e9b52da642b102cfd41ce11fdb
 - file: ../src/config/default/peripheral/clock/plib_clock.h
   hash: 01c269741541514e997ef61546f4dbb0e23f66e27c6a957162557f13b4638baf
 - file: ../src/config/default/peripheral/dmac/plib_dmac.c
   hash: fe2f36efea1f4bc45ed4116858da567ccf1e6db038612352a1ef7067413b8a3c
 - file: ../src/config/default/peripheral/dmac/plib_dmac.h
   hash: 3a2c43fa53bb62d4f8703bceb0909b7785338653372b1e786bd980008f81a08f
+- file: ../src/config/default/peripheral/eic/plib_eic.c
+  hash: 88fb0c42cd22dafc623010811c64edc5559266a94de305d6763d0107e6c6fc19
+- file: ../src/config/default/peripheral/eic/plib_eic.h
+  hash: 6e08e869cdf06e4abf1c339c52bb74e1db0f794342ca9c70aee45a175af6ccab
 - file: ../src/config/default/peripheral/evsys/plib_evsys.c
   hash: 7bb3bc0d60c4cf18638d76d3dfe9e5b13d2915d09e6a8a7bc4b5faae870c8f48
 - file: ../src/config/default/peripheral/evsys/plib_evsys.h

@@ -184,6 +184,8 @@ void SYS_Initialize ( void* data )
 
     CAN0_Initialize();
 
+    EIC_Initialize();
+
     TC0_TimerInitialize();
 
     TCC1_PWMInitialize();

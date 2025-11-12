@@ -4244,7 +4244,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -4343,7 +4343,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -4354,7 +4354,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -4800,6 +4800,50 @@ data:
         - attributes:
             value: E
           type: User
+        type: Values
+      type: String
+    EIC_CLOCK_ENABLE:
+      attributes:
+        id: EIC_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: eic
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    EIC_INTERRUPT_ENABLE:
+      attributes:
+        id: EIC_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: eic
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    EIC_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: EIC_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: eic
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    EIC_INTERRUPT_HANDLER:
+      attributes:
+        id: EIC_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: eic
+            value: EIC_Handler
+          type: Dynamic
         type: Values
       type: String
   userData:

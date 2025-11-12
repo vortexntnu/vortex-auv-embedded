@@ -237,7 +237,7 @@ static void check_overcurrent(void) {
     const uint8_t  THRUSTER_RATED_CURRENT    = 15U;       // From TSD7 datasheet  
     
     for (size_t sample = 0; sample < 8; sample++) {
-        float V_Imon = (float)adc_res[sample] * ADC_VREF / 4095.0f;
+        float V_Imon = (float)adc_res[sample] * ADC_VREF / 65535f;
         float I_out = V_Imon / (G_IMON * R_IMON);
 
         //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
