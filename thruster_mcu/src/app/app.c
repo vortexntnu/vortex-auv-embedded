@@ -384,7 +384,7 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
 }
 
 static void eic_pin_flt_thruster(uintptr_t context) {
-    turn_thrusters_neutral();
+    set_pwm_neutral(thrusters, 8);
 }
 
 
