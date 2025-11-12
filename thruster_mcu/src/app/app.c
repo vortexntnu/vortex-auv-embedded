@@ -147,6 +147,7 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 /* Callbacks */
 static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
 static void can_transmit_callback(uintptr_t context);
+static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext);
 
 /* --- Public functions --- */
 
@@ -358,6 +359,15 @@ static void can_transmit_callback(uintptr_t context) {
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         //printf("CAN TX successful\r\n");
     } 
+}
+
+static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext) {
+    if (returned_event == DMAC_TRANSFER_EVENT_COMPLETE) {
+        adc_dma_done = true;
+    } 
+    else if (returned_event == DMAC_TRANSFER_EVENT_ERROR) {
+        printf("ERROR: DMAC Transfer Failed!\r\n");
+    }
 }
 
 
