@@ -149,6 +149,7 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
 static void can_transmit_callback(uintptr_t context);
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext);
+static void eic_pin_flt_thruster(uintptr_t context);
 
 /* --- Public functions --- */
 
@@ -157,6 +158,9 @@ void app_init(void) {
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
     CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
+    
+    // Configure external interrupts 
+    EIC_CallbackRegister(EIC_PIN_0, eic_pin_flt_thruster, 0);
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     
@@ -370,6 +374,10 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
     else if (returned_event == DMAC_TRANSFER_EVENT_ERROR) {
         printf("ERROR: DMAC Transfer Failed!\r\n");
     }
+}
+
+static void eic_pin_flt_thruster(uintptr_t context) {
+    turn_thrusters_neutral();
 }
 
 
