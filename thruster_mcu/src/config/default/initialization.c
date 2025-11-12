@@ -161,6 +161,7 @@ void SYS_Initialize ( void* data )
 
 
   
+    PORT_Initialize();
 
     CLOCK_Initialize();
 
