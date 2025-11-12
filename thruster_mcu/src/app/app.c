@@ -7,6 +7,8 @@
 #define WRITE_ID(id) (id << 18)
 #define READ_ID(id) (id >> 18)
 
+#define TRANSFER_SIZE 16
+
 /* --- Constants --- */
 static const uint32_t TCC0_PERIOD               = 75000U;
 static const uint32_t TCC1_PERIOD               = 75000U;
@@ -44,10 +46,9 @@ static uint8_t txFiFo[CAN1_TX_FIFO_BUFFER_SIZE];
 static uint8_t rxFiFo0[CAN1_RX_FIFO0_SIZE];
 
 /* ADC */
-static const uint32_t adc_seq_regs[8] = {0x1801, 0x1802, 0x1803, 0x1805, 0x1806, 0x1807, 0x1812, 0x1813};
-
-static volatile uint16_t adc_res[8] = {0};
 static volatile bool adc_dma_done = false;
+static uint16_t adc_result_array[TRANSFER_SIZE];
+
 
 /* Application */
 static struct pwm_output thrusters[8] = {
@@ -88,7 +89,7 @@ static void message_handler(void);
  * Reads ADC samples for all 8 thruster channels, calculates output current from
  * the voltage, and disables all thrusters if any channel exceeds the rated current limit.
  */
-static void check_overcurrent(void);
+//static void check_overcurrent(void);
 
 /**
  * @brief Sends an overcurrent fault message over CAN
@@ -158,10 +159,10 @@ void app_init(void) {
     CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
-
     
     // Configure DMA
-    
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, adc_dma_callback, 0);
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
     
     TCC0_PWMStart();
     TCC1_PWMStart();
@@ -182,7 +183,7 @@ void app_init(void) {
 void app_task(void) {
     if (adc_dma_done) {
         adc_dma_done = false;
-        check_overcurrent();
+        //check_overcurrent();
     }
     
     if (can_message_received) {
@@ -228,6 +229,7 @@ static void message_handler(void) {
     }
 }
 
+/*
 static void check_overcurrent(void) {
     const float    ADC_VREF                  = 3.3f;
     const float    G_IMON                    = 18.18e-6f; // Amplifier gain 18.18 uA/A -> in A/A
@@ -248,7 +250,7 @@ static void check_overcurrent(void) {
             break;
         }
     }
-}
+}*/
 
 static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc_raw) {
     CAN_TX_BUFFER *txBuffer = NULL;
