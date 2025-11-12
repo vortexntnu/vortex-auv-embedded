@@ -161,6 +161,13 @@ void app_init(void) {
     
     // Configure external interrupts 
     EIC_CallbackRegister(EIC_PIN_0, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_3, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_4, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_6, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 0);
     
     ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     
