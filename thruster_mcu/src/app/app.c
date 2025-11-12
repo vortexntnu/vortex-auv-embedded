@@ -377,6 +377,8 @@ static void can_transmit_callback(uintptr_t context) {
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext) {
     if (returned_event == DMAC_TRANSFER_EVENT_COMPLETE) {
         adc_dma_done = true;
+        // Re-arm DMA for next conversion
+        DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
     } 
     else if (returned_event == DMAC_TRANSFER_EVENT_ERROR) {
         printf("ERROR: DMAC Transfer Failed!\r\n");
