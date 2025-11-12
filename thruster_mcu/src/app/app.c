@@ -156,6 +156,9 @@ void app_init(void) {
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
     CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
+    ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
+
+    
     // Configure DMA
     
     
@@ -168,7 +171,6 @@ void app_init(void) {
     set_pwm_neutral(lights, 1);
 
     
-    ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
     
     TC0_TimerStart();
     
