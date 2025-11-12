@@ -133,8 +133,11 @@ this interface.
 void CLOCK_Initialize (void);
 
 
+
+
 #ifdef __cplusplus // Provide C++ Compatibility
 }
 #endif
 
 #endif /* PLIB_CLOCK_H */
+

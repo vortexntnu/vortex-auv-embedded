@@ -19,7 +19,7 @@
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -64,13 +64,17 @@
 #endif
 // DOM-IGNORE-END
 
-#define   ADC_STATUS_NONE      (0U)
-#define   ADC_STATUS_RESRDY    (ADC_INTFLAG_RESRDY_Msk)
-#define   ADC_STATUS_OVERRUN   (ADC_INTFLAG_OVERRUN_Msk)
-#define   ADC_STATUS_WINMON    (ADC_INTFLAG_WINMON_Msk)
-#define   ADC_STATUS_MASK      (ADC_STATUS_RESRDY | ADC_STATUS_OVERRUN | ADC_STATUS_WINMON)
-        
-typedef uint8_t ADC_STATUS;
+// *****************************************************************************
+// *****************************************************************************
+// Section: Preprocessor macros
+// *****************************************************************************
+// *****************************************************************************
+#define ADC_STATUS_NONE 0U
+#define ADC_STATUS_RESRDY ADC_INTFLAG_RESRDY_Msk
+#define ADC_STATUS_WINMON ADC_INTFLAG_WINMON_Msk
+#define ADC_STATUS_OVERRUN ADC_INTFLAG_OVERRUN_Msk
+#define ADC_STATUS_MASK (ADC_STATUS_RESRDY | ADC_STATUS_OVERRUN | ADC_STATUS_WINMON)    
+#define ADC_STATUS_INVALID 0xFFFFFFFFU
 
 // *****************************************************************************
 // *****************************************************************************
@@ -95,18 +99,10 @@ typedef enum
     ADC_POSINPUT_AIN9 = ADC_INPUTCTRL_MUXPOS_AIN9,
     ADC_POSINPUT_AIN10 = ADC_INPUTCTRL_MUXPOS_AIN10,
     ADC_POSINPUT_AIN11 = ADC_INPUTCTRL_MUXPOS_AIN11,
-    ADC_POSINPUT_AIN12 = ADC_INPUTCTRL_MUXPOS_AIN12,
-    ADC_POSINPUT_AIN13 = ADC_INPUTCTRL_MUXPOS_AIN13,
-    ADC_POSINPUT_AIN14 = ADC_INPUTCTRL_MUXPOS_AIN14,
-    ADC_POSINPUT_AIN15 = ADC_INPUTCTRL_MUXPOS_AIN15,
-    ADC_POSINPUT_SCALEDCOREVCC = ADC_INPUTCTRL_MUXPOS_SCALEDCOREVCC,
-    ADC_POSINPUT_SCALEDVBAT = ADC_INPUTCTRL_MUXPOS_SCALEDVBAT,
-    ADC_POSINPUT_SCALEDIOVCC = ADC_INPUTCTRL_MUXPOS_SCALEDIOVCC,
     ADC_POSINPUT_BANDGAP = ADC_INPUTCTRL_MUXPOS_BANDGAP,
-    ADC_POSINPUT_PTAT = ADC_INPUTCTRL_MUXPOS_PTAT,
-    ADC_POSINPUT_CTAT = ADC_INPUTCTRL_MUXPOS_CTAT,
+    ADC_POSINPUT_SCALEDCOREVCC = ADC_INPUTCTRL_MUXPOS_SCALEDCOREVCC,
+    ADC_POSINPUT_SCALEDIOVCC = ADC_INPUTCTRL_MUXPOS_SCALEDIOVCC,
     ADC_POSINPUT_DAC = ADC_INPUTCTRL_MUXPOS_DAC,
-    ADC_POSINPUT_PTC = ADC_INPUTCTRL_MUXPOS_PTC,
 }ADC_POSINPUT;
 
 // *****************************************************************************
@@ -119,20 +115,20 @@ typedef enum
     ADC_NEGINPUT_AIN3 = ADC_INPUTCTRL_MUXNEG_AIN3,
     ADC_NEGINPUT_AIN4 = ADC_INPUTCTRL_MUXNEG_AIN4,
     ADC_NEGINPUT_AIN5 = ADC_INPUTCTRL_MUXNEG_AIN5,
-    ADC_NEGINPUT_AIN6 = ADC_INPUTCTRL_MUXNEG_AIN6,
-    ADC_NEGINPUT_AIN7 = ADC_INPUTCTRL_MUXNEG_AIN7,
     ADC_NEGINPUT_GND = ADC_INPUTCTRL_MUXNEG_GND,
 }ADC_NEGINPUT;
 
-
+typedef uint32_t ADC_STATUS;
 typedef enum
 {
-    ADC_WINMODE_DISABLED = ADC_CTRLB_WINMODE_DISABLE_Val,
-    ADC_WINMODE_GREATER_THAN_WINLT = ADC_CTRLB_WINMODE_MODE1_Val,
-    ADC_WINMODE_LESS_THAN_WINUT = ADC_CTRLB_WINMODE_MODE2_Val,
-    ADC_WINMODE_BETWEEN_WINLT_AND_WINUT = ADC_CTRLB_WINMODE_MODE3_Val,
-    ADC_WINMODE_OUTSIDE_WINLT_AND_WINUT = ADC_CTRLB_WINMODE_MODE4_Val
+    ADC_WINMODE_DISABLED = ADC_CTRLC_WINMODE_DISABLE_Val,
+    ADC_WINMODE_GREATER_THAN_WINLT = ADC_CTRLC_WINMODE_MODE1_Val,
+    ADC_WINMODE_LESS_THAN_WINUT = ADC_CTRLC_WINMODE_MODE2_Val,
+    ADC_WINMODE_BETWEEN_WINLT_AND_WINUT = ADC_CTRLC_WINMODE_MODE3_Val,
+    ADC_WINMODE_OUTSIDE_WINLT_AND_WINUT = ADC_CTRLC_WINMODE_MODE4_Val
 }ADC_WINMODE;
+
+
 // *****************************************************************************
 
 

@@ -74,35 +74,6 @@ extern uint32_t _stack;
 
 extern int main(void);
 
-__STATIC_INLINE void __attribute__((optimize("-O1"))) CMCC_Configure(void)
-{
-    CMCC_REGS->CMCC_CTRL &= ~(CMCC_CTRL_CEN_Msk);
-    while((CMCC_REGS->CMCC_SR & CMCC_SR_CSTS_Msk) == CMCC_SR_CSTS_Msk)
-    {
-        /*Wait for the operation to complete*/
-    }
-    CMCC_REGS->CMCC_CFG = CMCC_CFG_CSIZESW(2U)| CMCC_CFG_DCDIS_Msk;
-    CMCC_REGS->CMCC_CTRL = (CMCC_CTRL_CEN_Msk);
-}
-
-
-#if (__ARM_FP==14) || (__ARM_FP==4)
-
-/* Enable FPU */
-__STATIC_INLINE void __attribute__((optimize("-O1"))) FPU_Enable(void)
-{
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    SCB->CPACR |= (((uint32_t)0xFU) << 20);
-    __DSB();
-    __ISB();
-
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-}
-#endif /* (__ARM_FP==14) || (__ARM_FP==4) */
 
 
 /* Brief default application function used as a weak reference */
@@ -139,14 +110,6 @@ void __attribute__((optimize("-O1"), section(".text.Reset_Handler"), long_call, 
 
     /* Reserved for use by MPLAB XC32. */
     __xc32_on_reset();
-
-#if (__ARM_FP==14) || (__ARM_FP==4)
-    /* Enable the FPU if the application is built with -mfloat-abi=softfp or -mfloat-abi=hard */
-    FPU_Enable();
-#endif
-
-    /* Configure CMCC */
-    CMCC_Configure();
 
     /* Initialize data after TCM is enabled.
      * Data initialization from the XC32 .dinit template */

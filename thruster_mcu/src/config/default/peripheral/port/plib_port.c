@@ -53,62 +53,6 @@
 // *****************************************************************************
 // *****************************************************************************
 // *****************************************************************************
-/* Function:
-
-    void PORT_Initialize(void)
-
-  Summary:
-    Initializes the PORT Library.
-
-  Description:
-    This function initializes all ports and pins as configured in the
-    MHC Pin Manager.
-
-  Remarks:
-    Refer plib_port.h file for more information.
-*/
-
-void PORT_Initialize(void)
-{
-   /************************** GROUP 0 Initialization *************************/
-   PORT_REGS->GROUP[0].PORT_PINCFG[3] = 0x1U;
-   PORT_REGS->GROUP[0].PORT_PINCFG[5] = 0x1U;
-   PORT_REGS->GROUP[0].PORT_PINCFG[6] = 0x1U;
-   PORT_REGS->GROUP[0].PORT_PINCFG[7] = 0x1U;
-
-   PORT_REGS->GROUP[0].PORT_PMUX[1] = 0x10U;
-   PORT_REGS->GROUP[0].PORT_PMUX[2] = 0x10U;
-   PORT_REGS->GROUP[0].PORT_PMUX[3] = 0x11U;
-
-   /************************** GROUP 1 Initialization *************************/
-   PORT_REGS->GROUP[1].PORT_PINCFG[0] = 0x1U;
-   PORT_REGS->GROUP[1].PORT_PINCFG[1] = 0x1U;
-   PORT_REGS->GROUP[1].PORT_PINCFG[8] = 0x1U;
-   PORT_REGS->GROUP[1].PORT_PINCFG[9] = 0x1U;
-   PORT_REGS->GROUP[1].PORT_PINCFG[12] = 0x1U;
-   PORT_REGS->GROUP[1].PORT_PINCFG[13] = 0x1U;
-   PORT_REGS->GROUP[1].PORT_PINCFG[24] = 0x1U;
-   PORT_REGS->GROUP[1].PORT_PINCFG[25] = 0x1U;
-
-   PORT_REGS->GROUP[1].PORT_PMUX[0] = 0x11U;
-   PORT_REGS->GROUP[1].PORT_PMUX[4] = 0x11U;
-   PORT_REGS->GROUP[1].PORT_PMUX[6] = 0x77U;
-   PORT_REGS->GROUP[1].PORT_PMUX[12] = 0x33U;
-
-   /************************** GROUP 2 Initialization *************************/
-   PORT_REGS->GROUP[2].PORT_DIR = 0x40000U;
-   PORT_REGS->GROUP[2].PORT_OUT = 0x40000U;
-   PORT_REGS->GROUP[2].PORT_PINCFG[18] = 0x0U;
-
-   PORT_REGS->GROUP[2].PORT_PMUX[9] = 0x0U;
-
-   /************************** GROUP 3 Initialization *************************/
-   PORT_REGS->GROUP[3].PORT_PINCFG[10] = 0x1U;
-
-   PORT_REGS->GROUP[3].PORT_PMUX[5] = 0x5U;
-
-
-}
 // *****************************************************************************
 /* Function:
     uint32_t PORT_GroupRead(PORT_GROUP group)

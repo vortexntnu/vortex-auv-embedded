@@ -65,7 +65,7 @@
 */
 
 /* Total number of TCC channels in a module */
-#define TCC1_NUM_CHANNELS    (4U)
+#define TCC1_NUM_CHANNELS    (2U)
 
 /* TCC Channel numbers
 
@@ -82,8 +82,6 @@ typedef enum
 {
     TCC1_CHANNEL0,
     TCC1_CHANNEL1,
-    TCC1_CHANNEL2,
-    TCC1_CHANNEL3,
 }TCC1_CHANNEL_NUM;
 
 // *****************************************************************************
@@ -106,8 +104,6 @@ typedef enum
     TCC1_PWM_STATUS_FAULT_1 = TCC_INTFLAG_FAULT1_Msk,
     TCC1_PWM_STATUS_MC_0 = TCC_INTFLAG_MC0_Msk,
     TCC1_PWM_STATUS_MC_1 = TCC_INTFLAG_MC1_Msk,
-    TCC1_PWM_STATUS_MC_2 = TCC_INTFLAG_MC2_Msk,
-    TCC1_PWM_STATUS_MC_3 = TCC_INTFLAG_MC3_Msk,
 }TCC1_PWM_STATUS;
 
 // *****************************************************************************
@@ -126,7 +122,6 @@ void TCC1_PWMStart(void);
 
 void TCC1_PWMStop(void);
 
-void TCC1_PWMDeadTimeSet(uint8_t deadtime_high, uint8_t deadtime_low);
 
 void TCC1_PWMForceUpdate(void);
 

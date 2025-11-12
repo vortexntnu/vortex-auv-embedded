@@ -22,7 +22,7 @@
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -58,15 +58,19 @@
 void PM_Initialize( void )
 {
     /* Configure PM */
-    PM_REGS->PM_STDBYCFG = PM_STDBYCFG_RAMCFG(0U)| PM_STDBYCFG_FASTWKUP(0U);
-    PM_REGS->PM_HIBCFG = PM_HIBCFG_RAMCFG(0U)| PM_HIBCFG_BRAMCFG(0U);
-    PM_REGS->PM_BKUPCFG = PM_BKUPCFG_BRAMCFG(0U);
+    PM_REGS->PM_STDBYCFG = (uint16_t)(PM_STDBYCFG_BBIASHS_Msk| PM_STDBYCFG_VREGSMOD(0UL));
+
 }
 
 void PM_IdleModeEnter( void )
 {
-    /* Configure Idle Sleep */
-    PM_REGS->PM_SLEEPCFG = PM_SLEEPCFG_SLEEPMODE_IDLE_Val;
+    PM_REGS->PM_SLEEPCFG = (uint8_t)PM_SLEEPCFG_SLEEPMODE(0UL);
+
+    
+    while ((PM_REGS->PM_SLEEPCFG & PM_SLEEPCFG_SLEEPMODE_Msk) != PM_SLEEPCFG_SLEEPMODE(0UL))
+    {
+        /* Ensure that SLEEPMODE bits are configured with the given value */
+    }
     /* Wait for interrupt instruction execution */
     __WFI();
 }
@@ -74,65 +78,16 @@ void PM_IdleModeEnter( void )
 void PM_StandbyModeEnter( void )
 {
     /* Configure Standby Sleep */
-    PM_REGS->PM_SLEEPCFG = PM_SLEEPCFG_SLEEPMODE_STANDBY_Val;
-    /* Wait till the voltage regulator low power mode is ready */
-    while((PM_REGS->PM_INTFLAG & PM_INTFLAG_SLEEPRDY_Msk) == 0U)
+    PM_REGS->PM_SLEEPCFG = (uint8_t)PM_SLEEPCFG_SLEEPMODE_STANDBY_Val;
+  
+    while ((PM_REGS->PM_SLEEPCFG & PM_SLEEPCFG_SLEEPMODE_STANDBY_Val) == 0U)
     {
-
+        /* Ensure that SLEEPMODE bits are configured with the given value */
     }
+
     /* Wait for interrupt instruction execution */
     __WFI();
 }
 
-void PM_HibernateModeEnter( void )
-{
-    /* Configure Hibernate Sleep */
-    PM_REGS->PM_SLEEPCFG = PM_SLEEPCFG_SLEEPMODE_HIBERNATE_Val;
-    /* Wait till the voltage regulator low power mode is ready */
-    while((PM_REGS->PM_INTFLAG & PM_INTFLAG_SLEEPRDY_Msk) == 0U)
-    {
-
-    }
-    /* Wait for interrupt instruction execution */
-    __WFI();
-}
-
-void PM_BackupModeEnter( void )
-{
-    /* Configure Backup Sleep */
-    PM_REGS->PM_SLEEPCFG = PM_SLEEPCFG_SLEEPMODE_BACKUP_Val;
-    /* Wait till the voltage regulator low power mode is ready */
-    while((PM_REGS->PM_INTFLAG & PM_INTFLAG_SLEEPRDY_Msk) == 0U)
-    {
-
-    }
-    /* Wait for interrupt instruction execution */
-    __WFI();
-}
-
-void PM_OffModeEnter( void )
-{
-    /* Configure Off Sleep */
-    PM_REGS->PM_SLEEPCFG = PM_SLEEPCFG_SLEEPMODE_OFF_Val;
-    /* Wait for interrupt instruction execution */
-    __WFI();
-}
-
-/* ********Important Note********
- * Refer the bit description of PM->CTRLA.IORET
- * in datasheet before using this function.
- * When IORET is enabled, SWD access to the device will not be
- * available after waking up from Hibernate/Backup sleep until
- * the bit is cleared by the application.
- */
-void PM_IO_RetentionSet( void )
-{
-    PM_REGS->PM_CTRLA |= PM_CTRLA_IORET_Msk;
-}
-
-void PM_IO_RetentionClear( void )
-{
-    PM_REGS->PM_CTRLA &= (uint8_t)(~PM_CTRLA_IORET_Msk);
-}
 
 

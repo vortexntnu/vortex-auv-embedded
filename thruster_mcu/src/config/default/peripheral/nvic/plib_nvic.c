@@ -50,8 +50,6 @@
 
 void NVIC_Initialize( void )
 {
-    /* Priority 0 to 7 and no sub-priority. 0 is the highest priority */
-    NVIC_SetPriorityGrouping( 0x00 );
 
     /* Enable NVIC Controller */
     __DMB();
@@ -59,43 +57,19 @@ void NVIC_Initialize( void )
 
     /* Enable the interrupt sources and configure the priorities as configured
      * from within the "Interrupt Manager" of MHC. */
-    NVIC_SetPriority(DMAC_0_IRQn, 7);
-    NVIC_EnableIRQ(DMAC_0_IRQn);
-    NVIC_SetPriority(DMAC_1_IRQn, 7);
-    NVIC_EnableIRQ(DMAC_1_IRQn);
-    NVIC_SetPriority(SERCOM0_0_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM0_0_IRQn);
-    NVIC_SetPriority(SERCOM0_1_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM0_1_IRQn);
-    NVIC_SetPriority(SERCOM0_2_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM0_2_IRQn);
-    NVIC_SetPriority(SERCOM0_OTHER_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM0_OTHER_IRQn);
-    NVIC_SetPriority(SERCOM1_0_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM1_0_IRQn);
-    NVIC_SetPriority(SERCOM1_1_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM1_1_IRQn);
-    NVIC_SetPriority(SERCOM1_2_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM1_2_IRQn);
-    NVIC_SetPriority(SERCOM1_OTHER_IRQn, 7);
-    NVIC_EnableIRQ(SERCOM1_OTHER_IRQn);
-    NVIC_SetPriority(CAN0_IRQn, 7);
+    NVIC_SetPriority(SERCOM0_IRQn, 3);
+    NVIC_EnableIRQ(SERCOM0_IRQn);
+    NVIC_SetPriority(SERCOM1_IRQn, 3);
+    NVIC_EnableIRQ(SERCOM1_IRQn);
+    NVIC_SetPriority(CAN0_IRQn, 3);
     NVIC_EnableIRQ(CAN0_IRQn);
-    NVIC_SetPriority(CAN1_IRQn, 7);
+    NVIC_SetPriority(CAN1_IRQn, 3);
     NVIC_EnableIRQ(CAN1_IRQn);
-    NVIC_SetPriority(ADC0_RESRDY_IRQn, 7);
-    NVIC_EnableIRQ(ADC0_RESRDY_IRQn);
+    NVIC_SetPriority(ADC0_IRQn, 3);
+    NVIC_EnableIRQ(ADC0_IRQn);
 
-    /* Enable Usage fault */
-    SCB->SHCSR |= (SCB_SHCSR_USGFAULTENA_Msk);
-    /* Trap divide by zero */
-    SCB->CCR   |= SCB_CCR_DIV_0_TRP_Msk;
 
-    /* Enable Bus fault */
-    SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk);
 
-    /* Enable memory management fault */
-    SCB->SHCSR |= (SCB_SHCSR_MEMFAULTENA_Msk);
 
 }
 

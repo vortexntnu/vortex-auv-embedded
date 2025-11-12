@@ -52,21 +52,22 @@
 // Section: Configuration Bits
 // ****************************************************************************
 // ****************************************************************************
-#pragma config BOD33_DIS = SET
-#pragma config BOD33USERLEVEL = 0x1cU
-#pragma config BOD33_ACTION = RESET
-#pragma config BOD33_HYST = 0x2U
-#pragma config NVMCTRL_BOOTPROT = 0
-#pragma config NVMCTRL_SEESBLK = 0x0U
-#pragma config NVMCTRL_SEEPSZ = 0x0U
-#pragma config RAMECC_ECCDIS = SET
-#pragma config WDT_ENABLE = CLEAR
-#pragma config WDT_ALWAYSON = CLEAR
-#pragma config WDT_PER = CYC8192
-#pragma config WDT_WINDOW = CYC8192
-#pragma config WDT_EWOFFSET = CYC8192
-#pragma config WDT_WEN = CLEAR
-#pragma config NVMCTRL_REGION_LOCKS = 0xffffffffU
+#pragma config NVMCTRL_BOOTPROT = SIZE_0BYTES
+#pragma config NVMCTRL_EEPROM_SIZE = SIZE_0BYTES
+#pragma config BODVDDUSERLEVEL = 0x8U // Enter Hexadecimal value
+#pragma config BODVDD_DIS = DISABLED
+#pragma config BODVDD_ACTION = NONE
+
+#pragma config BODVDD_HYST = DISABLED
+#pragma config NVMCTRL_REGION_LOCKS = 0xffffU // Enter Hexadecimal value
+
+#pragma config WDT_ENABLE = DISABLED
+#pragma config WDT_ALWAYSON = DISABLED
+#pragma config WDT_PER = CYC8
+
+#pragma config WDT_WINDOW = CYC8
+#pragma config WDT_EWOFFSET = CYC8
+#pragma config WDT_WEN = DISABLED
 
 
 
@@ -152,13 +153,14 @@ void SYS_Initialize ( void* data )
     /* MISRAC 2012 deviation block start */
     /* MISRA C-2012 Rule 2.2 deviated in this file.  Deviation record ID -  H3_MISRAC_2012_R_2_2_DR_1 */
 
-    NVMCTRL_Initialize( );
+    NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_RWS(3UL);
+
+    PM_Initialize();
 
     STDIO_BufferModeSet();
 
 
   
-    PORT_Initialize();
 
     CLOCK_Initialize();
 
@@ -167,17 +169,15 @@ void SYS_Initialize ( void* data )
 
     SERCOM2_USART_Initialize();
 
-    SERCOM1_I2C_Initialize();
+    NVMCTRL_Initialize( );
 
-    EVSYS_Initialize();
+    SERCOM1_USART_Initialize();
 
     SERCOM0_USART_Initialize();
 
+    EVSYS_Initialize();
+
     CAN1_Initialize();
-
-    DMAC_Initialize();
-
-    PM_Initialize();
 
     CAN0_Initialize();
 
@@ -188,6 +188,7 @@ void SYS_Initialize ( void* data )
     TCC2_PWMInitialize();
 
     TCC0_PWMInitialize();
+
 
     ADC0_Initialize();
 

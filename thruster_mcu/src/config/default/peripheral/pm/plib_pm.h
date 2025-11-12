@@ -22,7 +22,7 @@
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -69,30 +69,13 @@
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Data Types
-// *****************************************************************************
-
-// *****************************************************************************
-// *****************************************************************************
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-
 void PM_Initialize( void );
-
 void PM_IdleModeEnter( void );
 
 void PM_StandbyModeEnter( void );
-
-void PM_HibernateModeEnter( void );
-
-void PM_BackupModeEnter( void );
-
-void PM_OffModeEnter( void );
-
-void PM_IO_RetentionSet( void );
-
-void PM_IO_RetentionClear( void );
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility

@@ -4,7 +4,7 @@
 
 
 project: thruster_mcu
-creation_date: 2025-11-10T10:22:52.916+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+creation_date: 2025-11-12T11:36:05.112+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
 operating_system: Mac OS X
 mcc_mode: IDE            # [IDE|Standalone|Headless]
 mcc_version: v5.6.3
@@ -18,5 +18,5 @@ modules:
     - {name: "CMSIS_5", version: "5.9.1-dev"}
 
 packs:
-    - {name: "SAME54_DFP", version: "3.9.244"}
+    - {name: "SAMC21_DFP", version: "3.8.119"}
 

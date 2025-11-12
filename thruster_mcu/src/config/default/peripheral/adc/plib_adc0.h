@@ -22,7 +22,7 @@
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -104,7 +104,7 @@ void ADC0_ComparisonWindowSet(uint16_t low_threshold, uint16_t high_threshold);
 
 void ADC0_WindowModeSet(ADC_WINMODE mode);
 
-uint16_t ADC0_LastConversionResultGet( void );
+bool ADC0_ConversionSequenceIsFinished(void);
 
 void ADC0_InterruptsClear(ADC_STATUS interruptMask);
 

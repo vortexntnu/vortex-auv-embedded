@@ -68,10 +68,6 @@ void TCC1_PWMInitialize(void)
     /* Clock prescaler */
     TCC1_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV16
                             | TCC_CTRLA_PRESCSYNC_PRESC ;
-    TCC1_REGS->TCC_WEXCTRL = TCC_WEXCTRL_OTMX(0UL);
-    /* Dead time configurations */
-    TCC1_REGS->TCC_WEXCTRL |= TCC_WEXCTRL_DTIEN0_Msk | TCC_WEXCTRL_DTIEN1_Msk | TCC_WEXCTRL_DTIEN2_Msk | TCC_WEXCTRL_DTIEN3_Msk
- 	 	 | TCC_WEXCTRL_DTLS(64UL) | TCC_WEXCTRL_DTHS(64UL);
 
     TCC1_REGS->TCC_WAVE = TCC_WAVE_WAVEGEN_NPWM | TCC_WAVE_RAMP_RAMP1;
 
@@ -79,8 +75,6 @@ void TCC1_PWMInitialize(void)
     /* Configure duty cycle values */
     TCC1_REGS->TCC_CC[0] = 0U;
     TCC1_REGS->TCC_CC[1] = 0U;
-    TCC1_REGS->TCC_CC[2] = 0U;
-    TCC1_REGS->TCC_CC[3] = 0U;
     TCC1_REGS->TCC_PER = 75000U;
 
 
@@ -135,12 +129,6 @@ uint32_t TCC1_PWM24bitPeriodGet (void)
     return (TCC1_REGS->TCC_PER & 0xFFFFFFU);
 }
 
-/* Configure dead time */
-void TCC1_PWMDeadTimeSet (uint8_t deadtime_high, uint8_t deadtime_low)
-{
-    TCC1_REGS->TCC_WEXCTRL &= ~(TCC_WEXCTRL_DTHS_Msk | TCC_WEXCTRL_DTLS_Msk);
-    TCC1_REGS->TCC_WEXCTRL |= TCC_WEXCTRL_DTHS((uint32_t)deadtime_high) | TCC_WEXCTRL_DTLS((uint32_t)deadtime_low);
-}
 
 bool TCC1_PWMPatternSet(uint8_t pattern_enable, uint8_t pattern_output)
 {

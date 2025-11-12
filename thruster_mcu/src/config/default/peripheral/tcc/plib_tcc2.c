@@ -68,7 +68,6 @@ void TCC2_PWMInitialize(void)
     /* Clock prescaler */
     TCC2_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV64
                             | TCC_CTRLA_PRESCSYNC_PRESC ;
-    TCC2_REGS->TCC_WEXCTRL = TCC_WEXCTRL_OTMX(0UL);
 
     TCC2_REGS->TCC_WAVE = TCC_WAVE_WAVEGEN_NPWM | TCC_WAVE_RAMP_RAMP1;
 
@@ -76,7 +75,6 @@ void TCC2_PWMInitialize(void)
     /* Configure duty cycle values */
     TCC2_REGS->TCC_CC[0] = 0U;
     TCC2_REGS->TCC_CC[1] = 0U;
-    TCC2_REGS->TCC_CC[2] = 0U;
     TCC2_REGS->TCC_PER = 18500U;
 
 

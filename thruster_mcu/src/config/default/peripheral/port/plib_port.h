@@ -65,15 +65,6 @@
 // *****************************************************************************
 // *****************************************************************************
 
-/*** Macros for LED0 pin ***/
-#define LED0_Set()               (PORT_REGS->GROUP[2].PORT_OUTSET = ((uint32_t)1U << 18U))
-#define LED0_Clear()             (PORT_REGS->GROUP[2].PORT_OUTCLR = ((uint32_t)1U << 18U))
-#define LED0_Toggle()            (PORT_REGS->GROUP[2].PORT_OUTTGL = ((uint32_t)1U << 18U))
-#define LED0_OutputEnable()      (PORT_REGS->GROUP[2].PORT_DIRSET = ((uint32_t)1U << 18U))
-#define LED0_InputEnable()       (PORT_REGS->GROUP[2].PORT_DIRCLR = ((uint32_t)1U << 18U))
-#define LED0_Get()               (((PORT_REGS->GROUP[2].PORT_IN >> 18U)) & 0x01U)
-#define LED0_PIN                  PORT_PIN_PC18
-
 // *****************************************************************************
 /* PORT Group
 
@@ -100,12 +91,6 @@
 /* Group 1 */
 #define PORT_GROUP_1 (PORT_BASE_ADDRESS + (1U * 0x80U))
 
-/* Group 2 */
-#define PORT_GROUP_2 (PORT_BASE_ADDRESS + (2U * 0x80U))
-
-/* Group 3 */
-#define PORT_GROUP_3 (PORT_BASE_ADDRESS + (3U * 0x80U))
-
 
 /* Helper macros to get port information from the pin */
 #define GET_PORT_GROUP(pin)  ((PORT_GROUP)(PORT_BASE_ADDRESS + (0x80U * (((uint32_t)pin) >> 5U))))
@@ -126,11 +111,6 @@ PERIPHERAL_FUNCTION_F = 0x5,
 PERIPHERAL_FUNCTION_G = 0x6,
 PERIPHERAL_FUNCTION_H = 0x7,
 PERIPHERAL_FUNCTION_I = 0x8,
-PERIPHERAL_FUNCTION_J = 0x9,
-PERIPHERAL_FUNCTION_K = 0xA,
-PERIPHERAL_FUNCTION_L = 0xB,
-PERIPHERAL_FUNCTION_M = 0xC,
-PERIPHERAL_FUNCTION_N = 0xD,
 
 }PERIPHERAL_FUNCTION;
 
@@ -236,6 +216,9 @@ typedef enum
     /* PA27 pin */
     PORT_PIN_PA27 = 27U,
 
+    /* PA28 pin */
+    PORT_PIN_PA28 = 28U,
+
     /* PA30 pin */
     PORT_PIN_PA30 = 30U,
 
@@ -296,161 +279,17 @@ typedef enum
     /* PB17 pin */
     PORT_PIN_PB17 = 49U,
 
-    /* PB18 pin */
-    PORT_PIN_PB18 = 50U,
-
-    /* PB19 pin */
-    PORT_PIN_PB19 = 51U,
-
-    /* PB20 pin */
-    PORT_PIN_PB20 = 52U,
-
-    /* PB21 pin */
-    PORT_PIN_PB21 = 53U,
-
     /* PB22 pin */
     PORT_PIN_PB22 = 54U,
 
     /* PB23 pin */
     PORT_PIN_PB23 = 55U,
 
-    /* PB24 pin */
-    PORT_PIN_PB24 = 56U,
-
-    /* PB25 pin */
-    PORT_PIN_PB25 = 57U,
-
-    /* PB26 pin */
-    PORT_PIN_PB26 = 58U,
-
-    /* PB27 pin */
-    PORT_PIN_PB27 = 59U,
-
-    /* PB28 pin */
-    PORT_PIN_PB28 = 60U,
-
-    /* PB29 pin */
-    PORT_PIN_PB29 = 61U,
-
     /* PB30 pin */
     PORT_PIN_PB30 = 62U,
 
     /* PB31 pin */
     PORT_PIN_PB31 = 63U,
-
-    /* PC00 pin */
-    PORT_PIN_PC00 = 64U,
-
-    /* PC01 pin */
-    PORT_PIN_PC01 = 65U,
-
-    /* PC02 pin */
-    PORT_PIN_PC02 = 66U,
-
-    /* PC03 pin */
-    PORT_PIN_PC03 = 67U,
-
-    /* PC04 pin */
-    PORT_PIN_PC04 = 68U,
-
-    /* PC05 pin */
-    PORT_PIN_PC05 = 69U,
-
-    /* PC06 pin */
-    PORT_PIN_PC06 = 70U,
-
-    /* PC07 pin */
-    PORT_PIN_PC07 = 71U,
-
-    /* PC10 pin */
-    PORT_PIN_PC10 = 74U,
-
-    /* PC11 pin */
-    PORT_PIN_PC11 = 75U,
-
-    /* PC12 pin */
-    PORT_PIN_PC12 = 76U,
-
-    /* PC13 pin */
-    PORT_PIN_PC13 = 77U,
-
-    /* PC14 pin */
-    PORT_PIN_PC14 = 78U,
-
-    /* PC15 pin */
-    PORT_PIN_PC15 = 79U,
-
-    /* PC16 pin */
-    PORT_PIN_PC16 = 80U,
-
-    /* PC17 pin */
-    PORT_PIN_PC17 = 81U,
-
-    /* PC18 pin */
-    PORT_PIN_PC18 = 82U,
-
-    /* PC19 pin */
-    PORT_PIN_PC19 = 83U,
-
-    /* PC20 pin */
-    PORT_PIN_PC20 = 84U,
-
-    /* PC21 pin */
-    PORT_PIN_PC21 = 85U,
-
-    /* PC22 pin */
-    PORT_PIN_PC22 = 86U,
-
-    /* PC23 pin */
-    PORT_PIN_PC23 = 87U,
-
-    /* PC24 pin */
-    PORT_PIN_PC24 = 88U,
-
-    /* PC25 pin */
-    PORT_PIN_PC25 = 89U,
-
-    /* PC26 pin */
-    PORT_PIN_PC26 = 90U,
-
-    /* PC27 pin */
-    PORT_PIN_PC27 = 91U,
-
-    /* PC28 pin */
-    PORT_PIN_PC28 = 92U,
-
-    /* PC30 pin */
-    PORT_PIN_PC30 = 94U,
-
-    /* PC31 pin */
-    PORT_PIN_PC31 = 95U,
-
-    /* PD00 pin */
-    PORT_PIN_PD00 = 96U,
-
-    /* PD01 pin */
-    PORT_PIN_PD01 = 97U,
-
-    /* PD08 pin */
-    PORT_PIN_PD08 = 104U,
-
-    /* PD09 pin */
-    PORT_PIN_PD09 = 105U,
-
-    /* PD10 pin */
-    PORT_PIN_PD10 = 106U,
-
-    /* PD11 pin */
-    PORT_PIN_PD11 = 107U,
-
-    /* PD12 pin */
-    PORT_PIN_PD12 = 108U,
-
-    /* PD20 pin */
-    PORT_PIN_PD20 = 116U,
-
-    /* PD21 pin */
-    PORT_PIN_PD21 = 117U,
 
     /* This element should not be used in any of the PORT APIs.
      * It will be used by other modules or application to denote that none of
@@ -464,40 +303,6 @@ typedef enum
 // Section: Generated API based on pin configurations done in Pin Manager
 // *****************************************************************************
 // *****************************************************************************
-// *****************************************************************************
-/* Function:
-    void PORT_Initialize(void)
-
-  Summary:
-    Initializes the PORT Library.
-
-  Description:
-    This function initializes all ports and pins as configured in the
-    MHC Pin Manager.
-
-  Precondition:
-    None.
-
-  Parameters:
-    None.
-
-  Returns:
-    None.
-
-  Example:
-    <code>
-
-    PORT_Initialize();
-
-    </code>
-
-  Remarks:
-    The function should be called once before calling any other PORTS PLIB
-    functions.
-*/
-
-void PORT_Initialize(void);
-
 // *****************************************************************************
 // *****************************************************************************
 // Section: PORT APIs which operates on multiple pins of a group

@@ -51,16 +51,13 @@
 #include <stdio.h>
 #include "peripheral/sercom/usart/plib_sercom2_usart.h"
 #include "peripheral/nvmctrl/plib_nvmctrl.h"
-#include "peripheral/sercom/i2c_master/plib_sercom1_i2c_master.h"
-#include "peripheral/evsys/plib_evsys.h"
+#include "peripheral/sercom/usart/plib_sercom1_usart.h"
 #include "peripheral/sercom/usart/plib_sercom0_usart.h"
+#include "peripheral/evsys/plib_evsys.h"
 #include "peripheral/can/plib_can1.h"
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
-#include "peripheral/dmac/plib_dmac.h"
-#include "peripheral/wdt/plib_wdt.h"
-#include "peripheral/cmcc/plib_cmcc.h"
 #include "peripheral/pm/plib_pm.h"
 #include "peripheral/can/plib_can0.h"
 #include "peripheral/tc/plib_tc0.h"
@@ -78,13 +75,13 @@ extern "C" {
 // DOM-IGNORE-END
 
 /* Device Information */
-#define DEVICE_NAME          "ATSAME54P20A"
-#define DEVICE_ARCH          "CORTEX-M4"
-#define DEVICE_FAMILY        "SAME"
-#define DEVICE_SERIES        "SAME54"
+#define DEVICE_NAME          "ATSAMC21J18A"
+#define DEVICE_ARCH          "CORTEX-M0PLUS"
+#define DEVICE_FAMILY        "SAMC"
+#define DEVICE_SERIES        "SAMC21"
 
 /* CPU clock frequency */
-#define CPU_CLOCK_FREQUENCY 120000000U
+#define CPU_CLOCK_FREQUENCY 48000000U
 
 // *****************************************************************************
 // *****************************************************************************

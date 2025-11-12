@@ -65,7 +65,7 @@
 */
 
 /* Total number of TCC channels in a module */
-#define TCC0_NUM_CHANNELS    (6U)
+#define TCC0_NUM_CHANNELS    (4U)
 
 /* TCC Channel numbers
 
@@ -84,8 +84,6 @@ typedef enum
     TCC0_CHANNEL1,
     TCC0_CHANNEL2,
     TCC0_CHANNEL3,
-    TCC0_CHANNEL4,
-    TCC0_CHANNEL5,
 }TCC0_CHANNEL_NUM;
 
 // *****************************************************************************
@@ -110,8 +108,6 @@ typedef enum
     TCC0_PWM_STATUS_MC_1 = TCC_INTFLAG_MC1_Msk,
     TCC0_PWM_STATUS_MC_2 = TCC_INTFLAG_MC2_Msk,
     TCC0_PWM_STATUS_MC_3 = TCC_INTFLAG_MC3_Msk,
-    TCC0_PWM_STATUS_MC_4 = TCC_INTFLAG_MC4_Msk,
-    TCC0_PWM_STATUS_MC_5 = TCC_INTFLAG_MC5_Msk,
 }TCC0_PWM_STATUS;
 
 // *****************************************************************************
