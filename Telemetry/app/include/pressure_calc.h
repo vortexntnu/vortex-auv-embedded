@@ -8,7 +8,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdio.h>
 
-// ---------- Internal ring buffer for rolling sigma ----------
+// Internal ring buffer for rolling sigma
 struct ring_stats {
     float* buf;
     size_t cap;
@@ -20,27 +20,26 @@ struct ring_stats {
 
 struct leak_conf {
     // Sampling + filters
-    float sample_hz;  // e.g., 5.0 Hz
-    float lp_tau_s;   // low-pass time constant for P,T (e.g., 8 s)
-    float b_tau_s;    // slow background EWMA time constant (e.g., 20*60 s)
+    float sample_hz;
+    float lp_tau_s;  // low-pass time constant for P,T
+    float b_tau_s;   // slow background EWMA time constant
     // Rolling stats for sigma_e
-    float sigma_window_s;  // e.g., 20*60 s
+    float sigma_window_s;
     // Thresholds
-    float shewhart_k;           // z-threshold (e.g., 4.0)
-    float shewhart_min_hold_s;  // require sustain (e.g., 3 s)
-    float cusum_k_sigma;        // reference k in units of sigma (e.g., 0.5)
-    float cusum_h_sigma;        // decision h in units of sigma (e.g., 5.0)
-    float slow_alarm_min_s;     // persistence for slow alarm (e.g., 300 s)
+    float shewhart_k;           // z-threshold
+    float shewhart_min_hold_s;  // require sustain
+    float cusum_k_sigma;        // reference k in units of sigma
+    float cusum_h_sigma;        // decision h in units of sigma
+    float slow_alarm_min_s;     // persistence for slow alarm
     // Guards
     float tprime_mask_abs;  // ignore decisions when |t'| exceeds (e.g., 0.01
                             // 1/s ~= 0.6 %/min)
     float mask_relax_s;     // duration to relax thresholds after mask event
-                            // (e.g., 20 s)
     // Hard rate backstop (optional; set <=0 to disable)
     float hard_e_abs;  // absolute e backstop in 1/s (e.g., 0.0005 -> 0.05%/s)
 };
 
-// ---------- Detector state ----------
+// Detector state
 struct leak_det {
     struct leak_conf cfg;
 

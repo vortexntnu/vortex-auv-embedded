@@ -80,6 +80,15 @@ static inline float ema_alpha(float tau_s, float dt_s) {
     return dt_s / (tau_s + dt_s);
 }
 
+/**
+ * @brief Initialize a leak_det instance from a configuration.
+ *
+ * @param ld Pointer to the leak_det structure to initialize (must be non-NULL).
+ * @param config Optional pointer to a leak_conf; if NULL, default configuration
+ * is used.
+ *
+ * @return 0 on success, -1 if initialization failed.
+ */
 int leakdet_init(struct leak_det* ld, struct leak_conf* config) {
     struct leak_conf cfg = (config ? *config : leak_conf_defaults());
     memset(ld, 0, sizeof(*ld));
@@ -100,10 +109,20 @@ int leakdet_init(struct leak_det* ld, struct leak_conf* config) {
     return 0;
 }
 
-// One update step with new raw samples
-// Inputs expected: P in kPa and T in degC (�C). Internally this function
-// converts P->Pa and T->K before performing calculations. dt is implicit
-// from cfg.sample_hz. Returns alarms via out params (may be NULL).
+/**
+ * @brief Process a single pressure/temperature sample, update the algorithm
+ * state in ld, refresh filtered/derived values and alarm timers, and produce
+ * alarm outputs.
+ *
+ * @param ld Pointer to the pressure-calculation state/context to be updated
+ * (mutable).
+ * @param P  New pressure sample (kPa).
+ * @param T  New temperature sample (°C).
+ * @param[out] fast_alarm  Set to non-zero when an immediate/fast pressure alarm
+ * condition is detected.
+ * @param[out] slow_alarm  Set to non-zero when a slower/longer-term pressure
+ * alarm condition is detected.
+ */
 void leakdet_update(struct leak_det* ld,
                     float P,
                     float T,

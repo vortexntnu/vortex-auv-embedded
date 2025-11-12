@@ -35,6 +35,11 @@ struct wsen_cycle {
 
 static struct wsen_cycle cycle;
 
+/**
+ * @brief Initializes WSEN PADS --> sets output data rate, enables the block
+ * data update feature and enables data ready interrupts.
+ * @return -1 on failure to write to wsen-pads registers, 0 otherwise.
+ */
 int wsen_init(void) {
     uint8_t buf[2];
 
@@ -56,7 +61,8 @@ int wsen_init(void) {
 }
 
 /**
- * @brief Can be used to check successful connection with wsen-pads
+ * @brief Can be used to check successful connection with wsen-pads.
+ * @return -1 on failure, 0 otherwise.
  */
 int wsen_check_device_id(void) {
     uint8_t reg = REG_DEVICE_ID;
@@ -139,6 +145,10 @@ void wsen_cycle_start(void) {
     }
 }
 
+/**
+ * @brief Used in the main loop to try reading measurements from the WSEN PADS
+ * if the measurement cycle is in the WSEN_START state.
+ */
 void wsen_cycle_tick(void) {
     if (cycle.state == WSEN_START) {
         if (read_measurements()) {
@@ -147,6 +157,19 @@ void wsen_cycle_tick(void) {
     }
 }
 
+/**
+ * @brief Check whether the latest measurement cycle completed successfully and
+ * obtain the last readings.
+ *
+ * @param[out] kPa   Pointer to a float that will receive the last measured
+ * absolute pressure in kilopascals (kPa). Must be a valid, writable pointer
+ * when the function returns true.
+ * @param[out] degC  Pointer to a float that will receive the last measured
+ * temperature in degrees Celsius (°C). Must be a valid, writable pointer when
+ * the function returns true.
+ * @return false if a measurement cycle is not done or if the driver is in an
+ * error state, true otherwise.
+ */
 bool wsen_cycle_done_ok(float* kPa, float* degC) {
     if (!cycle.done || cycle.state == WSEN_ERROR)
         return false;
@@ -155,6 +178,13 @@ bool wsen_cycle_done_ok(float* kPa, float* degC) {
     return true;
 }
 
+/**
+ * @brief Check whether the most recent I²C cycle finished with an error.
+ *
+ * @param[out] errOut Optional pointer to receive the error code for the failed
+ * cycle. Pass NULL to ignore the error code.
+ * @return true if the cycle is done and in WSEN_ERROR state; false otherwise.
+ */
 bool wsen_cycle_failed(SERCOM_I2C_ERROR* errOut) {
     if (!cycle.done || cycle.state != WSEN_ERROR)
         return false;
@@ -163,6 +193,13 @@ bool wsen_cycle_failed(SERCOM_I2C_ERROR* errOut) {
     return true;
 }
 
+/**
+ * @brief Reset the WSEN PADS driver cycle to its initial, idle state.
+ *
+ * @note This routine modifies global driver state. Call it to abort an ongoing
+ * cycle, to reinitialize the driver after an error, or before starting a fresh
+ * transaction.
+ */
 void wsen_reset(void) {
     cycle.state = WSEN_IDLE;
     cycle.done = false;
@@ -173,6 +210,11 @@ static void drdy_isr(uintptr_t context) {
     wsen_cycle_start();
 }
 
+/**
+ * @brief Configures the interrupt pin from the WSEN PADS which generates
+ * interrupts when pressure data is ready. The callback function will start a
+ * new measurement cycle.
+ */
 void drdy_init(void) {
     PORT_PinPeripheralFunctionConfig(PORT_PIN_PA19, PERIPHERAL_FUNCTION_A);
 
