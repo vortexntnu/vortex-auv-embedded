@@ -22,18 +22,10 @@ static void set_channel_range(uint8_t* ranges,
 }
 
 void ad7606_init(struct ad7606_device* dev,
-                 SPI_HandleTypeDef* hspi_master,
-                 SPI_HandleTypeDef* hspi_sdo_1,
-                 SPI_HandleTypeDef* hspi_sdo_2,
-                 SPI_HandleTypeDef* hspi_sdo_3,
-                 SPI_HandleTypeDef* hspi_sdo_4,
-                 SPI_HandleTypeDef* hspi_sdo_5) {
-    dev->hspi_master = hspi_master;
-    dev->hspi_sdo_1 = hspi_sdo_1;
-    dev->hspi_sdo_2 = hspi_sdo_2;
-    dev->hspi_sdo_3 = hspi_sdo_3;
-    dev->hspi_sdo_4 = hspi_sdo_4;
-    dev->hspi_sdo_5 = hspi_sdo_5;
+                 struct ad7606_register* reg,
+                 struct ad7606_config* cfg) {
+    set_config(cfg, &reg->config);
+    dev->registers = reg;
 }
 
 void ad7606_set_registers(struct ad7606_register* registers,
@@ -51,6 +43,6 @@ void ad7606_set_registers(struct ad7606_register* registers,
     memcpy(&registers->channel_phase, channel_phase, num_channels);
 }
 
-static inline void ad7606_send_registers(struct ad7606_device* dev, struct ad7606_register* reg){
-    HAL_SPI_Transmit_DMA(dev->hspi_master, (void*) reg, sizeof(*reg));
+static inline void ad7606_send_registers(struct ad7606_device* dev, struct ad7606_register* reg, SPI_HandleTypeDef* hspi_master){
+    HAL_SPI_Transmit_DMA(hspi_master, (void*) reg, sizeof(*reg));
 }

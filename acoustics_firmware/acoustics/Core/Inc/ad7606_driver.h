@@ -67,25 +67,11 @@ struct ad7606_register {
 };
 
 struct ad7606_device {
-    SPI_HandleTypeDef* hspi_master; /* SPI6: master, half‑duplex TX‑only */
-    SPI_HandleTypeDef* hspi_sdo_1;  /* SPI1: slave full‑duplex (RX DMA used) */
-    SPI_HandleTypeDef* hspi_sdo_2;  /* SPI2 */
-    SPI_HandleTypeDef* hspi_sdo_3;  /* SPI3 */
-    SPI_HandleTypeDef* hspi_sdo_4;  /* SPI4 */
-    SPI_HandleTypeDef* hspi_sdo_5;  /* SPI5 */
-
-    struct ad7606_register registers;
-
+    struct ad7606_register* registers;
     ad7606_data_ready on_ready; /* user callback when out[half] is filled */
 };
 
-void ad7606_init(struct ad7606_device* dev,
-                 SPI_HandleTypeDef* hspi_master,
-                 SPI_HandleTypeDef* hspi_sdo_1,
-                 SPI_HandleTypeDef* hspi_sdo_2,
-                 SPI_HandleTypeDef* hspi_sdo_3,
-                 SPI_HandleTypeDef* hspi_sdo_4,
-                 SPI_HandleTypeDef* hspi_sdo_5);
+void ad7606_init(struct ad7606_device* dev);
 
 void ad7606_set_config(struct ad7606_config* cfg, uint8_t* config);
 
