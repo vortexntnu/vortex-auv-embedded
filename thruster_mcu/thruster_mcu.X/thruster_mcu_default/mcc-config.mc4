@@ -27,7 +27,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAMC21J18A.ld
   hash: 3fc7dbb63ae72ecd9b52572e4dd84ed79cbd37feb6064cb6d4df6fca301d09af
 - file: ../src/config/default/definitions.h
-  hash: 1971ddbd228fdc56fafeaa7c156119d7ccb9c43d7523fdb7e5d2c80ee32ae83d
+  hash: 47f4f808499d851c6e270ab2cd4890155e48ccc2b8e3bf46619e5494fe7823df
 - file: ../src/config/default/device.h
   hash: e539bb402fa4783d95ccf06235458b2e1fe01207c83c0e046a853e0385d0b6f4
 - file: ../src/config/default/device_cache.h
@@ -37,7 +37,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: 42f9da2668e04ccb3473d45b149683a00f80072c6883c7918d6ce93997cd6987
 - file: ../src/config/default/initialization.c
-  hash: ab2c8f66f48969d42542c8b770af15d1181c2c9f706171e4cf237cdec9c339cd
+  hash: 8ae76e95a0febb75a7ffc976711a5232210b978f2a330996aeb18ba67bf7854c
 - file: ../src/config/default/interrupts.c
   hash: af9cfd3bed52cccc70c8da423ee97c8f7376ed49ed06c23a00a70dea40b92af4
 - file: ../src/config/default/interrupts.h
@@ -45,7 +45,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/libc_syscalls.c
   hash: 88bb2e34c939601b5b7ad076556e3ee0fcedf388436b8cddb6d6fd3e9d07472f
 - file: ../src/config/default/peripheral/adc/plib_adc0.c
-  hash: 776d3ac61f9355f41fb979fef9c707bfd5d6870a3bf8d07bdaddf5a2da7c4a40
+  hash: 549232ac91cdf4ff8cdea8af6cd27ee68fef097447a7487727f1a250fdb66a4f
 - file: ../src/config/default/peripheral/adc/plib_adc0.h
   hash: 455edd30331ed774b8482fc08f26c2f37b03372bd1b5c2ab54592fb86a8c57fb
 - file: ../src/config/default/peripheral/adc/plib_adc_common.h
@@ -89,9 +89,9 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/pm/plib_pm.h
   hash: b327e56856e773605cb0ba5abe0374485defeeb4b148520a145defebee77158b
 - file: ../src/config/default/peripheral/port/plib_port.c
-  hash: 7169acdc6e98e063cf566be577d6d07b232387722b9ec37e3092f0d580e50277
+  hash: 554b36ce35723948e94f7872d1d82d2876b522dd9f4d4eaa6750c080ef01365f
 - file: ../src/config/default/peripheral/port/plib_port.h
-  hash: 37b3577514fd3e294b932259b5f72b0ddd0a8c2c578c780a8c2528cff27701a7
+  hash: 3381b14f9d6d7666d2c9ace139aab59d70907bfc6adbf8fdfce9db8c117262cc
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.c
   hash: ec3967998f5d1745c1a379dc76149abdd92a0ee1573e642c3ba641be8ad7b756
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.h
@@ -131,7 +131,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/wdt/plib_wdt.h
   hash: d4bb429b750e4e2970fe12d9c4eea02d2e0b1f1d30279577033555379f94e1a0
 - file: ../src/config/default/pin_configurations.csv
-  hash: eee0b403ec632b982e68ae4a354193f79201455bffa3341020875a95257c1320
+  hash: 638806ff5f63e1f18fbb25a785725c7098e300fc472df0cfcde82fbbc7b5caaa
 - file: ../src/config/default/startup_xc32.c
   hash: e6227d89e36b74af1bc21e00e80b390502c97aaaa65796291f63b2d96cf0678e
 - file: ../src/config/default/stdio/xc32_monitor.c

@@ -4488,28 +4488,6 @@ data:
           type: Dynamic
         type: Values
       type: String
-    DMAC_HIGHEST_CHANNEL:
-      attributes:
-        id: DMAC_HIGHEST_CHANNEL
-      children:
-      - children:
-        - attributes:
-            id: core
-            value: '1'
-          type: Dynamic
-        type: Values
-      type: Integer
-    DMA_ENABLE:
-      attributes:
-        id: DMA_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
     DMAC_CHCTRLA_RUNSTDBY_CH_0:
       attributes:
         id: DMAC_CHCTRLA_RUNSTDBY_CH_0
@@ -4876,6 +4854,28 @@ data:
           type: User
         type: Values
       type: String
+    DMAC_HIGHEST_CHANNEL:
+      attributes:
+        id: DMAC_HIGHEST_CHANNEL
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DMA_ENABLE:
+      attributes:
+        id: DMA_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData:
     children:
     - attributes:
