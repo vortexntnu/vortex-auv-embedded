@@ -47,7 +47,7 @@ int main(void) {
     led_set(0, 0x00, 0x10, 0x00);
     led_commit_async();
 
-    i2c_init();
+    spi_init();
     wsen_init();
     drdy_init();
     leak_sensor_init();

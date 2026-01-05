@@ -34,12 +34,19 @@ struct wsen_cycle {
 
 static struct wsen_cycle cycle;
 
-static bool read_measurements(uint8_t* reg,
+/* static bool read_measurements(uint8_t* reg,
                               uint8_t* buf,
                               uint8_t len,
                               bool is_read) {
     if (is_read) {
         return SERCOM3_SPI_WriteRead(&reg, 1, cycle.read_buf, 5);
+    }
+} */
+static void wsen_cs_set(bool on) {
+    if (on) {
+        PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 7);  // Set PA7 high (CS for WSEN PADS on)
+    } else {
+        PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 7);  // Set PA7 low
     }
 }
 
@@ -55,16 +62,23 @@ int wsen_init(void) {
     uint8_t ctrl1 = 0x72;  // ODR 200Hz and BDU high
     buf[0] = REG_CTRL_1;
     buf[1] = ctrl1;
+
+    wsen_cs_set(true);
     if (!SERCOM3_SPI_Write(buf, 2)) {
+        wsen_cs_set(false);
         return -1;
     };
     // Enable data ready interrupts
     uint8_t ctrl3 = 0x04;  // DRDY = 1, INT_S = 00
     buf[0] = REG_CTRL_3;
     buf[1] = ctrl3;
+
     if (!SERCOM3_SPI_Write(buf, 2)) {
+        wsen_cs_set(false);
         return -1;
     };
+
+    wsen_cs_set(false);
     return 0;
 }
 
@@ -90,7 +104,10 @@ int wsen_check_device_id(void) {
 // and temperature data.
 static bool read_measurements() {
     uint8_t reg = REG_DATA_P_XL;
-    return SERCOM3_SPI_WriteRead(&reg, 1, cycle.read_buf, 5);
+    wsen_cs_set(true);
+    bool result = SERCOM3_SPI_WriteRead(&reg, 1, cycle.read_buf, 5);
+    wsen_cs_set(false);
+    return result;
 }
 
 static void sercom3_spi_cb(uintptr_t context) {
@@ -179,7 +196,7 @@ bool wsen_cycle_done_ok(float* kPa, float* degC) {
 
 bool wsen_cycle_failed(void) {
     if (cycle.state == WSEN_ERROR) {
-        return true
+        return true;
     }
     return false;
 };
