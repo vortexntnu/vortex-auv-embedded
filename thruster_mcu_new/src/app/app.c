@@ -277,8 +277,9 @@ static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc
     
     txBuffer->data[0] = thruster_id;
     txBuffer->data[1] = 0x00; // Padding for alignment
-    memcpy(&txBuffer->data[2], &current, sizeof(float)); 
-    memcpy(&txBuffer->data[6], &adc_raw, sizeof(uint16_t));
+    memcpy(&txBuffer->data[2], &adc_raw, sizeof(uint16_t));
+    memcpy(&txBuffer->data[4], &current, sizeof(float)); 
+    
     
     bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     if (!result) {
