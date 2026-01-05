@@ -1,6 +1,6 @@
 #include <stdlib.h>         // EXIT_FAILURE
 #include "definitions.h"    // Harmony driv
-
+#include "app/app.h"
 
 int main ( void ) {
     /* Initialize all modules */
