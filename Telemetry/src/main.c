@@ -28,7 +28,6 @@
 #include "definitions.h"  // SYS function prototypes
 
 #include "leak_sensor_eic.h"
-// #include "leak_update_tc2.h"
 #include "led_facade.h"
 #include "pressure_calc.h"
 #include "wsen_pads_port_sercom3.h"
@@ -55,15 +54,14 @@ int main(void) {
     struct leak_det leak_detector;
     leakdet_init(&leak_detector, NULL);
 
-    timing_tc2_init_5hz();  // TODO: don't start timer until pressure+temp
-                            // measurements have started
-
     float pressure = 0.0f;  // kPa
     float temp = 0.0f;      // °C
     float pressure_sum = 0.0f;
     float temp_sum = 0.0f;
     uint32_t samples = 0;
-
+    
+    timing_tc2_init_5hz();  
+    
     while (1) {
         if (!led_busy()) {
             // update again if needed
