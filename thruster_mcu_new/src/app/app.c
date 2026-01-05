@@ -169,22 +169,23 @@ void app_init(void) {
     EIC_CallbackRegister(EIC_PIN_6, eic_pin_flt_thruster, 6);
     EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 7);
     
-    ADC0_Enable(); // TODO: Remember to manually configure sample averaging in plib_adc0 before testing
+    // Enable ADC
+    ADC0_Enable();
     
     // Configure DMA
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, adc_dma_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
     
+    // Enable TCC 
     TCC0_PWMStart();
     TCC1_PWMStart();
-    //TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
     set_pwm_neutral(thrusters, 8);
     set_pwm_neutral(lights, 1);
 
     
-    
+    // Enable TC
     TC0_TimerStart();
     
     // Enable watchdog
