@@ -45,7 +45,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'false'
+            value: 'true'
           type: User
         type: Values
       type: Boolean
@@ -55,7 +55,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -105,7 +105,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: '264'
+            value: '260'
           type: Dynamic
         type: Values
       type: Hex

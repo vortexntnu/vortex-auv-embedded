@@ -25,7 +25,6 @@ typedef enum {
 struct wsen_cycle {
     volatile WSEN_STATE state;
     volatile bool done;
-    volatile SERCOM_I2C_ERROR err;
 
     volatile float last_pressure;
     volatile float last_temp;
@@ -34,6 +33,15 @@ struct wsen_cycle {
 };
 
 static struct wsen_cycle cycle;
+
+static bool read_measurements(uint8_t* reg,
+                              uint8_t* buf,
+                              uint8_t len,
+                              bool is_read) {
+    if (is_read) {
+        return SERCOM3_SPI_WriteRead(&reg, 1, cycle.read_buf, 5);
+    }
+}
 
 /**
  * @brief Initializes WSEN PADS --> sets output data rate, enables the block
@@ -47,14 +55,14 @@ int wsen_init(void) {
     uint8_t ctrl1 = 0x72;  // ODR 200Hz and BDU high
     buf[0] = REG_CTRL_1;
     buf[1] = ctrl1;
-    if (!SERCOM3_I2C_Write(WSEN_PADS_ADDR, buf, 2)) {
+    if (!SERCOM3_SPI_Write(buf, 2)) {
         return -1;
     };
     // Enable data ready interrupts
     uint8_t ctrl3 = 0x04;  // DRDY = 1, INT_S = 00
     buf[0] = REG_CTRL_3;
     buf[1] = ctrl3;
-    if (!SERCOM3_I2C_Write(WSEN_PADS_ADDR, buf, 2)) {
+    if (!SERCOM3_SPI_Write(buf, 2)) {
         return -1;
     };
     return 0;
@@ -67,7 +75,7 @@ int wsen_init(void) {
 int wsen_check_device_id(void) {
     uint8_t reg = REG_DEVICE_ID;
     uint8_t device_id = 0;
-    if (!SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, &device_id, 1)) {
+    if (!SERCOM3_SPI_WriteRead(&reg, 1, &device_id, 1)) {
         return -1;
     };
 
@@ -82,18 +90,11 @@ int wsen_check_device_id(void) {
 // and temperature data.
 static bool read_measurements() {
     uint8_t reg = REG_DATA_P_XL;
-    return SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, cycle.read_buf, 5);
+    return SERCOM3_SPI_WriteRead(&reg, 1, cycle.read_buf, 5);
 }
 
-static void sercom3_i2c_cb(uintptr_t context) {
+static void sercom3_spi_cb(uintptr_t context) {
     (void)context;
-    cycle.err = SERCOM3_I2C_ErrorGet();
-
-    if (cycle.err != SERCOM_I2C_ERROR_NONE) {
-        cycle.state = WSEN_ERROR;
-        cycle.done = true;
-        return;
-    }
 
     switch (cycle.state) {
         case WSEN_WAIT: {
@@ -120,11 +121,10 @@ static void sercom3_i2c_cb(uintptr_t context) {
     }
 }
 
-void i2c_init(void) {
-    SERCOM3_I2C_CallbackRegister(sercom3_i2c_cb, 0);
+void spi_init(void) {
+    SERCOM3_SPI_CallbackRegister(sercom3_spi_cb, 0);
     cycle.state = WSEN_IDLE;
     cycle.done = false;
-    cycle.err = SERCOM_I2C_ERROR_NONE;
 }
 
 void wsen_cycle_start(void) {
@@ -133,11 +133,10 @@ void wsen_cycle_start(void) {
         return;  // already running
     }
     cycle.done = false;
-    cycle.err = SERCOM_I2C_ERROR_NONE;
     cycle.state = WSEN_START;
 
     if (!read_measurements()) {
-        // If I²C was busy, we'll retry from main loop by calling
+        // If SPI was busy, we'll retry from main loop by calling
         // wsen_cycle_tick()
         cycle.state = WSEN_START;
     } else {
@@ -178,20 +177,12 @@ bool wsen_cycle_done_ok(float* kPa, float* degC) {
     return true;
 }
 
-/**
- * @brief Check whether the most recent I²C cycle finished with an error.
- *
- * @param[out] errOut Optional pointer to receive the error code for the failed
- * cycle. Pass NULL to ignore the error code.
- * @return true if the cycle is done and in WSEN_ERROR state; false otherwise.
- */
-bool wsen_cycle_failed(SERCOM_I2C_ERROR* errOut) {
-    if (!cycle.done || cycle.state != WSEN_ERROR)
-        return false;
-    if (errOut)
-        *errOut = cycle.err;
-    return true;
-}
+bool wsen_cycle_failed(void) {
+    if (cycle.state == WSEN_ERROR) {
+        return true
+    }
+    return false;
+};
 
 /**
  * @brief Reset the WSEN PADS driver cycle to its initial, idle state.
@@ -216,10 +207,10 @@ static void drdy_isr(uintptr_t context) {
  * new measurement cycle.
  */
 void drdy_init(void) {
-    PORT_PinPeripheralFunctionConfig(PORT_PIN_PA19, PERIPHERAL_FUNCTION_A);
+    PORT_PinPeripheralFunctionConfig(PORT_PIN_PA18, PERIPHERAL_FUNCTION_A);
 
-    EIC_CallbackRegister(EIC_PIN_3, drdy_isr, 0);
-    EIC_InterruptEnable(EIC_PIN_3);
+    EIC_CallbackRegister(EIC_PIN_2, drdy_isr, 0);
+    EIC_InterruptEnable(EIC_PIN_2);
 }
 
 // This function uses polling to check if the pressure data is ready before
@@ -233,12 +224,12 @@ int read_pressure(float* pressure) {
     uint8_t reg = REG_STATUS;
     // Wait until new pressure data available (P_DA bit = 1)
     do {
-        SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, &status, 1);
+        SERCOM3_SPI_WriteRead(&reg, 1, &status, 1);
     } while (!(status & 0x01));
 
     // Read the 3 pressure registers (XL, L, H)
     reg = REG_DATA_P_XL;
-    if (!SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, rawData, 3)) {
+    if (!SERCOM3_SPI_WriteRead(&reg, 1, rawData, 3)) {
         return -1;
     };
 
@@ -266,12 +257,12 @@ int read_temp(float* temp) {
     // Wait until new temperature data available (T_DA bit = 1)
     uint8_t reg = REG_STATUS;
     do {
-        SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, &status, 1);
+        SERCOM3_SPI_WriteRead(&reg, 1, &status, 1);
     } while (!(status & 0x02));
 
     reg = REG_DATA_T_L;
     // Read 2 temperature bytes: L, H
-    if (!SERCOM3_I2C_WriteRead(WSEN_PADS_ADDR, &reg, 1, rawData, 2)) {
+    if (!SERCOM3_SPI_WriteRead(&reg, 1, rawData, 2)) {
         return -1;
     };
 

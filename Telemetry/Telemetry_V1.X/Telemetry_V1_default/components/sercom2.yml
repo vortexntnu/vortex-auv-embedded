@@ -206,7 +206,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '1'
+            value: '3'
           type: User
         type: Values
       type: KeyValueSet
@@ -243,4 +243,14 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    USART_TXPO:
+      attributes:
+        id: USART_TXPO
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData: {}

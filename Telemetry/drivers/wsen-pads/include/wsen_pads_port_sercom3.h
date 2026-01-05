@@ -11,12 +11,12 @@ extern "C" {
 
 int wsen_init(void);
 int wsen_check_device_id(void);
-void i2c_init(void);
+void spi_init(void);
 void drdy_init(void);
 void wsen_cycle_start(void);
 void wsen_cycle_tick(void);
 bool wsen_cycle_done_ok(float* kPa, float* degC);
-bool wsen_cycle_failed(SERCOM_I2C_ERROR* errOut);
+bool wsen_cycle_failed(void);
 void wsen_reset(void);
 
 #ifdef __cplusplus
