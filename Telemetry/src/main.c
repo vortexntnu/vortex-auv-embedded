@@ -77,10 +77,7 @@ int main(void) {
             temp_sum += temp;
             samples++;
         } else {
-            SERCOM_I2C_ERROR err;
-            if (wsen_cycle_failed(&err)) {
-                wsen_reset();
-            }
+            wsen_reset();
         }
         if (leakdet_tick) {
             leakdet_tick = false;
