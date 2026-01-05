@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: nvmctrl
-coreVersion: 5.8.3
+componentName: dfp
+coreVersion: 5.8.2
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: nvmctrl
+  name: dfp
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,8 +21,8 @@ data:
     children:
     - children:
       - attributes:
-          id: nvmctrl
-          x: '20'
+          id: dfp
+          x: '440'
           y: '20'
         type: ElementPosition
       type: ElementPositions

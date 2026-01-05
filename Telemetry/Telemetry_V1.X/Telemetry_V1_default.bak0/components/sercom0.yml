@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: sercom1
-coreVersion: 5.8.3
+componentName: sercom0
+coreVersion: 5.8.2
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: sercom1
+  name: sercom0
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,9 +21,9 @@ data:
     children:
     - children:
       - attributes:
-          id: sercom1
-          x: '19'
-          y: '204'
+          id: sercom0
+          x: '20'
+          y: '88'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
@@ -34,51 +34,98 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom1
+            id: sercom0
             value: '232'
           type: Dynamic
         type: Values
       type: Hex
+    RECEIVE_DATA_REGISTER:
+      attributes:
+        id: RECEIVE_DATA_REGISTER
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '&(SERCOM0_REGS->SPIM.SERCOM_DATA)'
+          type: Dynamic
+        type: Values
+      type: String
+    SERCOM_MODE:
+      attributes:
+        id: SERCOM_MODE
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    SPI_BAUD_RATE:
+      attributes:
+        id: SPI_BAUD_RATE
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '2400000'
+          type: User
+        type: Values
+      type: Integer
     SPI_BAUD_REG_VALUE:
       attributes:
         id: SPI_BAUD_REG_VALUE
       children:
       - children:
         - attributes:
-            id: sercom1
-            value: '23'
+            id: sercom0
+            value: '9'
           type: Dynamic
         type: Values
       type: Integer
-    USART_7816_BAUD_VALUE:
+    SPI_DOPO:
       attributes:
-        id: USART_7816_BAUD_VALUE
+        id: SPI_DOPO
       children:
       - children:
         - attributes:
-            id: sercom1
-            value: '-1'
-          type: Dynamic
-        type: Values
-      type: Integer
-    USART_BAUD_RATE:
-      attributes:
-        id: USART_BAUD_RATE
-      children:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
       - children:
         - attributes:
-            value: '5180000'
+            value: '1'
           type: User
         type: Values
-      type: Integer
+      type: KeyValueSet
+    TRANSMIT_DATA_REGISTER:
+      attributes:
+        id: TRANSMIT_DATA_REGISTER
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '&(SERCOM0_REGS->SPIM.SERCOM_DATA)'
+          type: Dynamic
+        type: Values
+      type: String
     USART_BAUD_VALUE:
       attributes:
         id: USART_BAUD_VALUE
       children:
       - children:
         - attributes:
-            id: sercom1
-            value: '8956'
+            id: sercom0
+            value: '63019'
           type: Dynamic
         type: Values
       type: Integer
@@ -88,29 +135,19 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom1
+            id: sercom0
             value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
-    USART_RXPO:
-      attributes:
-        id: USART_RXPO
-      children:
-      - children:
-        - attributes:
-            value: '1'
-          type: User
-        type: Values
-      type: KeyValueSet
     USART_SAMPLE_COUNT:
       attributes:
         id: USART_SAMPLE_COUNT
       children:
       - children:
         - attributes:
-            id: sercom1
-            value: '8'
+            id: sercom0
+            value: '16'
           type: Dynamic
         type: Values
       type: Integer
@@ -120,8 +157,8 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom1
-            value: '2'
+            id: sercom0
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -131,7 +168,7 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom1
+            id: sercom0
             value: 'false'
           type: Dynamic
         type: Values

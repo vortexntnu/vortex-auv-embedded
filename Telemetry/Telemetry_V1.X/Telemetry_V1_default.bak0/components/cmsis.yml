@@ -1,13 +1,17 @@
 configVersion: 1.0.0
-componentName: nvmctrl
-coreVersion: 5.8.3
+componentName: cmsis
+coreVersion: 5.8.2
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: nvmctrl
+  name: cmsis
   type: module
   version: ''
+- dependencyPackage: ''
+  name: CMSIS_5
+  type: package
+  version: 5.9.0
 - dependencyPackage: ''
   name: csp
   type: package
@@ -21,9 +25,9 @@ data:
     children:
     - children:
       - attributes:
-          id: nvmctrl
-          x: '20'
-          y: '20'
+          id: cmsis
+          x: '330'
+          y: '60'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph

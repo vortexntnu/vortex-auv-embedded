@@ -1,6 +1,6 @@
 configVersion: 1.0.0
-coreVersion: 5.8.3
-spaHostVersion: 1.2.0
+coreVersion: 5.8.2
+spaHostVersion: 1.0.0
 device: ATSAMC21J18A
 deviceLibrary:
   className: com.microchip.mcc.harmony.Harmony3Library
