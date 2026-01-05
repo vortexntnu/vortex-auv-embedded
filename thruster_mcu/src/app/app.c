@@ -89,7 +89,7 @@ static void message_handler(void);
  * Reads ADC samples for all 8 thruster channels, calculates output current from
  * the voltage, and disables all thrusters if any channel exceeds the rated current limit.
  */
-//static void check_overcurrent(void);
+static void check_overcurrent(void);
 
 /**
  * @brief Sends an overcurrent fault message over CAN
@@ -248,14 +248,14 @@ static void check_overcurrent(void) {
     const uint8_t  THRUSTER_RATED_CURRENT    = 15U;       // From TSD7 datasheet  
     
     for (size_t sample = 0; sample < 8; sample++) {
-        float V_Imon = (float)adc_res[sample] * ADC_VREF / 65535f;
+        float V_Imon = (float)adc_result_array[sample] * ADC_VREF / 65535U;
         float I_out = V_Imon / (G_IMON * R_IMON);
 
-        //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_res[sample], (double)((float)adc_res[sample]*ADC_VREF/4095.0f), (double)I_out);
+        //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_result_array[sample], (double)((float)adc_result_array[sample]*ADC_VREF/4095.0f), (double)I_out);
         if (I_out > THRUSTER_RATED_CURRENT) {
             set_pwm_neutral(thrusters, 8);
             
-            if (!send_thruster_fault(sample, I_out, adc_res[sample])) {
+            if (!send_thruster_fault(sample, I_out, adc_result_array[sample])) {
                 // Handle retransmission?
             }
             break;
