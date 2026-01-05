@@ -1,22 +1,26 @@
 /*******************************************************************************
- System Interrupts File
+  SERCOM Universal Synchronous/Asynchrnous Receiver/Transmitter PLIB
 
-  Company:
+  Company
     Microchip Technology Inc.
 
-  File Name:
-    interrupt.h
+  File Name
+    plib_sercom2_usart.h
 
-  Summary:
-    Interrupt vectors mapping
+  Summary
+    USART peripheral library interface.
 
-  Description:
-    This file contains declarations of device vectors used by Harmony 3
- *******************************************************************************/
+  Description
+    This file defines the interface to the USART peripheral library. This
+    library provides access to and control of the associated peripheral
+    instance.
 
-// DOM-IGNORE-BEGIN
+  Remarks:
+    None.
+*******************************************************************************/
+
 /*******************************************************************************
-* Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -36,37 +40,76 @@
 * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
- *******************************************************************************/
-// DOM-IGNORE-END
+*******************************************************************************/
 
-#ifndef INTERRUPTS_H
-#define INTERRUPTS_H
+#ifndef PLIB_SERCOM2_USART_H // Guards against multiple inclusion
+#define PLIB_SERCOM2_USART_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-#include <stdint.h>
 
+#include "plib_sercom_usart_common.h"
 
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus // Provide C++ Compatibility
+
+    extern "C" {
+
+#endif
+// DOM-IGNORE-END
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Handler Routines
+// Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-void Reset_Handler (void);
-void NonMaskableInt_Handler (void);
-void HardFault_Handler (void);
-void EIC_InterruptHandler (void);
-void DMAC_InterruptHandler (void);
-void SERCOM0_USART_InterruptHandler (void);
-void SERCOM1_USART_InterruptHandler (void);
-void CAN0_InterruptHandler (void);
-void CAN1_InterruptHandler (void);
-void ADC0_InterruptHandler (void);
+
+void SERCOM2_USART_Initialize( void );
+
+bool SERCOM2_USART_SerialSetup( USART_SERIAL_SETUP * serialSetup, uint32_t clkFrequency );
+
+void SERCOM2_USART_Enable( void );
+
+void SERCOM2_USART_Disable( void );
+
+void SERCOM2_USART_TransmitterEnable( void );
+
+void SERCOM2_USART_TransmitterDisable( void );
+
+bool SERCOM2_USART_Write( void *buffer, const size_t size );
+
+bool SERCOM2_USART_TransmitComplete( void );
 
 
+bool SERCOM2_USART_TransmitterIsReady( void );
 
-#endif // INTERRUPTS_H
+void SERCOM2_USART_WriteByte( int data );
+
+
+void SERCOM2_USART_ReceiverEnable( void );
+
+void SERCOM2_USART_ReceiverDisable( void );
+
+bool SERCOM2_USART_Read( void *buffer, const size_t size );
+
+bool SERCOM2_USART_ReceiverIsReady( void );
+
+int SERCOM2_USART_ReadByte( void );
+
+USART_ERROR SERCOM2_USART_ErrorGet( void );
+
+uint32_t SERCOM2_USART_FrequencyGet( void );
+
+
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus  // Provide C++ Compatibility
+
+    }
+
+#endif
+// DOM-IGNORE-END
+
+#endif //PLIB_SERCOM2_USART_H

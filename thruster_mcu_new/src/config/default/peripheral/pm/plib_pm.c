@@ -1,22 +1,28 @@
 /*******************************************************************************
- System Interrupts File
+  Power Manager(PM) PLIB
 
-  Company:
+  Company
     Microchip Technology Inc.
 
-  File Name:
-    interrupt.h
+  File Name
+    plib_pm.c
 
-  Summary:
-    Interrupt vectors mapping
+  Summary
+    PM PLIB Implementation File.
 
-  Description:
-    This file contains declarations of device vectors used by Harmony 3
- *******************************************************************************/
+  Description
+    This file defines the interface to the PM peripheral library. This
+    library provides access to and control of the associated peripheral
+    instance.
+
+  Remarks:
+    None.
+
+*******************************************************************************/
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -36,37 +42,52 @@
 * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
- *******************************************************************************/
+*******************************************************************************/
 // DOM-IGNORE-END
-
-#ifndef INTERRUPTS_H
-#define INTERRUPTS_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-#include <stdint.h>
+/* This section lists the other files that are included in this file.
+*/
+
+#include "device.h"
+#include "plib_pm.h"
+void PM_Initialize( void )
+{
+    /* Configure PM */
+    PM_REGS->PM_STDBYCFG = (uint16_t)(PM_STDBYCFG_BBIASHS_Msk| PM_STDBYCFG_VREGSMOD(0UL));
+
+}
+
+void PM_IdleModeEnter( void )
+{
+    PM_REGS->PM_SLEEPCFG = (uint8_t)PM_SLEEPCFG_SLEEPMODE(0UL);
+
+    
+    while ((PM_REGS->PM_SLEEPCFG & PM_SLEEPCFG_SLEEPMODE_Msk) != PM_SLEEPCFG_SLEEPMODE(0UL))
+    {
+        /* Ensure that SLEEPMODE bits are configured with the given value */
+    }
+    /* Wait for interrupt instruction execution */
+    __WFI();
+}
+
+void PM_StandbyModeEnter( void )
+{
+    /* Configure Standby Sleep */
+    PM_REGS->PM_SLEEPCFG = (uint8_t)PM_SLEEPCFG_SLEEPMODE_STANDBY_Val;
+  
+    while ((PM_REGS->PM_SLEEPCFG & PM_SLEEPCFG_SLEEPMODE_STANDBY_Val) == 0U)
+    {
+        /* Ensure that SLEEPMODE bits are configured with the given value */
+    }
+
+    /* Wait for interrupt instruction execution */
+    __WFI();
+}
 
 
 
-// *****************************************************************************
-// *****************************************************************************
-// Section: Handler Routines
-// *****************************************************************************
-// *****************************************************************************
-void Reset_Handler (void);
-void NonMaskableInt_Handler (void);
-void HardFault_Handler (void);
-void EIC_InterruptHandler (void);
-void DMAC_InterruptHandler (void);
-void SERCOM0_USART_InterruptHandler (void);
-void SERCOM1_USART_InterruptHandler (void);
-void CAN0_InterruptHandler (void);
-void CAN1_InterruptHandler (void);
-void ADC0_InterruptHandler (void);
-
-
-
-#endif // INTERRUPTS_H
