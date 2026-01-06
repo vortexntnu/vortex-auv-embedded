@@ -161,6 +161,7 @@ void SYS_Initialize ( void* data )
 
 
   
+    PORT_Initialize();
 
     CLOCK_Initialize();
 
@@ -173,9 +174,9 @@ void SYS_Initialize ( void* data )
 
     SERCOM1_USART_Initialize();
 
-    EVSYS_Initialize();
-
     SERCOM0_USART_Initialize();
+
+    EVSYS_Initialize();
 
     CAN1_Initialize();
 
@@ -188,6 +189,8 @@ void SYS_Initialize ( void* data )
     TC0_TimerInitialize();
 
     TCC1_PWMInitialize();
+
+    TCC2_PWMInitialize();
 
     TCC0_PWMInitialize();
 

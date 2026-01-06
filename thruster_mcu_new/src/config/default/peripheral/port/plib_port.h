@@ -65,6 +65,30 @@
 // *****************************************************************************
 // *****************************************************************************
 
+/*** Macros for PWM_1 pin ***/
+#define PWM_1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
+#define PWM_1_PIN                  PORT_PIN_PA08
+
+/*** Macros for PWM_2 pin ***/
+#define PWM_2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 9U)) & 0x01U)
+#define PWM_2_PIN                  PORT_PIN_PA09
+
+/*** Macros for PWM_3 pin ***/
+#define PWM_3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 10U)) & 0x01U)
+#define PWM_3_PIN                  PORT_PIN_PA10
+
+/*** Macros for PWM_4 pin ***/
+#define PWM_4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 11U)) & 0x01U)
+#define PWM_4_PIN                  PORT_PIN_PA11
+
+/*** Macros for PWM_5 pin ***/
+#define PWM_5_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 10U)) & 0x01U)
+#define PWM_5_PIN                  PORT_PIN_PB10
+
+/*** Macros for PWM_6 pin ***/
+#define PWM_6_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
+#define PWM_6_PIN                  PORT_PIN_PB11
+
 // *****************************************************************************
 /* PORT Group
 
@@ -303,6 +327,40 @@ typedef enum
 // Section: Generated API based on pin configurations done in Pin Manager
 // *****************************************************************************
 // *****************************************************************************
+// *****************************************************************************
+/* Function:
+    void PORT_Initialize(void)
+
+  Summary:
+    Initializes the PORT Library.
+
+  Description:
+    This function initializes all ports and pins as configured in the
+    MHC Pin Manager.
+
+  Precondition:
+    None.
+
+  Parameters:
+    None.
+
+  Returns:
+    None.
+
+  Example:
+    <code>
+
+    PORT_Initialize();
+
+    </code>
+
+  Remarks:
+    The function should be called once before calling any other PORTS PLIB
+    functions.
+*/
+
+void PORT_Initialize(void);
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: PORT APIs which operates on multiple pins of a group

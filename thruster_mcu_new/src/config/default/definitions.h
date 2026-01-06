@@ -52,8 +52,8 @@
 #include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/sercom/usart/plib_sercom2_usart.h"
 #include "peripheral/sercom/usart/plib_sercom1_usart.h"
-#include "peripheral/evsys/plib_evsys.h"
 #include "peripheral/sercom/usart/plib_sercom0_usart.h"
+#include "peripheral/evsys/plib_evsys.h"
 #include "peripheral/can/plib_can1.h"
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
@@ -65,6 +65,7 @@
 #include "peripheral/eic/plib_eic.h"
 #include "peripheral/tc/plib_tc0.h"
 #include "peripheral/tcc/plib_tcc1.h"
+#include "peripheral/tcc/plib_tcc2.h"
 #include "peripheral/tcc/plib_tcc0.h"
 #include "peripheral/adc/plib_adc0.h"
 

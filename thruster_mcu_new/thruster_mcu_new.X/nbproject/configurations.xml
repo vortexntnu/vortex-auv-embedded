@@ -56,6 +56,7 @@
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc1.h</itemPath>
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc_common.h</itemPath>
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc0.h</itemPath>
+              <itemPath>../src/config/default/peripheral/tcc/plib_tcc2.h</itemPath>
             </logicalFolder>
             <logicalFolder name="wdt" displayName="wdt" projectFiles="true">
               <itemPath>../src/config/default/peripheral/wdt/plib_wdt.h</itemPath>
@@ -200,6 +201,7 @@
           <itemPath>thruster_mcu_new_default/components/evsys.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/sercom2.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/can1.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/tcc2.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/adc0.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/core.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/nvmctrl.yml</itemPath>
@@ -273,6 +275,7 @@
             <logicalFolder name="tcc" displayName="tcc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc1.c</itemPath>
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc0.c</itemPath>
+              <itemPath>../src/config/default/peripheral/tcc/plib_tcc2.c</itemPath>
             </logicalFolder>
             <logicalFolder name="wdt" displayName="wdt" projectFiles="true">
               <itemPath>../src/config/default/peripheral/wdt/plib_wdt.c</itemPath>
