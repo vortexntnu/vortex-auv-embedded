@@ -4,7 +4,7 @@
 
 
 project: thruster_mcu_new
-creation_date: 2026-01-06T12:39:55.611+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+creation_date: 2026-01-06T12:53:26.402+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
 operating_system: Mac OS X
 mcc_mode: IDE            # [IDE|Standalone|Headless]
 mcc_version: v5.6.3

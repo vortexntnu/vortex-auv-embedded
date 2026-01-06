@@ -65,6 +65,14 @@
 // *****************************************************************************
 // *****************************************************************************
 
+/*** Macros for PWM_7 pin ***/
+#define PWM_7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 0U)) & 0x01U)
+#define PWM_7_PIN                  PORT_PIN_PA00
+
+/*** Macros for PWM_8 pin ***/
+#define PWM_8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 1U)) & 0x01U)
+#define PWM_8_PIN                  PORT_PIN_PA01
+
 /*** Macros for PWM_1 pin ***/
 #define PWM_1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
 #define PWM_1_PIN                  PORT_PIN_PA08
