@@ -150,6 +150,7 @@ static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
 static void can_transmit_callback(uintptr_t context);
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext);
 static void eic_pin_flt_thruster(uintptr_t context);
+static void eic_pin_killswitch(uintptr_t context);
 
 /* --- Public functions --- */
 
@@ -160,6 +161,9 @@ void app_init(void) {
     CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
     // Configure external interrupts 
+    EIC_CallbackRegister(EIC_PIN_0, eic_pin_killswitch, 0);
+    
+    /*
     EIC_CallbackRegister(EIC_PIN_0, eic_pin_flt_thruster, 0);
     EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 1);
     EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 2);
@@ -167,7 +171,11 @@ void app_init(void) {
     EIC_CallbackRegister(EIC_PIN_4, eic_pin_flt_thruster, 4);
     EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 5);
     EIC_CallbackRegister(EIC_PIN_6, eic_pin_flt_thruster, 6);
-    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 7);
+    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 7); 
+     */
+    
+    
+    
     
     // Enable ADC
     ADC0_Enable();
@@ -391,4 +399,6 @@ static void eic_pin_flt_thruster(uintptr_t context) {
     // TODO: Send CAN fault message (I don't have the current available so send_thruster_fault() can't be used)
 }
 
-
+static void eic_pin_killswitch(uintptr_t context) {
+    printf("LOG: KILLSWITCH TRIGGERED");
+}
