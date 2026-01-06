@@ -108,6 +108,15 @@
 #define KS_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 6U)) & 0x01U)
 #define KS_PIN                  PORT_PIN_PB06
 
+/*** Macros for RESET_TH pin ***/
+#define RESET_TH_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 7U))
+#define RESET_TH_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 7U))
+#define RESET_TH_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 7U))
+#define RESET_TH_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 7U))
+#define RESET_TH_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 7U))
+#define RESET_TH_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 7U)) & 0x01U)
+#define RESET_TH_PIN                  PORT_PIN_PB07
+
 /*** Macros for IMON_TH3 pin ***/
 #define IMON_TH3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
 #define IMON_TH3_PIN                  PORT_PIN_PB08

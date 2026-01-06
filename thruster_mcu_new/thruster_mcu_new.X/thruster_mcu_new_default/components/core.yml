@@ -2153,7 +2153,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x0'
+            value: '0x80'
           type: Dynamic
         type: Values
       type: String
@@ -4954,6 +4954,99 @@ data:
       - children:
         - attributes:
             value: IMON_TH8
+          type: User
+        type: Values
+      type: String
+    PIN_10_MODE:
+      attributes:
+        id: PIN_10_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_10_FUNCTION_TYPE:
+      attributes:
+        id: PIN_10_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: GPIO
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_1_PINCFG7:
+      attributes:
+        id: PORT_GROUP_1_PINCFG7
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x2'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PIN_7_USED:
+      attributes:
+        id: PORT_GROUP_1_PIN_7_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_10_INEN:
+      attributes:
+        id: PIN_10_INEN
+      children:
+      - children:
+        - attributes:
+            value: 'True'
+          type: User
+        type: Values
+      type: String
+    PIN_10_DIR:
+      attributes:
+        id: PIN_10_DIR
+      children:
+      - children:
+        - attributes:
+            value: Out
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_1_PAD_7:
+      attributes:
+        id: PORT_GROUP_1_PAD_7
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PB07
+          type: Dynamic
+        type: Values
+      type: String
+    PIN_10_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_10_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: GPIO
+          type: User
+        type: Values
+      type: String
+    PIN_10_FUNCTION_NAME:
+      attributes:
+        id: PIN_10_FUNCTION_NAME
+      children:
+      - children:
+        - attributes:
+            value: RESET_TH
           type: User
         type: Values
       type: String
