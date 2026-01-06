@@ -362,7 +362,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x21e0e'
+            value: '0x29e0e'
           type: Dynamic
         type: Values
       type: String
@@ -2240,6 +2240,211 @@ data:
           type: User
         type: Values
       type: String
+    PIN_61_MODE:
+      attributes:
+        id: PIN_61_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_61_FUNCTION_TYPE:
+      attributes:
+        id: PIN_61_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: TC3_WO0
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_1_PMUX0:
+      attributes:
+        id: PORT_GROUP_1_PMUX0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x4'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PAD_0:
+      attributes:
+        id: PORT_GROUP_1_PAD_0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PB00
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PINCFG0:
+      attributes:
+        id: PORT_GROUP_1_PINCFG0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_1_PIN_0_USED:
+      attributes:
+        id: PORT_GROUP_1_PIN_0_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_61_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_61_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: E
+          type: User
+        type: Values
+      type: String
+    PIN_61_FUNCTION_NAME:
+      attributes:
+        id: PIN_61_FUNCTION_NAME
+      children:
+      - children:
+        - attributes:
+            value: PWM_9
+          type: User
+        type: Values
+      type: String
+    TC3_CLOCK_FREQUENCY:
+      attributes:
+        id: TC3_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_31_FREQ:
+      attributes:
+        id: GCLK_ID_31_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_31_CHEN:
+      attributes:
+        id: GCLK_ID_31_CHEN
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC3_CLOCK_ENABLE:
+      attributes:
+        id: TC3_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC3_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: TC3_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_23_0_ENABLE:
+      attributes:
+        id: NVIC_23_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC3_INTERRUPT_ENABLE:
+      attributes:
+        id: TC3_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: tc3
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_23_0_HANDLER:
+      attributes:
+        id: NVIC_23_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: TC3_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    TC3_INTERRUPT_HANDLER:
+      attributes:
+        id: TC3_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: tc3
+            value: TC3_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    NVIC_23_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_23_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC3_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: TC3_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: tc3
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData:
     children:
     - attributes:

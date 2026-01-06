@@ -106,6 +106,10 @@
 #define PWM_6_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
 #define PWM_6_PIN                  PORT_PIN_PB11
 
+/*** Macros for PWM_9 pin ***/
+#define PWM_9_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 0U)) & 0x01U)
+#define PWM_9_PIN                  PORT_PIN_PB00
+
 // *****************************************************************************
 /* PORT Group
 

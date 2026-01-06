@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: tc0
+componentName: tc3
 coreVersion: 5.8.3
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: tc0
+  name: tc3
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,9 +21,9 @@ data:
     children:
     - children:
       - attributes:
-          id: tc0
-          x: '12'
-          y: '581'
+          id: tc3
+          x: '181'
+          y: '584'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
@@ -44,7 +44,7 @@ data:
       children:
       - children:
         - attributes:
-            id: tc0
+            id: tc3
             value: '46875'
           type: Dynamic
         type: Values
@@ -83,7 +83,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            id: tc0
+            id: tc3
             value: '23436'
           type: Dynamic
         type: Values

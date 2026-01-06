@@ -51,6 +51,7 @@
             <logicalFolder name="tc" displayName="tc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tc/plib_tc_common.h</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc0.h</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc3.h</itemPath>
             </logicalFolder>
             <logicalFolder name="tcc" displayName="tcc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc1.h</itemPath>
@@ -201,6 +202,7 @@
           <itemPath>thruster_mcu_new_default/components/evsys.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/sercom2.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/can1.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/tc3.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/tcc2.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/adc0.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/core.yml</itemPath>
@@ -271,6 +273,7 @@
             </logicalFolder>
             <logicalFolder name="tc" displayName="tc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tc/plib_tc0.c</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc3.c</itemPath>
             </logicalFolder>
             <logicalFolder name="tcc" displayName="tcc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tcc/plib_tcc1.c</itemPath>

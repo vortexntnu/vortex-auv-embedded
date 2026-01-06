@@ -188,6 +188,8 @@ void SYS_Initialize ( void* data )
 
     TC0_TimerInitialize();
 
+    TC3_TimerInitialize();
+
     TCC1_PWMInitialize();
 
     TCC2_PWMInitialize();
