@@ -73,6 +73,14 @@
 #define PWM_8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 1U)) & 0x01U)
 #define PWM_8_PIN                  PORT_PIN_PA01
 
+/*** Macros for IMON_TH1 pin ***/
+#define IMON_TH1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 2U)) & 0x01U)
+#define IMON_TH1_PIN                  PORT_PIN_PA02
+
+/*** Macros for IMON_TH2 pin ***/
+#define IMON_TH2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 3U)) & 0x01U)
+#define IMON_TH2_PIN                  PORT_PIN_PA03
+
 /*** Macros for FLT_TH8 pin ***/
 #define FLT_TH8_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 4U))
 #define FLT_TH8_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 4U))
@@ -99,6 +107,30 @@
 #define KS_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 6U))
 #define KS_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 6U)) & 0x01U)
 #define KS_PIN                  PORT_PIN_PB06
+
+/*** Macros for IMON_TH3 pin ***/
+#define IMON_TH3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
+#define IMON_TH3_PIN                  PORT_PIN_PB08
+
+/*** Macros for IMON_TH4 pin ***/
+#define IMON_TH4_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 9U)) & 0x01U)
+#define IMON_TH4_PIN                  PORT_PIN_PB09
+
+/*** Macros for IMON_TH5 pin ***/
+#define IMON_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 4U)) & 0x01U)
+#define IMON_TH5_PIN                  PORT_PIN_PA04
+
+/*** Macros for IMON_TH6 pin ***/
+#define IMON_TH6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 5U)) & 0x01U)
+#define IMON_TH6_PIN                  PORT_PIN_PA05
+
+/*** Macros for IMON_TH7 pin ***/
+#define IMON_TH7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 6U)) & 0x01U)
+#define IMON_TH7_PIN                  PORT_PIN_PA06
+
+/*** Macros for IMON_TH8 pin ***/
+#define IMON_TH8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 7U)) & 0x01U)
+#define IMON_TH8_PIN                  PORT_PIN_PA07
 
 /*** Macros for PWM_1 pin ***/
 #define PWM_1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
