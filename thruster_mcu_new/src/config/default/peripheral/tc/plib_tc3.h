@@ -45,7 +45,7 @@
 *******************************************************************************/
 // DOM-IGNORE-END
 
-#ifndef PLIB_TC3_H      // Guards against multiple inclusion
+#ifndef PLIB_TC3_H       // Guards against multiple inclusion
 #define PLIB_TC3_H
 
 // *****************************************************************************
@@ -85,30 +85,32 @@
    this interface.
 */
 
-// *****************************************************************************
 
-void TC3_TimerInitialize( void );
+void TC3_CompareInitialize( void );
 
-void TC3_TimerStart( void );
+void TC3_CompareStart( void );
 
-void TC3_TimerStop( void );
+void TC3_CompareStop( void );
 
-uint32_t TC3_TimerFrequencyGet( void );
+uint32_t TC3_CompareFrequencyGet( void );
+
+bool TC3_Compare16bitPeriodSet( uint16_t period );
+
+uint16_t TC3_Compare16bitPeriodGet( void );
+
+uint16_t TC3_Compare16bitCounterGet( void );
+
+void TC3_Compare16bitCounterSet( uint16_t count );
+
+bool TC3_Compare16bitMatch0Set( uint16_t compareValue );
+
+bool TC3_Compare16bitMatch1Set( uint16_t compareValue );
 
 
-void TC3_Timer16bitPeriodSet( uint16_t period );
 
-uint16_t TC3_Timer16bitPeriodGet( void );
+TC_COMPARE_STATUS TC3_CompareStatusGet( void );
 
-uint16_t TC3_Timer16bitCounterGet( void );
-
-void TC3_Timer16bitCounterSet( uint16_t count );
-
-
-
-bool TC3_TimerPeriodHasExpired( void );
-
-void TC3_TimerCommandSet(TC_COMMAND command);
+void TC3_CompareCommandSet(TC_COMMAND command);
 
 
 // DOM-IGNORE-BEGIN
