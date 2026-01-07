@@ -345,6 +345,10 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) 
             TCC1_PWM24bitDutySet(channel, ticks);
             break;
             
+        case 2:
+            TCC2_PWM16bitDutySet(channel, ticks);
+            break;
+            
         default: 
             break;
     }

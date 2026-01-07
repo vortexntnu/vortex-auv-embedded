@@ -106,4 +106,92 @@ data:
           type: User
         type: Values
       type: Float
+    TC_TIMER_HEADER:
+      attributes:
+        id: TC_TIMER_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_TIMER_SOURCE:
+      attributes:
+        id: TC_TIMER_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_COMPARE_HEADER:
+      attributes:
+        id: TC_COMPARE_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_COMPARE_SOURCE:
+      attributes:
+        id: TC_COMPARE_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_CAPTURE_HEADER:
+      attributes:
+        id: TC_CAPTURE_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_CAPTURE_SOURCE:
+      attributes:
+        id: TC_CAPTURE_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_OPERATION_MODE:
+      attributes:
+        id: TC_OPERATION_MODE
+      children:
+      - children:
+        - attributes:
+            value: Timer
+          type: User
+        type: Values
+      type: Combo
   userData: {}
