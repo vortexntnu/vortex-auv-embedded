@@ -21,7 +21,7 @@
 *******************************************************************************/
 //DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2021 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -73,43 +73,37 @@
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-#define CAN0_CLOCK_FREQUENCY    48000000U
-
 /* CAN0 Message RAM Configuration Size */
-#define CAN0_RX_FIFO0_ELEMENT_SIZE       16U
-#define CAN0_RX_FIFO0_SIZE               16U
-#define CAN0_RX_FIFO1_ELEMENT_SIZE       16U
-#define CAN0_RX_FIFO1_SIZE               16U
+#define CAN0_RX_FIFO0_ELEMENT_SIZE       72U
+#define CAN0_RX_FIFO0_SIZE               576U
 #define CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE 16U
 #define CAN0_TX_FIFO_BUFFER_SIZE         16U
 #define CAN0_TX_EVENT_FIFO_SIZE          8U
 
 /* CAN0_MESSAGE_RAM_CONFIG_SIZE to be used by application or driver
    for allocating buffer from non-cached contiguous memory */
-#define CAN0_MESSAGE_RAM_CONFIG_SIZE     56U
+#define CAN0_MESSAGE_RAM_CONFIG_SIZE     600U
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-void CAN0_Initialize(void);
-bool CAN0_MessageTransmitFifo(uint8_t numberOfMessage, CAN_TX_BUFFER *txBuffer);
-uint8_t CAN0_TxFifoFreeLevelGet(void);
-bool CAN0_TxBufferIsBusy(uint8_t bufferNumber);
-bool CAN0_TxEventFifoRead(uint8_t numberOfTxEvent, CAN_TX_EVENT_FIFO *txEventFifo);
-bool CAN0_MessageReceiveFifo(CAN_RX_FIFO_NUM rxFifoNum, uint8_t numberOfMessage, CAN_RX_BUFFER *rxBuffer);
+void CAN0_Initialize (void);
+bool CAN0_MessageTransmit(uint32_t id, uint8_t length, uint8_t* data, CAN_MODE mode, CAN_MSG_TX_ATTRIBUTE msgAttr);
+bool CAN0_MessageReceive(uint32_t *id, uint8_t *length, uint8_t *data, uint16_t *timestamp,
+                                         CAN_MSG_RX_ATTRIBUTE msgAttr, CAN_MSG_RX_FRAME_ATTRIBUTE *msgFrameAttr);
+bool CAN0_TransmitEventFIFOElementGet(uint32_t *id, uint8_t *messageMarker, uint16_t *timestamp);
 CAN_ERROR CAN0_ErrorGet(void);
 void CAN0_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount);
+bool CAN0_InterruptGet(CAN_INTERRUPT_MASK interruptMask);
+void CAN0_InterruptClear(CAN_INTERRUPT_MASK interruptMask);
+bool CAN0_TxFIFOIsFull(void);
 void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress);
 void CAN0_SleepModeEnter(void);
 void CAN0_SleepModeExit(void);
-bool CAN0_BitTimingCalculationGet(CAN_BIT_TIMING_SETUP *setup, CAN_BIT_TIMING *bitTiming);
-bool CAN0_BitTimingSet(CAN_BIT_TIMING *bitTiming);
-void CAN0_TxFifoCallbackRegister(CAN_TX_FIFO_CALLBACK callback, uintptr_t contextHandle);
-void CAN0_TxEventFifoCallbackRegister(CAN_TX_EVENT_FIFO_CALLBACK callback, uintptr_t contextHandle);
-void CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_NUM rxFifoNum, CAN_RX_FIFO_CALLBACK callback, uintptr_t contextHandle);
-void CAN0_CallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle);
+void CAN0_TxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle);
+void CAN0_RxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle, CAN_MSG_RX_ATTRIBUTE msgAttr);
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
     }
