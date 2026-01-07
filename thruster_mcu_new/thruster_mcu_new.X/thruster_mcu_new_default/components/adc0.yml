@@ -294,4 +294,94 @@ data:
           type: User
         type: Values
       type: Boolean
+    ADC_SEQCTRL_SEQ0:
+      attributes:
+        id: ADC_SEQCTRL_SEQ0
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ1:
+      attributes:
+        id: ADC_SEQCTRL_SEQ1
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ2:
+      attributes:
+        id: ADC_SEQCTRL_SEQ2
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ3:
+      attributes:
+        id: ADC_SEQCTRL_SEQ3
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ4:
+      attributes:
+        id: ADC_SEQCTRL_SEQ4
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ5:
+      attributes:
+        id: ADC_SEQCTRL_SEQ5
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ6:
+      attributes:
+        id: ADC_SEQCTRL_SEQ6
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ7:
+      attributes:
+        id: ADC_SEQCTRL_SEQ7
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_SEQCTRL_SEQ8:
+      attributes:
+        id: ADC_SEQCTRL_SEQ8
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

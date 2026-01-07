@@ -100,8 +100,15 @@ void ADC0_Initialize( void )
     /* Reference */
     ADC0_REGS->ADC_REFCTRL = (uint8_t)ADC_REFCTRL_REFSEL_INTVCC2 | ADC_REFCTRL_REFCOMP_Msk;
 
-    /* Input pin */
-    ADC0_REGS->ADC_INPUTCTRL = (uint16_t) ADC_POSINPUT_AIN0;
+    /*lint -e{9048} false positive about a missing 'U' literal */
+    ADC0_REGS->ADC_SEQCTRL = ADC_SEQCTRL_SEQEN(1U << 0U)
+		 | ADC_SEQCTRL_SEQEN(1U << 1U)
+		 | ADC_SEQCTRL_SEQEN(1U << 2U)
+		 | ADC_SEQCTRL_SEQEN(1U << 3U)
+		 | ADC_SEQCTRL_SEQEN(1U << 4U)
+		 | ADC_SEQCTRL_SEQEN(1U << 5U)
+		 | ADC_SEQCTRL_SEQEN(1U << 6U)
+		 | ADC_SEQCTRL_SEQEN(1U << 7U);
 
     /* Resolution & Operation Mode */
     ADC0_REGS->ADC_CTRLC = (uint16_t)(ADC_CTRLC_RESSEL_16BIT | ADC_CTRLC_WINMODE(0UL) );
