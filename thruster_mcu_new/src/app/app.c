@@ -315,10 +315,14 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
         
         uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, outputs[i].frame_us);
         
+        // TODO: Fix this shitty code
         if (outputs[i].mode == PWM_TCC) {
             tcc_write(outputs[i].instance, outputs[i].channel, ticks);
         } else if (outputs[i].mode == MPWM_TC) {
-            TC3_Compare16bitPeriodSet(ticks);
+            if (outputs[i].channel == 1) {
+                TC3_Compare16bitPeriodSet(ticks);
+            }
+            
         } 
     }
     
