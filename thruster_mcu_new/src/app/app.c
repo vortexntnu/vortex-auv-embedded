@@ -13,11 +13,18 @@
 static const uint32_t TCC0_PERIOD               = 75000U;
 static const uint32_t TCC1_PERIOD               = 75000U;
 static const uint32_t TCC2_PERIOD               = 18500U;
+static const uint32_t TC3_PERIOD                = 18500U; // TODO: Use actual value!
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 
+enum operating_mode {
+    PWM_TCC,
+    MPWM_TC,
+};
+
 /* --- Types --- */
 struct pwm_output {
+    enum operating_mode mode;
     uint8_t  instance;
     uint8_t  channel;
     uint32_t period_ticks;
@@ -52,17 +59,17 @@ static uint16_t adc_result_array[TRANSFER_SIZE];
 
 /* Application */
 static struct pwm_output thrusters[8] = {
-    {1, 0, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC0
-    {1, 1, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC1
-    {0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC2
-    {0, 3, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC3
-    {0, 0, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC0
-    {0, 1, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC1
-    {2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC2_CC0
-    {2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}  // TCC2_CC1
+    {PWM_TCC, 1, 0, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC0
+    {PWM_TCC, 1, 1, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC1
+    {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC2
+    {PWM_TCC, 0, 3, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC3
+    {PWM_TCC, 0, 0, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC0
+    {PWM_TCC, 0, 1, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC1
+    {PWM_TCC, 2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC2_CC0
+    {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}  // TCC2_CC1
 };
 
-static struct pwm_output lights[1] = {{1, 2, TCC1_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TCC1_CHANNEL2
+static struct pwm_output lights[1] = {{MPWM_TC, 1, 2, TCC1_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TCC1_CHANNEL2
 
 /* --- Private function prototypes --- */
 
@@ -308,7 +315,11 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
         
         uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, outputs[i].frame_us);
         
-        tcc_write(outputs[i].instance, outputs[i].channel, ticks);
+        if (outputs[i].mode == PWM_TCC) {
+            tcc_write(outputs[i].instance, outputs[i].channel, ticks);
+        } else if (outputs[i].mode == MPWM_TC) {
+            TC3_Compare16bitPeriodSet(ticks);
+        } 
     }
     
     // Pet the watchdog after applying updates 
@@ -334,6 +345,7 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
     }
     
 }
+
 
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) {
     switch (instance) {
