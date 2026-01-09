@@ -13,7 +13,7 @@
 static const uint32_t TCC0_PERIOD               = 75000U;
 static const uint32_t TCC1_PERIOD               = 75000U;
 static const uint32_t TCC2_PERIOD               = 18500U;
-static const uint32_t TC3_PERIOD                = 18500U; // TODO: Use actual value!
+static const uint32_t TC3_PERIOD                = 20000U; 
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 
@@ -319,10 +319,7 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
         if (outputs[i].mode == PWM_TCC) {
             tcc_write(outputs[i].instance, outputs[i].channel, ticks);
         } else if (outputs[i].mode == MPWM_TC) {
-            if (outputs[i].channel == 1) {
-                TC3_Compare16bitPeriodSet(ticks);
-            }
-            
+            TC3_Compare16bitPeriodSet(ticks);
         } 
     }
     
