@@ -207,6 +207,28 @@ void leakdet_update(struct leak_det* ld,
         ld->relax_countdown--;
     }
 
+    // After ld->e computed, before ring_push/ring_std:
+    bool sigma_update_ok = true;
+
+    // gate on thermal mask too
+    if (masked) sigma_update_ok = false;
+
+    // gate if residual is already suspicious (uses previous sigma_e)
+    if (fabs(ld->e) > 3.0f * ld->sigma_e) sigma_update_ok = false;
+
+    // gate if CUSUM already trending
+    if (ld->Cplus > 0.5f * ld->cusum_h || ld->Cminus > 0.5f * ld->cusum_h)
+        sigma_update_ok = false;
+
+    if (sigma_update_ok) {
+        ring_push(&ld->e_stats, ld->e);
+        ld->sigma_e = ring_std(&ld->e_stats);
+    }
+
+    // Always floor
+    if (ld->sigma_e < 1e-9f) ld->sigma_e = 1e-9f;
+
+
     // --- Shewhart (fast)
     bool fast = false;
     if (!masked) {

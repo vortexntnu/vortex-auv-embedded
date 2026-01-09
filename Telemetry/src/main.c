@@ -39,6 +39,39 @@
 // *****************************************************************************
 
 int main(void) {
+    SYS_Initialize(NULL);
+
+    printf("Starting Telemetry Application...\n");
+
+    PORT_REGS->GROUP[0].PORT_DIR = (1 << 15);
+    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 15); 
+
+    uint8_t buf[4];
+    buf[0] = 0x02;
+    buf[1] = 0x01;
+    buf[2] = 0x00;
+    buf[3] = 'i';
+    printf("buf[1]: %x\n", buf[1]);
+    PORT_REGS->GROUP[1].PORT_DIR = (1 << 14);
+    PORT_REGS->GROUP[1].PORT_OUTCLR = (1 << 14);
+    SERCOM3_SPI_Write(buf, 4);
+    PORT_REGS->GROUP[1].PORT_OUTSET = (1 << 14);
+
+    uint8_t rx = 'a';
+    printf("rx: %c\n", rx);
+    buf[0] = 0x03;
+    buf[3] = 1;
+
+    PORT_REGS->GROUP[1].PORT_OUTCLR = (1 << 14);
+    //SERCOM3_SPI_WriteRead(buf, 3, &rx, 1);
+    SERCOM3_SPI_WriteRead(&buf[0], 4, &rx, 1);
+
+    PORT_REGS->GROUP[1].PORT_OUTSET = (1 << 14);
+    //printf("Sent: %c\n", buf[3]);
+    printf("Received: %c\n", rx);
+
+    printf("\n");
+
     // system init...
     led_init();  // calls ws_led_sercom5_init_2p4mhz(),
                  // ws2812enc_init(), and bind()
