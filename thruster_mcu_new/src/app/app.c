@@ -71,6 +71,9 @@ static struct pwm_output thrusters[8] = {
 
 static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TC3_CC1. For MPWM TOP = CC0 and duty cycle is determined by CC1
 
+// FOR TESTING
+void generate_pwm_signals();
+
 /* --- Private function prototypes --- */
 
 /**
@@ -197,8 +200,8 @@ void app_init(void) {
     TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
-    set_pwm_neutral(thrusters, 8);
-    set_pwm_neutral(lights, 1);
+    //set_pwm_neutral(thrusters, 8);
+    //set_pwm_neutral(lights, 1);
 
     
     // Enable TC
@@ -347,6 +350,22 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
         return value;
     }
     
+}
+
+void generate_pwm_signals() {
+    // Testing PWM Channel 3 - WO3
+    uint8_t instance = 1;
+    uint8_t channel = 1;
+    
+    uint16_t pulse_us = 2000;
+    
+    pulse_us = clamp(pulse_us, 1000, 2000);
+    
+    uint32_t ticks = us_to_ticks(TCC0_PERIOD, pulse_us, THRUSTER_PWM_PERIOD_US);
+        
+    tcc_write(instance, channel, ticks);
+    
+    //TCC1_PWM24bitDutySet(1, 10000);
 }
 
 
