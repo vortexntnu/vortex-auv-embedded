@@ -354,16 +354,18 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
 
 void generate_pwm_signals() {
     // Testing PWM Channel 3 - WO3
-    uint8_t instance = 1;
-    uint8_t channel = 1;
+    uint8_t instance = 0;
+    uint8_t channel = 2;
     
-    uint16_t pulse_us = 2000;
+    uint16_t pulse_us = 1500;
     
     pulse_us = clamp(pulse_us, 1000, 2000);
     
     uint32_t ticks = us_to_ticks(TCC0_PERIOD, pulse_us, THRUSTER_PWM_PERIOD_US);
         
     tcc_write(instance, channel, ticks);
+    
+    WDT_Clear();
     
     //TCC1_PWM24bitDutySet(1, 10000);
 }
