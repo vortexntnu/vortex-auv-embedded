@@ -6,6 +6,7 @@
                    projectFiles="true">
       <logicalFolder name="f2" displayName="app" projectFiles="true">
         <itemPath>../app/include/led_facade.h</itemPath>
+        <itemPath>../app/include/can_facade.h</itemPath>
       </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
@@ -199,6 +200,7 @@
                    projectFiles="true">
       <logicalFolder name="f2" displayName="app" projectFiles="true">
         <itemPath>../app/src/led_facade.c</itemPath>
+        <itemPath>../app/src/can_facade.c</itemPath>
       </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
@@ -1081,6 +1083,8 @@
         <property key="periphComp5.gte" value="gt"/>
         <property key="periphComp6.gte" value="gt"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/Users/marku/OneDrive/Dokumenter/Vortex/Project/vortex-auv-embedded/Telemetry/Telemetry_V1.X/debug/default/Telemetry_V1_ptg"/>
         <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preservedataflash.ranges"

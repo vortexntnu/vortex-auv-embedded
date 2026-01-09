@@ -31,9 +31,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "definitions.h"                
-#include "ws2812_spi_enc.h"      
+#include "definitions.h"
 #include "led_facade.h"
+#include "can_facade.h"
+#include "interrupts.h"
 #include "ws2812_port_sercom0_harmony.h"
 
 // *****************************************************************************
@@ -42,63 +43,48 @@
 // *****************************************************************************
 // *****************************************************************************
 
-static uint32_t rx_messageID = 0;
-static uint8_t rx_message[64] = {0};
-static uint8_t rx_messageLength = 0;
-static uint16_t timestamp = 0;
-static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
+#define LED_CMD_STDID  (0x469u)
 
-volatile bool rxReady = false;
-static bool s_ram_bound = false;
-static uint8_t s_can_msg_ram[CAN0_MESSAGE_RAM_CONFIG_SIZE];
+/* RX variables defined in CAN_facade.c */
+extern volatile bool rxReady;
+extern uint32_t rx_messageID;
+extern uint8_t  rx_message[64];
+extern uint8_t  rx_messageLength;
+extern uint16_t timestamp;
 
-void APP_CAN_Callback(uintptr_t context)
-{
-    (void)context;
+static volatile bool uncommitted_changes = false;
 
-    rxReady = true;
+uint8_t  tx_counter = 0;
+uint32_t last_spin   = 0;
 
-    // Re-arm for next message
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message, &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-}
+// Test ID.
+//const uint32_t can_test_id = 0x469;
 
-/* --- Initialize CAN0 and bind message RAM --- */
-void CAN_Init(void)
-{
-    if (!s_ram_bound)
-    {
-        CAN0_MessageRAMConfigSet(s_can_msg_ram);
-        s_ram_bound = true;
-    }
-    
-    CAN0_RxCallbackRegister(APP_CAN_Callback,(uintptr_t)NULL,CAN_MSG_ATTR_RX_FIFO0);
-    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message, &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
-}
-
-/* --- Non-blocking send using Tx FIFO --- */
-bool CAN_Send(uint32_t id, uint8_t* data, uint8_t len)
-{
-    const CAN_MODE mode = CAN_MODE_FD_WITHOUT_BRS;
-    const CAN_MSG_TX_ATTRIBUTE attr = CAN_MSG_ATTR_TX_FIFO_DATA_FRAME;
-
-    // Try once, return false if FIFO full
-    return CAN0_MessageTransmit(id, len, data, mode, attr);
-}
 
 int main(void)
 {
     SYS_Initialize(NULL);
-    
     CAN_Init();
     led_init();
     
+    /* Start with a known state */
+    led_clear_all();
+    //led_set(1, 255, 0, 0);
+    //led_set(3, 0, 255, 0);
+    //led_set(5, 0, 0, 20);
+    //led_set(5, 0, 0, 0);
+    led_commit_async();
+
     printf("\r\n----------------------------------------\r\n");
     printf(" SAMC21 CAN RX (LED Controller) \r\n");
+    printf(" Listening on STD ID 0x%03x \r\n", LED_CMD_STDID);
     printf(" DLC=4: [idx R G B], idx=255 -> ALL \r\n");
     printf("----------------------------------------\r\n");
     
-
-    while (1) {
+    
+    
+    while (true)
+    {
         SYS_Tasks();
         
         if (rxReady)
@@ -113,13 +99,46 @@ int main(void)
             for (uint8_t i = 0; i < rx_messageLength; i++)
                 printf("0x%02x ", rx_message[i]);
             printf("\r\n");
+            
+            uint8_t can_test_payload[8] = {
+            tx_counter++, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77
+            };
+            
+            CAN_Send(LED_CMD_STDID, can_test_payload, sizeof(can_test_payload));
         }
-        /*
-        if(!led_busy()){
-            led_clear_all();
-            led_set(2,255,255,255);
+        
+        if (rxReady)
+        {
+            rxReady = false;
+            
+            if (rx_messageID == LED_CMD_STDID){
+                led_set(rx_message[0], rx_message[1], rx_message[2], rx_message[3]);
+                uncommitted_changes = true;
+            }
+
+            uint8_t can_test_payload[8] = {
+            tx_counter++, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77
+            };
+            
+            CAN_Send(LED_CMD_STDID, can_test_payload, sizeof(can_test_payload));
+        }
+
+        /* Background commit of pending LED updates */
+        if (uncommitted_changes)
+        {
+            printf("\r\nCommitting LED changes\r\n");
             led_commit_async();
-        }*/
+
+            if (!led_busy())
+            {
+                // NOTE: If you intend to mark changes as committed, consider setting false here. 
+                uncommitted_changes = true;
+            }
+            else
+            {
+                uncommitted_changes = false;
+            }
+        }
     }
     return (EXIT_FAILURE);
 }
