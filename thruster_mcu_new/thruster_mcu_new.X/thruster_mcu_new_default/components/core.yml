@@ -5050,6 +5050,28 @@ data:
           type: User
         type: Values
       type: String
+    NVIC_-14_0_HANDLER:
+      attributes:
+        id: NVIC_-14_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: NonMaskableInt_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    NonMaskableInt_INTERRUPT_HANDLER:
+      attributes:
+        id: NonMaskableInt_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: eic
+            value: NonMaskableInt_Handler
+          type: Dynamic
+        type: Values
+      type: String
   userData:
     children:
     - attributes:

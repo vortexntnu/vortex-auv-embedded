@@ -353,17 +353,28 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
 }
 
 void generate_pwm_signals() {
-    // Testing PWM Channel 3 - WO3
-    uint8_t instance = 0;
-    uint8_t channel = 2;
+    // PWM 1 | TCC1_WO2 | Working
+    // PWM 2 | TCC1_WO3 | Working
+    // PWM 3 | TCC0_WO2 | Working
+    // PWM 4 | TCC0_WO3 | Working
+    // PWM 5 | TCC0_WO4 | Pin not on devboard
+    // PWM 6 | TCC0_WO5 | Pin not on devboard
+    // PWM 7 | TCC2_WO0 | Pin not on devboard
+    // PWM 8 | TCC2_WO1 | Pin not on devboard
+    // PWM 9 | TC3_ WO0 | PB00 | Not working!
+   
+    uint8_t instance = 3;
+    uint8_t channel = 1;
     
-    uint16_t pulse_us = 1500;
+    uint16_t pulse_us = 1100;
     
-    pulse_us = clamp(pulse_us, 1000, 2000);
+    pulse_us = clamp(pulse_us, 1100, 1900);
     
-    uint32_t ticks = us_to_ticks(TCC0_PERIOD, pulse_us, THRUSTER_PWM_PERIOD_US);
+    uint32_t ticks = us_to_ticks(TC3_PERIOD, pulse_us, LIGHT_PWM_PERIOD_US);
         
-    tcc_write(instance, channel, ticks);
+    //tcc_write(instance, channel, ticks);
+    
+    TC3_Compare16bitMatch1Set(ticks);
     
     WDT_Clear();
     

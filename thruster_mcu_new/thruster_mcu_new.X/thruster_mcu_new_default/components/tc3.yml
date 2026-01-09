@@ -242,7 +242,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            value: '1125'
+            value: '7500'
           type: User
         type: Values
       type: Long

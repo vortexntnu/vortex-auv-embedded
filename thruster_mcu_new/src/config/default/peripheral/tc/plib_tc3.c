@@ -88,7 +88,7 @@ void TC3_CompareInitialize( void )
 
 
     TC3_REGS->COUNT16.TC_CC[0] = 14999U;
-    TC3_REGS->COUNT16.TC_CC[1] = 1125U;
+    TC3_REGS->COUNT16.TC_CC[1] = 7500U;
 
     /* Clear all interrupt flags */
     TC3_REGS->COUNT16.TC_INTFLAG = (uint8_t)TC_INTFLAG_Msk;

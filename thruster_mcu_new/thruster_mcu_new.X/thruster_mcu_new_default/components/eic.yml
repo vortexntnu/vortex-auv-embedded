@@ -301,4 +301,14 @@ data:
           type: User
         type: Values
       type: Boolean
+    NMI_CTRL:
+      attributes:
+        id: NMI_CTRL
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}
