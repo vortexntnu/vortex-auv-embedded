@@ -203,6 +203,7 @@ void app_init(void) {
     
     // Enable TC
     TC0_TimerStart();
+    TC3_CompareStart();
     
     // Enable watchdog
     WDT_Enable();
