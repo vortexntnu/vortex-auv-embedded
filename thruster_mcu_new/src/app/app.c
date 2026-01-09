@@ -194,6 +194,7 @@ void app_init(void) {
     // Enable TCC 
     TCC0_PWMStart();
     TCC1_PWMStart();
+    TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
     set_pwm_neutral(thrusters, 8);
