@@ -69,7 +69,7 @@ static struct pwm_output thrusters[8] = {
     {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}  // TCC2_CC1
 };
 
-static struct pwm_output lights[1] = {{MPWM_TC, 1, 2, TCC1_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TCC1_CHANNEL2
+static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TC3_CC1. For MPWM TOP = CC0 and duty cycle is determined by CC1
 
 /* --- Private function prototypes --- */
 
