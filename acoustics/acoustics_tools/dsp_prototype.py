@@ -17,7 +17,6 @@ def adc_oversampling(signal,s):
 
     return new_signal
 
-
 def single_freq_DFT(signal,freq,dt):
     n = len(signal)
     R = 0
@@ -44,7 +43,7 @@ def TDOA_calculate(times):
 if __name__ == "__main__":
     f = 30000#29000
 
-    time = np.linspace(0,1/(f),int(1/f * 1000000))
+    time = np.linspace(0,1/(f),20*int(1/f * 1000000))
     dt = time[1]
     data = []
     true_phase = []
@@ -68,12 +67,12 @@ if __name__ == "__main__":
         amplitudes.append(float(A))
         calculated_phase.append(phi)
         data.append(signal)
-        #id = np.arange(len(signal))
-        #plt.plot(id,data[i])
+        id = np.arange(len(signal))
+        plt.plot(id,data[i])
 
     if np.average(amplitudes) > 0.75:
         print(TDOA_calculate(true_phase))
         print(TDOA_calculate(calculated_phase))
 
     
-    #plt.show()
+    plt.show()

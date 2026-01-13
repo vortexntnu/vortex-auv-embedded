@@ -1,10 +1,45 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#construct linear system from knowns
 
-#use least squares to construct a system that is easier to solve
+def adc_oversampling(signal,s):
+    N = len(signal)
+    n = len(signal)//s
+    if N%s != 0:
+        n += 1
 
-#use cholesky with forward backward composition to sovle it fast
+    new_signal = np.zeros(n)
+
+    for i in range(n):
+        if N-i*s < s:
+            new_signal[i] = np.average(signal[i*s:N])
+        else:
+            new_signal[i] = np.average(signal[i*s:i*s+s])
+
+    return new_signal
+
+def single_freq_DFT(signal,freq,dt):
+    n = len(signal)
+    R = 0
+    I = 0
+    for i in range(n):
+        R += np.cos(2*np.pi*i*freq*dt)*signal[i]
+        I += -np.sin(2*np.pi*i*freq*dt)*signal[i]
+
+    amplitude = 2*np.sqrt(R**2+I**2)/n
+    phase = np.atan2(I,R)
+
+    #print("Amplitude",amplitude)
+    #print("Phase",phase)
+
+    return amplitude,phase
+
+def TDOA_calculate(times):
+    time_differences = []
+    for i in range(1,len(times)):
+        time_differences.append(times[i]-times[0])
+
+    return time_differences
+
 
 def TDOA_solve(r,t,c):
 
@@ -60,11 +95,11 @@ R = np.array([
 ])
 
 # True source
-s_true = np.array([0.3, 0.4, 0.2])
+s_true = np.array([10, 10, 10])
 
 c = 1500.0  # speed of sound
-n = 30
-N = 1000
+n = 1000
+N = 1
 
 error_list = np.zeros(n)
 
@@ -76,13 +111,13 @@ for i in range(n):
         t = np.linalg.norm(R - s_true, axis=1) / c
 
         # Add noise
-        t += np.random.normal(0, i*10**-4, size=len(t))
+        t += np.random.normal(0, i*10**-5, size=len(t))
 
         #solve
         p = TDOA_solve(R,t,c)
         distances[j] = np.linalg.norm(s_true-p)
     #print(np.std(distances))
-    error_list[i] = np.std(distances)
+    error_list[i] = np.average(distances)
 
 #print(p)
 index = np.arange(len(error_list))
