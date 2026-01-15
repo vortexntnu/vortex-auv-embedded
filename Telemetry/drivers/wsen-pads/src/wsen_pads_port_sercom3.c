@@ -87,7 +87,7 @@ int wsen_init(void) {
  * @return -1 on failure, 0 otherwise.
  */
 int wsen_check_device_id(void) {
-    uint8_t reg = REG_DEVICE_ID;
+    uint8_t reg = REG_DEVICE_ID | 0x80; // MSB 1 for read
     uint8_t device_id = 0;
     if (!SERCOM3_SPI_WriteRead(&reg, 1, &device_id, 1)) {
         return -1;
@@ -103,7 +103,7 @@ int wsen_check_device_id(void) {
 // Helper function that reads the 5 wsen-pads registers containing the pressure
 // and temperature data.
 static bool read_measurements() {
-    uint8_t reg = REG_DATA_P_XL;
+    uint8_t reg = REG_DATA_P_XL | 0x80; // MSB is 1 for read
     wsen_cs_set(true);
     bool result = SERCOM3_SPI_WriteRead(&reg, 1, cycle.read_buf, 5);
     wsen_cs_set(false);
