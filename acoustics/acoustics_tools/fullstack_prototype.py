@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from functions import *
 
+
+# Run acoustic_data_simulator.jl to generate hydrophone data files before running this script
 signal_data = load_all_hydrophone_data()
 print("Loaded signal data from hydrophones.")
 
@@ -138,17 +140,17 @@ peak_reached = False
 peak_i = -1
 peak_index_in_buffer = -1
 decrease_counter = 0
-patience = 5  # Number of consecutive decreases before breaking
+patience = 100  # Number of consecutive decreases before breaking
 
 hydro_pos = [
-        [0.5, 0.5, 0.5],
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0],
-        [1.0, 1.0, 0.0]
-    ]
+    [0.5, 0.5, 0.5],
+    [1.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0],
+    [1.0, 1.0, 0.0],
+    [0.0, 0.0, 0.0]
+]
 
-pinger_pos = [20.0, 15.0, 30.0]
+pinger_pos = [10.0, 5.0, -18.0]
 pinger_direction = np.array(pinger_pos) - np.array([0.5, 0.5, 0.5])
 pinger_direction = pinger_direction / np.linalg.norm(pinger_direction)
 
@@ -187,8 +189,8 @@ for i in range(ADC_out[0].shape[0]):
             decrease_counter = 0  # If equal, reset
 
 # Plot the max magnitudes over time
-""" plt.plot(np.arange(len(mf_magnitude_list)), [np.max(mf) if mf is not None else 0 for mf in mf_magnitude_list])
-plt.show() """
+plt.plot(np.arange(len(mf_magnitude_list)), [np.max(mf) if mf is not None else 0 for mf in mf_magnitude_list])
+plt.show()
 # Plot final buffer states
 def plot_buffer_states(buffers, buffer_size):
     plt.figure(figsize=(10, 8))
@@ -200,6 +202,8 @@ def plot_buffer_states(buffers, buffer_size):
         plt.ylabel('Amplitude')
     plt.tight_layout()
     plt.show()
+
+plot_buffer_states(buffers, buffer_size)
 
 
 # TDOA calculate
