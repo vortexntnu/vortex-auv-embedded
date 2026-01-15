@@ -37,7 +37,7 @@ def buffer_add_sample(signal, buffer, index):
     return buffer
 
 # initialize buffers
-buffer_size = 1024
+buffer_size = 256
 buffers = np.zeros((5, buffer_size))
 
 def generate_reference_signal(frequency, sampling_rate, duration, output_length=None):
@@ -57,11 +57,21 @@ def generate_reference_signal(frequency, sampling_rate, duration, output_length=
             reference_signal = reference_signal[:output_length]
     return reference_signal
 
+def generate_reference_signal_edged(frequency, sampling_rate, output_length):
+    t = np.arange(0, output_length/(sampling_rate), 1/sampling_rate)
+    reference_signal = np.sin(2 * np.pi * frequency * t)
+    for i in range(len(reference_signal)):
+        if i < len(reference_signal)//2:
+            reference_signal[i] *= 0
+    return reference_signal
+
 pinger_frequency = 30000  # 30 kHz
 sampling_rate = 125000  # 125 kHz
 duration = 0.004  # 4 ms
-reference_signal = generate_reference_signal(pinger_frequency, sampling_rate, duration)
+#reference_signal = generate_reference_signal(pinger_frequency, sampling_rate, duration)
+reference_signal = generate_reference_signal(pinger_frequency, sampling_rate, duration, output_length=buffer_size)
 reference_signal_with_padding = generate_reference_signal(pinger_frequency, sampling_rate, duration, output_length=buffer_size)
+reference_signal_edged = generate_reference_signal_edged(pinger_frequency, sampling_rate, buffer_size)
 
 def plot_reference_signal(reference_signal):
     i = np.arange(reference_signal.shape[0])
@@ -71,7 +81,7 @@ def plot_reference_signal(reference_signal):
     plt.ylabel('Amplitude')
     plt.show()
 
-plot_reference_signal(reference_signal_with_padding)
+plot_reference_signal(reference_signal_edged)
 
 # Detect signal presence
 # Compute reference signal fourier transform
@@ -117,7 +127,7 @@ def detect_signal_in_buffer(buffer, reference_signal, reference_signal_fft, thre
     else:
         return False, mf_magnitude, None
     
-def calculate_TDOA(peak_indices, sampling_rate):
+def calculate_times(peak_indices, sampling_rate):
     tdoa = np.array(peak_indices) / sampling_rate
     return tdoa
 
@@ -127,7 +137,7 @@ def cross_correlation_tdoa(buffers):
         correlation = scpy.correlate(buffers[j], buffers[0], mode='full')
         peak_index = np.argmax(np.abs(correlation))
         peak_indices.append(peak_index)
-    tdoa = calculate_TDOA(peak_indices, sampling_rate)
+    tdoa = calculate_times(peak_indices, sampling_rate)
     return tdoa
 
 #plot_reference_signal(reference_signal)
@@ -150,11 +160,20 @@ hydro_pos = [
     [0.0, 0.0, 0.0]
 ]
 
-pinger_pos = [10.0, 5.0, -18.0]
-pinger_direction = np.array(pinger_pos) - np.array([0.5, 0.5, 0.5])
+for i in range(5):
+    hydro_pos[i] = np.array(hydro_pos[i]) - np.array([0.0, 0.0, 12.0])  # Adjust for hydrophone offset
+
+pinger_pos = [15.0, 5.0, -18.0]
+pinger_direction = np.array(pinger_pos) - hydro_pos[0]
 pinger_direction = pinger_direction / np.linalg.norm(pinger_direction)
 
-for i in range(ADC_out[0].shape[0]):
+print(ADC_out[0].shape[0])
+
+for i in range(len(reference_signal_edged)):
+    for j in range(5):
+        buffers[j] = buffer_add_sample(ADC_out[j], buffers[j], i)
+
+""" for i in range(ADC_out[0].shape[0]):
     for j in range(5):
         buffers[j] = buffer_add_sample(ADC_out[j], buffers[j], i)
 
@@ -190,7 +209,7 @@ for i in range(ADC_out[0].shape[0]):
 
 # Plot the max magnitudes over time
 plt.plot(np.arange(len(mf_magnitude_list)), [np.max(mf) if mf is not None else 0 for mf in mf_magnitude_list])
-plt.show()
+plt.show() """
 # Plot final buffer states
 def plot_buffer_states(buffers, buffer_size):
     plt.figure(figsize=(10, 8))

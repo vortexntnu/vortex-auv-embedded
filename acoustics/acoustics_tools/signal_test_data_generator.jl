@@ -22,13 +22,13 @@ end
 
 # Default configuration
 function default_config()
-    pinger_pos = [20.0, 15.0, 30.0]
+    pinger_pos = [10.0, 5.0, -18.0]
     hydro_pos = [
         [0.5, 0.5, 0.5],
         [1.0, 0.0, 0.0],
         [0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0],
-        [1.0, 1.0, 0.0]
+        [1.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0]
     ]
     return HydrophoneConfig(
         pinger_pos,

@@ -23,5 +23,5 @@ for i, file in enumerate(files):
 
 plt.tight_layout()
 plt.show()
-#plt.savefig('hydrophone_signals.png', dpi=300)
+plt.savefig('hydrophone_signals.png', dpi=300)
 print("Plot saved as hydrophone_signals.png")
