@@ -1565,7 +1565,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_1
+            value: PWM_8
           type: User
         type: Values
       type: String
@@ -1575,7 +1575,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_2
+            value: PWM_7
           type: User
         type: Values
       type: String
@@ -1659,7 +1659,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_3
+            value: PWM_6
           type: User
         type: Values
       type: String
@@ -1732,7 +1732,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_4
+            value: PWM_5
           type: User
         type: Values
       type: String
@@ -1816,7 +1816,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_5
+            value: PWM_4
           type: User
         type: Values
       type: String
@@ -1889,7 +1889,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_6
+            value: PWM_3
           type: User
         type: Values
       type: String
@@ -2080,7 +2080,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_7
+            value: PWM_1
           type: User
         type: Values
       type: String
@@ -2090,7 +2090,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_8
+            value: PWM_2
           type: User
         type: Values
       type: String
@@ -2556,7 +2556,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH1
+            value: FLT_TH4
           type: User
         type: Values
       type: String
@@ -2670,7 +2670,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH2
+            value: FLT_TH3
           type: User
         type: Values
       type: String
@@ -2784,7 +2784,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH3
+            value: FLT_TH2
           type: User
         type: Values
       type: String
@@ -2898,7 +2898,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH4
+            value: PG_TH7
           type: User
         type: Values
       type: String
@@ -3012,7 +3012,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH5
+            value: PG_TH6
           type: User
         type: Values
       type: String
@@ -3126,7 +3126,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PH_TH6
+            value: FLT_TH5
           type: User
         type: Values
       type: String
@@ -3240,7 +3240,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH7
+            value: PG_TH8
           type: User
         type: Values
       type: String
@@ -3354,7 +3354,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH8
+            value: FLT_TH1
           type: User
         type: Values
       type: String
@@ -3594,7 +3594,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH1
+            value: PG_TH4
           type: User
         type: Values
       type: String
@@ -3687,7 +3687,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH2
+            value: PG_TH3
           type: User
         type: Values
       type: String
@@ -3800,7 +3800,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH3
+            value: PG_TH2
           type: User
         type: Values
       type: String
@@ -3903,7 +3903,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH4
+            value: FLT_TH7
           type: User
         type: Values
       type: String
@@ -4006,7 +4006,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH5
+            value: FLT_TH6
           type: User
         type: Values
       type: String
@@ -4109,7 +4109,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH6
+            value: PG_TH5
           type: User
         type: Values
       type: String
@@ -4212,7 +4212,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH7
+            value: FLT_TH8
           type: User
         type: Values
       type: String
@@ -4315,7 +4315,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH8
+            value: PG_TH1
           type: User
         type: Values
       type: String
@@ -4409,7 +4409,7 @@ data:
       children:
       - children:
         - attributes:
-            value: IMON_TH1
+            value: IMON_TH3
           type: User
         type: Values
       type: String
@@ -4482,7 +4482,7 @@ data:
       children:
       - children:
         - attributes:
-            value: IMON_TH2
+            value: IMON_TH4
           type: User
         type: Values
       type: String
@@ -4566,7 +4566,7 @@ data:
       children:
       - children:
         - attributes:
-            value: IMON_TH3
+            value: IMON_TH2
           type: User
         type: Values
       type: String
@@ -4639,7 +4639,7 @@ data:
       children:
       - children:
         - attributes:
-            value: IMON_TH4
+            value: IMON_TH1
           type: User
         type: Values
       type: String
@@ -5070,6 +5070,71 @@ data:
             id: eic
             value: NonMaskableInt_Handler
           type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_OUT:
+      attributes:
+        id: PORT_GROUP_0_OUT
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x0'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PINCFG12:
+      attributes:
+        id: PORT_GROUP_0_PINCFG12
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x0'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PIN_12_USED:
+      attributes:
+        id: PORT_GROUP_0_PIN_12_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PORT_GROUP_0_PMUX6:
+      attributes:
+        id: PORT_GROUP_0_PMUX6
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x0'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PAD_12:
+      attributes:
+        id: PORT_GROUP_0_PAD_12
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PA12
+          type: Dynamic
+        type: Values
+      type: String
+    PIN_29_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_29_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
         type: Values
       type: String
   userData:
