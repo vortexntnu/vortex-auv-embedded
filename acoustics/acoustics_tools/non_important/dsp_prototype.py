@@ -73,6 +73,5 @@ if __name__ == "__main__":
     if np.average(amplitudes) > 0.75:
         print(TDOA_calculate(true_phase))
         print(TDOA_calculate(calculated_phase))
-
     
     plt.show()

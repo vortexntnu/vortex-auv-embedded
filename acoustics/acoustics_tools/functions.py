@@ -1,5 +1,9 @@
+"""
+DSP utilities for hydrophone signal processing and simulator orchestration.
+"""
 import numpy as np
 import scipy.signal as scpy
+
 
 def TDOA_pos_solve(r,t,c):
     """
@@ -319,3 +323,23 @@ def load_all_hydrophone_data():
         time, signal = load_hydrophone_data(file_path)
         hydro_data.append((time, signal))
     return hydro_data
+
+# Detect signal presence
+# Compute reference signal fourier transform
+def matched_filtering_fft(signal_fft, reference_signal_fft):
+    """Perform matched filtering in the frequency domain.
+
+    Parameters
+    ----------
+    signal_fft : np.ndarray
+        Complex FFT of the input signal.
+    reference_signal_fft : np.ndarray
+        Complex FFT of the reference (template) signal.
+
+    Returns
+    -------
+    np.ndarray
+        Frequency-domain matched-filter output suitable for IFFT.
+    """
+    matched_filter_output_fft = signal_fft * np.conj(reference_signal_fft)
+    return matched_filter_output_fft
