@@ -1,12 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import scipy.signal as scpy
+
 from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.widgets import Button
 
 from functions import *
 from plotting_functions import *
 from julia_functions import load_simulation_config_json
+
+# ==== Debug / Quick-run options ====
+# Set to True to run only a limited number of frames and exit after printing SNR stats.
+HEADLESS_SNR_ONLY = False
+HEADLESS_MAX_FRAMES = 200
 
 # ==== Load Simulation Configuration ====
 config = load_simulation_config_json("simulation_config.json")
@@ -91,7 +98,7 @@ frame_skip = buffer_size #ADC_out[0].shape[0] // (animation_length * desired_fps
 frame_number = ADC_out[0].shape[0] // frame_skip
 print(f"Animation will capture every {frame_skip} iterations.")
 
-# Collect buffer states and matched filter outputs for animation
+# Collect buffer states outputs for animation
 buffer_frames = []
 matched_filter_frames = []
 noise_frames = []
@@ -99,11 +106,16 @@ SNR_frames = []
 straigt_buffer_frames = []
 
 noise_buffer = np.zeros(frame_number)
-
 SNR_buffer = np.zeros(frame_number)
+# ==== DSP parameters ====
+SNR_threshold_db = 10.0  # SNR threshold for detection (dB)
 
 print("Running simulation and collecting buffer states...")
-for i in range(ADC_out[0].shape[0]):
+max_samples = ADC_out[0].shape[0]
+if HEADLESS_SNR_ONLY:
+    max_samples = min(max_samples, frame_skip * HEADLESS_MAX_FRAMES)
+
+for i in range(max_samples):
     for j in range(ADC_out.shape[0]):
         buffers[j] = buffer_add_sample(ADC_out[j], buffers[j], i)
 
@@ -115,40 +127,58 @@ for i in range(ADC_out[0].shape[0]):
         straigt_buffer_frames.append(straigt_buffer.copy())
         
         # Compute matched filter for reference hydrophone
-        reference_hydrophone_fft = np.fft.fftshift(np.fft.fft(straigt_buffer))
-        reference_signal_fft = np.fft.fftshift(np.fft.fft(reference_signal_oversampled, n=buffer_size))
+        # Linear matched filtering via FFT-based convolution (same-length output)
+        mf_time = scpy.fftconvolve(straigt_buffer, reference_signal_oversampled[::-1], mode="same")
+        mf_power = np.abs(mf_time) ** 2
+        matched_filter_frames.append(mf_power.copy())
 
-        mf_fft = matched_filtering_fft(reference_hydrophone_fft, reference_signal_fft)
-        matched_reference_buffer = np.fft.ifftshift(np.fft.ifft(mf_fft))
-        matched_filter_frames.append(matched_reference_buffer.copy()) 
+        # Estimate noise floor from the matched-filter output, excluding the main peak region.
+        peak_idx = int(np.argmax(mf_power))
+        guard = max(8, buffer_size // 4)  # (min 8 samples)
+        left_end = max(0, peak_idx - guard)
+        right_start = min(buffer_size, peak_idx + guard)
+        noise_region = np.concatenate((straigt_buffer[:left_end], straigt_buffer[right_start:]))
 
-        noies_estimate_type = "RMS"
-        if noies_estimate_type == "RMS":
-            noise = np.sqrt(np.mean(straigt_buffer**2))
-        elif noies_estimate_type == "MAD":
-            pass
+        noise_estimate_type = "RMS"
+        if noise_region.size == 0:
+            noise_floor = float(np.median(noise_region**2))
+        elif noise_estimate_type == "RMS":
+            noise_floor = float(np.mean(noise_region**2))
+        elif noise_estimate_type == "MAD":
+            noise_floor = float(1.4826 * np.median(np.abs(noise_region**2 - np.median(noise_region**2))))
+        else:  # "MEDIAN"
+            noise_floor = float(np.median(noise_region**2))
+
+        h_norm2 = float(np.sum(reference_signal_oversampled ** 2))
+        noise_floor = (noise_floor) * h_norm2
         
         noise_buffer[:-1] = noise_buffer[1:]
-        noise_buffer[-1] = noise
+        noise_buffer[-1] = noise_floor
         noise_frames.append(noise_buffer.copy())
             
 
         # Compute SNR
         SNR_buffer[:-1] = SNR_buffer[1:]
-        peak_signal = np.max(np.abs(matched_reference_buffer))
-        mf_norm = peak_signal / noise if noise != 0 else 0
-        SNR_buffer[-1] = 20 * np.log10(mf_norm) if mf_norm != 0 else 0
+        peak_power = float(np.max(mf_power))
+        snr_linear = peak_power / (noise_floor) if noise_floor > 0 else 0
+        SNR_buffer[-1] = 10.0 * np.log10(snr_linear) if snr_linear > 0 else 0
         SNR_frames.append(SNR_buffer.copy())
 
-
 print(f"Simulation complete. Captured {len(buffer_frames)} frames.")
+
+if HEADLESS_SNR_ONLY:
+    snr_last = np.array([frame[-1] for frame in SNR_frames], dtype=float)
+    best_idx = int(np.argmax(snr_last)) if snr_last.size else -1
+    best_snr = float(snr_last[best_idx]) if best_idx >= 0 else float("nan")
+    print(f"Max SNR: {best_snr:.2f} dB at frame {best_idx} (iteration {best_idx * frame_skip})")
+    raise SystemExit(0)
 
 # Compute matched filter range for proper axis scaling
 mf_min = min(np.min(np.real(mf)) for mf in matched_filter_frames)
 mf_max = max(np.max(np.real(mf)) for mf in matched_filter_frames)
 
 noise_min = min(np.min(noise) for noise in noise_frames)
-noise_max = max(np.max(noise) for noise in noise_frames) + 10  # Add some headroom
+noise_max = max(np.max(noise) for noise in noise_frames)  # Add some headroom
 
 SNR_min = min(np.min(SNR) for SNR in SNR_frames)
 SNR_max = max(np.max(SNR) for SNR in SNR_frames) + 10  # Add some headroom
@@ -196,8 +226,6 @@ def animate(frame_num):
         axes[3].set_title('Hydrophone 1 - SNR Output')
         axes[3].set_ylim(SNR_min, SNR_max)
 
-        
-        
         # Hide other axes
         for j in range(4, 5):
             axes[j].set_visible(False)

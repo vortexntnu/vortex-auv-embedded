@@ -128,6 +128,38 @@ hydrophones_data = [collect(row) for row in eachcol(hydrophones_data)]
 
 print("Signal transmission through channels completed.\n")
 
+# ===============================
+# Electrical Hardware Simulation
+# ===============================
+hydrophone_sensitivity = -180.0  # dB re 1V/μPa
+amplifier_gain = 8.57            # dB at 31kHz
+analog_filter_lower_cutoff = 18_870  # Hz
+analog_filter_upper_cutoff = 52_870  # Hz
+
+Michael_filter = analogfilter(Bandpass(2*π*analog_filter_lower_cutoff, 2*π*analog_filter_upper_cutoff),Butterworth(4))
+
+f_0 = sqrt(analog_filter_lower_cutoff * analog_filter_upper_cutoff)
+BW = analog_filter_upper_cutoff - analog_filter_lower_cutoff
+Q = f_0 / BW
+K = 10.0^(amplifier_gain / 20.0)
+ω_0 = 2 * π * f_0
+ω_0_squared = ω_0^2
+
+Michael_filter = bilinear(Michael_filter, hydrophone_sample_frequency)
+
+for i ∈ eachindex(hydrophones_data)
+    # Apply hydrophone sensitivity
+    hydrophones_data[i] .*= 10.0^( hydrophone_sensitivity / 20.0 )
+
+    # Apply amplifier gain
+    hydrophones_data[i] .*= 10.0^( amplifier_gain / 20.0 )
+
+    # Apply analog filter
+    hydrophones_data[i] = filt(Michael_filter, hydrophones_data[i])
+end
+
+print("Electrical hardware simulation completed.\n")
+
 # ==============================
 # Visualization
 # ==============================
