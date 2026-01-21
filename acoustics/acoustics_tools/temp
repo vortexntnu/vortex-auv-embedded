@@ -59,19 +59,6 @@ def buffer_straigten(buffer, index):
 # initialize digital signal processing parameters
 pinger_frequency = 30000  # 30 kHz
 sampling_rate = 1000000  # 1 MHz
-effective_sampling_rate = sampling_rate / oversampling_factor
-
-# ==== Detection / template parameters ====
-# A finite burst template is far more stable than a step-gated sine in multipath.
-template_cycles = 20  # number of sine cycles in the matched-filter template
-template_window = "tukey"  # "hann" | "tukey" | "rect"
-template_tukey_alpha = 0.25
-template_use_complex_iq = True  # robust to unknown carrier phase (recommended)
-
-# Matched-filter CFAR-ish noise estimation (on MF power)
-snr_threshold_db = 10.0  # detection threshold in dB for MF power / noise power
-guard_len = None  # if None, derived from template length
-noise_cells_fraction = 0.6  # fraction of buffer used as noise cells (excluding guard), spread on both sides
 
 
 detection_area_size = max(np.linalg.norm(np.array(h) - np.array(hydro_pos[0])) for h in hydro_pos[1:]) * sampling_rate / (oversampling_factor * c)
@@ -90,53 +77,12 @@ def generate_reference_signal(frequency, sampling_rate, output_length):
             reference_signal[i] *= 0
     return reference_signal
 
-def generate_sine_burst_template(frequency_hz: float, fs_hz: float, cycles: int) -> np.ndarray:
-    n = int(np.ceil(cycles * fs_hz / frequency_hz))
-    n = max(8, n)
-    t = np.arange(n) / fs_hz
-    x = np.sin(2 * np.pi * frequency_hz * t)
-    if template_window == "hann":
-        w = np.hanning(n)
-    elif template_window == "tukey":
-        w = scpy.windows.tukey(n, alpha=template_tukey_alpha)
-    else:
-        w = np.ones(n)
-    x = x * w
-    x = x - np.mean(x)
-    x_norm = np.linalg.norm(x)
-    return x / x_norm if x_norm > 0 else x
 
+reference_signal = generate_reference_signal(pinger_frequency, sampling_rate, buffer_size*oversampling_factor)
 
-def generate_complex_burst_template(frequency_hz: float, fs_hz: float, cycles: int) -> np.ndarray:
-    n = int(np.ceil(cycles * fs_hz / frequency_hz))
-    n = max(8, n)
-    t = np.arange(n) / fs_hz
-    x = np.exp(1j * 2 * np.pi * frequency_hz * t)
-    if template_window == "hann":
-        w = np.hanning(n)
-    elif template_window == "tukey":
-        w = scpy.windows.tukey(n, alpha=template_tukey_alpha)
-    else:
-        w = np.ones(n)
-    x = x * w
-    x_norm = np.linalg.norm(x)
-    return x / x_norm if x_norm > 0 else x
+reference_signal_oversampled = adc_oversampling(reference_signal, oversampling_factor)
 
-
-if template_use_complex_iq:
-    reference_signal_oversampled = generate_complex_burst_template(
-        pinger_frequency,
-        effective_sampling_rate,
-        template_cycles,
-    )
-else:
-    reference_signal_oversampled = generate_sine_burst_template(
-        pinger_frequency,
-        effective_sampling_rate,
-        template_cycles,
-    )
-
-plot_reference_signal(np.real(reference_signal_oversampled))
+plot_reference_signal(reference_signal_oversampled)
 
 for i in range(5):
     hydro_pos[i] = np.array(hydro_pos[i]) - np.array(drone_pos)  # Adjust for hydrophone offset
@@ -149,8 +95,7 @@ animation_length = 30  # seconds
 desired_fps = 24  # Desired frames per second for the animation
 animation_interval = 1000 // desired_fps  # Milliseconds between frames
 frame_skip = buffer_size #ADC_out[0].shape[0] // (animation_length * desired_fps)  # Capture every N iterations as a frame
-warmup_samples = buffer_size - 1  # wait until ring buffer is fully populated
-frame_number = max(0, (ADC_out[0].shape[0] - warmup_samples) // frame_skip)
+frame_number = ADC_out[0].shape[0] // frame_skip
 print(f"Animation will capture every {frame_skip} iterations.")
 
 # Collect buffer states outputs for animation
@@ -159,12 +104,11 @@ matched_filter_frames = []
 noise_frames = []
 SNR_frames = []
 straigt_buffer_frames = []
-detected_index_frames = []
 
 noise_buffer = np.zeros(frame_number)
 SNR_buffer = np.zeros(frame_number)
 # ==== DSP parameters ====
-SNR_threshold_db = snr_threshold_db  # kept for UI labels/plots
+SNR_threshold_db = 10.0  # SNR threshold for detection (dB)
 
 print("Running simulation and collecting buffer states...")
 max_samples = ADC_out[0].shape[0]
@@ -176,72 +120,49 @@ for i in range(max_samples):
         buffers[j] = buffer_add_sample(ADC_out[j], buffers[j], i)
 
     straigt_buffer = buffer_straigten(buffers[0], i)
-
-    buffer_is_full = i >= warmup_samples
-    # Capture only when the ring buffer is full, and align to the end of each block.
-    if buffer_is_full and ((i + 1) % frame_skip == 0):
+    
+    if i % frame_skip == 0:  # Capture frame every frame_skip iterations
         
         buffer_frames.append(buffers.copy())
         straigt_buffer_frames.append(straigt_buffer.copy())
         
         # Compute matched filter for reference hydrophone
-        # Linear correlation via FFT convolution; using a finite template gives a sharp peak.
-        h = reference_signal_oversampled
-        x = straigt_buffer - float(np.mean(straigt_buffer))
-        if np.iscomplexobj(h):
-            mf_time = scpy.fftconvolve(x, np.conj(h[::-1]), mode="same")
-        else:
-            mf_time = scpy.fftconvolve(x, h[::-1], mode="same")
+        # Linear matched filtering via FFT-based convolution (same-length output)
+        mf_time = scpy.fftconvolve(straigt_buffer, reference_signal_oversampled[::-1], mode="same")
         mf_power = np.abs(mf_time) ** 2
         matched_filter_frames.append(mf_power.copy())
 
-        # Noise floor estimation on MF power (CFAR-ish): exclude a guard band around candidate peak.
-        # This keeps the noise estimate from inflating when the signal (and multipath peaks) appear.
-        peaks, _ = scpy.find_peaks(mf_power)
-        if peaks.size > 0:
-            cand_idx = int(peaks[np.argmax(mf_power[peaks])])
-        else:
-            cand_idx = int(np.argmax(mf_power))
+        # Estimate noise floor from the matched-filter output, excluding the main peak region.
+        peak_idx = int(np.argmax(mf_power))
+        guard = max(8, buffer_size // 4)  # (min 8 samples)
+        left_end = max(0, peak_idx - guard)
+        right_start = min(buffer_size, peak_idx + guard)
+        noise_region = np.concatenate((straigt_buffer[:left_end], straigt_buffer[right_start:]))
 
-        g = guard_len
-        if g is None:
-            g = max(8, int(2 * len(h)))
-        g = int(min(g, buffer_size // 2))
+        noise_estimate_type = "RMS"
+        if noise_region.size == 0:
+            noise_floor = float(np.median(noise_region**2))
+        elif noise_estimate_type == "RMS":
+            noise_floor = float(np.mean(noise_region**2))
+        elif noise_estimate_type == "MAD":
+            noise_floor = float(1.4826 * np.median(np.abs(noise_region**2 - np.median(noise_region**2))))
+        else:  # "MEDIAN"
+            noise_floor = float(np.median(noise_region**2))
 
-        # Choose noise cells from far away on both sides of the candidate.
-        noise_cells_each_side = int((noise_cells_fraction * buffer_size) // 2)
-        left_start = max(0, cand_idx - g - noise_cells_each_side)
-        left_end = max(0, cand_idx - g)
-        right_start = min(buffer_size, cand_idx + g)
-        right_end = min(buffer_size, cand_idx + g + noise_cells_each_side)
-
-        noise_cells = np.concatenate((mf_power[left_start:left_end], mf_power[right_start:right_end]))
-        if noise_cells.size < 16:
-            # Fallback: global median power (robust, but less precise)
-            noise_floor = float(np.median(mf_power))
-        else:
-            noise_floor = float(np.mean(noise_cells))
+        h_norm2 = float(np.sum(reference_signal_oversampled ** 2))
+        noise_floor = (noise_floor) * h_norm2
         
         noise_buffer[:-1] = noise_buffer[1:]
         noise_buffer[-1] = noise_floor
         noise_frames.append(noise_buffer.copy())
-        
-        
+            
+
         # Compute SNR
         SNR_buffer[:-1] = SNR_buffer[1:]
-        # Prefer first significant peak above threshold for "arrival" under multipath.
-        snr_curve_db = 10.0 * np.log10((mf_power + 1e-12) / (noise_floor + 1e-12))
-        det_peaks, props = scpy.find_peaks(snr_curve_db, height=SNR_threshold_db)
-        if det_peaks.size > 0:
-            det_idx = int(det_peaks[0])
-            peak_power = float(mf_power[det_idx])
-        else:
-            peak_power = float(np.max(mf_power))
-            det_idx = -1
+        peak_power = float(np.max(mf_power))
         snr_linear = peak_power / (noise_floor) if noise_floor > 0 else 0
         SNR_buffer[-1] = 10.0 * np.log10(snr_linear) if snr_linear > 0 else 0
         SNR_frames.append(SNR_buffer.copy())
-        detected_index_frames.append(det_idx)
 
 print(f"Simulation complete. Captured {len(buffer_frames)} frames.")
 
@@ -274,10 +195,6 @@ for j in range(5):
     axes[j].set_ylim(min_val, max_val)
     axes[j].set_xlabel('Sample Index')
 
-# Detection marker (used in matched-filter view)
-det_vline = axes[1].axvline(0, color='r', linewidth=1, alpha=0.9)
-det_vline.set_visible(False)
-
 skip_n = 1  # Number of frames to skip on skip button press
 
 # Animation state
@@ -299,13 +216,6 @@ def animate(frame_num):
         axes[1].set_title('Hydrophone 1 - Matched Filter Output')
         axes[1].set_ylim(mf_min, mf_max)
 
-        det_idx = detected_index_frames[frame_num] if frame_num < len(detected_index_frames) else -1
-        if det_idx is not None and det_idx >= 0:
-            det_vline.set_xdata([det_idx, det_idx])
-            det_vline.set_visible(True)
-        else:
-            det_vline.set_visible(False)
-
         lines[2].set_xdata(np.arange(frame_number))
         lines[2].set_ydata(noise_frames[frame_num])
         axes[2].set_title('Hydrophone 1 - Noise Output')
@@ -321,7 +231,6 @@ def animate(frame_num):
             axes[j].set_visible(False)
     else:
         # Display buffer data for all hydrophones
-        det_vline.set_visible(False)
         lines[2].set_xdata(np.arange(buffer_size))
         lines[3].set_xdata(np.arange(buffer_size))
         for j in range(5):
@@ -332,10 +241,7 @@ def animate(frame_num):
     
     status = 'PAUSED' if animation_state['paused'] else 'PLAYING'
     view_mode = 'Matched Filter' if animation_state['show_matched_filter'] else 'Buffers'
-    fig.suptitle(
-        f'{view_mode} - Frame {frame_num}/{len(buffer_frames)-1} '
-        f'(Iteration {warmup_samples + (frame_num + 1) * frame_skip - 1}) [{status}]'
-    )
+    fig.suptitle(f'{view_mode} - Frame {frame_num}/{len(buffer_frames)-1} (Iteration {frame_num*frame_skip}) [{status}]')
     return lines
 
 ani = FuncAnimation(fig, animate, frames=len(buffer_frames), interval=animation_interval, repeat=True)
