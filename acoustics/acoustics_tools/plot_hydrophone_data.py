@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.ticker as ticker
 import matplotlib.widgets as mwidgets
+import os
 
 
 def _fft_amp_db(time: np.ndarray, signal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -16,8 +17,29 @@ def _fft_amp_db(time: np.ndarray, signal: np.ndarray) -> tuple[np.ndarray, np.nd
     dB_amplitude = 20 * np.log10(amplitude + np.finfo(float).tiny)
     return freq, dB_amplitude
 
-# List of hydrophone data files
-files = [f'hydrophone_{i}_data.csv' for i in range(1, 6)]
+COMBINED_FILE = 'hydrophones_data.csv'
+LEGACY_FILES = [f'hydrophone_{i}_data.csv' for i in range(1, 6)]
+
+
+def _load_all_hydrophones() -> tuple[list[np.ndarray], list[np.ndarray]]:
+    """Returns (times, signals) for 5 hydrophones.
+
+    Prefers the combined CSV when present, otherwise falls back to legacy per-hydrophone files.
+    """
+    if os.path.isfile(COMBINED_FILE):
+        d = pd.read_csv(COMBINED_FILE)
+        time = d['time'].to_numpy()
+        times = [time for _ in range(5)]
+        signals = [d[f'hydrophone_{i}'].to_numpy() for i in range(1, 6)]
+        return times, signals
+
+    times = []
+    signals = []
+    for file in LEGACY_FILES:
+        d = pd.read_csv(file)
+        times.append(d['time'].to_numpy())
+        signals.append(d['signal'].to_numpy())
+    return times, signals
 
 # Create subplots
 fig, axes = plt.subplots(5, 1, figsize=(10, 10), sharex=False)
@@ -116,9 +138,9 @@ def plot_mode(mode):
 
     if mode == 'Hydrophone 1 Only':
         supylabel.set_visible(False)
-        data = pd.read_csv(files[0])
-        time = data['time'].to_numpy()
-        signal = data['signal'].to_numpy()
+        times, signals = _load_all_hydrophones()
+        time = times[0]
+        signal = signals[0]
 
         top = 0.93
         bottom = 0.18
@@ -170,12 +192,7 @@ def plot_mode(mode):
         axes[1].set_position([0.125, y1, 0.775, height])
 
         # Load all hydrophones once
-        times = []
-        signals = []
-        for file in files:
-            d = pd.read_csv(file)
-            times.append(d['time'].to_numpy())
-            signals.append(d['signal'].to_numpy())
+        times, signals = _load_all_hydrophones()
 
         for i in range(5):
             axes[0].plot(times[i], signals[i], label=f'Hydrophone {i+1}')
@@ -206,12 +223,7 @@ def plot_mode(mode):
     if mode == 'Time Domain':
         supylabel.set_text('Voltage (V)')
 
-        times = []
-        signals = []
-        for file in files:
-            d = pd.read_csv(file)
-            times.append(d['time'].to_numpy())
-            signals.append(d['signal'].to_numpy())
+        times, signals = _load_all_hydrophones()
 
         t_min = min(t.min() for t in times)
         t_max = max(t.max() for t in times)
@@ -230,11 +242,10 @@ def plot_mode(mode):
 
     elif mode == 'FFT Amplitude (dB)':
         supylabel.set_text('Amplitude (dB)')
+
+        times, signals = _load_all_hydrophones()
         for i in range(5):
-            data = pd.read_csv(files[i])
-            time = data['time'].to_numpy()
-            signal = data['signal'].to_numpy()
-            freq_plot, dB_amplitude_plot = _fft_amp_db(time, signal)
+            freq_plot, dB_amplitude_plot = _fft_amp_db(times[i], signals[i])
 
             axes[i].plot(freq_plot, dB_amplitude_plot, label=f'Hydrophone {i+1}')
             axes[i].set_xscale('log')

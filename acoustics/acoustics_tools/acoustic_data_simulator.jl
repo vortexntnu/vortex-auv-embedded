@@ -357,26 +357,27 @@ end
 # CSV Output Setup
 # ==============================
 
-function save_to_csv(data,timeseries,name)
-    open("$(name)_data.csv", "w") do f
-        println(f, "time,signal")
-        for j ∈ eachindex(data)
-            println(f, "$(timeseries[j]),$(data[j])")
+function save_all_to_single_csv(hydrophones_data; filename::AbstractString = "hydrophones_data.csv")
+    n_h = length(hydrophones_data)
+    n = length(hydrophones_data[1])
+    for i in 2:n_h
+        length(hydrophones_data[i]) == n || error("Hydrophone signals have different lengths; cannot write a single aligned CSV")
+    end
+
+    t = range(0, step=1/hydrophone_sample_frequency, length=n)
+
+    open(filename, "w") do f
+        header = ["time"; ["hydrophone_$(i)" for i in 1:n_h]]
+        println(f, join(header, ","))
+        for j ∈ 1:n
+            row = [t[j]; [hydrophones_data[i][j] for i in 1:n_h]]
+            println(f, join(row, ","))
         end
     end
 end
 
-# Save to files (optional)
-function save_all_to_csv(hydrophones_data)
-    for i ∈ eachindex(hydrophones_data)
-        t = range(0, step=1/hydrophone_sample_frequency, length=length(hydrophones_data[i]))
-        sig = hydrophones_data[i]
-        save_to_csv(sig,t,"hydrophone_$(i)")
-    end
-end
-
-save_all_to_csv(hydrophones_data)
-print("Simulation data saved to CSV files.\n")
+save_all_to_single_csv(hydrophones_data)
+print("Simulation data saved to hydrophones_data.csv.\n")
 end
 
 function default_simulation_config()

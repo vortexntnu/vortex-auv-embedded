@@ -3,6 +3,7 @@ DSP utilities for hydrophone signal processing and simulator orchestration.
 """
 import numpy as np
 import scipy.signal as scpy
+import os
 
 
 def TDOA_pos_solve(r,t,c):
@@ -289,41 +290,6 @@ def signal_generate(frequency, phase, duration, dt):
     signal = np.sin(2 * np.pi * frequency * t + phase)
     return signal
 
-def load_hydrophone_data(file_path):
-    """
-    Loads hydrophone data from a CSV file and returns time and signal as numpy arrays.
-
-    Parameters
-    ----------
-    file_path : str
-        Path to the CSV file containing 'time,signal' columns.
-
-    Returns
-    -------
-    tuple
-        (time_array, signal_array) as numpy arrays.
-    """
-    data = np.loadtxt(file_path, delimiter=',', skiprows=1)
-    time = data[:, 0]
-    signal = data[:, 1]
-    return time, signal
-
-def load_all_hydrophone_data():
-    """
-    Loads data from all 5 hydrophone CSV files.
-
-    Returns
-    -------
-    list
-        List of tuples [(time1, signal1), (time2, signal2), ..., (time5, signal5)].
-    """
-    hydro_data = []
-    for i in range(1, 6):
-        file_path = f'hydrophone_{i}_data.csv'
-        time, signal = load_hydrophone_data(file_path)
-        hydro_data.append((time, signal))
-    return hydro_data
-
 # Detect signal presence
 # Compute reference signal fourier transform
 def matched_filtering_fft(signal_fft, reference_signal_fft):
@@ -404,42 +370,3 @@ def generate_reference_signal(frequency, sampling_rate, output_length):
         if i < len(reference_signal)//2:
             reference_signal[i] *= 0
     return reference_signal
-
-""" def generate_sine_burst_template(frequency_hz: float, fs_hz: float, duration: float) -> np.ndarray:
-    n = int(np.ceil(duration * fs_hz))
-    t = np.arange(n) / fs_hz
-    x = np.sin(2 * np.pi * frequency_hz * t)
-    if template_window == "hann":
-        w = np.hanning(n)
-    elif template_window == "tukey":
-        w = scpy.windows.tukey(n, alpha=template_tukey_alpha)
-    else:
-        w = np.ones(n)
-    x = x * w
-    x = x - np.mean(x)
-    x_norm = np.linalg.norm(x)
-    return x / x_norm if x_norm > 0 else x
-
-def generate_complex_burst_template(frequency_hz: float, fs_hz: float, duration: float) -> np.ndarray:
-    n = int(np.ceil(duration * fs_hz))
-    t = np.arange(n) / fs_hz
-    x = np.exp(1j * 2 * np.pi * frequency_hz * t)
-    if template_window == "hann":
-        w = np.hanning(n)
-    elif template_window == "tukey":
-        w = scpy.windows.tukey(n, alpha=template_tukey_alpha)
-    else:
-        w = np.ones(n)
-    x = x * w
-    x_norm = np.linalg.norm(x)
-    return x / x_norm if x_norm > 0 else x
-
-def zero_padding(signal, desired_length):
-    current_length = len(signal)
-    if current_length >= desired_length:
-        return signal[:desired_length]
-    else:
-        padding = np.zeros(desired_length - current_length)
-        return np.concatenate((signal, padding)) """
-
-

@@ -8,7 +8,7 @@ from matplotlib.widgets import Button
 
 from functions import *
 from plotting_functions import *
-from julia_functions import load_simulation_config_json
+from julia_functions import *
 
 def main():
     parser = argparse.ArgumentParser(description="Run the acoustic signal processing simulation.")
