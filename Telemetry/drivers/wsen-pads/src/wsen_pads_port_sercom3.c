@@ -65,7 +65,6 @@ int wsen_init(void) {
 
     wsen_cs_set(true);
     if (!SERCOM3_SPI_Write(buf, 2)) {
-        wsen_cs_set(false);
         return -1;
     };
     // Enable data ready interrupts
@@ -73,12 +72,10 @@ int wsen_init(void) {
     buf[0] = REG_CTRL_3;
     buf[1] = ctrl3;
 
+    wsen_cs_set(true);
     if (!SERCOM3_SPI_Write(buf, 2)) {
-        wsen_cs_set(false);
         return -1;
     };
-
-    wsen_cs_set(false);
     return 0;
 }
 
@@ -106,12 +103,13 @@ static bool read_measurements() {
     uint8_t reg = REG_DATA_P_XL | 0x80; // MSB is 1 for read
     wsen_cs_set(true);
     bool result = SERCOM3_SPI_WriteRead(&reg, 1, cycle.read_buf, 5);
-    wsen_cs_set(false);
     return result;
 }
 
 static void sercom3_spi_cb(uintptr_t context) {
     (void)context;
+    
+    wsen_cs_set(false);
 
     switch (cycle.state) {
         case WSEN_WAIT: {
