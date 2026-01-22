@@ -1,294 +1,190 @@
-import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.ticker as ticker
+import matplotlib.widgets as mwidgets
 
-import scipy.signal as scpy
+# List of hydrophone data files
+files = [f'hydrophone_{i}_data.csv' for i in range(1, 6)]
 
-from matplotlib.animation import FuncAnimation, PillowWriter
-from matplotlib.widgets import Button
+# Create subplots
+fig, axes = plt.subplots(5, 1, figsize=(10, 10), sharex=False)
+fig.subplots_adjust(hspace=0.05, bottom=0.18, top=0.93, left=0.12, right=0.97)
+default_positions = [ax.get_position() for ax in axes]
+try:
+    supylabel = fig.supylabel('')
+except AttributeError:
+    supylabel = fig.text(0.04, 0.5, '', va='center', rotation='vertical')
 
-from functions import *
-from plotting_functions import *
-from julia_functions import load_simulation_config_json
+# Add buttons
+button_ax1 = plt.axes([0.02, 0.02, 0.22, 0.05])
+button1 = mwidgets.Button(button_ax1, 'Time Domain')
+button_ax2 = plt.axes([0.26, 0.02, 0.22, 0.05])
+button2 = mwidgets.Button(button_ax2, 'FFT Amplitude (dB)')
+button_ax3 = plt.axes([0.50, 0.02, 0.22, 0.05])
+button3 = mwidgets.Button(button_ax3, 'PSD (dB)')
+button_ax4 = plt.axes([0.74, 0.02, 0.24, 0.05])
+button4 = mwidgets.Button(button_ax4, 'Hydrophone 1 Only')
 
-# ==== Debug / Quick-run options ====
-# Set to True to run only a limited number of frames and exit after printing SNR stats.
-HEADLESS_SNR_ONLY = False
-HEADLESS_MAX_FRAMES = 200
+def on_click1(event):
+    plot_mode('Time Domain')
 
-# ==== Load Simulation Configuration ====
-config = load_simulation_config_json("simulation_config.json")
-hydro_pos = config["hydrophones_pos"]
-drone_pos = config["drone_pos"]
-pinger_pos = config["pinger_pos"]
-c = 1538.9235842  # speed of sound in water at ~15 degrees Celsius
-print("Loaded simulation configuration.")
-print(f"Hydrophone Positions: {hydro_pos}")
-print(f"Drone Position: {drone_pos}")  
-print(f"Pinger Position: {pinger_pos}")
+def on_click2(event):
+    plot_mode('FFT Amplitude (dB)')
 
+def on_click3(event):
+    plot_mode('PSD (dB)')
 
-# Run acoustic_data_simulator.jl to generate hydrophone data files before running this script
-signal_data = load_all_hydrophone_data()
-print("Loaded signal data from hydrophones.")
+def on_click4(event):
+    plot_mode('Hydrophone 1 Only')
 
+button1.on_clicked(on_click1)
+button2.on_clicked(on_click2)
+button3.on_clicked(on_click3)
+button4.on_clicked(on_click4)
 
-# ==== ADC Oversampling ====
-ADC_out = np.zeros((5,), dtype=object)
+def plot_mode(mode):
+    for i, ax in enumerate(axes):
+        ax.set_visible(True)
+        ax.set_position(default_positions[i])
+    # Clear first (and reset log axes) before drawing
+    for i in range(5):
+        if axes[i].get_xscale() == 'log':
+            axes[i].set_xscale('linear')
+        axes[i].clear()
 
-oversampling_factor = 8
-for i, (time, signal) in enumerate(signal_data):
-    print(f"Processing Hydrophone {i+1} data...")
-    # Oversample the signal
-    oversampled_signal = adc_oversampling(signal, oversampling_factor)
-    ADC_out[i] = oversampled_signal
-    print(f"Hydrophone {i+1} signal oversampled.")
+    if mode == 'Hydrophone 1 Only':
+        supylabel.set_visible(False)
+        data = pd.read_csv(files[0])
+        time = data['time']
+        signal = data['signal']
 
-print("All hydrophone signals oversampled.")
+        top = 0.93
+        bottom = 0.18
+        hspace = 0.07
+        available = top - bottom
+        height = (available - 2 * hspace) / 3
+        y0 = top - height
+        y1 = y0 - hspace - height
+        y2 = y1 - hspace - height
 
-# Compute signal range for proper axis scaling
-min_val = min(np.min(adc) for adc in ADC_out)
-max_val = max(np.max(adc) for adc in ADC_out)
+        axes[0].set_position([0.125, y0, 0.775, height])
+        axes[1].set_position([0.125, y1, 0.775, height])
+        axes[2].set_position([0.125, y2, 0.775, height])
 
-def buffer_add_sample(signal, buffer, index):
-    buffer[index % buffer_size] = signal[index]
-    return buffer
+        axes[0].plot(time, signal, label='Hydrophone 1')
+        axes[0].set_ylabel('Voltage (V)')
+        axes[0].legend()
+        axes[0].set_xlabel('Time (s)')
 
-def buffer_straigten(buffer, index):
-    return np.concatenate((buffer[index % buffer_size:], buffer[:index % buffer_size]))
+        n = len(signal)
+        dt = time[1] - time[0]
+        freq = np.fft.rfftfreq(n, d=dt)
+        fft_values = np.fft.rfft(signal)
 
-# initialize digital signal processing parameters
-pinger_frequency = 30000  # 30 kHz
-sampling_rate = 1000000  # 1 MHz
+        amplitude = np.abs(fft_values) / n
+        dB_amplitude = 20 * np.log10(amplitude + 1e-12)
+        axes[1].plot(freq, dB_amplitude, label='Hydrophone 1')
+        axes[1].set_xscale('log')
+        axes[1].xaxis.set_minor_locator(ticker.LogLocator(subs=(2,3,4,5,6,7,8,9)))
+        axes[1].set_ylabel('Amplitude (dB)')
+        axes[1].legend()
+        axes[1].set_xlabel('Frequency (Hz)')
 
+        fs = 1 / dt
+        psd = np.abs(fft_values) ** 2 / (fs * n)
+        psd[1:] *= 2  # for one-sided PSD
+        dB_psd = 10 * np.log10(psd + 1e-12)
+        axes[2].plot(freq, dB_psd, label='Hydrophone 1')
+        axes[2].set_xscale('log')
+        axes[2].xaxis.set_minor_locator(ticker.LogLocator(subs=(2,3,4,5,6,7,8,9)))
+        axes[2].set_ylabel('PSD (dB/Hz)')
+        axes[2].legend()
+        axes[2].set_xlabel('Frequency (Hz)')
 
-detection_area_size = max(np.linalg.norm(np.array(h) - np.array(hydro_pos[0])) for h in hydro_pos[1:]) * sampling_rate / (oversampling_factor * c)
-detection_area_size = int(np.ceil(detection_area_size)) * 2
-print(f"Estimated Minimum Detection Area Size: {detection_area_size} samples")
-buffer_size = int(np.exp2(np.ceil(np.log2(detection_area_size))))
-print(f"Buffer Size Set To: {buffer_size} samples")
+        axes[0].grid(True, which='both')
+        axes[1].grid(True, which='both')
+        axes[2].grid(True, which='both')
+        axes[3].set_visible(False)
+        axes[4].set_visible(False)
 
-buffers = np.zeros((5, buffer_size))
+        fig.suptitle(f'Hydrophone Signals - {mode}')
+        plt.draw()
+        return
 
-def generate_reference_signal(frequency, sampling_rate, output_length):
-    t = np.arange(0, output_length/(sampling_rate), 1/sampling_rate)
-    reference_signal = np.sin(2 * np.pi * frequency * t)
-    for i in range(len(reference_signal)):
-        if i < len(reference_signal)//2:
-            reference_signal[i] *= 0
-    return reference_signal
+    supylabel.set_visible(True)
+    if mode == 'Time Domain':
+        supylabel.set_text('Voltage (V)')
 
+        times = []
+        signals = []
+        for file in files:
+            d = pd.read_csv(file)
+            times.append(d['time'].to_numpy())
+            signals.append(d['signal'].to_numpy())
 
-reference_signal = generate_reference_signal(pinger_frequency, sampling_rate, buffer_size*oversampling_factor)
+        t_min = min(t.min() for t in times)
+        t_max = max(t.max() for t in times)
+        y_min = min(s.min() for s in signals)
+        y_max = max(s.max() for s in signals)
+        pad = 0.05 * (y_max - y_min) if y_max > y_min else 1.0
 
-reference_signal_oversampled = adc_oversampling(reference_signal, oversampling_factor)
+        for i in range(5):
+            axes[i].plot(times[i], signals[i], label=f'Hydrophone {i+1}')
+            axes[i].legend(loc='upper right')
+            axes[i].set_xlim(t_min, t_max)
+            axes[i].set_ylim(y_min - pad, y_max + pad)
+            axes[i].grid(True, which='both')
+            if i == 4:
+                axes[i].set_xlabel('Time (s)')
 
-plot_reference_signal(reference_signal_oversampled)
+    elif mode == 'FFT Amplitude (dB)':
+        supylabel.set_text('Amplitude (dB)')
+        for i in range(5):
+            data = pd.read_csv(files[i])
+            time = data['time'].to_numpy()
+            signal = data['signal'].to_numpy()
+            n = len(signal)
+            freq = np.fft.rfftfreq(n, d=(time[1] - time[0]))
+            fft_values = np.fft.rfft(signal)
+            amplitude = np.abs(fft_values) / n
+            dB_amplitude = 20 * np.log10(amplitude + 1e-12)
 
-for i in range(5):
-    hydro_pos[i] = np.array(hydro_pos[i]) - np.array(drone_pos)  # Adjust for hydrophone offset
+            axes[i].plot(freq, dB_amplitude, label=f'Hydrophone {i+1}')
+            axes[i].set_xscale('log')
+            axes[i].xaxis.set_minor_locator(ticker.LogLocator(subs=(2,3,4,5,6,7,8,9)))
+            axes[i].legend(loc='upper right')
+            axes[i].grid(True, which='both')
+            if i == 4:
+                axes[i].set_xlabel('Frequency (Hz)')
 
-pinger_direction = np.array(pinger_pos) - hydro_pos[0]
-pinger_direction = pinger_direction / np.linalg.norm(pinger_direction)
+    elif mode == 'PSD (dB)':
+        supylabel.set_text('PSD (dB/Hz)')
+        for i in range(5):
+            data = pd.read_csv(files[i])
+            time = data['time'].to_numpy()
+            signal = data['signal'].to_numpy()
+            n = len(signal)
+            dt = time[1] - time[0]
+            fs = 1 / dt
+            freq = np.fft.rfftfreq(n, d=dt)
+            fft_values = np.fft.rfft(signal)
+            psd = np.abs(fft_values) ** 2 / (fs * n)
+            psd[1:] *= 2  # for one-sided PSD
+            dB_psd = 10 * np.log10(psd + 1e-12)
 
-# ==== Animation Configuration ====
-animation_length = 30  # seconds
-desired_fps = 24  # Desired frames per second for the animation
-animation_interval = 1000 // desired_fps  # Milliseconds between frames
-frame_skip = buffer_size #ADC_out[0].shape[0] // (animation_length * desired_fps)  # Capture every N iterations as a frame
-frame_number = ADC_out[0].shape[0] // frame_skip
-print(f"Animation will capture every {frame_skip} iterations.")
+            axes[i].plot(freq, dB_psd, label=f'Hydrophone {i+1}')
+            axes[i].set_xscale('log')
+            axes[i].xaxis.set_minor_locator(ticker.LogLocator(subs=(2,3,4,5,6,7,8,9)))
+            axes[i].legend(loc='upper right')
+            axes[i].grid(True, which='both')
+            if i == 4:
+                axes[i].set_xlabel('Frequency (Hz)')
 
-# Collect buffer states outputs for animation
-buffer_frames = []
-matched_filter_frames = []
-noise_frames = []
-SNR_frames = []
-straigt_buffer_frames = []
+    fig.suptitle(f'Hydrophone Signals - {mode}')
+    plt.draw()
 
-noise_buffer = np.zeros(frame_number)
-SNR_buffer = np.zeros(frame_number)
-# ==== DSP parameters ====
-SNR_threshold_db = 10.0  # SNR threshold for detection (dB)
+# Initial plot
+plot_mode('Time Domain')
 
-print("Running simulation and collecting buffer states...")
-max_samples = ADC_out[0].shape[0]
-if HEADLESS_SNR_ONLY:
-    max_samples = min(max_samples, frame_skip * HEADLESS_MAX_FRAMES)
-
-for i in range(max_samples):
-    for j in range(ADC_out.shape[0]):
-        buffers[j] = buffer_add_sample(ADC_out[j], buffers[j], i)
-
-    straigt_buffer = buffer_straigten(buffers[0], i)
-    
-    if i % frame_skip == 0:  # Capture frame every frame_skip iterations
-        
-        buffer_frames.append(buffers.copy())
-        straigt_buffer_frames.append(straigt_buffer.copy())
-        
-        # Compute matched filter for reference hydrophone
-        # Linear matched filtering via FFT-based convolution (same-length output)
-        mf_time = scpy.fftconvolve(straigt_buffer, reference_signal_oversampled[::-1], mode="same")
-        mf_power = np.abs(mf_time) ** 2
-        matched_filter_frames.append(mf_power.copy())
-
-        # Estimate noise floor from the matched-filter output, excluding the main peak region.
-        peak_idx = int(np.argmax(mf_power))
-        guard = max(8, buffer_size // 4)  # (min 8 samples)
-        left_end = max(0, peak_idx - guard)
-        right_start = min(buffer_size, peak_idx + guard)
-        noise_region = np.concatenate((straigt_buffer[:left_end], straigt_buffer[right_start:]))
-
-        noise_estimate_type = "RMS"
-        if noise_region.size == 0:
-            noise_floor = float(np.median(noise_region**2))
-        elif noise_estimate_type == "RMS":
-            noise_floor = float(np.mean(noise_region**2))
-        elif noise_estimate_type == "MAD":
-            noise_floor = float(1.4826 * np.median(np.abs(noise_region**2 - np.median(noise_region**2))))
-        else:  # "MEDIAN"
-            noise_floor = float(np.median(noise_region**2))
-
-        h_norm2 = float(np.sum(reference_signal_oversampled ** 2))
-        noise_floor = (noise_floor) * h_norm2
-        
-        noise_buffer[:-1] = noise_buffer[1:]
-        noise_buffer[-1] = noise_floor
-        noise_frames.append(noise_buffer.copy())
-            
-
-        # Compute SNR
-        SNR_buffer[:-1] = SNR_buffer[1:]
-        peak_power = float(np.max(mf_power))
-        snr_linear = peak_power / (noise_floor) if noise_floor > 0 else 0
-        SNR_buffer[-1] = 10.0 * np.log10(snr_linear) if snr_linear > 0 else 0
-        SNR_frames.append(SNR_buffer.copy())
-
-print(f"Simulation complete. Captured {len(buffer_frames)} frames.")
-
-if HEADLESS_SNR_ONLY:
-    snr_last = np.array([frame[-1] for frame in SNR_frames], dtype=float)
-    best_idx = int(np.argmax(snr_last)) if snr_last.size else -1
-    best_snr = float(snr_last[best_idx]) if best_idx >= 0 else float("nan")
-    print(f"Max SNR: {best_snr:.2f} dB at frame {best_idx} (iteration {best_idx * frame_skip})")
-    raise SystemExit(0)
-
-# Compute matched filter range for proper axis scaling
-mf_min = min(np.min(np.real(mf)) for mf in matched_filter_frames)
-mf_max = max(np.max(np.real(mf)) for mf in matched_filter_frames)
-
-noise_min = min(np.min(noise) for noise in noise_frames)
-noise_max = max(np.max(noise) for noise in noise_frames)  # Add some headroom
-
-SNR_min = min(np.min(SNR) for SNR in SNR_frames)
-SNR_max = max(np.max(SNR) for SNR in SNR_frames) + 10  # Add some headroom
-
-# Create animation with interactive controls
-n = 5
-fig = plt.figure(figsize=(12, 10))
-axes = [plt.subplot(5, 1, i+1) for i in range(5)]
-lines = []
-for j in range(5):
-    line, = axes[j].plot(buffer_frames[0][j])
-    lines.append(line)
-    axes[j].set_title(f'Hydrophone {j+1} Buffer')
-    axes[j].set_ylim(min_val, max_val)
-    axes[j].set_xlabel('Sample Index')
-
-skip_n = 1  # Number of frames to skip on skip button press
-
-# Animation state
-animation_state = {'paused': False, 'current_frame': 0, 'show_matched_filter': False}
-
-def animate(frame_num):
-    if not animation_state['paused']:
-        animation_state['current_frame'] = frame_num
-    else:
-        frame_num = animation_state['current_frame']
-    
-    if animation_state['show_matched_filter']:
-        # Display only matched filter output for reference hydrophone
-        lines[0].set_ydata(straigt_buffer_frames[frame_num])
-        axes[0].set_title('Hydrophone 1 - Straigt Buffer Output')
-        axes[0].set_ylim(min_val, max_val)
-        
-        lines[1].set_ydata(np.real(matched_filter_frames[frame_num]))
-        axes[1].set_title('Hydrophone 1 - Matched Filter Output')
-        axes[1].set_ylim(mf_min, mf_max)
-
-        lines[2].set_xdata(np.arange(frame_number))
-        lines[2].set_ydata(noise_frames[frame_num])
-        axes[2].set_title('Hydrophone 1 - Noise Output')
-        axes[2].set_ylim(noise_min, noise_max)
-
-        lines[3].set_xdata(np.arange(frame_number))
-        lines[3].set_ydata(SNR_frames[frame_num])
-        axes[3].set_title('Hydrophone 1 - SNR Output')
-        axes[3].set_ylim(SNR_min, SNR_max)
-
-        # Hide other axes
-        for j in range(4, 5):
-            axes[j].set_visible(False)
-    else:
-        # Display buffer data for all hydrophones
-        lines[2].set_xdata(np.arange(buffer_size))
-        lines[3].set_xdata(np.arange(buffer_size))
-        for j in range(5):
-            lines[j].set_ydata(buffer_frames[frame_num][j])
-            axes[j].set_title(f'Hydrophone {j+1} Buffer')
-            axes[j].set_ylim(min_val, max_val)
-            axes[j].set_visible(True)
-    
-    status = 'PAUSED' if animation_state['paused'] else 'PLAYING'
-    view_mode = 'Matched Filter' if animation_state['show_matched_filter'] else 'Buffers'
-    fig.suptitle(f'{view_mode} - Frame {frame_num}/{len(buffer_frames)-1} (Iteration {frame_num*frame_skip}) [{status}]')
-    return lines
-
-ani = FuncAnimation(fig, animate, frames=len(buffer_frames), interval=animation_interval, repeat=True)
-
-# Create control buttons
-ax_play = plt.axes([0.2, 0.02, 0.08, 0.04])
-ax_skip_back = plt.axes([0.1, 0.02, 0.08, 0.04])
-ax_skip_fwd = plt.axes([0.3, 0.02, 0.08, 0.04])
-ax_toggle = plt.axes([0.42, 0.02, 0.08, 0.04])
-ax_save = plt.axes([0.52, 0.02, 0.08, 0.04])
-
-btn_play = Button(ax_play, 'Pause/Play')
-btn_skip_back = Button(ax_skip_back, 'Skip Back')
-btn_skip_fwd = Button(ax_skip_fwd, 'Skip Fwd')
-btn_toggle = Button(ax_toggle, 'Toggle View')
-btn_save = Button(ax_save, 'Save GIF')
-
-def on_play(event):
-    animation_state['paused'] = not animation_state['paused']
-
-def on_skip_back(event):
-    animation_state['current_frame'] = max(0, animation_state['current_frame'] - skip_n)
-    animation_state['paused'] = True
-
-def on_skip_fwd(event):
-    animation_state['current_frame'] = min(len(buffer_frames) - 1, animation_state['current_frame'] + skip_n)
-    animation_state['paused'] = True
-
-def on_toggle(event):
-    animation_state['show_matched_filter'] = not animation_state['show_matched_filter']
-    animation_state['paused'] = True
-
-def on_save(event):
-    print("Saving animation as GIF...")
-    writer = PillowWriter(fps=desired_fps)
-    ani.save('buffer_animation.gif', writer=writer)
-    print("Animation saved as 'buffer_animation.gif'")
-
-btn_play.on_clicked(on_play)
-btn_skip_back.on_clicked(on_skip_back)
-btn_skip_fwd.on_clicked(on_skip_fwd)
-btn_toggle.on_clicked(on_toggle)
-btn_save.on_clicked(on_save)
-
-plt.subplots_adjust(bottom=0.12)
 plt.show()
-    
-
-""" print("Pinger Direction Vector:", pinger_direction)
-print("Pinger Position:", pinger_pos) """
