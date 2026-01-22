@@ -194,20 +194,20 @@
                      displayName="Telemetry_V1_default"
                      projectFiles="true">
         <logicalFolder name="components" displayName="components" projectFiles="true">
-          <itemPath>Telemetry_V1_default/components/can0.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/sercom0.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/tc3.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/stdio.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/sercom3.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/core.yml</itemPath>
           <itemPath>Telemetry_V1_default/components/eic.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/nvmctrl.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/evsys.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/can0.yml</itemPath>
           <itemPath>Telemetry_V1_default/components/dfp.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/sercom1.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/cmsis.yml</itemPath>
-          <itemPath>Telemetry_V1_default/components/sercom2.yml</itemPath>
           <itemPath>Telemetry_V1_default/components/tc2.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom1.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom3.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/nvmctrl.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/cmsis.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom0.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/stdio.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/tc3.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/evsys.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/sercom2.yml</itemPath>
+          <itemPath>Telemetry_V1_default/components/core.yml</itemPath>
         </logicalFolder>
         <itemPath>Telemetry_V1_default/mcc-config.mc4</itemPath>
       </logicalFolder>
@@ -456,7 +456,7 @@
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-cross-reference-file" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
-        <property key="heap-size" value="0"/>
+        <property key="heap-size" value="512"/>
         <property key="input-libraries" value=""/>
         <property key="kseg-length" value=""/>
         <property key="kseg-origin" value=""/>
