@@ -343,3 +343,84 @@ def matched_filtering_fft(signal_fft, reference_signal_fft):
     """
     matched_filter_output_fft = signal_fft * np.conj(reference_signal_fft)
     return matched_filter_output_fft
+
+def signal_fft_power(X):
+    """Compute the power of a signal in the frequency domain.
+    Parameters
+    ----------
+    X : np.ndarray
+        Complex FFT of the signal.
+    Returns
+    -------
+    float
+        Power of the signal.
+    """
+    return np.sum(np.real(X*np.conj(X)))
+
+def compute_snr_db(signal_power, noise_power):
+    """Compute SNR in decibels.
+
+    Parameters
+    ----------
+    signal_power : float
+        Power of the signal.
+    noise_power : float
+        Power of the noise.
+
+    Returns
+    -------
+    float
+        SNR in decibels.
+    """
+    if noise_power == 0:
+        return float('inf')
+    snr = 10 * np.log10(signal_power / noise_power) if noise_power > 0 else 0
+    return snr
+
+
+def generate_reference_signal(frequency, sampling_rate, output_length):
+    t = np.arange(0, output_length/(sampling_rate), 1/sampling_rate)
+    reference_signal = np.sin(2 * np.pi * frequency * t)
+    for i in range(len(reference_signal)):
+        if i < len(reference_signal)//2:
+            reference_signal[i] *= 0
+    return reference_signal
+
+""" def generate_sine_burst_template(frequency_hz: float, fs_hz: float, duration: float) -> np.ndarray:
+    n = int(np.ceil(duration * fs_hz))
+    t = np.arange(n) / fs_hz
+    x = np.sin(2 * np.pi * frequency_hz * t)
+    if template_window == "hann":
+        w = np.hanning(n)
+    elif template_window == "tukey":
+        w = scpy.windows.tukey(n, alpha=template_tukey_alpha)
+    else:
+        w = np.ones(n)
+    x = x * w
+    x = x - np.mean(x)
+    x_norm = np.linalg.norm(x)
+    return x / x_norm if x_norm > 0 else x
+
+def generate_complex_burst_template(frequency_hz: float, fs_hz: float, duration: float) -> np.ndarray:
+    n = int(np.ceil(duration * fs_hz))
+    t = np.arange(n) / fs_hz
+    x = np.exp(1j * 2 * np.pi * frequency_hz * t)
+    if template_window == "hann":
+        w = np.hanning(n)
+    elif template_window == "tukey":
+        w = scpy.windows.tukey(n, alpha=template_tukey_alpha)
+    else:
+        w = np.ones(n)
+    x = x * w
+    x_norm = np.linalg.norm(x)
+    return x / x_norm if x_norm > 0 else x
+
+def zero_padding(signal, desired_length):
+    current_length = len(signal)
+    if current_length >= desired_length:
+        return signal[:desired_length]
+    else:
+        padding = np.zeros(desired_length - current_length)
+        return np.concatenate((signal, padding)) """
+
+
