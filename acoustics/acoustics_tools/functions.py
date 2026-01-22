@@ -373,8 +373,10 @@ def compute_snr_db(signal_power, noise_power):
         SNR in decibels.
     """
     if noise_power == 0:
-        return float('inf')
-    snr = 10 * np.log10(signal_power / noise_power) if noise_power > 0 else 0
+        return 0
+    if signal_power == 0:
+        return 0
+    snr = 10 * np.log10(signal_power / noise_power)
     return snr
 
 

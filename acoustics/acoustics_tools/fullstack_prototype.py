@@ -50,7 +50,7 @@ def working_block(buffer, new_data_index, block_size, block_number):
     new_data_block = new_data_index // block_size
     working_block = (new_data_block + 3) % (block_number)
     start_index = working_block * block_size
-    return buffer[start_index:start_index + block_size]
+    return buffer[start_index:(start_index + block_size)%(len(buffer)+1)]
 
 # initialize digital signal processing parameters
 pinger_frequency = 30000  # 30 kHz
@@ -59,7 +59,6 @@ effective_sampling_rate = sampling_rate / oversampling_factor
 
 # Estimate minimum detection area size based on pinger frequency and speed of sound
 largest_distance_from_reference = max(np.linalg.norm(np.array(h) - np.array(hydro_pos[0])) for h in hydro_pos[1:])
-
 detection_area_radius = (largest_distance_from_reference / c) * effective_sampling_rate
 detection_area_diameter = int(np.ceil(detection_area_radius)) * 2
 print(f"Estimated Minimum Detection Area Diameter: {detection_area_diameter} samples")
@@ -67,16 +66,18 @@ print(f"Estimated Minimum Detection Area Diameter: {detection_area_diameter} sam
 block_size = int(np.exp2(np.ceil(np.log2(detection_area_diameter))))
 print(f"Block Size Set To: {block_size} samples")
 
+head_room_blocks = 2 # extra blocks to ensure working block is always valid. SHOUDL ALLWAYS BE >= 2 to ensure enough past data.
+block_number = 3 + head_room_blocks # total number of blocks in ring buffers. 3 blocks for working + future and past data, rest for head room.
+buffer_size = block_size * block_number # total buffer size per hydrophone
+print(f"Total Buffer Size Per Hydrophone: {buffer_size} samples")
+
+buffers = np.zeros((5, buffer_size))
+
 max_allowed_detection_execution_time = block_size / (effective_sampling_rate/1000000) # in microseconds
 print(f"Max Detection Execution Time Per Frame: {max_allowed_detection_execution_time:.0f} µs")
 
-head_room_blocks = 0
-block_number = 5 + head_room_blocks
-buffer_size = block_size * block_number
-buffers = np.zeros((5, block_size))
-
 for i in range(5):
-    hydro_pos[i] = np.array(hydro_pos[i]) - np.array(drone_pos)  # Adjust for hydrophone offset
+    hydro_pos[i] = np.array(hydro_pos[i]) - np.array(drone_pos)  # Adjust for drone position
 
 pinger_direction = np.array(pinger_pos) - hydro_pos[0]
 pinger_direction = pinger_direction / np.linalg.norm(pinger_direction)
@@ -86,7 +87,7 @@ animation_length = 30  # seconds
 desired_fps = 24  # Desired frames per second for the animation
 animation_interval = 1000 // desired_fps  # Milliseconds between frames
 frame_skip = block_size #ADC_out[0].shape[0] // (animation_length * desired_fps)  # Capture every N iterations as a frame
-warmup_samples = block_size  # wait until first working block is fully populated
+warmup_samples = block_size*head_room_blocks  # wait until first working block is fully populated
 frame_number = max(0, (ADC_out[0].shape[0] - warmup_samples) // frame_skip)
 print(f"Animation will capture every {frame_skip} iterations.")
 
@@ -117,10 +118,10 @@ for i in range(max_samples):
 
     buffer_is_full = i >= warmup_samples
     # Capture only when the ring buffer is full, and align to the end of each block.
-    if buffer_is_full and ((i + 1) % block_size == 0):
+    if buffer_is_full and (i % block_size == 0):
 
-        reference_buffer = buffers[0]
-        straigt_buffer = buffer_straigten(buffers[0], i)
+        reference_buffer = working_block(buffers[0], i, block_size, block_number)
+        straigt_buffer = reference_buffer
 
         x = straigt_buffer - float(np.mean(straigt_buffer))
 
@@ -142,8 +143,11 @@ for i in range(max_samples):
         SNR = pinger_power / (noise_power) if noise_power > 0 else 0
 
         # ==== Store frame data ====
+        buffers_frame = []
+        for buffer in buffers:
+            buffers_frame.append(working_block(buffer, i, block_size, block_number))
 
-        buffer_frames.append(buffers.copy())
+        buffer_frames.append(np.array(buffers_frame).copy())
         straigt_buffer_frames.append(straigt_buffer.copy())
 
         signal_power_buffer[:-1] = signal_power_buffer[1:]
@@ -170,6 +174,7 @@ for i in range(max_samples):
 
 print(f"Simulation complete. Captured {len(buffer_frames)} frames.")
 
+#exit(0) # remove this line to enable plotting
 if HEADLESS_SNR_ONLY:
     snr_last = np.array([frame[-1] for frame in SNR_frames], dtype=float)
     best_idx = int(np.argmax(snr_last)) if snr_last.size else -1
@@ -327,7 +332,3 @@ btn_save.on_clicked(on_save)
 
 plt.subplots_adjust(bottom=0.12)
 plt.show()
-    
-
-""" print("Pinger Direction Vector:", pinger_direction)
-print("Pinger Position:", pinger_pos) """
