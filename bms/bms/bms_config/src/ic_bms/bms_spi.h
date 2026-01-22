@@ -47,6 +47,9 @@
 
 #define THERMISOR_TEMP 0x6A
 #define INTERNAL_TEMP 0x68
+#define TS1_TEMP 0x70
+#define TS2_TEMP 0x72
+#define TS3_TEMP 0x74
 
 //command only (R)
 
@@ -87,7 +90,8 @@ bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length);
 void bms_set_protection_threshold(void);
 void bms_battery_status(void);
 void read_cells_1to6(void);
-
+void bms_sample_temps(void);
+bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC);
 
 
 
