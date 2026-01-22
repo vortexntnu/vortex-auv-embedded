@@ -379,6 +379,23 @@ def compute_snr_db(signal_power, noise_power):
     snr = 10 * np.log10(signal_power / noise_power)
     return snr
 
+def Hilbert_envelope(signal):
+    """Compute the Hilbert envelope of a real-valued signal.
+
+    Parameters
+    ----------
+    signal : np.ndarray
+        Real-valued input signal.
+
+    Returns
+    -------
+    np.ndarray
+        Hilbert envelope of the input signal.
+    """
+    analytic_signal = scpy.hilbert(signal)
+    envelope = np.abs(analytic_signal)
+    return envelope
+
 
 def generate_reference_signal(frequency, sampling_rate, output_length):
     t = np.arange(0, output_length/(sampling_rate), 1/sampling_rate)
