@@ -57,10 +57,6 @@ static volatile bool uncommitted_changes = false;
 uint8_t  tx_counter = 0;
 uint32_t last_spin   = 0;
 
-// Test ID.
-//const uint32_t can_test_id = 0x469;
-
-
 int main(void)
 {
     SYS_Initialize(NULL);
