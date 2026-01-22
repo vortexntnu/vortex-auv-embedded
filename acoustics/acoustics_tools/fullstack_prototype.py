@@ -106,7 +106,6 @@ def generate_sine_burst_template(frequency_hz: float, fs_hz: float, cycles: int)
     x_norm = np.linalg.norm(x)
     return x / x_norm if x_norm > 0 else x
 
-
 def generate_complex_burst_template(frequency_hz: float, fs_hz: float, cycles: int) -> np.ndarray:
     n = int(np.ceil(cycles * fs_hz / frequency_hz))
     n = max(8, n)
@@ -122,6 +121,14 @@ def generate_complex_burst_template(frequency_hz: float, fs_hz: float, cycles: i
     x_norm = np.linalg.norm(x)
     return x / x_norm if x_norm > 0 else x
 
+def zero_padding(signal, desired_length):
+    current_length = len(signal)
+    if current_length >= desired_length:
+        return signal[:desired_length]
+    else:
+        padding = np.zeros(desired_length - current_length)
+        return np.concatenate((signal, padding))
+
 
 if template_use_complex_iq:
     reference_signal_oversampled = generate_complex_burst_template(
@@ -135,6 +142,8 @@ else:
         effective_sampling_rate,
         template_cycles,
     )
+
+    
 
 plot_reference_signal(np.real(reference_signal_oversampled))
 
@@ -260,7 +269,7 @@ noise_min = min(np.min(noise) for noise in noise_frames)
 noise_max = max(np.max(noise) for noise in noise_frames)  # Add some headroom
 
 SNR_min = min(np.min(SNR) for SNR in SNR_frames)
-SNR_max = max(np.max(SNR) for SNR in SNR_frames) + 10  # Add some headroom
+SNR_max = max(np.max(SNR) for SNR in SNR_frames) + 5  # Add some headroom
 
 # Create animation with interactive controls
 n = 5

@@ -2,6 +2,7 @@ using UnderwaterAcoustics
 using Plots
 using SignalAnalysis
 using JSON3
+using FFTW
 
 
 struct simulation_config
@@ -38,6 +39,142 @@ function config_from_json(path::AbstractString)
 end
 
 function simulate_hydrophone_data(config::simulation_config)
+
+# ===============================
+# Electrical model configuration
+# ===============================
+# For best fidelity: export the LTspice AC analysis of V(out) as a text/CSV file with columns:
+#   freq_hz, mag_db, phase_deg
+# Then set `use_measured_transfer = true` and point to that file.
+use_measured_transfer = true
+measured_transfer_path = "LTSpice_analog_filter_sim/analog_filter_sim_results.txt"  # user-provided export
+
+# Hydrophone sensitivity: -180 dB re 1 V/µPa.
+# IMPORTANT: ensure the acoustic simulator output is in µPa. If it is in Pa, add +120 dB.
+hydrophone_sensitivity_db_v_per_uPa = -180.0
+
+# Simple parametric fallback model (used when no measured transfer is supplied)
+fallback_amp_gain_db_at_31k = 8.57
+fallback_bp_low_hz = 18_870.0
+fallback_bp_high_hz = 52_870.0
+fallback_bp_order = 2
+
+function load_measured_transfer(path::AbstractString)
+    # Accept LTspice exports in either:
+    #  - polar:   freq <tab> (-148dB,-91°)
+    #  - cart:    freq <tab> (re,im)
+    #  - numeric: freq, mag_db, phase_deg
+    # Lines starting with '#' or ';' are ignored. Header lines are skipped.
+    rows = Tuple{Float64,Float64,Float64}[]  # (freq_hz, mag_db, phase_deg)
+
+    function _parse_first_float(s::AbstractString)
+        m = match(r"[-+]?((\d+(\.\d*)?)|(\.\d+))([eE][-+]?\d+)?", s)
+        m === nothing && error("No float in: $s")
+        return parse(Float64, m.match)
+    end
+
+    function _strip_wrappers(s::AbstractString)
+        t = strip(s)
+        if startswith(t, "(") && endswith(t, ")")
+            t = t[2:end-1]
+        end
+        return strip(t)
+    end
+
+    function _parse_ltspice_pair(field::AbstractString)
+        # Returns either (mag_db, phase_deg, :polar) or (mag_db, phase_deg, :cart)
+        t = _strip_wrappers(field)
+        parts = split(t, ",")
+        length(parts) < 2 && error("Not a complex pair: $field")
+        a = strip(parts[1])
+        b = strip(parts[2])
+
+        # Detect polar by 'dB' or degree symbol
+        if occursin("dB", a) || occursin("°", b) || occursin("deg", lowercase(b)) || occursin("dB", b)
+            mdb = _parse_first_float(a)
+            ph = _parse_first_float(b)
+            return mdb, ph, :polar
+        else
+            re = _parse_first_float(a)
+            im = _parse_first_float(b)
+            mag = sqrt(re^2 + im^2)
+            mdb = 20.0 * log10(mag + 1e-300)
+            ph = atan(im, re) * 180.0 / π
+            return mdb, ph, :cart
+        end
+    end
+
+    for line in eachline(path)
+        s = strip(line)
+        isempty(s) && continue
+        startswith(s, "#") && continue
+        startswith(s, ";") && continue
+
+        # Normalize separators; keep parentheses payload intact by not splitting on commas first.
+        parts = split(s)  # whitespace split (tabs/spaces)
+        if length(parts) >= 2
+            # LTspice 2-column export: freq + complex field
+            try
+                f = _parse_first_float(parts[1])
+                field = join(parts[2:end], "")
+                mdb, ph, _ = _parse_ltspice_pair(field)
+                push!(rows, (f, mdb, ph))
+                continue
+            catch
+                # fall through to numeric parsing
+            end
+        end
+
+        # Numeric parsing: accept CSV or whitespace separated freq, mag_db, phase_deg
+        parts_num = split(replace(s, "," => " "))
+        if length(parts_num) >= 3
+            try
+                f = _parse_first_float(parts_num[1])
+                mdb = _parse_first_float(parts_num[2])
+                ph = _parse_first_float(parts_num[3])
+                push!(rows, (f, mdb, ph))
+            catch
+                # ignore unparsable lines (e.g., headers)
+            end
+        end
+    end
+    if isempty(rows)
+        error("No usable rows found in measured transfer file: $path")
+    end
+    sort!(rows, by = r -> r[1])
+    freqs = [r[1] for r in rows]
+    mag_db = [r[2] for r in rows]
+    phase_deg = [r[3] for r in rows]
+    return freqs, mag_db, phase_deg
+end
+
+function interp1_linear(x::Vector{Float64}, y::Vector{Float64}, xq::Float64)
+    # Linear interpolation with end clamping
+    xq <= x[1] && return y[1]
+    xq >= x[end] && return y[end]
+    i = searchsortedlast(x, xq)
+    i = clamp(i, 1, length(x) - 1)
+    x1, x2 = x[i], x[i+1]
+    y1, y2 = y[i], y[i+1]
+    t = (xq - x1) / (x2 - x1)
+    return y1 + t * (y2 - y1)
+end
+
+function apply_measured_transfer_fft(x::Vector{Float64}, fs::Int64, freqs::Vector{Float64}, mag_db::Vector{Float64}, phase_deg::Vector{Float64})
+    # Applies a one-sided transfer function to a real signal using rFFT.
+    # Frequency response is interpolated linearly in frequency.
+    n = length(x)
+    X = rfft(x)
+    # rfft bins: k=0..n/2
+    for k in eachindex(X)
+        f = (k - 1) * fs / n
+        mdb = interp1_linear(freqs, mag_db, f)
+        ph = interp1_linear(freqs, phase_deg, f)
+        H = 10.0^(mdb / 20.0) * cis(ph * π / 180.0)
+        X[k] *= H
+    end
+    return irfft(X, n)
+end
 
 # Unpack configuration
 hydrophones_pos = config.hydrophones_pos
@@ -131,31 +268,43 @@ print("Signal transmission through channels completed.\n")
 # ===============================
 # Electrical Hardware Simulation
 # ===============================
-hydrophone_sensitivity = -180.0  # dB re 1V/μPa
-amplifier_gain = 8.57            # dB at 31kHz
-analog_filter_lower_cutoff = 18_870  # Hz
-analog_filter_upper_cutoff = 52_870  # Hz
+sens_v_per_uPa = 10.0^(hydrophone_sensitivity_db_v_per_uPa / 20.0)
 
-Michael_filter = analogfilter(Bandpass(2*π*analog_filter_lower_cutoff, 2*π*analog_filter_upper_cutoff),Butterworth(4))
+measured_freqs = Float64[]
+measured_mag_db = Float64[]
+measured_phase_deg = Float64[]
+if use_measured_transfer
+    if isfile(measured_transfer_path)
+        measured_freqs, measured_mag_db, measured_phase_deg = load_measured_transfer(measured_transfer_path)
+        print("Loaded measured transfer response from $(measured_transfer_path).\n")
+    else
+        error("use_measured_transfer=true but file not found: $(measured_transfer_path)")
+    end
+end
 
-f_0 = sqrt(analog_filter_lower_cutoff * analog_filter_upper_cutoff)
-BW = analog_filter_upper_cutoff - analog_filter_lower_cutoff
-Q = f_0 / BW
-K = 10.0^(amplifier_gain / 20.0)
-ω_0 = 2 * π * f_0
-ω_0_squared = ω_0^2
-
-Michael_filter = bilinear(Michael_filter, hydrophone_sample_frequency)
+fallback_filter = analogfilter(
+    Bandpass(2*π*fallback_bp_low_hz, 2*π*fallback_bp_high_hz),
+    Butterworth(fallback_bp_order),
+)
+fallback_filter = bilinear(fallback_filter, hydrophone_sample_frequency)
+fallback_gain = 10.0^(fallback_amp_gain_db_at_31k / 20.0)
 
 for i ∈ eachindex(hydrophones_data)
     # Apply hydrophone sensitivity
-    hydrophones_data[i] .*= 10.0^( hydrophone_sensitivity / 20.0 )
+    hydrophones_data[i] .*= sens_v_per_uPa
 
-    # Apply amplifier gain
-    hydrophones_data[i] .*= 10.0^( amplifier_gain / 20.0 )
-
-    # Apply analog filter
-    hydrophones_data[i] = filt(Michael_filter, hydrophones_data[i])
+    if use_measured_transfer
+        hydrophones_data[i] = apply_measured_transfer_fft(
+            hydrophones_data[i],
+            hydrophone_sample_frequency,
+            measured_freqs,
+            measured_mag_db,
+            measured_phase_deg,
+        )
+    else
+        hydrophones_data[i] .*= fallback_gain
+        hydrophones_data[i] = filt(fallback_filter, hydrophones_data[i])
+    end
 end
 
 print("Electrical hardware simulation completed.\n")
