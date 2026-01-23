@@ -362,6 +362,46 @@ def Hilbert_envelope(signal):
     envelope = np.abs(analytic_signal)
     return envelope
 
+def CFAR_Thresholding(signal, window_size, guard_size, p_fa):
+    """Apply CFAR thresholding to a 1D signal.
+
+    Parameters
+    ----------
+    signal : np.ndarray
+        Input signal.
+    window_size : int
+        Size of the training window on each side.
+    guard_size : int
+        Size of the guard window on each side.
+    p_fa : float
+        Desired probability of false alarm.
+
+    Returns
+    -------
+    np.ndarray
+        Binary array indicating detections (1) and non-detections (0).
+    """
+    n = len(signal)
+    thresholded_signal = np.zeros(n)
+    alpha = window_size * (p_fa ** (-1 / window_size) - 1)  # CFAR scaling factor
+
+    for i in range(n):
+        start = max(0, i - guard_size - window_size)
+        end = min(n, i + guard_size + window_size + 1)
+
+        # Exclude guard cells
+        training_cells = np.concatenate((signal[start:i - guard_size], signal[i + guard_size + 1:end]))
+        noise_level = np.mean(training_cells) if len(training_cells) > 0 else 0
+
+        threshold = alpha * noise_level
+
+        if signal[i] > threshold:
+            thresholded_signal[i] = 1
+
+    return thresholded_signal
+
+#def 
+
 
 def generate_reference_signal(frequency, sampling_rate, output_length):
     t = np.arange(0, output_length/(sampling_rate), 1/sampling_rate)

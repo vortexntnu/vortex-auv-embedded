@@ -34,6 +34,7 @@ class SubMode(str, Enum):
     # Sub-modes for Reference
     DETECTION = "detection"
     HILBERT = "hilbert"
+    HILBERT_3D = "hilbert_3d"
 
 
 @dataclass(frozen=True)
@@ -785,8 +786,6 @@ class HilbertPanel(Panel):
         self.store = store
         self.fig = fig
         self.lines: list[Line2D | None] = [None, None, None, None, None]
-        self.ax_3d: Axes3D | None = None
-        self.base_ax_1: Axes = axes[1]
         
         # Precompute y-ranges for envelope and edge
         ws_data = store.arrays["working_space_frames"]
@@ -822,7 +821,7 @@ class HilbertPanel(Panel):
             self.y_max_edge = self.y_min_edge + 1e-12
 
     def plot(self) -> None:
-        """Create line artists for plots 0, 2, 3, 4 (plot 1 is 3D)."""
+        """Create line artists for plots 0, 2, 3, 4 (plot 1 reserved)."""
         for idx in [0, 2, 3, 4]:
             line, = self.axes[idx].plot([], [], linewidth=1)
             self.lines[idx] = line
@@ -832,26 +831,10 @@ class HilbertPanel(Panel):
         for ax in self.axes:
             ax.clear()
             ax.set_visible(True)
-        if self.ax_3d is None or self.ax_3d not in self.fig.axes:
-            self.base_ax_1.set_visible(False)
-            self.ax_3d = self.fig.add_subplot(5, 1, 2, projection='3d')
-            self.axes[1] = self.ax_3d
-        else:
-            self.base_ax_1.set_visible(False)
-            self.ax_3d.set_visible(True)
-            self.axes[1] = self.ax_3d
-        self.ax_3d.set_xlim3d(0, self.ws_len-1)
-        self.ax_3d.set_ylim3d(self.y_min_env, self.y_max_env)
-        self.ax_3d.set_zlim3d(self.y_min_edge, self.y_max_edge)
         self.plot()
 
     def deactivate(self) -> None:
         """Clear axes and hide."""
-        if self.ax_3d is not None:
-            self.ax_3d.clear()
-            self.ax_3d.set_visible(False)
-        self.axes[1] = self.base_ax_1
-        self.base_ax_1.set_visible(True)
         for ax in self.axes:
             ax.clear()
             ax.set_visible(False)
@@ -886,21 +869,12 @@ class HilbertPanel(Panel):
         self.axes[0].set_ylabel("Amplitude")
         artists.append(self.lines[0])
 
-        # Plot 1: 3D plot of complex Hilbert transform
-        if self.ax_3d is None or self.ax_3d not in self.fig.axes:
-            self.base_ax_1.set_visible(False)
-            self.ax_3d = self.fig.add_subplot(5, 1, 2, projection='3d')
-            self.axes[1] = self.ax_3d
-        else:
-            self.base_ax_1.set_visible(False)
-            self.ax_3d.set_visible(True)
-            self.axes[1] = self.ax_3d
-        self.ax_3d.clear()
-        self.ax_3d.plot(x, analytic_signal.real, analytic_signal.imag, linewidth=0.5, color='tab:blue')
-        self.ax_3d.set_title("3D Hilbert Transform (Real, Imag vs Time)")
-        self.ax_3d.set_xlabel("Sample Index")
-        self.ax_3d.set_ylabel("Real Part")
-        self.ax_3d.set_zlabel("Imaginary Part")
+        # Plot 1: Reserved (empty)
+        self.axes[1].clear()
+        self.axes[1].set_title("")
+        self.axes[1].set_xlim(0, 1)
+        self.axes[1].set_ylim(0, 1)
+        self.axes[1].axis('off')
 
         # Plot 2: Phase
         self.lines[2].set_xdata(x)
@@ -944,6 +918,98 @@ class HilbertPanel(Panel):
 
         return artists
 
+
+class Hilbert3DPanel(Panel):
+    """Dedicated 3D Hilbert view for reference hydrophone (full-size plot)."""
+
+    def __init__(self, axes: list[Axes], store: FrameStore, fig: Figure):
+        import scipy.signal as scpy
+        self.axes = axes
+        self.store = store
+        self.fig = fig
+        self.ax_3d: Axes3D | None = None
+        self.base_axes: list[Axes] = axes
+
+        ws_data = store.arrays["working_space_frames"]
+        self.ws_len = ws_data.shape[2]
+        self.y_min_raw = float(np.min(ws_data))
+        self.y_max_raw = float(np.max(ws_data))
+        if self.y_min_raw == self.y_max_raw:
+            self.y_max_raw = self.y_min_raw + 1e-12
+
+        envelope_data = []
+        edge_data = []
+        for frame in ws_data:
+            analytic = scpy.hilbert(frame[0])
+            env = np.abs(analytic)
+            envelope_data.append(env)
+            env_analytic = scpy.hilbert(env)
+            edge = env_analytic.imag
+            edge_data.append(edge)
+
+        envelope_data = np.array(envelope_data)
+        edge_data = np.array(edge_data)
+        self.y_min_env = float(np.min(envelope_data))
+        self.y_max_env = float(np.max(envelope_data))
+        if self.y_min_env == self.y_max_env:
+            self.y_max_env = self.y_min_env + 1e-12
+
+        self.y_min_edge = float(np.min(edge_data))
+        self.y_max_edge = float(np.max(edge_data))
+        if self.y_min_edge == self.y_max_edge:
+            self.y_max_edge = self.y_min_edge + 1e-12
+
+    def plot(self) -> None:
+        # No line artists needed; 3D plot is drawn directly.
+        return None
+
+    def activate(self) -> None:
+        # Hide all base axes to give full space to the 3D plot.
+        for ax in self.axes:
+            ax.clear()
+            ax.set_visible(False)
+
+        if self.ax_3d is None or self.ax_3d not in self.fig.axes:
+            self.ax_3d = self.fig.add_subplot(1, 1, 1, projection='3d')
+        else:
+            self.ax_3d.set_visible(True)
+
+        self.ax_3d.set_xlim3d(0, self.ws_len - 1)
+        self.ax_3d.set_ylim3d(self.y_min_env, self.y_max_env)
+        self.ax_3d.set_zlim3d(self.y_min_edge, self.y_max_edge)
+
+    def deactivate(self) -> None:
+        if self.ax_3d is not None:
+            self.ax_3d.clear()
+            self.ax_3d.set_visible(False)
+
+        for ax in self.axes:
+            ax.clear()
+            ax.set_visible(False)
+
+    def update(self, frame_idx: int, store: FrameStore, state: AppState) -> list[Artist]:
+        import scipy.signal as scpy
+
+        ws_data = store.arrays["working_space_frames"][frame_idx][0]
+        ws_len = len(ws_data)
+        x = np.arange(ws_len)
+
+        analytic_signal = scpy.hilbert(ws_data)
+
+        if self.ax_3d is None or self.ax_3d not in self.fig.axes:
+            self.ax_3d = self.fig.add_subplot(1, 1, 1, projection='3d')
+
+        self.ax_3d.clear()
+        self.ax_3d.plot(x, analytic_signal.real, analytic_signal.imag, linewidth=0.5, color='tab:blue')
+        self.ax_3d.set_title("3D Hilbert Transform (Real, Imag vs Time)")
+        self.ax_3d.set_xlabel("Sample Index")
+        self.ax_3d.set_ylabel("Real Part")
+        self.ax_3d.set_zlabel("Imaginary Part")
+        self.ax_3d.set_xlim3d(0, ws_len - 1)
+        self.ax_3d.set_ylim3d(self.y_min_env, self.y_max_env)
+        self.ax_3d.set_zlim3d(self.y_min_edge, self.y_max_edge)
+
+        return []
 
 class GuiApp:
     def __init__(
@@ -1018,6 +1084,9 @@ class GuiApp:
             self.axes, store=self.store, fig=self.fig
         )
         self.panels[(MainMode.REFERENCE, SubMode.HILBERT)] = HilbertPanel(
+            self.axes, store=self.store, fig=self.fig
+        )
+        self.panels[(MainMode.REFERENCE, SubMode.HILBERT_3D)] = Hilbert3DPanel(
             self.axes, store=self.store, fig=self.fig
         )
 
@@ -1149,7 +1218,7 @@ class GuiApp:
             if index < len(sub_modes):
                 self.state.set_sub_mode(sub_modes[index])
         elif self.state.main_mode == MainMode.REFERENCE:
-            sub_modes = [SubMode.DETECTION, SubMode.HILBERT]
+            sub_modes = [SubMode.DETECTION, SubMode.HILBERT, SubMode.HILBERT_3D]
             if index < len(sub_modes):
                 self.state.set_sub_mode(sub_modes[index])
         
@@ -1165,7 +1234,7 @@ class GuiApp:
                 btn.label.set_text(label)
                 ax.set_visible(True)
         elif self.state.main_mode == MainMode.REFERENCE:
-            labels = ["Detect", "Hilbert"]
+            labels = ["Detect", "Hilbert", "Hilbert 3D"]
             for i in range(len(labels)):
                 self.sub_buttons[i].label.set_text(labels[i])
                 self.sub_button_axes[i].set_visible(True)
@@ -1187,7 +1256,11 @@ class GuiApp:
     def _animate(self, frame_idx: int):
         # Only advance frame if not paused
         if not self.state.paused:
-            self.state.current_frame = frame_idx
+            if frame_idx >= len(self.store) - 1:
+                self.state.current_frame = len(self.store) - 1
+                self.state.paused = True
+            else:
+                self.state.current_frame = frame_idx
         # Always use self.state.current_frame for display and update
         display_frame = int(self.state.current_frame)
 
@@ -1210,7 +1283,8 @@ class GuiApp:
             SubMode.ENVELOPE_EDGE: "Envelope Edge",
             SubMode.OVERLAP: "Overlap View",
             SubMode.DETECTION: "Detection",
-            SubMode.HILBERT: "Hilbert Transform"
+            SubMode.HILBERT: "Hilbert Transform",
+            SubMode.HILBERT_3D: "Hilbert Transform (3D)"
         }
 
         title = f"{main_mode_names[self.state.main_mode]} - {sub_mode_names[self.state.sub_mode]}"
