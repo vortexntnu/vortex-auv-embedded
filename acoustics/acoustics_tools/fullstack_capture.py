@@ -49,6 +49,7 @@ def run_capture(
     config_path: str,
     tdoa_method: str,
     verbose: bool = True,
+    hydrophone_data_path: str | None = "hydrophones_data.csv",
 ) -> tuple[FrameStore, tuple[Any, float, Any, float]]:
     config = load_simulation_config_json(config_path)
     hydro_pos = config["hydrophones_pos"]
@@ -57,7 +58,7 @@ def run_capture(
 
     c = 1538.9235842
 
-    signal_data = load_all_hydrophone_data()
+    signal_data = load_all_hydrophone_data(combined_path=hydrophone_data_path) if hydrophone_data_path else load_all_hydrophone_data()
 
     ADC_out = np.zeros((5,), dtype=object)
     oversampling_factor = 8
@@ -231,17 +232,17 @@ def run_capture(
                 direction_error = float(np.degrees(np.atan2(dir_error_sin, dir_error_cos)))
 
                 if verbose:
+                    print("")
                     print(
                         f"Frame {i // block_size}: "
                         f"Pos Error: {position_error:.2f} deg, "
                         f"Dir Error: {direction_error:.2f} deg, "
                         f"SNR: {10*np.log10(SNR):.2f} dB"
                     )
-                    print(f"    Real Position:      {tuple(pinger_pos)}")
-                    print(f"    Estimated Position: {tuple(estimated_position)}")
-                    print("")
-                    print(f"    Real Direction:     {tuple(pinger_direction)}")
-                    print(f"    Estimated Direction: {tuple(estimated_direction)}")
+                    print(f"    Real Position:      {pinger_pos}")
+                    print(f"    Estimated Position: {estimated_position}")
+                    print(f"    Real Direction:     {pinger_direction}")
+                    print(f"    Estimated Direction:{estimated_direction}")
 
                 pinger_found = True
 
@@ -263,7 +264,7 @@ def run_capture(
             reference_buffer_frames.append(reference_buffer.copy())
             hilbert_envelope_frames.append(reference_envelope.copy())
             hilbert_envelope_edge_frames.append(reference_envelope_edge.copy())
-            detected_indices
+            detected_indices_history.append(detected_indices.copy())
 
             ws_frame = np.stack(
                 [

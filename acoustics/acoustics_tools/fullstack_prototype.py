@@ -35,9 +35,10 @@ if __name__ == "__main__":
     parser.add_argument("--export", type=str, default="buffer_frames.npz", help="Save captured frames to .npz")
     parser.add_argument("--fps", type=int, default=24, help="GUI playback FPS")
     parser.add_argument("--quiet", action="store_true", help="Reduce printing")
+    parser.add_argument("--hydrophone_data_path", type=str, default="hydrophones_data.csv", help="Path to hydrophone data CSV file")
     args = parser.parse_args()
 
-    store, results = run_capture(config_path=args.config, tdoa_method=args.tdoa_method, verbose=not args.quiet)
+    store, results = run_capture(config_path=args.config, tdoa_method=args.tdoa_method, verbose=not args.quiet, hydrophone_data_path=args.hydrophone_data_path)
     if args.export:
         store.save_npz(args.export)
         print(f"Saved capture to: {args.export}")

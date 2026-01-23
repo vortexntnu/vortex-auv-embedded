@@ -72,7 +72,7 @@ def load_combined_hydrophone_data(file_path: str = 'hydrophones_data.csv'):
     signals = [data[:, i] for i in range(1, data.shape[1])]
     return time, signals
 
-def load_all_hydrophone_data():
+def load_all_hydrophone_data(combined_path: str = 'hydrophones_data.csv'):
     """
     Loads hydrophone data.
 
@@ -84,7 +84,6 @@ def load_all_hydrophone_data():
     list
         List of tuples [(time1, signal1), (time2, signal2), ..., (time5, signal5)].
     """
-    combined_path = 'hydrophones_data.csv'
     if os.path.isfile(combined_path):
         time, signals = load_combined_hydrophone_data(combined_path)
         return [(time, sig) for sig in signals]
