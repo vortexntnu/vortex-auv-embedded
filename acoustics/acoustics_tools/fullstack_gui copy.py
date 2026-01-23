@@ -412,7 +412,7 @@ class EnvelopeEdgePanel(Panel):
             # Compute for all working blocks
             data_source = []
             for buffer_frame in store.arrays["buffer_frames"]:
-                edge = scpy.hilbert(np.abs(scpy.hilbert(buffer_frame, axis=1)), axis=1).imag
+                edge = np.abs(scpy.hilbert(np.abs(scpy.hilbert(buffer_frame, axis=1)), axis=1)).imag
                 data_source.append(edge)
             data_source = np.array(data_source)
         
@@ -451,7 +451,7 @@ class EnvelopeEdgePanel(Panel):
             title_suffix = "Workspace"
         else:
             buffer_data = store.arrays["buffer_frames"][frame_idx]
-            data = scpy.hilbert(np.abs(scpy.hilbert(buffer_data, axis=1)), axis=1).imag
+            data = np.abs(scpy.hilbert(np.abs(scpy.hilbert(buffer_data, axis=1)), axis=1)).imag
             x_len = store.meta.block_size
             title_suffix = "Working Block"
 
@@ -493,7 +493,7 @@ class OverlapPanel(Panel):
             env_data_source = store.arrays["buffer_envelope_frames"]
             edge_data_source = []
             for buffer_frame in raw_data_source:
-                edge = scpy.hilbert(np.abs(scpy.hilbert(buffer_frame, axis=1)), axis=1).imag
+                edge = np.abs(scpy.hilbert(np.abs(scpy.hilbert(buffer_frame, axis=1)), axis=1)).imag
                 edge_data_source.append(edge)
             edge_data_source = np.array(edge_data_source)
         
@@ -552,7 +552,7 @@ class OverlapPanel(Panel):
         else:
             raw_data = store.arrays["buffer_frames"][frame_idx]
             env_data = store.arrays["buffer_envelope_frames"][frame_idx]
-            edge_data = scpy.hilbert(np.abs(scpy.hilbert(raw_data, axis=1)), axis=1).imag
+            edge_data = np.abs(scpy.hilbert(np.abs(scpy.hilbert(raw_data, axis=1)), axis=1)).imag
             title_suffix = "Working Block"
 
         x_len = int(raw_data.shape[1])
@@ -799,19 +799,14 @@ class HilbertPanel(Panel):
             self.base_ax_1.set_visible(False)
             self.ax_3d = self.fig.add_subplot(5, 1, 2, projection='3d')
             self.axes[1] = self.ax_3d
-        else:
-            self.base_ax_1.set_visible(False)
-            self.ax_3d.set_visible(True)
-            self.axes[1] = self.ax_3d
         self.plot()
 
     def deactivate(self) -> None:
         """Clear axes and hide."""
         if self.ax_3d is not None:
-            self.ax_3d.clear()
-            self.ax_3d.set_visible(False)
+            self.ax_3d.remove()
+            self.ax_3d = None
         self.axes[1] = self.base_ax_1
-        self.base_ax_1.set_visible(True)
         for ax in self.axes:
             ax.clear()
             ax.set_visible(False)
@@ -835,6 +830,7 @@ class HilbertPanel(Panel):
         # Envelope edge
         envelope_analytic = scpy.hilbert(envelope)
         envelope_edge = envelope_analytic.imag
+        print(type(envelope_edge))
 
         # Plot 0: Raw time data
         self.lines[0].set_xdata(x)
@@ -850,10 +846,6 @@ class HilbertPanel(Panel):
         if self.ax_3d is None or self.ax_3d not in self.fig.axes:
             self.base_ax_1.set_visible(False)
             self.ax_3d = self.fig.add_subplot(5, 1, 2, projection='3d')
-            self.axes[1] = self.ax_3d
-        else:
-            self.base_ax_1.set_visible(False)
-            self.ax_3d.set_visible(True)
             self.axes[1] = self.ax_3d
         self.ax_3d.clear()
         self.ax_3d.plot(x, analytic_signal.real, analytic_signal.imag, linewidth=0.5, color='tab:blue')

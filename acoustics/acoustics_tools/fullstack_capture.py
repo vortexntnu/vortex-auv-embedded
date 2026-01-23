@@ -264,7 +264,7 @@ def run_capture(
             )
             working_space_frames.append(ws_frame.copy())
             working_space_envelope_frames.append(np.abs(scpy.hilbert(ws_frame, axis=1)).copy())
-            working_space_envelope_edge_frames.append(np.abs(scpy.hilbert(ws_frame, axis=1)).imag.copy())
+            working_space_envelope_edge_frames.append(scpy.hilbert(np.abs(scpy.hilbert(ws_frame, axis=1)), axis=1).imag.copy())
 
             signal_power_buffer[:-1] = signal_power_buffer[1:]
             signal_power_buffer[-1] = pinger_power
