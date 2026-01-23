@@ -1025,21 +1025,21 @@ class GuiApp:
         """Setup button interface with state machine logic."""
         # Always-visible buttons
         ax_play = plt.axes([0.02, 0.02, 0.08, 0.04])
-        ax_skip_back = plt.axes([0.11, 0.02, 0.08, 0.04])
-        ax_skip_fwd = plt.axes([0.20, 0.02, 0.08, 0.04])
-        ax_save = plt.axes([0.29, 0.02, 0.08, 0.04])
+        ax_skip_back = plt.axes([0.11, 0.02, 0.05, 0.04])
+        ax_skip_fwd = plt.axes([0.17, 0.02, 0.05, 0.04])
+        ax_save = plt.axes([0.23, 0.02, 0.08, 0.04])
 
         # Main mode buttons
-        ax_workspace = plt.axes([0.40, 0.02, 0.08, 0.04])
-        ax_working = plt.axes([0.49, 0.02, 0.08, 0.04])
-        ax_reference = plt.axes([0.58, 0.02, 0.08, 0.04])
+        ax_workspace = plt.axes([0.34, 0.02, 0.08, 0.04])
+        ax_working = plt.axes([0.43, 0.02, 0.08, 0.04])
+        ax_reference = plt.axes([0.52, 0.02, 0.08, 0.04])
 
-        # Sub-mode buttons (5 buttons for Workspace/Working, 2 for Reference)
-        ax_sub1 = plt.axes([0.69, 0.02, 0.06, 0.04])
-        ax_sub2 = plt.axes([0.76, 0.02, 0.06, 0.04])
-        ax_sub3 = plt.axes([0.83, 0.02, 0.06, 0.04])
-        ax_sub4 = plt.axes([0.90, 0.02, 0.06, 0.04])
-        ax_sub5 = plt.axes([0.97, 0.02, 0.06, 0.04])
+        # Add extra space before sub-mode buttons
+        ax_sub1 = plt.axes([0.63, 0.02, 0.06, 0.04])
+        ax_sub2 = plt.axes([0.70, 0.02, 0.06, 0.04])
+        ax_sub3 = plt.axes([0.77, 0.02, 0.06, 0.04])
+        ax_sub4 = plt.axes([0.84, 0.02, 0.06, 0.04])
+        ax_sub5 = plt.axes([0.91, 0.02, 0.06, 0.04])
 
         self.btn_play = Button(ax_play, "Play/Pause")
         self.btn_skip_back = Button(ax_skip_back, "◄")
@@ -1064,6 +1064,10 @@ class GuiApp:
         # Button callbacks
         def on_play(event):
             self.state.paused = not self.state.paused
+            if self.state.paused:
+                self.ani.event_source.stop()
+            else:
+                self.ani.event_source.start()
 
         def on_skip_back(event):
             self.state.current_frame = max(0, self.state.current_frame - self.skip_n)
@@ -1181,16 +1185,18 @@ class GuiApp:
         self._active_panel_key = key
 
     def _animate(self, frame_idx: int):
+        # Only advance frame if not paused
         if not self.state.paused:
             self.state.current_frame = frame_idx
-        frame_idx = int(self.state.current_frame)
+        # Always use self.state.current_frame for display and update
+        display_frame = int(self.state.current_frame)
 
         panel_key = (self.state.main_mode, self.state.sub_mode)
         self._set_active_panel(panel_key)
-        artists = self.panels[panel_key].update(frame_idx, self.store, self.state)
+        artists = self.panels[panel_key].update(display_frame, self.store, self.state)
 
         status = "PAUSED" if self.state.paused else "PLAYING"
-        
+
         # Generate title
         main_mode_names = {
             MainMode.WORKSPACE: "Workspace",
@@ -1206,12 +1212,12 @@ class GuiApp:
             SubMode.DETECTION: "Detection",
             SubMode.HILBERT: "Hilbert Transform"
         }
-        
+
         title = f"{main_mode_names[self.state.main_mode]} - {sub_mode_names[self.state.sub_mode]}"
         meta = self.store.meta
         self.fig.suptitle(
-            f"{title} | Frame {frame_idx}/{len(self.store) - 1} "
-            f"(Sample {meta.warmup_samples + (frame_idx + 1) * meta.frame_skip - 1}) [{status}]"
+            f"{title} | Frame {display_frame}/{len(self.store) - 1} "
+            f"(Sample {meta.warmup_samples + (display_frame + 1) * meta.frame_skip - 1}) [{status}]"
         )
 
         return artists
