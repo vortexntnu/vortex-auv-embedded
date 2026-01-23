@@ -215,23 +215,33 @@ def run_capture(
                 estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival - times_of_arrival[0], c)
                 estimated_position_normalized = estimated_position / np.linalg.norm(estimated_position)
 
-                pos_dir_error_cos = float(np.dot(estimated_position_normalized, pinger_direction))
-                pos_dir_error_sin = float(
-                    np.dot(
-                        estimated_position_normalized,
-                        estimated_position_normalized - np.dot(pos_dir_error_cos, pinger_direction),
-                    )
-                )
-                position_error = float(np.atan2(pos_dir_error_sin, pos_dir_error_cos) * (180.0 / np.pi))
+                pos_error_cos = float(np.dot(estimated_position_normalized, pinger_direction))
+                ortho_direction = estimated_position_normalized - pos_error_cos*pinger_direction
+                ortho_direction = ortho_direction / np.linalg.norm(ortho_direction)
+                pos_error_sin = float(np.dot(estimated_position_normalized,   ortho_direction))
+                position_error = float(np.degrees(np.atan2(pos_error_sin, pos_error_cos)))
 
                 estimated_direction = TDOA_direction_solve(hydro_pos, times_of_arrival - times_of_arrival[0], c)
                 estimated_direction = estimated_direction / np.linalg.norm(estimated_direction)
 
                 dir_error_cos = float(np.dot(estimated_direction, pinger_direction))
-                dir_error_sin = float(
-                    np.dot(estimated_direction, estimated_direction - np.dot(dir_error_cos, pinger_direction))
-                )
-                direction_error = float(np.atan2(dir_error_sin, dir_error_cos) * (180.0 / np.pi))
+                ortho_direction = estimated_direction - dir_error_cos*pinger_direction
+                ortho_direction = ortho_direction / np.linalg.norm(ortho_direction)
+                dir_error_sin = float(np.dot(estimated_direction,   ortho_direction))
+                direction_error = float(np.degrees(np.atan2(dir_error_sin, dir_error_cos)))
+
+                if verbose:
+                    print(
+                        f"Frame {i // block_size}: "
+                        f"Pos Error: {position_error:.2f} deg, "
+                        f"Dir Error: {direction_error:.2f} deg, "
+                        f"SNR: {10*np.log10(SNR):.2f} dB"
+                    )
+                    print(f"    Real Position:      {tuple(pinger_pos)}")
+                    print(f"    Estimated Position: {tuple(estimated_position)}")
+                    print("")
+                    print(f"    Real Direction:     {tuple(pinger_direction)}")
+                    print(f"    Estimated Direction: {tuple(estimated_direction)}")
 
                 pinger_found = True
 

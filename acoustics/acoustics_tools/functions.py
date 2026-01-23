@@ -401,7 +401,27 @@ def CFAR_Thresholding(signal, window_size, guard_size, p_fa):
     return thresholded_signal
 
 #def 
+def angle_between_directions_deg(dir1, dir2):
+    """Calculate the angle in degrees between two direction vectors.
 
+    Parameters
+    ----------
+    dir1 : np.ndarray
+        First direction vector.
+    dir2 : np.ndarray
+        Second direction vector.
+
+    Returns
+    -------
+    float
+        Angle between the two directions in degrees.
+    """
+    dir1_normalized = dir1 / np.linalg.norm(dir1)
+    dir2_normalized = dir2 / np.linalg.norm(dir2)
+    dot_product = np.clip(np.dot(dir1_normalized, dir2_normalized), -1.0, 1.0)
+    angle_rad = np.arccos(dot_product)
+    angle_deg = np.degrees(angle_rad)
+    return angle_deg
 
 def generate_reference_signal(frequency, sampling_rate, output_length):
     t = np.arange(0, output_length/(sampling_rate), 1/sampling_rate)
