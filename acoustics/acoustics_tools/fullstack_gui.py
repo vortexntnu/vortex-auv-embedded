@@ -399,23 +399,19 @@ class EnvelopeEdgePanel(Panel):
     """Shows envelope edge (imaginary part of Hilbert of envelope) for all 5 hydrophones."""
     
     def __init__(self, axes: list[Axes], is_workspace: bool, store: FrameStore):
-        import scipy.signal as scpy
         self.axes = axes
         self.is_workspace = is_workspace
         self.store = store
         self.lines: list[Line2D] = []
-        
-        # Precompute y-range across all frames
+        # Use workspace envelope edge frames for both workspace and working block
         if is_workspace:
             data_source = store.arrays["working_space_envelope_edge_frames"]
         else:
-            # Compute for all working blocks
-            data_source = []
-            for buffer_frame in store.arrays["buffer_frames"]:
-                edge = scpy.hilbert(np.abs(scpy.hilbert(buffer_frame, axis=1)), axis=1).imag
-                data_source.append(edge)
-            data_source = np.array(data_source)
-        
+            # For working block, take the middle block from workspace envelope edge frames
+            ws_edge = store.arrays["working_space_envelope_edge_frames"]
+            block_size = store.meta.block_size
+            # Middle block is always the block at index block_size:2*block_size
+            data_source = ws_edge[:, :, block_size:2*block_size]
         self.y_min = float(np.min(data_source))
         self.y_max = float(np.max(data_source))
         if self.y_min == self.y_max:
@@ -443,16 +439,15 @@ class EnvelopeEdgePanel(Panel):
         self.lines = []
 
     def update(self, frame_idx: int, store: FrameStore, state: AppState) -> list[Artist]:
-        import scipy.signal as scpy
-        
         if self.is_workspace:
             data = store.arrays["working_space_envelope_edge_frames"][frame_idx]
             x_len = int(data.shape[1])
             title_suffix = "Workspace"
         else:
-            buffer_data = store.arrays["buffer_frames"][frame_idx]
-            data = scpy.hilbert(np.abs(scpy.hilbert(buffer_data, axis=1)), axis=1).imag
-            x_len = store.meta.block_size
+            ws_edge = store.arrays["working_space_envelope_edge_frames"][frame_idx]
+            block_size = store.meta.block_size
+            data = ws_edge[:, block_size:2*block_size]
+            x_len = block_size
             title_suffix = "Working Block"
 
         x = np.arange(x_len)
@@ -475,38 +470,33 @@ class OverlapPanel(Panel):
     """Shows all 5 hydrophones overlapped in different transform plots."""
     
     def __init__(self, axes: list[Axes], is_workspace: bool, store: FrameStore):
-        import scipy.signal as scpy
         self.axes = axes
         self.is_workspace = is_workspace
         self.store = store
-        # lines[plot_idx][hydro_idx] - one set of 5 lines per plot
         self.lines: list[list[Line2D]] = []
         self.colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
-        
         # Precompute y-ranges
         if is_workspace:
             raw_data_source = store.arrays["working_space_frames"]
             env_data_source = store.arrays["working_space_envelope_frames"]
             edge_data_source = store.arrays["working_space_envelope_edge_frames"]
         else:
-            raw_data_source = store.arrays["buffer_frames"]
-            env_data_source = store.arrays["buffer_envelope_frames"]
-            edge_data_source = []
-            for buffer_frame in raw_data_source:
-                edge = scpy.hilbert(np.abs(scpy.hilbert(buffer_frame, axis=1)), axis=1).imag
-                edge_data_source.append(edge)
-            edge_data_source = np.array(edge_data_source)
-        
+            ws_raw = store.arrays["working_space_frames"]
+            ws_env = store.arrays["working_space_envelope_frames"]
+            ws_edge = store.arrays["working_space_envelope_edge_frames"]
+            block_size = store.meta.block_size
+            # Take middle block for working block
+            raw_data_source = ws_raw[:, :, block_size:2*block_size]
+            env_data_source = ws_env[:, :, block_size:2*block_size]
+            edge_data_source = ws_edge[:, :, block_size:2*block_size]
         self.y_min_raw = float(np.min(raw_data_source))
         self.y_max_raw = float(np.max(raw_data_source))
         if self.y_min_raw == self.y_max_raw:
             self.y_max_raw = self.y_min_raw + 1e-12
-            
         self.y_min_env = float(np.min(env_data_source))
         self.y_max_env = float(np.max(env_data_source))
         if self.y_min_env == self.y_max_env:
             self.y_max_env = self.y_min_env + 1e-12
-            
         self.y_min_edge = float(np.min(edge_data_source))
         self.y_max_edge = float(np.max(edge_data_source))
         if self.y_min_edge == self.y_max_edge:
@@ -542,17 +532,19 @@ class OverlapPanel(Panel):
         self.lines = []
 
     def update(self, frame_idx: int, store: FrameStore, state: AppState) -> list[Artist]:
-        import scipy.signal as scpy
-        
         if self.is_workspace:
             raw_data = store.arrays["working_space_frames"][frame_idx]
             env_data = store.arrays["working_space_envelope_frames"][frame_idx]
             edge_data = store.arrays["working_space_envelope_edge_frames"][frame_idx]
             title_suffix = "Workspace"
         else:
-            raw_data = store.arrays["buffer_frames"][frame_idx]
-            env_data = store.arrays["buffer_envelope_frames"][frame_idx]
-            edge_data = scpy.hilbert(np.abs(scpy.hilbert(raw_data, axis=1)), axis=1).imag
+            ws_raw = store.arrays["working_space_frames"][frame_idx]
+            ws_env = store.arrays["working_space_envelope_frames"][frame_idx]
+            ws_edge = store.arrays["working_space_envelope_edge_frames"][frame_idx]
+            block_size = store.meta.block_size
+            raw_data = ws_raw[:, block_size:2*block_size]
+            env_data = ws_env[:, block_size:2*block_size]
+            edge_data = ws_edge[:, block_size:2*block_size]
             title_suffix = "Working Block"
 
         x_len = int(raw_data.shape[1])
@@ -583,11 +575,9 @@ class OverlapPanel(Panel):
             plot_freqs = freqs[pos_mask]
             plot_mag = np.abs(fft_vals[pos_mask]) / len(raw_data[i])
             max_fft = max(max_fft, np.max(plot_mag))
-            
             self.lines[1][i].set_xdata(plot_freqs)
             self.lines[1][i].set_ydata(plot_mag)
             artists.append(self.lines[1][i])
-        
         self.axes[1].set_xlim(0, fs / 2)
         self.axes[1].set_ylim(0, max_fft * 1.1 if max_fft > 0 else 1)
 
