@@ -246,8 +246,6 @@ def run_capture(
 
                 pinger_found = True
 
-            detected_indices_history.append(detected_indices.copy())
-
             # ==== Store frame data ====
             buffers_frame = np.stack(
                 [
