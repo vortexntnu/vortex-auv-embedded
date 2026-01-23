@@ -325,13 +325,15 @@ class FrequencyDomainPanel(Panel):
             plot_freqs = freqs[pos_mask]
             plot_mag = np.abs(fft_vals[pos_mask]) / len(signal)
 
-            self.lines[i].set_xdata(plot_freqs)
-            self.lines[i].set_ydata(plot_mag)
+            self.axes[i].clear()
+            width = (plot_freqs[-1] - plot_freqs[0]) / len(plot_freqs) * 0.8 if len(plot_freqs) > 1 else 0.8
+            self.axes[i].bar(plot_freqs, plot_mag, width=width)
             self.axes[i].set_title(f"Hydrophone {i+1} FFT - {title_suffix}")
             self.axes[i].set_xlim(0, fs / 2)
             self.axes[i].set_ylim(0, self.y_max)
             self.axes[i].set_xlabel("Frequency (Hz)")
             self.axes[i].set_ylabel("Magnitude")
+
             artists.append(self.lines[i])
 
         return artists
@@ -601,6 +603,7 @@ class OverlapPanel(Panel):
         self.axes[1].set_xlabel("Frequency (Hz)")
         self.axes[1].set_ylabel("Magnitude")
         max_fft = 0.0
+        self.axes[1].clear()
         for i in range(5):
             fft_vals = np.fft.fft(raw_data[i])
             freqs = np.fft.fftfreq(len(raw_data[i]), d=1/fs)
@@ -608,9 +611,9 @@ class OverlapPanel(Panel):
             plot_freqs = freqs[pos_mask]
             plot_mag = np.abs(fft_vals[pos_mask]) / len(raw_data[i])
             max_fft = max(max_fft, np.max(plot_mag))
-            self.lines[1][i].set_xdata(plot_freqs)
-            self.lines[1][i].set_ydata(plot_mag)
-            artists.append(self.lines[1][i])
+            width = (plot_freqs[-1] - plot_freqs[0]) / len(plot_freqs) * 0.8 if len(plot_freqs) > 1 else 0.8
+            self.axes[1].bar(plot_freqs, plot_mag, width=width, alpha=0.7)
+        
         self.axes[1].set_xlim(0, fs / 2)
         self.axes[1].set_ylim(0, max_fft * 1.1 if max_fft > 0 else 1)
 
@@ -650,12 +653,22 @@ class OverlapPanel(Panel):
             self.lines[3][i].set_ydata(edge_data[i])
             artists.append(self.lines[3][i])
 
-        # Plot 4: Legend
+        # Plot 4: Legend (horizontal layout)
         self.axes[4].clear()
         self.axes[4].axis('off')
         legend_lines = [plt.Line2D([0], [0], color=self.colors[i], lw=2) for i in range(5)]
         legend_labels = [f'Hydrophone {i+1}' for i in range(5)]
-        self.axes[4].legend(legend_lines, legend_labels, loc='center', fontsize=12, frameon=True)
+        self.axes[4].legend(
+            legend_lines,
+            legend_labels,
+            loc='center',
+            fontsize=12,
+            frameon=True,
+            ncol=5,
+            columnspacing=1.5,
+            handletextpad=0.8,
+            borderaxespad=0.5
+        )
 
         return artists
 
