@@ -401,7 +401,8 @@ end
 
 function main()
     print("Starting Acoustic Data Simulator...\n")
-    cfg = config_from_json("simulation_config.json")
+    config_path = length(ARGS) >= 1 ? ARGS[1] : "simulation_config.json"
+    cfg = config_from_json(config_path)
     simulate_hydrophone_data(cfg)
 end
 
