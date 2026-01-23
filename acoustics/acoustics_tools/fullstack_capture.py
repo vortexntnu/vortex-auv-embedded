@@ -123,8 +123,6 @@ def run_capture(
     FFT_noise_frames: list[np.ndarray] = []
     FFT_freqs_frames: list[np.ndarray] = []
 
-    detected_index_frames: list[np.ndarray] = []
-
     signal_power_buffer = np.zeros(frame_number)
     noise_buffer = np.zeros(frame_number)
     SNR_buffer = np.zeros(frame_number)
@@ -138,6 +136,8 @@ def run_capture(
 
     if verbose:
         print("Running simulation and collecting buffer states...")
+
+    detected_indices_history = []
 
     for i in range(ADC_out[0].shape[0]):
         for j in range(ADC_out.shape[0]):
@@ -209,7 +209,7 @@ def run_capture(
                         detected_indices[k] = detected_index + detected_indices[0]
 
                     else:
-                        detected_indices[k] = int(np.argmin(envelope_edge_k)) + detected_indices[0]
+                        detected_indices[k] = int(np.argmin(envelope_edge_k))
 
                 times_of_arrival = detected_indices.astype(float) / effective_sampling_rate
                 estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival - times_of_arrival[0], c)
@@ -235,6 +235,8 @@ def run_capture(
 
                 pinger_found = True
 
+            detected_indices_history.append(detected_indices.copy())
+
             # ==== Store frame data ====
             buffers_frame = np.stack(
                 [
@@ -251,7 +253,7 @@ def run_capture(
             reference_buffer_frames.append(reference_buffer.copy())
             hilbert_envelope_frames.append(reference_envelope.copy())
             hilbert_envelope_edge_frames.append(reference_envelope_edge.copy())
-            detected_index_frames.append(detected_indices.copy())
+            detected_indices
 
             ws_frame = np.stack(
                 [
@@ -307,7 +309,7 @@ def run_capture(
         "FFT_signal_frames": np.stack(FFT_signal_frames, axis=0),
         "FFT_noise_frames": np.stack(FFT_noise_frames, axis=0),
         "FFT_freqs_frames": np.stack(FFT_freqs_frames, axis=0),
-        "detected_index_frames": np.stack(detected_index_frames, axis=0),
+        "detected_indices_frames": np.stack(detected_indices_history, axis=0),
     }
 
     # Save the final state of the raw working space to a CSV file

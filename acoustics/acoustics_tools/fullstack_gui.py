@@ -232,8 +232,18 @@ class TimeDomainPanel(Panel):
             title_suffix = "Workspace"
         else:
             data = store.arrays["buffer_frames"][frame_idx]
-            x_len = store.meta.block_size
+            block_size = store.meta.block_size
+            x_len = block_size
             title_suffix = "Working Block"
+
+        if state.current_frame == len(store) - 1:
+            if "detected_indices_frames" in store.arrays:
+                detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
+                if not self.is_workspace:
+                    detected_indices = [det - block_size for det in detected_indices]
+                for idx, det in enumerate(detected_indices):
+                        if det >= 0 and det < x_len:
+                            self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
 
         x = np.arange(x_len)
         artists: list[Artist] = []
@@ -387,8 +397,18 @@ class HilbertEnvelopePanel(Panel):
             title_suffix = "Workspace"
         else:
             data = store.arrays["buffer_envelope_frames"][frame_idx]
-            x_len = store.meta.block_size
+            block_size = store.meta.block_size
+            x_len = block_size
             title_suffix = "Working Block"
+
+        if state.current_frame == len(store) - 1:
+            if "detected_indices_frames" in store.arrays:
+                detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
+                if not self.is_workspace:
+                    detected_indices = [det - block_size for det in detected_indices]
+                for idx, det in enumerate(detected_indices):
+                        if det >= 0 and det < x_len:
+                            self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
 
         x = np.arange(x_len)
         artists: list[Artist] = []
@@ -469,6 +489,15 @@ class EnvelopeEdgePanel(Panel):
             x_len = block_size
             title_suffix = "Working Block"
 
+        if state.current_frame == len(store) - 1:
+                if "detected_indices_frames" in store.arrays:
+                    detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
+                    if not self.is_workspace:
+                        detected_indices = [det - block_size for det in detected_indices]
+                    for idx, det in enumerate(detected_indices):
+                            if det >= 0 and det < x_len:
+                                self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+
         x = np.arange(x_len)
         artists: list[Artist] = []
 
@@ -489,6 +518,10 @@ class EnvelopeEdgePanel(Panel):
                 block_boundaries = [block_size * j for j in range(1, n_blocks)]
                 for boundary in block_boundaries:
                     self.axes[i].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
+                
+
+                
+                    
 
         return artists
 
@@ -597,6 +630,19 @@ class OverlapPanel(Panel):
             self.lines[0][i].set_xdata(x)
             self.lines[0][i].set_ydata(raw_data[i])
             artists.append(self.lines[0][i])
+
+        # Draw detected_indices as vertical lines on the final frame
+        if state.current_frame == len(store) - 1:
+            if "detected_indices_frames" in store.arrays:
+                detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
+                if not self.is_workspace:
+                    # For working block, adjust indices to be relative to the middle block
+                    detected_indices = [det - block_size for det in detected_indices]
+                for idx, det in enumerate(detected_indices):
+                    if det >= 0 and det < x_len:
+                        self.axes[0].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
+                        self.axes[2].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
+                        self.axes[3].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
 
         # Plot 1: Frequency domain - all hydrophones overlapped
         self.axes[1].set_title(f"All Hydrophones - Frequency Domain - {title_suffix}")
