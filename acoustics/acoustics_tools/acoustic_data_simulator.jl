@@ -38,7 +38,7 @@ function config_from_json(path::AbstractString)
     )
 end
 
-function simulate_hydrophone_data(config::simulation_config)
+function simulate_hydrophone_data(config::simulation_config, hydrophone_data_path::Union{Nothing,AbstractString}=nothing, verbose::Bool=true)
 
 # ===============================
 # Electrical model configuration
@@ -401,9 +401,13 @@ end
 
 function main()
     print("Starting Acoustic Data Simulator...\n")
+
     config_path = length(ARGS) >= 1 ? ARGS[1] : "simulation_config.json"
+    hydrophone_data_path = length(ARGS) >= 2 ? ARGS[2] : nothing
+    verbose = length(ARGS) >= 3 ? ARGS[3] == "true" : true
+
     cfg = config_from_json(config_path)
-    simulate_hydrophone_data(cfg)
+    simulate_hydrophone_data(cfg, hydrophone_data_path, verbose)
 end
 
-main()
+#main()

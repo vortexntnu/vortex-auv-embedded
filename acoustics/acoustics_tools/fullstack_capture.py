@@ -50,6 +50,7 @@ def run_capture(
     tdoa_method: str,
     verbose: bool = True,
     hydrophone_data_path: str | None = "hydrophones_data.csv",
+    inject_faulty_detection: bool = False,
 ) -> tuple[FrameStore, tuple[Any, float, Any, float]]:
     config = load_simulation_config_json(config_path)
     hydro_pos = config["hydrophones_pos"]
@@ -179,6 +180,17 @@ def run_capture(
 
             if SNR > 1.0:
                 detected_indices[0] = int(np.argmin(reference_envelope_edge))
+                
+                if inject_faulty_detection:
+                    bad_one = np.random.randint(0, 5)
+                else:
+                    bad_one = -1
+                if bad_one >= 0:
+                    print(f"Intentionally corrupting hydrophone {bad_one} detection for testing.")
+                if bad_one == 0:
+                    offset = np.random.randint(-50, 50)
+                    detected_indices[0] += offset
+                    print(f"Corrupted by: {offset} indexes.")
 
                 for k in range(1, 5):
                     ws_k = _working_space(
@@ -211,6 +223,10 @@ def run_capture(
 
                     else:
                         detected_indices[k] = int(np.argmin(envelope_edge_k))
+                        if k == bad_one:
+                            offset = np.random.randint(-50, 50)
+                            detected_indices[k] += offset
+                            print(f"Corrupted by: {offset} indexes.")
 
                 times_of_arrival = detected_indices.astype(float) / effective_sampling_rate
                 estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival - times_of_arrival[0], c)

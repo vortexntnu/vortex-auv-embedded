@@ -236,9 +236,9 @@ class TimeDomainPanel(Panel):
             x_len = block_size
             title_suffix = "Working Block"
 
-        if state.current_frame == len(store) - 1:
+        if frame_idx == len(store) - 1:
             if "detected_indices_frames" in store.arrays:
-                detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
+                detected_indices = store.arrays["detected_indices_frames"][frame_idx]
                 if not self.is_workspace:
                     detected_indices = [det - block_size for det in detected_indices]
                 for idx, det in enumerate(detected_indices):
@@ -401,9 +401,9 @@ class HilbertEnvelopePanel(Panel):
             x_len = block_size
             title_suffix = "Working Block"
 
-        if state.current_frame == len(store) - 1:
+        if frame_idx == len(store) - 1:
             if "detected_indices_frames" in store.arrays:
-                detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
+                detected_indices = store.arrays["detected_indices_frames"][frame_idx]
                 if not self.is_workspace:
                     detected_indices = [det - block_size for det in detected_indices]
                 for idx, det in enumerate(detected_indices):
@@ -489,14 +489,14 @@ class EnvelopeEdgePanel(Panel):
             x_len = block_size
             title_suffix = "Working Block"
 
-        if state.current_frame == len(store) - 1:
-                if "detected_indices_frames" in store.arrays:
-                    detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
-                    if not self.is_workspace:
-                        detected_indices = [det - block_size for det in detected_indices]
-                    for idx, det in enumerate(detected_indices):
-                            if det >= 0 and det < x_len:
-                                self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+        if frame_idx == len(store) - 1:
+            if "detected_indices_frames" in store.arrays:
+                detected_indices = store.arrays["detected_indices_frames"][frame_idx]
+                if not self.is_workspace:
+                    detected_indices = [det - block_size for det in detected_indices]
+                for idx, det in enumerate(detected_indices):
+                        if det >= 0 and det < x_len:
+                            self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
 
         x = np.arange(x_len)
         artists: list[Artist] = []
@@ -632,9 +632,9 @@ class OverlapPanel(Panel):
             artists.append(self.lines[0][i])
 
         # Draw detected_indices as vertical lines on the final frame
-        if state.current_frame == len(store) - 1:
+        if frame_idx == len(store) - 1:
             if "detected_indices_frames" in store.arrays:
-                detected_indices = store.arrays["detected_indices_frames"][state.current_frame]
+                detected_indices = store.arrays["detected_indices_frames"][frame_idx]
                 if not self.is_workspace:
                     # For working block, adjust indices to be relative to the middle block
                     detected_indices = [det - block_size for det in detected_indices]
