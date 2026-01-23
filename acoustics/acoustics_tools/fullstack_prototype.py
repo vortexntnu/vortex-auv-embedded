@@ -32,7 +32,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default="simulation_config.json", help="Path to simulation config JSON")
     parser.add_argument("--tdoa_method", type=str, default="envelope_envelope", help="TDOA method")
     parser.add_argument("--no-gui", action="store_true", help="Run capture only (no GUI)")
-    parser.add_argument("--export", type=str, default=None, help="Save captured frames to .npz")
+    parser.add_argument("--export", type=str, default="buffer_frames.npz", help="Save captured frames to .npz")
     parser.add_argument("--fps", type=int, default=24, help="GUI playback FPS")
     parser.add_argument("--quiet", action="store_true", help="Reduce printing")
     args = parser.parse_args()

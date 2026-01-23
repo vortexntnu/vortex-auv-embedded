@@ -246,6 +246,14 @@ class TimeDomainPanel(Panel):
             self.axes[i].set_xlabel("Sample Index")
             self.axes[i].set_ylabel("Amplitude")
             artists.append(self.lines[i])
+            # Draw block boundary lines if workspace
+            if self.is_workspace:
+                block_size = store.meta.block_size
+                ws_len = store.meta.working_space_size
+                n_blocks = ws_len // block_size
+                block_boundaries = [block_size * j for j in range(1, n_blocks)]
+                for boundary in block_boundaries:
+                    self.axes[i].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
 
         return artists
 
@@ -391,6 +399,14 @@ class HilbertEnvelopePanel(Panel):
             self.axes[i].set_xlabel("Sample Index")
             self.axes[i].set_ylabel("Envelope Magnitude")
             artists.append(self.lines[i])
+            # Draw block boundary lines if workspace
+            if self.is_workspace:
+                block_size = store.meta.block_size
+                ws_len = store.meta.working_space_size
+                n_blocks = ws_len // block_size
+                block_boundaries = [block_size * j for j in range(1, n_blocks)]
+                for boundary in block_boundaries:
+                    self.axes[i].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
 
         return artists
 
@@ -462,6 +478,14 @@ class EnvelopeEdgePanel(Panel):
             self.axes[i].set_xlabel("Sample Index")
             self.axes[i].set_ylabel("Envelope Edge")
             artists.append(self.lines[i])
+            # Draw block boundary lines if workspace
+            if self.is_workspace:
+                block_size = store.meta.block_size
+                ws_len = store.meta.working_space_size
+                n_blocks = ws_len // block_size
+                block_boundaries = [block_size * j for j in range(1, n_blocks)]
+                for boundary in block_boundaries:
+                    self.axes[i].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
 
         return artists
 
@@ -558,6 +582,14 @@ class OverlapPanel(Panel):
         self.axes[0].set_ylim(self.y_min_raw, self.y_max_raw)
         self.axes[0].set_xlabel("Sample Index")
         self.axes[0].set_ylabel("Amplitude")
+        # Draw block boundary lines if workspace
+        if self.is_workspace:
+            block_size = store.meta.block_size
+            ws_len = store.meta.working_space_size
+            n_blocks = ws_len // block_size
+            block_boundaries = [block_size * j for j in range(1, n_blocks)]
+            for boundary in block_boundaries:
+                self.axes[0].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
         for i in range(5):
             self.lines[0][i].set_xdata(x)
             self.lines[0][i].set_ydata(raw_data[i])
@@ -587,6 +619,13 @@ class OverlapPanel(Panel):
         self.axes[2].set_ylim(self.y_min_env, self.y_max_env)
         self.axes[2].set_xlabel("Sample Index")
         self.axes[2].set_ylabel("Envelope Magnitude")
+        if self.is_workspace:
+            block_size = store.meta.block_size
+            ws_len = store.meta.working_space_size
+            n_blocks = ws_len // block_size
+            block_boundaries = [block_size * j for j in range(1, n_blocks)]
+            for boundary in block_boundaries:
+                self.axes[2].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
         for i in range(5):
             self.lines[2][i].set_xdata(x)
             self.lines[2][i].set_ydata(env_data[i])
@@ -598,6 +637,13 @@ class OverlapPanel(Panel):
         self.axes[3].set_ylim(self.y_min_edge, self.y_max_edge)
         self.axes[3].set_xlabel("Sample Index")
         self.axes[3].set_ylabel("Envelope Edge")
+        if self.is_workspace:
+            block_size = store.meta.block_size
+            ws_len = store.meta.working_space_size
+            n_blocks = ws_len // block_size
+            block_boundaries = [block_size * j for j in range(1, n_blocks)]
+            for boundary in block_boundaries:
+                self.axes[3].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
         for i in range(5):
             self.lines[3][i].set_xdata(x)
             self.lines[3][i].set_ydata(edge_data[i])
@@ -744,6 +790,7 @@ class HilbertPanel(Panel):
         
         # Precompute y-ranges for envelope and edge
         ws_data = store.arrays["working_space_frames"]
+        self.ws_len = ws_data.shape[2]
         self.y_min_raw = float(np.min(ws_data))
         self.y_max_raw = float(np.max(ws_data))
         if self.y_min_raw == self.y_max_raw:
@@ -793,6 +840,9 @@ class HilbertPanel(Panel):
             self.base_ax_1.set_visible(False)
             self.ax_3d.set_visible(True)
             self.axes[1] = self.ax_3d
+        self.ax_3d.set_xlim3d(0, self.ws_len-1)
+        self.ax_3d.set_ylim3d(self.y_min_env, self.y_max_env)
+        self.ax_3d.set_zlim3d(self.y_min_edge, self.y_max_edge)
         self.plot()
 
     def deactivate(self) -> None:
@@ -881,6 +931,16 @@ class HilbertPanel(Panel):
         self.axes[4].set_xlabel("Sample Index")
         self.axes[4].set_ylabel("Envelope Edge")
         artists.append(self.lines[4])
+
+        block_size = store.meta.block_size
+        ws_len = store.meta.working_space_size
+        n_blocks = ws_len // block_size
+        block_boundaries = [block_size * j for j in range(1, n_blocks)]
+        for boundary in block_boundaries:
+            self.axes[0].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
+            self.axes[2].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
+            self.axes[3].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
+            self.axes[4].axvline(boundary, color='gray', linestyle='--', linewidth=0.8, alpha=0.5, zorder=0)
 
         return artists
 

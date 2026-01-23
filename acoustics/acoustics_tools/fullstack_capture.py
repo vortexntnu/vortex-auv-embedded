@@ -290,6 +290,7 @@ def run_capture(
         if pinger_found:
             break
 
+
     # Convert to arrays
     arrays: dict[str, np.ndarray] = {
         "buffer_frames": np.stack(buffer_frames, axis=0),
@@ -308,6 +309,20 @@ def run_capture(
         "FFT_freqs_frames": np.stack(FFT_freqs_frames, axis=0),
         "detected_index_frames": np.stack(detected_index_frames, axis=0),
     }
+
+    # Save the final state of the raw working space to a CSV file
+    # Shape: (5, working_space_size)
+    final_working_space = working_space_frames[-1]  # shape (5, N)
+    import csv
+    csv_path = "final_workingspace_state.csv"
+    with open(csv_path, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        # Write header
+        header = ["index"] + [f"hydrophone_{i}" for i in range(final_working_space.shape[0])]
+        writer.writerow(header)
+        # Write each hydrophone as a row
+        for row in final_working_space:
+            writer.writerow(row)
 
     adc_min = float(min(np.min(adc) for adc in ADC_out))
     adc_max = float(max(np.max(adc) for adc in ADC_out))
