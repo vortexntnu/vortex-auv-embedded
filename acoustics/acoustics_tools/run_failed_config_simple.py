@@ -7,11 +7,11 @@ from pathlib import Path
 # =====================
 # Edit these variables
 # =====================
-INDEX = 9
+INDEX = 9  # Dataset index N (config_N.json / data_N.csv)
 TDOA_METHOD = "envelope_envelope"
 SHOW_GUI = True
 QUIET = False
-FPS = 24
+FPS = 10
 FAULTY = False
 EXPORT_NPZ = ""  # e.g. "case_98.npz" (empty string disables)
 

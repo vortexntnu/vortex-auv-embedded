@@ -198,6 +198,7 @@ class TimeDomainPanel(Panel):
         self.is_workspace = is_workspace
         self.store = store
         self.lines: list[Line2D] = []
+        self.detection_lines: list[Line2D] = []
         
         # Precompute y-range across all frames
         if is_workspace:
@@ -215,6 +216,8 @@ class TimeDomainPanel(Panel):
         for ax in self.axes:
             line, = ax.plot([], [], linewidth=1)
             self.lines.append(line)
+            detection_line = ax.axvline(-1, color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+            self.detection_lines.append(detection_line)
 
     def activate(self) -> None:
         """Clear axes, create artists, and show."""
@@ -229,6 +232,7 @@ class TimeDomainPanel(Panel):
             ax.clear()
             ax.set_visible(False)
         self.lines = []
+        self.detection_lines = []
 
     def update(self, frame_idx: int, store: FrameStore, state: AppState) -> list[Artist]:
         if self.is_workspace:
@@ -248,7 +252,8 @@ class TimeDomainPanel(Panel):
                     detected_indices = [det - block_size for det in detected_indices]
                 for idx, det in enumerate(detected_indices):
                         if det >= 0 and det < x_len:
-                            self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+                            self.detection_lines.append(self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2))
+                            pass
 
         x = np.arange(x_len)
         artists: list[Artist] = []
@@ -262,6 +267,7 @@ class TimeDomainPanel(Panel):
             self.axes[i].set_xlabel("Sample Index")
             self.axes[i].set_ylabel("Amplitude")
             artists.append(self.lines[i])
+            artists.append(self.detection_lines[i])
             # Draw block boundary lines if workspace
             if self.is_workspace:
                 block_size = store.meta.block_size
@@ -362,6 +368,7 @@ class HilbertEnvelopePanel(Panel):
         self.is_workspace = is_workspace
         self.store = store
         self.lines: list[Line2D] = []
+        self.detection_lines: list[Line2D] = []
         
         # Precompute y-range across all frames
         if is_workspace:
@@ -380,6 +387,8 @@ class HilbertEnvelopePanel(Panel):
         for ax in self.axes:
             line, = ax.plot([], [], linewidth=1)
             self.lines.append(line)
+            detection_line = ax.axvline(-1, color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+            self.detection_lines.append(detection_line)
 
     def activate(self) -> None:
         """Clear axes, create artists, and show."""
@@ -394,6 +403,7 @@ class HilbertEnvelopePanel(Panel):
             ax.clear()
             ax.set_visible(False)
         self.lines = []
+        self.detection_lines = []
 
     def update(self, frame_idx: int, store: FrameStore, state: AppState) -> list[Artist]:
         if self.is_workspace:
@@ -413,7 +423,7 @@ class HilbertEnvelopePanel(Panel):
                     detected_indices = [det - block_size for det in detected_indices]
                 for idx, det in enumerate(detected_indices):
                         if det >= 0 and det < x_len:
-                            self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+                            self.detection_lines.append(self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2))
 
 
         x = np.arange(x_len)
@@ -428,6 +438,7 @@ class HilbertEnvelopePanel(Panel):
             self.axes[i].set_xlabel("Sample Index")
             self.axes[i].set_ylabel("Envelope Magnitude")
             artists.append(self.lines[i])
+            artists.append(self.detection_lines[i])
             # Draw block boundary lines if workspace
             if self.is_workspace:
                 block_size = store.meta.block_size
@@ -449,6 +460,7 @@ class EnvelopeEdgePanel(Panel):
         self.store = store
         self.lines: list[Line2D] = []
         self.extra_lines: list[Line2D] = []
+        self.detection_lines: list[Line2D] = []
         # Use workspace envelope edge frames for both workspace and working block
         if is_workspace:
             data_source = store.arrays["working_space_envelope_edge_frames"]
@@ -471,6 +483,8 @@ class EnvelopeEdgePanel(Panel):
             self.lines.append(line)
             extra_line, = ax.plot([], [], linewidth=1, color='orange', marker="o",linestyle='')
             self.extra_lines.append(extra_line)
+            detection_line = ax.axvline(-1, color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+            self.detection_lines.append(detection_line)
 
     def activate(self) -> None:
         """Clear axes, create artists, and show."""
@@ -486,6 +500,8 @@ class EnvelopeEdgePanel(Panel):
             ax.set_visible(False)
         self.lines = []
         self.extra_lines = []
+        self.detection_lines = []
+
     def update(self, frame_idx: int, store: FrameStore, state: AppState) -> list[Artist]:
         from scipy.signal import find_peaks
         if self.is_workspace:
@@ -506,8 +522,9 @@ class EnvelopeEdgePanel(Panel):
                     detected_indices = [det - block_size for det in detected_indices]
                 for idx, det in enumerate(detected_indices):
                         if det >= 0 and det < x_len:
+                            self.detection_lines.append(self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2))
                             pass
-                            #self.axes[idx].axvline(det,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+                            
         x = np.arange(x_len)
         artists: list[Artist] = []
 
@@ -518,7 +535,8 @@ class EnvelopeEdgePanel(Panel):
             find_peakss_data, _ = find_peaks(-data[i], height=min_height,prominence=0.01,distance=5,plateau_size=1)
             first_peak = np.min(find_peakss_data) if len(find_peakss_data) > 0 else None
             if first_peak is not None:
-                self.axes[i].axvline(first_peak,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+                self.detection_lines.append(self.axes[i].axvline(first_peak,color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2))
+                pass
             self.extra_lines[i].set_xdata(find_peakss_data)
             self.extra_lines[i].set_ydata(data[i][find_peakss_data])
             self.axes[i].set_title(f"Hydrophone {i+1} Envelope Edge - {title_suffix}")
@@ -528,6 +546,7 @@ class EnvelopeEdgePanel(Panel):
             self.axes[i].set_ylabel("Envelope Edge")
             artists.append(self.lines[i])
             artists.append(self.extra_lines[i])
+            artists.append(self.detection_lines[i])
             # Draw block boundary lines if workspace
             if self.is_workspace:
                 block_size = store.meta.block_size
@@ -552,6 +571,7 @@ class OverlapPanel(Panel):
         self.is_workspace = is_workspace
         self.store = store
         self.lines: list[list[Line2D]] = []
+        self.detection_lines: list[Line2D] = []
         self.colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
         # Precompute y-ranges
         if is_workspace:
@@ -593,7 +613,11 @@ class OverlapPanel(Panel):
                     line, = self.axes[plot_idx].plot([], [], alpha=0.7, linewidth=1)
                     line.set_color(self.colors[hydro_idx])
                     ax_lines.append(line)
+                    #detection_line = self.axes[plot_idx].axvline(-1, color="red", linestyle='-.', linewidth=2, alpha=1, zorder=2)
+                    #detection_line.set_color(self.colors[hydro_idx])
+                #self.detection_lines.append(detection_line)
                 self.lines.append(ax_lines)
+        self.detection_lines = []
 
     def activate(self) -> None:
         """Clear axes, create artists, and show."""
@@ -608,6 +632,7 @@ class OverlapPanel(Panel):
             ax.clear()
             ax.set_visible(False)
         self.lines = []
+        self.detection_lines = []
 
     def update(self, frame_idx: int, store: FrameStore, state: AppState) -> list[Artist]:
         if self.is_workspace:
@@ -658,9 +683,10 @@ class OverlapPanel(Panel):
                     detected_indices = [det - block_size for det in detected_indices]
                 for idx, det in enumerate(detected_indices):
                     if det >= 0 and det < x_len:
-                        self.axes[0].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
-                        self.axes[2].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
-                        self.axes[3].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
+                        #self.axes[0].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
+                        #self.axes[2].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
+                        #self.axes[3].axvline(det, color=self.colors[idx], linestyle='-', linewidth=2, alpha=1, zorder=2)
+                        pass
 
         # Plot 1: Frequency domain - all hydrophones overlapped
         self.axes[1].set_title(f"All Hydrophones - Frequency Domain - {title_suffix}")
@@ -1053,8 +1079,8 @@ class Hilbert3DPanel(Panel):
             self.ax_3d.set_visible(True)
 
         self.ax_3d.set_xlim3d(0, self.ws_len - 1)
-        self.ax_3d.set_ylim3d(self.y_min_env, self.y_max_env)
-        self.ax_3d.set_zlim3d(self.y_min_edge, self.y_max_edge)
+        self.ax_3d.set_ylim3d(-self.y_max_env, self.y_max_env)
+        self.ax_3d.set_zlim3d(-self.y_max_env, self.y_max_env)
 
     def deactivate(self) -> None:
         if self.ax_3d is not None:
@@ -1084,8 +1110,8 @@ class Hilbert3DPanel(Panel):
         self.ax_3d.set_ylabel("Real Part")
         self.ax_3d.set_zlabel("Imaginary Part")
         self.ax_3d.set_xlim3d(0, ws_len - 1)
-        self.ax_3d.set_ylim3d(self.y_min_env, self.y_max_env)
-        self.ax_3d.set_zlim3d(self.y_min_edge, self.y_max_edge)
+        self.ax_3d.set_ylim3d(-self.y_max_env, self.y_max_env)
+        self.ax_3d.set_zlim3d(-self.y_max_env, self.y_max_env)
 
         return []
 
@@ -1337,6 +1363,7 @@ class GuiApp:
             if frame_idx >= len(self.store) - 1:
                 self.state.current_frame = len(self.store) - 1
                 self.state.paused = True
+                #self.state.current_frame = frame_idx
             else:
                 self.state.current_frame = frame_idx
         # Always use self.state.current_frame for display and update

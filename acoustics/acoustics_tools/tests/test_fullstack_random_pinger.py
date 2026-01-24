@@ -23,6 +23,7 @@ def _discover_test_cases() -> list[tuple[Path, Path]]:
 
     configs = sorted(TEST_DATA_DIR.glob("config_*.json"))
     pairs: list[tuple[Path, Path]] = []
+    print(f"Discovered {len(configs)} config files in {TEST_DATA_DIR}")
 
     for cfg in configs:
         m = re.match(r"config_(\d+)\.json$", cfg.name)
@@ -32,6 +33,8 @@ def _discover_test_cases() -> list[tuple[Path, Path]]:
         csv_path = TEST_DATA_DIR / f"data_{idx}.csv"
         if csv_path.exists():
             pairs.append((cfg, csv_path))
+        else:
+            print(f"Warning: Missing CSV data file for config index {idx}: {csv_path}", file=sys.stderr)
 
     return pairs
 
@@ -56,7 +59,7 @@ def _param_ids() -> list[str]:
 
 @pytest.mark.slow
 @pytest.mark.parametrize("config_path,csv_path", _param_cases(), ids=_param_ids())
-def test_fullstack_premade_random_drone_data(config_path: Path, csv_path: Path, fullstack_perf_recorder) -> None:
+def test_fullstack_premade_random_drone_data(config_path: Path, csv_path: Path, fullstack_perf_recorder, request) -> None:
     if not _ALL_CASES:
         pytest.skip(
             "No premade test data found in tests/test_data. "
@@ -82,7 +85,7 @@ def test_fullstack_premade_random_drone_data(config_path: Path, csv_path: Path, 
     assert store.meta.pinger_found, f"Pinger not found! (config={config_path.name}, data={csv_path.name})"
     position_error = float(result[1]) if result[1] is not None else None
     direction_error = float(result[3]) if result[3] is not None else None
-    fullstack_perf_recorder.record(direction_error_deg=direction_error, position_error_deg=position_error)
+    fullstack_perf_recorder.stage(request.node.nodeid, direction_error_deg=direction_error, position_error_deg=position_error)
 
     assert direction_error is not None and math.isfinite(direction_error), (
         f"Direction error not finite: {direction_error} (config={config_path.name})"

@@ -63,7 +63,10 @@ def run_capture(
     signal_data = load_all_hydrophone_data(combined_path=hydrophone_data_path) if hydrophone_data_path else load_all_hydrophone_data()
 
     ADC_out = np.zeros((5,), dtype=object)
+
+
     oversampling_factor = 8
+
     for i, (_time, signal) in enumerate(signal_data):
         ADC_out[i] = adc_oversampling(signal, oversampling_factor)
 
@@ -137,7 +140,7 @@ def run_capture(
     estimated_direction = None
     direction_error = 180.0
 
-    SNR_threshold = 1
+    SNR_threshold = 10**(5/10)  # 7 dB
 
     if verbose:
         print("Running simulation and collecting buffer states...")
@@ -158,6 +161,7 @@ def run_capture(
             fft_freqs = np.fft.fftfreq(len(reference_buffer), d=1 / effective_sampling_rate)
 
             q = np.abs(np.abs(fft_freqs) - pinger_frequency) <= effective_sampling_rate / block_size * 3
+            
             F = np.zeros(buffer_fft.size)
             F[q] = 1.0
 
@@ -166,8 +170,8 @@ def run_capture(
 
             fft_plot_freqs = np.fft.fftshift(fft_freqs)[fft_freqs < 0]
 
-            noise_power = signal_fft_power(buffer_noise_fft) / block_size
-            pinger_power = signal_fft_power(buffer_signal_fft) / block_size
+            noise_power = signal_fft_power(buffer_noise_fft) / (np.sum(1.0 - q))#block_size #
+            pinger_power = signal_fft_power(buffer_signal_fft) / np.sum(q)#block_size #
 
             SNR = pinger_power / noise_power if noise_power > 0 else 0
 
@@ -182,7 +186,7 @@ def run_capture(
             detected_indices = np.full((5,), -1, dtype=int)
 
             if SNR > SNR_threshold and not pinger_found:
-                min_height = -np.min(reference_envelope_edge)*0.8
+                min_height = -np.min(reference_envelope_edge)*0.7
                 find_peakss_data, _ = scpy.find_peaks(-reference_envelope_edge, height=min_height,prominence=0.01,distance=5,plateau_size=1)
                 first_peak = np.min(find_peakss_data) if len(find_peakss_data) > 0 else np.argmin(reference_envelope_edge)
                 detected_indices[0] = int(first_peak)
@@ -316,6 +320,7 @@ def run_capture(
             FFT_freqs_frames.append(fft_plot_freqs.copy())
 
         if pinger_found:
+            #pass
             break
 
 
