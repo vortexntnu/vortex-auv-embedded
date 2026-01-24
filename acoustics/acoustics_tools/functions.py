@@ -383,6 +383,7 @@ def CFAR_Thresholding(signal, window_size, guard_size, p_fa):
     """
     n = len(signal)
     thresholded_signal = np.zeros(n)
+    threshold_line = np.zeros(n)
     alpha = window_size * (p_fa ** (-1 / window_size) - 1)  # CFAR scaling factor
 
     for i in range(n):
@@ -394,11 +395,12 @@ def CFAR_Thresholding(signal, window_size, guard_size, p_fa):
         noise_level = np.mean(training_cells) if len(training_cells) > 0 else 0
 
         threshold = alpha * noise_level
+        threshold_line[i] = threshold
 
         if signal[i] > threshold:
             thresholded_signal[i] = 1
 
-    return thresholded_signal
+    return thresholded_signal, threshold_line
 
 #def 
 def angle_between_directions_deg(dir1, dir2):

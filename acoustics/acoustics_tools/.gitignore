@@ -4,3 +4,4 @@ __pycache__/
 *.py[cod]
 *$py.class
 !good_example_data.csv
+test_data/

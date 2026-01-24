@@ -420,4 +420,61 @@ function main()
     println("Acoustic Data Simulation completed.\n")
 end
 
-#main()
+"""Run multiple simulations from a batch description file.
+
+The batch file is JSON with schema:
+
+{
+  "verbose": false,
+  "items": [
+    {"config_path": "path/to/config_0.json", "output_csv": "path/to/data_0.csv"},
+    {"config_path": "path/to/config_1.json", "output_csv": "path/to/data_1.csv"}
+  ]
+}
+
+Paths may be absolute or relative to the Julia working directory.
+"""
+function run_test_batch(batch_path::AbstractString)
+    batch = JSON3.read(read(batch_path, String))
+
+    verbose = haskey(batch, "verbose") ? Bool(batch["verbose"]) : false
+    items = batch["items"]
+    n = length(items)
+
+    println("Starting Acoustic Data Simulator batch run ($n items)...\n")
+
+    for (i, item) in enumerate(items)
+        config_path = String(item["config_path"])
+        output_csv = String(item["output_csv"])
+
+        if verbose
+            println("[$i/$n] Config: $config_path")
+            println("      Out:    $output_csv\n")
+        end
+
+        cfg = config_from_json(config_path)
+        simulate_hydrophone_data(cfg, output_csv, verbose)
+    end
+
+    println("Acoustic Data Simulation batch completed.\n")
+end
+
+
+"""Legacy helper: run N simulations using the same config file.
+
+This is mostly useful for quick local experiments.
+"""
+function multi_run_simulations(config_path::AbstractString, num_runs::Int64; out_dir::AbstractString = ".", verbose::Bool = true)
+    cfg = config_from_json(config_path)
+    mkpath(out_dir)
+    for run_id ∈ 1:num_runs
+        if verbose
+            println("Starting simulation run $run_id of $num_runs...\n")
+        end
+        out_csv = joinpath(out_dir, "hydrophones_data_run_$(run_id).csv")
+        simulate_hydrophone_data(cfg, out_csv, verbose)
+        if verbose
+            println("Completed simulation run $run_id of $num_runs.\n")
+        end
+    end
+end

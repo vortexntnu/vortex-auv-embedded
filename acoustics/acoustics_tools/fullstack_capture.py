@@ -93,7 +93,7 @@ def run_capture(
     for i in range(5):
         hydro_pos[i] = np.array(hydro_pos[i]) - np.array(drone_pos)
 
-    pinger_direction = np.array(pinger_pos) - hydro_pos[0]
+    pinger_direction = np.array(pinger_pos) - np.array(drone_pos)
     pinger_direction = pinger_direction / np.linalg.norm(pinger_direction)
 
     # Animation capture settings (kept consistent with your prior behavior)
@@ -179,8 +179,11 @@ def run_capture(
             detected_indices = np.full((5,), -1, dtype=int)
 
             if SNR > 1.0:
-                detected_indices[0] = int(np.argmin(reference_envelope_edge))
-                
+                min_height = -np.min(reference_envelope_edge)*0.8
+                find_peakss_data, _ = scpy.find_peaks(-reference_envelope_edge, height=min_height,prominence=0.01,distance=5,plateau_size=1)
+                first_peak = np.min(find_peakss_data) if len(find_peakss_data) > 0 else np.argmin(reference_envelope_edge)
+                detected_indices[0] = int(first_peak)
+
                 if inject_faulty_detection:
                     bad_one = np.random.randint(0, 5)
                 else:
@@ -222,14 +225,21 @@ def run_capture(
                         detected_indices[k] = detected_index + detected_indices[0]
 
                     else:
-                        detected_indices[k] = int(np.argmin(envelope_edge_k))
+                        min_height = -np.min(envelope_edge_k)*0.8
+                        find_peakss_data, _ = scpy.find_peaks(-envelope_edge_k, height=min_height,prominence=0.01,distance=5,plateau_size=1)
+                        first_peak = np.min(find_peakss_data) if len(find_peakss_data) > 0 else np.argmin(envelope_edge_k)
+                        detected_indices[k] = int(first_peak)
                         if k == bad_one:
                             offset = np.random.randint(-50, 50)
                             detected_indices[k] += offset
                             print(f"Corrupted by: {offset} indexes.")
 
+                print("Detected Indices:", detected_indices)
                 times_of_arrival = detected_indices.astype(float) / effective_sampling_rate
-                estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival - times_of_arrival[0], c)
+                abs_times_of_arrival = times_of_arrival + ((i // block_size)-3)*block_size / effective_sampling_rate
+                print("Times of Arrival (ms):", np.round(abs_times_of_arrival * 1000, 2))
+
+                estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival, c)
                 estimated_position_normalized = estimated_position / np.linalg.norm(estimated_position)
 
                 pos_error_cos = float(np.dot(estimated_position_normalized, pinger_direction))
@@ -238,7 +248,7 @@ def run_capture(
                 pos_error_sin = float(np.dot(estimated_position_normalized,   ortho_direction))
                 position_error = float(np.degrees(np.atan2(pos_error_sin, pos_error_cos)))
 
-                estimated_direction = TDOA_direction_solve(hydro_pos, times_of_arrival - times_of_arrival[0], c)
+                estimated_direction = TDOA_direction_solve(hydro_pos, times_of_arrival, c)
                 estimated_direction = estimated_direction / np.linalg.norm(estimated_direction)
 
                 dir_error_cos = float(np.dot(estimated_direction, pinger_direction))
