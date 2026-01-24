@@ -49,6 +49,7 @@ class CaptureMeta:
     pinger_frequency: float
     frame_number: int
     pinger_found: bool
+    snr_threshold: float
 
 
 class FrameStore:
@@ -97,6 +98,7 @@ class FrameStore:
             "pinger_frequency": self.meta.pinger_frequency,
             "frame_number": self.meta.frame_number,
             "pinger_found": int(self.meta.pinger_found),
+            "snr_threshold": self.meta.snr_threshold,
         }
         payload: dict[str, Any] = {}
         for k, v in meta_dict.items():
@@ -132,6 +134,7 @@ class FrameStore:
             pinger_frequency=float(meta_kwargs["pinger_frequency"]),
             frame_number=int(meta_kwargs["frame_number"]),
             pinger_found=bool(int(meta_kwargs["pinger_found"])),
+            snr_threshold=float(meta_kwargs["snr_threshold"]),
         )
         return FrameStore(meta=meta, arrays=arrays, scalars=scalars)
 
@@ -511,7 +514,7 @@ class EnvelopeEdgePanel(Panel):
         for i in range(5):
             self.lines[i].set_xdata(x)
             self.lines[i].set_ydata(data[i])
-            min_height = -np.min(data[i])*0.8
+            min_height = -np.min(data[i])*0.7
             find_peakss_data, _ = find_peaks(-data[i], height=min_height,prominence=0.01,distance=5,plateau_size=1)
             first_peak = np.min(find_peakss_data) if len(find_peakss_data) > 0 else None
             if first_peak is not None:
@@ -754,6 +757,8 @@ class DetectionPanel(Panel):
         self.y_min_noi, self.y_max_noi = store.range("noise_power_frames")
         self.y_min_snr, self.y_max_snr = store.range("SNR_frames")
 
+        self.snr_threshold_db = np.log10(store.meta.snr_threshold) * 10
+
     def plot(self) -> None:
         """Create line artists for non-bar plots (plots 0, 2, 3, 4)."""
         for idx in [0, 2, 3, 4]:
@@ -761,8 +766,7 @@ class DetectionPanel(Panel):
             self.lines[idx] = line
         
         # Create threshold line (will be on axes[4])
-        self.threshold_line = self.axes[4].axhline(0, color='red', linestyle='--', linewidth=1, alpha=0.6)
-
+        self.threshold_line = self.axes[4].axhline(self.snr_threshold_db, color='red', linestyle='--', linewidth=1, alpha=0.6)
     def activate(self) -> None:
         """Clear axes, create artists, and show."""
         for ax in self.axes:
@@ -842,7 +846,7 @@ class DetectionPanel(Panel):
         
         # Threshold line at 0 dB
         self.threshold_line.set_xdata([0, n_frames])
-        self.threshold_line.set_ydata([0, 0])
+        self.threshold_line.set_ydata([self.snr_threshold_db, self.snr_threshold_db])
         self.threshold_line.set_visible(True)
         
         artists.append(self.lines[4])

@@ -423,6 +423,12 @@ def angle_between_directions_deg(dir1, dir2):
     dot_product = np.clip(np.dot(dir1_normalized, dir2_normalized), -1.0, 1.0)
     angle_rad = np.arccos(dot_product)
     angle_deg = np.degrees(angle_rad)
+
+    dir_angle_cos = float(np.clip(np.dot(dir1_normalized, dir2_normalized), -1.0, 1.0))
+    ortho_direction = dir1_normalized - dir_angle_cos*dir2_normalized
+    ortho_direction = ortho_direction / np.linalg.norm(ortho_direction)
+    dir_angle_sin = float(np.clip(np.dot(dir1_normalized,   ortho_direction), -1.0, 1.0))
+    angle_deg = float(np.degrees(np.atan2(dir_angle_sin, dir_angle_cos)))
     return angle_deg
 
 def generate_reference_signal(frequency, sampling_rate, output_length):

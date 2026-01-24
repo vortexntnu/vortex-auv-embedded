@@ -67,14 +67,14 @@ def _run_julia_batch(*, batch_path: Path) -> None:
 
 def _random_pinger_pos(
     rng: np.random.Generator,
-    drone_pos: list[float],
+    pinger_pos: list[float],
     sea_depth: float,
     *,
     min_distance: float = 4.0,
     max_distance: float = 25.0,
     max_attempts: int = 1000,
 ) -> list[float]:
-    drone = np.asarray(drone_pos, dtype=float)
+    pinger = np.asarray(pinger_pos, dtype=float)
     min_z = -float(sea_depth) + 0.2
     max_z = -0.2
 
@@ -82,7 +82,7 @@ def _random_pinger_pos(
         direction = rng.normal(size=3)
         direction /= np.linalg.norm(direction)
         radius = rng.uniform(min_distance, max_distance)
-        candidate = drone + direction * radius
+        candidate = pinger + direction * radius
         if min_z <= candidate[2] <= max_z:
             return candidate.tolist()
 
@@ -101,12 +101,15 @@ def main() -> None:
     base_config = load_simulation_config_json(BASE_CONFIG)
     rng = np.random.default_rng(args.seed)
 
+    # Keep pinger constant; randomize drone position.
+    pinger_pos = [0.0, 0.0, -5.5]
+
     items: list[dict[str, str]] = []
 
     for i in range(args.count):
-        pinger_pos = _random_pinger_pos(
+        drone_pos = _random_pinger_pos(
             rng,
-            base_config["drone_pos"],
+            pinger_pos,
             base_config["sea_depth"],
             min_distance=args.min_distance,
             max_distance=args.max_distance,
@@ -114,6 +117,7 @@ def main() -> None:
 
         config = dict(base_config)
         config["pinger_pos"] = pinger_pos
+        config["drone_pos"] = drone_pos
 
         config_path = OUT_DIR / f"config_{i}.json"
         data_path = OUT_DIR / f"data_{i}.csv"

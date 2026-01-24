@@ -12,6 +12,7 @@ from functions import (
     adc_oversampling,
     compute_snr_db,
     signal_fft_power,
+    angle_between_directions_deg,
 )
 
 from julia_functions import (
@@ -54,8 +55,8 @@ def run_capture(
 ) -> tuple[FrameStore, tuple[Any, float, Any, float]]:
     config = load_simulation_config_json(config_path)
     hydro_pos = config["hydrophones_pos"]
-    drone_pos = config["drone_pos"]
-    pinger_pos = config["pinger_pos"]
+    drone_pos = np.array(config["drone_pos"])
+    pinger_pos = np.array(config["pinger_pos"])
 
     c = 1538.9235842
 
@@ -91,9 +92,9 @@ def run_capture(
 
     # Positions relative to drone
     for i in range(5):
-        hydro_pos[i] = np.array(hydro_pos[i]) - np.array(drone_pos)
+        hydro_pos[i] = np.array(hydro_pos[i]) - drone_pos
 
-    pinger_direction = np.array(pinger_pos) - np.array(drone_pos)
+    pinger_direction = pinger_pos - drone_pos
     pinger_direction = pinger_direction / np.linalg.norm(pinger_direction)
 
     # Animation capture settings (kept consistent with your prior behavior)
@@ -132,9 +133,11 @@ def run_capture(
     pinger_found = False
 
     estimated_position = None
-    position_error = float("inf")
+    position_error = 180.0
     estimated_direction = None
-    direction_error = float("inf")
+    direction_error = 180.0
+
+    SNR_threshold = 1
 
     if verbose:
         print("Running simulation and collecting buffer states...")
@@ -178,7 +181,7 @@ def run_capture(
 
             detected_indices = np.full((5,), -1, dtype=int)
 
-            if SNR > 1.0:
+            if SNR > SNR_threshold and not pinger_found:
                 min_height = -np.min(reference_envelope_edge)*0.8
                 find_peakss_data, _ = scpy.find_peaks(-reference_envelope_edge, height=min_height,prominence=0.01,distance=5,plateau_size=1)
                 first_peak = np.min(find_peakss_data) if len(find_peakss_data) > 0 else np.argmin(reference_envelope_edge)
@@ -225,7 +228,7 @@ def run_capture(
                         detected_indices[k] = detected_index + detected_indices[0]
 
                     else:
-                        min_height = -np.min(envelope_edge_k)*0.8
+                        min_height = -np.min(envelope_edge_k)*0.7
                         find_peakss_data, _ = scpy.find_peaks(-envelope_edge_k, height=min_height,prominence=0.01,distance=5,plateau_size=1)
                         first_peak = np.min(find_peakss_data) if len(find_peakss_data) > 0 else np.argmin(envelope_edge_k)
                         detected_indices[k] = int(first_peak)
@@ -240,22 +243,10 @@ def run_capture(
                 print("Times of Arrival (ms):", np.round(abs_times_of_arrival * 1000, 2))
 
                 estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival, c)
-                estimated_position_normalized = estimated_position / np.linalg.norm(estimated_position)
-
-                pos_error_cos = float(np.dot(estimated_position_normalized, pinger_direction))
-                ortho_direction = estimated_position_normalized - pos_error_cos*pinger_direction
-                ortho_direction = ortho_direction / np.linalg.norm(ortho_direction)
-                pos_error_sin = float(np.dot(estimated_position_normalized,   ortho_direction))
-                position_error = float(np.degrees(np.atan2(pos_error_sin, pos_error_cos)))
+                position_error = angle_between_directions_deg(estimated_position, pinger_direction)
 
                 estimated_direction = TDOA_direction_solve(hydro_pos, times_of_arrival, c)
-                estimated_direction = estimated_direction / np.linalg.norm(estimated_direction)
-
-                dir_error_cos = float(np.dot(estimated_direction, pinger_direction))
-                ortho_direction = estimated_direction - dir_error_cos*pinger_direction
-                ortho_direction = ortho_direction / np.linalg.norm(ortho_direction)
-                dir_error_sin = float(np.dot(estimated_direction,   ortho_direction))
-                direction_error = float(np.degrees(np.atan2(dir_error_sin, dir_error_cos)))
+                direction_error = angle_between_directions_deg(estimated_direction, pinger_direction)
 
                 if verbose:
                     print("")
@@ -265,7 +256,7 @@ def run_capture(
                         f"Dir Error: {direction_error:.2f} deg, "
                         f"SNR: {10*np.log10(SNR):.2f} dB"
                     )
-                    print(f"    Real Position:      {pinger_pos}")
+                    print(f"    Real Position Relative To Drone:      {pinger_pos-drone_pos}")
                     print(f"    Estimated Position: {estimated_position}")
                     print(f"    Real Direction:     {pinger_direction}")
                     print(f"    Estimated Direction:{estimated_direction}")
@@ -373,6 +364,7 @@ def run_capture(
         pinger_frequency=pinger_frequency,
         frame_number=frame_number,
         pinger_found=pinger_found,
+        snr_threshold=SNR_threshold,
     )
 
     store = FrameStore(
