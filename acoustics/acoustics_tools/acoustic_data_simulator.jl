@@ -39,6 +39,7 @@ function config_from_json(path::AbstractString)
 end
 
 function simulate_hydrophone_data(config::simulation_config, hydrophone_data_path::Union{Nothing,AbstractString}=nothing, verbose::Bool=true)
+    vprintln(msg::AbstractString) = verbose && println(msg)
 
 # ===============================
 # Electrical model configuration
@@ -183,7 +184,7 @@ pinger_pos = config.pinger_pos
 sea_depth = config.sea_depth
 noise_level = config.noise_level
 noise_type = config.noise_type
-print("Simulation configuration loaded.\n")
+vprintln("Simulation configuration loaded.\n")
 
 # ==============================
 # Simulation parameters
@@ -201,7 +202,7 @@ env = UnderwaterEnvironment(
 )
 pm = PekerisRayTracer(env) # Pekeris based propagation model
 
-print("Simulatioon Environment configured.\n")
+vprintln("Simulatioon Environment configured.\n")
 # ==============================
 # Hardware configuration
 # ==============================
@@ -213,8 +214,10 @@ pinger_power = 150.0         # Pinger source level [dB re 1μPa at 1m]
 
 pinger = AcousticSource(pinger_pos, pinger_frequency,spl=pinger_power)
 
-print("Pinger configured at position:\n")
-print("  ", pinger_pos, "\n")
+if verbose
+    println("Pinger configured at position:\n")
+    println("  ", pinger_pos, "\n")
+end
 
 # Hydrophone configuration
 hydrophone_sample_frequency = 1_000_000  # Sampling frequency of hydrophones [Hz]
@@ -223,12 +226,14 @@ hydrophones_pos = map(pos -> pos .+ drone_pos, hydrophones_pos)  # Adjust hydrop
 
 hydrophones = [AcousticReceiver(pos) for pos ∈ hydrophones_pos]
 
-print("Hydrphones configured at positions: \n")
-for i ∈ eachindex(hydrophones_pos)
-    print("  ", hydrophones_pos[i], "\n")
-end
+if verbose
+    println("Hydrphones configured at positions: \n")
+    for i ∈ eachindex(hydrophones_pos)
+        print("  ", hydrophones_pos[i], "\n")
+    end
 
-print("Pinger and Hydrophones configured.\n")
+    println("Pinger and Hydrophones configured.\n")
+end
 
 # ==============================
 # Simulating model
@@ -236,16 +241,18 @@ print("Pinger and Hydrophones configured.\n")
 
 reference_hydrophone_rays = arrivals(pm, pinger, hydrophones[1])
 
-print("Ray tracing simulation completed.\n")
-print("Rays to reference hydrophone: \n")
-for ray ∈ reference_hydrophone_rays
-    print("  ",ray, "\n")
-end
+if verbose
+    println("Ray tracing simulation completed.\n")
+    println("Rays to reference hydrophone: \n")
+    for ray ∈ reference_hydrophone_rays
+        print("  ",ray, "\n")
+    end
 
-print("Hydropone ping rays: \n")
-for i ∈ eachindex(hydrophones)
-    rays = arrivals(pm, pinger, hydrophones[i])
-    print("Hydrophone ", i, " first ray: ", rays[1], "\n")
+    println("Hydropone ping rays: \n")
+    for i ∈ eachindex(hydrophones)
+        rays = arrivals(pm, pinger, hydrophones[i])
+        print("Hydrophone ", i, " first ray: ", rays[1], "\n")
+    end
 end
 
 if noise_type == "white"
@@ -263,7 +270,7 @@ x = cw(pinger_frequency, pinger_duration, hydrophone_sample_frequency; window=(t
 hydrophones_data = transmit(channels, x; abstime = true)
 hydrophones_data = [collect(row) for row in eachcol(hydrophones_data)]
 
-print("Signal transmission through channels completed.\n")
+vprintln("Signal transmission through channels completed.\n")
 
 # ===============================
 # Electrical Hardware Simulation
@@ -276,7 +283,7 @@ measured_phase_deg = Float64[]
 if use_measured_transfer
     if isfile(measured_transfer_path)
         measured_freqs, measured_mag_db, measured_phase_deg = load_measured_transfer(measured_transfer_path)
-        print("Loaded measured transfer response from $(measured_transfer_path).\n")
+        vprintln("Loaded measured transfer response from $(measured_transfer_path).\n")
     else
         error("use_measured_transfer=true but file not found: $(measured_transfer_path)")
     end
@@ -307,7 +314,7 @@ for i ∈ eachindex(hydrophones_data)
     end
 end
 
-print("Electrical hardware simulation completed.\n")
+vprintln("Electrical hardware simulation completed.\n")
 
 # ==============================
 # Visualization
@@ -376,38 +383,41 @@ function save_all_to_single_csv(hydrophones_data; filename::AbstractString = "hy
     end
 end
 
-save_all_to_single_csv(hydrophones_data)
-print("Simulation data saved to hydrophones_data.csv.\n")
+save_all_to_single_csv(hydrophones_data; filename = hydrophone_data_path === nothing ? "hydrophones_data.csv" : hydrophone_data_path)
+vprintln("Simulation data saved to $(hydrophone_data_path === nothing ? "hydrophones_data.csv" : hydrophone_data_path).\n")
 end
 
 function default_simulation_config()
     hydro_pos = [
-        (0.5, 0.5, 0.5),
-        (1.0, 0.0, 0.0),
-        (0.0, 1.0, 0.0),
-        (1.0, 1.0, 0.0),
+        (0.175, 0.175, 0.175),
+        (0.35, 0.0, 0.0),
+        (0.0, 0.35, 0.0),
+        (0.35, 0.35, 0.0),
         (0.0, 0.0, 0.0)
     ]
 
     return simulation_config(
         hydrophones_pos = hydro_pos,
-        drone_pos = (0.0, 0.0, -1.0),
+        drone_pos = (0.0, -1.0, -3.0),
         pinger_pos = (15.0, 10.0, -5.5),
         sea_depth = 6.0,
-        noise_level = 5e5,
-        noise_type = "white",
+        noise_level = 3.87e5,
+        noise_type = "red",
     )
 end
 
 function main()
-    print("Starting Acoustic Data Simulator...\n")
 
     config_path = length(ARGS) >= 1 ? ARGS[1] : "simulation_config.json"
     hydrophone_data_path = length(ARGS) >= 2 ? ARGS[2] : nothing
     verbose = length(ARGS) >= 3 ? ARGS[3] == "true" : true
 
+    println("Starting Acoustic Data Simulator...\n")
+
     cfg = config_from_json(config_path)
     simulate_hydrophone_data(cfg, hydrophone_data_path, verbose)
+
+    println("Acoustic Data Simulation completed.\n")
 end
 
 #main()
