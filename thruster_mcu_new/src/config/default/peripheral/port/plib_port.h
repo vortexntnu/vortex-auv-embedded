@@ -81,219 +81,148 @@
 #define IMON_TH4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 3U)) & 0x01U)
 #define IMON_TH4_PIN                  PORT_PIN_PA03
 
-/*** Macros for PG_TH1 pin ***/
-#define PG_TH1_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 4U))
-#define PG_TH1_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 4U))
-#define PG_TH1_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 4U))
-#define PG_TH1_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 4U))
-#define PG_TH1_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 4U))
-#define PG_TH1_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 4U)) & 0x01U)
-#define PG_TH1_PIN                  PORT_PIN_PB04
+/*** Macros for PG_TH4 pin ***/
+#define PG_TH4_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 4U)) & 0x01U)
+#define PG_TH4_PIN                  PORT_PIN_PB04
 
-/*** Macros for FLT_TH1 pin ***/
-#define FLT_TH1_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 5U))
-#define FLT_TH1_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 5U))
-#define FLT_TH1_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 5U))
-#define FLT_TH1_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 5U))
-#define FLT_TH1_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 5U))
-#define FLT_TH1_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 5U)) & 0x01U)
-#define FLT_TH1_PIN                  PORT_PIN_PB05
-
-/*** Macros for KS pin ***/
-#define KS_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 6U))
-#define KS_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 6U))
-#define KS_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 6U))
-#define KS_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 6U))
-#define KS_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 6U))
-#define KS_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 6U)) & 0x01U)
-#define KS_PIN                  PORT_PIN_PB06
-
-/*** Macros for RESET_TH pin ***/
-#define RESET_TH_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 7U))
-#define RESET_TH_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 7U))
-#define RESET_TH_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 7U))
-#define RESET_TH_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 7U))
-#define RESET_TH_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 7U))
-#define RESET_TH_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 7U)) & 0x01U)
-#define RESET_TH_PIN                  PORT_PIN_PB07
-
-/*** Macros for IMON_TH2 pin ***/
-#define IMON_TH2_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
-#define IMON_TH2_PIN                  PORT_PIN_PB08
+/*** Macros for FLT_TH4 pin ***/
+#define FLT_TH4_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 5U)) & 0x01U)
+#define FLT_TH4_PIN                  PORT_PIN_PB05
 
 /*** Macros for IMON_TH1 pin ***/
-#define IMON_TH1_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 9U)) & 0x01U)
-#define IMON_TH1_PIN                  PORT_PIN_PB09
+#define IMON_TH1_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
+#define IMON_TH1_PIN                  PORT_PIN_PB08
+
+/*** Macros for FLT_TH2 pin ***/
+#define FLT_TH2_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 9U)) & 0x01U)
+#define FLT_TH2_PIN                  PORT_PIN_PB09
+
+/*** Macros for IMON_TH2 pin ***/
+#define IMON_TH2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 4U)) & 0x01U)
+#define IMON_TH2_PIN                  PORT_PIN_PA04
 
 /*** Macros for IMON_TH5 pin ***/
-#define IMON_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 4U)) & 0x01U)
-#define IMON_TH5_PIN                  PORT_PIN_PA04
+#define IMON_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 5U)) & 0x01U)
+#define IMON_TH5_PIN                  PORT_PIN_PA05
 
 /*** Macros for IMON_TH6 pin ***/
-#define IMON_TH6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 5U)) & 0x01U)
-#define IMON_TH6_PIN                  PORT_PIN_PA05
+#define IMON_TH6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 6U)) & 0x01U)
+#define IMON_TH6_PIN                  PORT_PIN_PA06
 
 /*** Macros for IMON_TH7 pin ***/
-#define IMON_TH7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 6U)) & 0x01U)
-#define IMON_TH7_PIN                  PORT_PIN_PA06
+#define IMON_TH7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 7U)) & 0x01U)
+#define IMON_TH7_PIN                  PORT_PIN_PA07
+
+/*** Macros for KS pin ***/
+#define KS_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
+#define KS_PIN                  PORT_PIN_PA08
 
 /*** Macros for IMON_TH8 pin ***/
-#define IMON_TH8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 7U)) & 0x01U)
-#define IMON_TH8_PIN                  PORT_PIN_PA07
+#define IMON_TH8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 9U)) & 0x01U)
+#define IMON_TH8_PIN                  PORT_PIN_PA09
 
 /*** Macros for PWM_8 pin ***/
-#define PWM_8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
-#define PWM_8_PIN                  PORT_PIN_PA08
+#define PWM_8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 10U)) & 0x01U)
+#define PWM_8_PIN                  PORT_PIN_PA10
 
 /*** Macros for PWM_7 pin ***/
-#define PWM_7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 9U)) & 0x01U)
-#define PWM_7_PIN                  PORT_PIN_PA09
-
-/*** Macros for PWM_6 pin ***/
-#define PWM_6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 10U)) & 0x01U)
-#define PWM_6_PIN                  PORT_PIN_PA10
-
-/*** Macros for PWM_5 pin ***/
-#define PWM_5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 11U)) & 0x01U)
-#define PWM_5_PIN                  PORT_PIN_PA11
-
-/*** Macros for PWM_4 pin ***/
-#define PWM_4_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 10U)) & 0x01U)
-#define PWM_4_PIN                  PORT_PIN_PB10
-
-/*** Macros for PWM_3 pin ***/
-#define PWM_3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
-#define PWM_3_PIN                  PORT_PIN_PB11
+#define PWM_7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 11U)) & 0x01U)
+#define PWM_7_PIN                  PORT_PIN_PA11
 
 /*** Macros for PG_TH8 pin ***/
-#define PG_TH8_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 12U))
-#define PG_TH8_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 12U))
-#define PG_TH8_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 12U))
-#define PG_TH8_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 12U))
-#define PG_TH8_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 12U))
-#define PG_TH8_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 12U)) & 0x01U)
-#define PG_TH8_PIN                  PORT_PIN_PB12
+#define PG_TH8_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 10U)) & 0x01U)
+#define PG_TH8_PIN                  PORT_PIN_PB10
 
 /*** Macros for FLT_TH8 pin ***/
-#define FLT_TH8_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 13U))
-#define FLT_TH8_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 13U))
-#define FLT_TH8_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 13U))
-#define FLT_TH8_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 13U))
-#define FLT_TH8_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 13U))
-#define FLT_TH8_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 13U)) & 0x01U)
-#define FLT_TH8_PIN                  PORT_PIN_PB13
+#define FLT_TH8_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
+#define FLT_TH8_PIN                  PORT_PIN_PB11
+
+/*** Macros for PG_TH7 pin ***/
+#define PG_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 12U)) & 0x01U)
+#define PG_TH7_PIN                  PORT_PIN_PB12
+
+/*** Macros for FLT_TH7 pin ***/
+#define FLT_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 13U)) & 0x01U)
+#define FLT_TH7_PIN                  PORT_PIN_PB13
 
 /*** Macros for PG_TH5 pin ***/
-#define PG_TH5_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 16U))
-#define PG_TH5_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 16U))
-#define PG_TH5_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 16U))
-#define PG_TH5_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 16U))
-#define PG_TH5_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 16U))
 #define PG_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
 #define PG_TH5_PIN                  PORT_PIN_PA16
 
 /*** Macros for FLT_TH5 pin ***/
-#define FLT_TH5_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 17U))
-#define FLT_TH5_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 17U))
-#define FLT_TH5_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 17U))
-#define FLT_TH5_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 17U))
-#define FLT_TH5_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 17U))
 #define FLT_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 17U)) & 0x01U)
 #define FLT_TH5_PIN                  PORT_PIN_PA17
 
 /*** Macros for FLT_TH6 pin ***/
-#define FLT_TH6_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 18U))
-#define FLT_TH6_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 18U))
-#define FLT_TH6_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 18U))
-#define FLT_TH6_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 18U))
-#define FLT_TH6_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 18U))
 #define FLT_TH6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 18U)) & 0x01U)
 #define FLT_TH6_PIN                  PORT_PIN_PA18
 
 /*** Macros for PG_TH6 pin ***/
-#define PG_TH6_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 19U))
-#define PG_TH6_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 19U))
-#define PG_TH6_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 19U))
-#define PG_TH6_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 19U))
-#define PG_TH6_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 19U))
 #define PG_TH6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 19U)) & 0x01U)
 #define PG_TH6_PIN                  PORT_PIN_PA19
 
-/*** Macros for FLT_TH7 pin ***/
-#define FLT_TH7_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 16U))
-#define FLT_TH7_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 16U))
-#define FLT_TH7_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 16U))
-#define FLT_TH7_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 16U))
-#define FLT_TH7_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 16U))
-#define FLT_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 16U)) & 0x01U)
-#define FLT_TH7_PIN                  PORT_PIN_PB16
+/*** Macros for PWM_6 pin ***/
+#define PWM_6_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 16U)) & 0x01U)
+#define PWM_6_PIN                  PORT_PIN_PB16
 
-/*** Macros for PG_TH7 pin ***/
-#define PG_TH7_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 17U))
-#define PG_TH7_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 17U))
-#define PG_TH7_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 17U))
-#define PG_TH7_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 17U))
-#define PG_TH7_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 17U))
-#define PG_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 17U)) & 0x01U)
-#define PG_TH7_PIN                  PORT_PIN_PB17
+/*** Macros for PWM_5 pin ***/
+#define PWM_5_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 17U)) & 0x01U)
+#define PWM_5_PIN                  PORT_PIN_PB17
 
-/*** Macros for PG_TH2 pin ***/
-#define PG_TH2_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 20U))
-#define PG_TH2_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 20U))
-#define PG_TH2_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 20U))
-#define PG_TH2_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 20U))
-#define PG_TH2_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 20U))
-#define PG_TH2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 20U)) & 0x01U)
-#define PG_TH2_PIN                  PORT_PIN_PA20
-
-/*** Macros for FLT_TH2 pin ***/
-#define FLT_TH2_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 21U))
-#define FLT_TH2_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 21U))
-#define FLT_TH2_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 21U))
-#define FLT_TH2_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 21U))
-#define FLT_TH2_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 21U))
-#define FLT_TH2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 21U)) & 0x01U)
-#define FLT_TH2_PIN                  PORT_PIN_PA21
+/*** Macros for PMW_4 pin ***/
+#define PMW_4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 24U)) & 0x01U)
+#define PMW_4_PIN                  PORT_PIN_PA24
 
 /*** Macros for PG_TH3 pin ***/
-#define PG_TH3_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 22U))
-#define PG_TH3_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 22U))
-#define PG_TH3_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 22U))
-#define PG_TH3_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 22U))
-#define PG_TH3_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 22U))
-#define PG_TH3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 22U)) & 0x01U)
-#define PG_TH3_PIN                  PORT_PIN_PA22
+#define PG_TH3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 22U)) & 0x01U)
+#define PG_TH3_PIN                  PORT_PIN_PB22
 
 /*** Macros for FLT_TH3 pin ***/
-#define FLT_TH3_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 23U))
-#define FLT_TH3_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 23U))
-#define FLT_TH3_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 23U))
-#define FLT_TH3_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 23U))
-#define FLT_TH3_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 23U))
-#define FLT_TH3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 23U)) & 0x01U)
-#define FLT_TH3_PIN                  PORT_PIN_PA23
+#define FLT_TH3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 23U)) & 0x01U)
+#define FLT_TH3_PIN                  PORT_PIN_PB23
 
-/*** Macros for PG_TH4 pin ***/
-#define PG_TH4_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 24U))
-#define PG_TH4_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 24U))
-#define PG_TH4_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 24U))
-#define PG_TH4_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 24U))
-#define PG_TH4_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 24U))
-#define PG_TH4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 24U)) & 0x01U)
-#define PG_TH4_PIN                  PORT_PIN_PA24
+/*** Macros for PG_TH2 pin ***/
+#define PG_TH2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 28U)) & 0x01U)
+#define PG_TH2_PIN                  PORT_PIN_PA28
 
-/*** Macros for FLT_TH4 pin ***/
-#define FLT_TH4_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 25U))
-#define FLT_TH4_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 25U))
-#define FLT_TH4_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 25U))
-#define FLT_TH4_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 25U))
-#define FLT_TH4_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 25U))
-#define FLT_TH4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 25U)) & 0x01U)
-#define FLT_TH4_PIN                  PORT_PIN_PA25
+/*** Macros for FLT_TH1 pin ***/
+#define FLT_TH1_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 30U)) & 0x01U)
+#define FLT_TH1_PIN                  PORT_PIN_PB30
+
+/*** Macros for PG_TH1 pin ***/
+#define PG_TH1_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 31U)) & 0x01U)
+#define PG_TH1_PIN                  PORT_PIN_PB31
 
 /*** Macros for PWM_9 pin ***/
 #define PWM_9_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 0U)) & 0x01U)
 #define PWM_9_PIN                  PORT_PIN_PB00
+
+/*** Macros for LED_3 pin ***/
+#define LED_3_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 1U))
+#define LED_3_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 1U))
+#define LED_3_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 1U))
+#define LED_3_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 1U))
+#define LED_3_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 1U))
+#define LED_3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 1U)) & 0x01U)
+#define LED_3_PIN                  PORT_PIN_PB01
+
+/*** Macros for LED_2 pin ***/
+#define LED_2_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 2U))
+#define LED_2_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 2U))
+#define LED_2_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 2U))
+#define LED_2_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 2U))
+#define LED_2_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 2U))
+#define LED_2_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 2U)) & 0x01U)
+#define LED_2_PIN                  PORT_PIN_PB02
+
+/*** Macros for LED_1 pin ***/
+#define LED_1_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 3U))
+#define LED_1_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 3U))
+#define LED_1_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 3U))
+#define LED_1_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 3U))
+#define LED_1_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 3U))
+#define LED_1_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 3U)) & 0x01U)
+#define LED_1_PIN                  PORT_PIN_PB03
 
 // *****************************************************************************
 /* PORT Group
