@@ -5,3 +5,6 @@ __pycache__/
 *$py.class
 !good_example_data.csv
 test_data/
+test_data_100/
+test_data_4/
+!tests/test_data_example/*.csv

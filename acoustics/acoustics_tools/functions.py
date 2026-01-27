@@ -58,7 +58,66 @@ def TDOA_pos_solve(r,t,c):
     p = np.zeros(3)
 
     for i in range(2,-1,-1):
-        p[i] = (x[i]-np.dot(LT[i][i:],p[i:]))/LT[i][i]
+        p[i] = (x[i]-np.dot(LT[i][i+1:],p[i+1:]))/LT[i][i]
+
+    if p[2] > 0:
+        p[2] = -p[2]
+    
+    return p
+
+def TDOA_direction_solve(r,t,c):
+    """
+    Functions for TDOA based localization and signal processing
+
+    Parameters
+    ----------
+    r : list of np.arrays
+        receiver positions
+    t : list of floats
+        time of arrivals
+    c : float
+        speed of sound in medium
+    """
+
+    #Generate linear system on form Ap = b so that we can solve for p
+    n = len(t)
+    A = []
+    b = []
+
+    for i in range(1,n):
+        Ai = (r[0]-r[i])
+        bi = c*(t[i]-t[0])
+
+        A.append(Ai)
+        b.append(bi)
+
+    A = np.array(A)
+    b = np.array(b)
+
+    #Use least squares to make a system that is easier to solve and fixes other things
+
+    AT = A.T #Transpose
+    M = np.matmul(AT,A) + np.identity(3)*10**-6
+    y = np.matmul(AT,b)
+
+    #now we solve Mp = y wher M is Semi positive definite and symetrical
+    #for this we use cholesky
+    
+    L = np.linalg.cholesky(M)
+    LT = L.T
+
+    #solve L*L^T * p = y by first solving L*x = y for x, then solving L^T * p = L*x for p
+    #since L and L^T are triangular this is trivial
+
+    x = np.zeros(3)
+
+    for i in range(3):
+        x[i] = (y[i]-np.dot(L[i][:i],x[:i]))/L[i][i]
+
+    p = np.zeros(3)
+
+    for i in range(2,-1,-1):
+        p[i] = (x[i]-np.dot(LT[i][i+1:],p[i+1:]))/LT[i][i]
     
     return p
 
@@ -145,62 +204,6 @@ def TDOA_calculate(times):
         time_differences.append(times[i]-times[0])
 
     return time_differences
-
-def TDOA_direction_solve(r,t,c):
-    """
-    Functions for TDOA based localization and signal processing
-
-    Parameters
-    ----------
-    r : list of np.arrays
-        receiver positions
-    t : list of floats
-        time of arrivals
-    c : float
-        speed of sound in medium
-    """
-
-    #Generate linear system on form Ap = b so that we can solve for p
-    n = len(t)
-    A = []
-    b = []
-
-    for i in range(1,n):
-        Ai = (r[0]-r[i])
-        bi = c*(t[i]-t[0])
-
-        A.append(Ai)
-        b.append(bi)
-
-    A = np.array(A)
-    b = np.array(b)
-
-    #Use least squares to make a system that is easier to solve and fixes other things
-
-    AT = A.T #Transpose
-    M = np.matmul(AT,A) + np.identity(3)*10**-6
-    y = np.matmul(AT,b)
-
-    #now we solve Mp = y wher M is Semi positive definite and symetrical
-    #for this we use cholesky
-    
-    L = np.linalg.cholesky(M)
-    LT = L.T
-
-    #solve L*L^T * p = y by first solving L*x = y for x, then solving L^T * p = L*x for p
-    #since L and L^T are triangular this is trivial
-
-    x = np.zeros(3)
-
-    for i in range(3):
-        x[i] = (y[i]-np.dot(L[i][:i],x[:i]))/L[i][i]
-
-    p = np.zeros(3)
-
-    for i in range(2,-1,-1):
-        p[i] = (x[i]-np.dot(LT[i][i:],p[i:]))/LT[i][i]
-    
-    return p
 
 def match_filter(signal, template):
     """

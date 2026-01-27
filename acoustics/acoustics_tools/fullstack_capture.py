@@ -136,9 +136,11 @@ def run_capture(
     pinger_found = False
 
     estimated_position = None
-    position_error = 180.0
+    position_error_deg = 180.0
     estimated_direction = None
     direction_error = 180.0
+    absolute_estimated_position = None
+    position_error = float('inf')
 
     SNR_threshold = 10**(5/10)  # 7 dB
 
@@ -247,7 +249,9 @@ def run_capture(
                 print("Times of Arrival (ms):", np.round(abs_times_of_arrival * 1000, 2))
 
                 estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival, c)
-                position_error = angle_between_directions_deg(estimated_position, pinger_direction)
+                position_error_deg = angle_between_directions_deg(estimated_position, pinger_direction)
+                absolute_estimated_position = estimated_position + drone_pos - pinger_pos
+                position_error = np.linalg.norm(absolute_estimated_position)/np.linalg.norm(pinger_pos - drone_pos)
 
                 estimated_direction = TDOA_direction_solve(hydro_pos, times_of_arrival, c)
                 direction_error = angle_between_directions_deg(estimated_direction, pinger_direction)
@@ -256,12 +260,14 @@ def run_capture(
                     print("")
                     print(
                         f"Frame {i // block_size}: "
-                        f"Pos Error: {position_error:.2f} deg, "
-                        f"Dir Error: {direction_error:.2f} deg, "
+                        f"Pos Error: {position_error_deg:.2f}°, "
+                        f"Dir Error: {direction_error:.2f}°, "
                         f"SNR: {10*np.log10(SNR):.2f} dB"
                     )
-                    print(f"    Real Position Relative To Drone:      {pinger_pos-drone_pos}")
-                    print(f"    Estimated Position: {estimated_position}")
+                    print(f"    Pinger Position:    {pinger_pos}")
+                    print(f"    Drone Position:     {drone_pos}")
+                    print(f"    Estimated Position: {absolute_estimated_position}")
+                    print(f"    Position Error:     {100*position_error:.2f}%")
                     print(f"    Real Direction:     {pinger_direction}")
                     print(f"    Estimated Direction:{estimated_direction}")
 
@@ -381,4 +387,4 @@ def run_capture(
         },
     )
 
-    return store, (estimated_position, position_error, estimated_direction, direction_error)
+    return store, (estimated_position, position_error_deg, estimated_direction, direction_error,absolute_estimated_position,position_error)

@@ -1,5 +1,6 @@
 using UnderwaterAcoustics
 using Plots
+theme(:dark)
 using SignalAnalysis
 using JSON3
 using FFTW
@@ -227,7 +228,7 @@ hydrophones_pos = map(pos -> pos .+ drone_pos, hydrophones_pos)  # Adjust hydrop
 hydrophones = [AcousticReceiver(pos) for pos ∈ hydrophones_pos]
 
 if verbose
-    println("Hydrphones configured at positions: \n")
+    println("Hydrophones configured at positions: \n")
     for i ∈ eachindex(hydrophones_pos)
         print("  ", hydrophones_pos[i], "\n")
     end
@@ -243,16 +244,18 @@ reference_hydrophone_rays = arrivals(pm, pinger, hydrophones[1])
 
 if verbose
     println("Ray tracing simulation completed.\n")
-    println("Rays to reference hydrophone: \n")
-    for ray ∈ reference_hydrophone_rays
+    println("Reference hydrophone signal and reflection arrivals: ")
+    sorted_reference_hydrophone_rays = sort(reference_hydrophone_rays, by = r -> r.t)
+    for ray ∈ sorted_reference_hydrophone_rays
         print("  ",ray, "\n")
     end
 
-    println("Hydropone ping rays: \n")
+    println("\nHydrophones first signal arrivals: ")
     for i ∈ eachindex(hydrophones)
         rays = arrivals(pm, pinger, hydrophones[i])
-        print("Hydrophone ", i, " first ray: ", rays[1], "\n")
+        print("Hydrophone ", i, " first arrival: ", rays[1], "\n")
     end
+    println("")
 end
 
 if noise_type == "white"
@@ -321,12 +324,16 @@ vprintln("Electrical hardware simulation completed.\n")
 # ==============================
 
 function plot_reference_hydrophone_rays(rays)
-    p = plot(env; xlims=(-5,15))
-    plot!(pinger)
-    for hydrophone ∈ hydrophones
+    p = plot(env; aspect_ratio = 1, xlims=(-1,7), ylims=(-6.5,1.5), zlims=(-10,10), title="Acoustic Ray Paths to Reference Hydrophone", label="",dpi=300)
+    plot!(pinger, markersize=8, markercolor=:red, label="Pinger")
+    plot!()
+    #= for hydrophone ∈ hydrophones
         plot!(hydrophone)
-    end
-    plot!(rays)
+    end =#
+    plot!(hydrophones[1], markersize=8, markercolor=:green, label="Reference Hydrophone")
+    plot!(rays; label="")
+    plot!(legend=:topright)
+    savefig("reference_hydrophone_rays.png") # save the most recent fig as filename_string (such as "output.png")
     display(p)
     gui()
 end
@@ -478,3 +485,6 @@ function multi_run_simulations(config_path::AbstractString, num_runs::Int64; out
         end
     end
 end
+
+#main()
+

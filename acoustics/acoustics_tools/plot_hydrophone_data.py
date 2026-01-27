@@ -17,7 +17,7 @@ def _fft_amp_db(time: np.ndarray, signal: np.ndarray) -> tuple[np.ndarray, np.nd
     dB_amplitude = 20 * np.log10(amplitude + np.finfo(float).tiny)
     return freq, dB_amplitude
 
-COMBINED_FILE = 'tests/test_data/data_56.csv'
+COMBINED_FILE = 'tests/test_data/data_10.csv'#"hydrophones_data.csv"#
 LEGACY_FILES = [f'hydrophone_{i}_data.csv' for i in range(1, 6)]
 
 

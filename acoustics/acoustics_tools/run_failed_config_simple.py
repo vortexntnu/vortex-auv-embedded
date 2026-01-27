@@ -7,9 +7,9 @@ from pathlib import Path
 # =====================
 # Edit these variables
 # =====================
-INDEX = 9  # Dataset index N (config_N.json / data_N.csv)
+INDEX = 42  # Dataset index N (config_N.json / data_N.csv)
 TDOA_METHOD = "envelope_envelope"
-SHOW_GUI = True
+SHOW_GUI = False
 QUIET = False
 FPS = 10
 FAULTY = False

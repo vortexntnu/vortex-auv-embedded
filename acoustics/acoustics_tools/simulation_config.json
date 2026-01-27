@@ -6,8 +6,8 @@
     [0.35, 0.35, 0.0],
     [0.0, 0.0, 0.0]
   ],
-  "drone_pos": [0.0, -1.0, -3.0],
-  "pinger_pos": [15.0, 10.0, -5.5],
+  "drone_pos": [0.0, 0.0, -3.0],
+  "pinger_pos": [15, 15.0, -5.5],
   "sea_depth": 6.0,
   "noise_level": 3.87e5,
   "noise_type": "red"
