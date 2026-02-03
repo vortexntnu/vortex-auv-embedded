@@ -75,6 +75,11 @@
 
 #define FET_STATUS 0x7F
 
+// BOTHOFF PINS
+
+#define GPIO_GROUP_A 0u
+#define PIN_BOTHOFF 6u
+#define BOTHOFF_PIN_MASK (1u << PIN_BOTHOFF)
 
 /* Minimal driver: only SPI+CS bring-up */
 
@@ -92,6 +97,8 @@ void bms_battery_status(void);
 void read_cells_1to6(void);
 void bms_sample_temps(void);
 bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC);
+void bothoff_init(void);
+void bothoff_high(void);
 
 
 

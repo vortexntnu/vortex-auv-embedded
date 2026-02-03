@@ -27,7 +27,6 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 #include "ic_bms/bms_spi.h"
-#include "spi_link_test.h"
 
 #include <stdio.h>
 
@@ -56,7 +55,7 @@ int main ( void )
     read_cells_1to6();
     bms_battery_status();
     bms_sample_temps();
-    spi_link_test_run_once();
+    
 
     while ( true )
     {
