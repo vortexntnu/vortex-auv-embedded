@@ -4,26 +4,26 @@
 #include "dma.h"
 #include "can1.h"
 
-void state_machine(volatile uint32_t* events, struct can_tx_frame* tx_frame, struct can_rx_frame* rx_frame) {
-    uint32_t ev = *events;
-    *events &= ~ev;
+void state_machine(struct state_context* state_ctx) {
+    uint32_t ev = state_ctx->events;
+    state_ctx->events &= ~ev;
 
     if (ev & EVENT_SET_PWM) {
-        set_servos_pwm(rx_frame->buf);
+        set_servos_pwm(state_ctx->rx_frame.buf);
         WDT_Clear();
     }
 
     if (ev & EVENT_READ_ENCODER) {
-        tx_frame->id = CAN_SEND_ANGLES;
-        tx_frame->len = 6;
-        read_encoders(ANGLE_REGISTER, tx_frame->buf);
+        state_ctx->tx_frame.id = CAN_SEND_ANGLES;
+        state_ctx->tx_frame.len = 6;
+        read_encoders(ANGLE_REGISTER, state_ctx->tx_frame.buf);
     }
 
     if (ev & EVENT_TRANSMIT_ANGLES) {
-        can_transmit(tx_frame);
+        can_transmit(&state_ctx->tx_frame);
     }
 
-    can_recieve(rx_frame);
+    can_recieve(&state_ctx->rx_frame);
 }
 
 void can_rx_callback(uintptr_t context) {

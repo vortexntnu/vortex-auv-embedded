@@ -34,11 +34,18 @@ typedef enum {
     SERVO_3,
 } SERVO_ADC_PINS;
 
+
+struct state_context {
+  volatile uint32_t events;
+  struct can_tx_frame tx_frame;
+  struct can_rx_frame rx_frame;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void state_machine(volatile uint32_t* events, struct can_tx_frame* tx_frame, struct can_rx_frame* rx_frame);
+void state_machine(struct state_context* state_ctx);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);

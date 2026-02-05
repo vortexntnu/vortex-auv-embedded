@@ -1,4 +1,5 @@
 #include "gripper.h"
+#include <string.h>
 
 
 
