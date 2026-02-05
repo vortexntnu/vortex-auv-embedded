@@ -51,7 +51,7 @@ int main ( void )
     /* Initialize all modules */
     SYS_Initialize ( NULL );
 
-    spi_test_run_and_print();
+    spi_driver_self_test_run();
 
     bq76942_init();
     bms_set_protection_threshold();
