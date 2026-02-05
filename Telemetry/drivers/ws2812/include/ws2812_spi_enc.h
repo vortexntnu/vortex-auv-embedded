@@ -1,13 +1,26 @@
-/*
- * ws2812_spi_enc.h
+/* 
+ * Header File
+ * 
+ * Platform:
+ *  ATSAMC21 
+ * 
+ * Company:
+ *  Vortex NTNU.
+ * 
+ * Author:
+ *  Markus Sandvik
+ * 
+ * File Name:
+ *  ws2812_spi_enc.h
  *
- * Non-blocking 3-bit SPI encoder for WS2812/WS2812B.
- * - Encoding: WS bit (1.25us) -> 3 SPI bits at ~2.4 MHz (0->100, 1->110)
- * - SPI: Mode 0, MSB-first, continuous, NO gaps
- * - Latch: keep DIN low for >= 80us after transfer
+ * Description:
+ *  Non-blocking 3-bit SPI encoder for WS2812/WS2812B.
+ *  - Encoding: WS bit (1.25us) -> 3 SPI bits at ~2.4 MHz (0->100, 1->110)
+ *  - SPI: Mode 0, MSB-first, continuous, NO gaps
+ *  - Latch: keep DIN low for >= 80us after transfer
  *
- * This core is hardware-agnostic. You provide async TX callbacks
- * (typically SPI+IRQ or SPI+DMAC on SAMC21) via ws2812enc_set_async_port().
+ *  This core is hardware-agnostic. You provide async TX callbacks
+ *  (typically SPI+IRQ or SPI+DMAC on SAMC21) via ws2812enc_set_async_port().
  */
 
 #ifndef WS2812_SPI_ENC_H

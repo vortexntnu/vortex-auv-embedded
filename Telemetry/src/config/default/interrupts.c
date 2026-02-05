@@ -86,7 +86,6 @@ extern void RTC_Handler                ( void ) __attribute__((weak, alias("Dumm
 extern void FREQM_Handler              ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TSENS_Handler              ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void NVMCTRL_Handler            ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
-extern void DMAC_Handler               ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void EVSYS_Handler              ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void SERCOM2_Handler            ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void SERCOM4_Handler            ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -131,7 +130,7 @@ const H3DeviceVectors exception_table=
     .pfnFREQM_Handler              = FREQM_Handler,
     .pfnTSENS_Handler              = TSENS_Handler,
     .pfnNVMCTRL_Handler            = NVMCTRL_Handler,
-    .pfnDMAC_Handler               = DMAC_Handler,
+    .pfnDMAC_Handler               = DMAC_InterruptHandler,
     .pfnEVSYS_Handler              = EVSYS_Handler,
     .pfnSERCOM0_Handler            = SERCOM0_SPI_InterruptHandler,
     .pfnSERCOM1_Handler            = SERCOM1_USART_InterruptHandler,

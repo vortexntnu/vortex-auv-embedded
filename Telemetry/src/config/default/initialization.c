@@ -178,7 +178,11 @@ void SYS_Initialize ( void* data )
 
     EVSYS_Initialize();
 
+    DMAC_Initialize();
+
     CAN0_Initialize();
+
+    SERCOM4_USART_Initialize();
 
     EIC_Initialize();
 

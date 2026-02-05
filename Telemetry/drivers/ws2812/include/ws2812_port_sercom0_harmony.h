@@ -1,17 +1,30 @@
-#ifndef WS2812_PORT_SERCOM0_HARMONY_H
-#define WS2812_PORT_SERCOM0_HARMONY_H
+/*
+ * Header File
+ * 
+ * Platform:
+ *  ATSAMC21 
+ * 
+ * Company:
+ *  Vortex NTNU.
+ * 
+ * Author:
+ *  Markus Sandvik
+ * 
+ * File Name:
+ *  ws2812_port_sercom0_harmony.h
+ */
 
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Bind the Harmony PLIB-backed async port (SERCOM0 SPI + TC3 timer)
- * to the ws2812 encoder. Call once after SYS_Initialize().
- */
-void ws2812_port_bind_sercom0_harmony(void);
+
+#define WS2812_RESET_PAD_BYTES 80
+
+uint32_t ws_led_dbg_get_isr_count(void);
+void ws_led_bind_port(void);   /* call once after SPI/DMAC init */
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* WS2812_PORT_SERCOM0_HARMONY_H */

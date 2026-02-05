@@ -1,25 +1,25 @@
 /*******************************************************************************
-  CAN Peripheral Library Interface Header File
+  DMAC Peripheral Library Interface Header File
 
   Company:
     Microchip Technology Inc.
 
   File Name:
-    plib_can0.h
+    plib_dmac.h
 
   Summary:
-    CAN PLIB interface declarations.
+    DMAC peripheral library interface.
 
   Description:
-    The CAN plib provides a simple interface to manage the CAN modules on
-    Microchip microcontrollers. This file defines the interface declarations
-    for the CAN plib.
+    This file defines the interface to the DMAC peripheral library. This
+    library provides access to and control of the DMAC controller.
 
   Remarks:
     None.
 
 *******************************************************************************/
-//DOM-IGNORE-BEGIN
+
+// DOM-IGNORE-BEGIN
 /*******************************************************************************
 * Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
@@ -42,10 +42,10 @@
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
-//DOM-IGNORE-END
+// DOM-IGNORE-END
 
-#ifndef PLIB_CAN0_H
-#define PLIB_CAN0_H
+#ifndef PLIB_DMAC_H    // Guards against multiple inclusion
+#define PLIB_DMAC_H
 
 // *****************************************************************************
 // *****************************************************************************
@@ -53,18 +53,17 @@
 // *****************************************************************************
 // *****************************************************************************
 
-/*
- * This section lists the other files that are included in this file.
- */
-#include <stdbool.h>
+/*  This section lists the other files that are included in this file.
+*/
+#include <device.h>
 #include <string.h>
-
-#include "device.h"
-#include "plib_can_common.h"
+#include <stdbool.h>
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
+
     extern "C" {
+
 #endif
 // DOM-IGNORE-END
 
@@ -73,45 +72,95 @@
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-/* CAN0 Message RAM Configuration Size */
-#define CAN0_RX_FIFO0_ELEMENT_SIZE       72U
-#define CAN0_RX_FIFO0_SIZE               576U
-#define CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE 16U
-#define CAN0_TX_FIFO_BUFFER_SIZE         16U
-#define CAN0_TX_EVENT_FIFO_SIZE          8U
 
-/* CAN0_MESSAGE_RAM_CONFIG_SIZE to be used by application or driver
-   for allocating buffer from non-cached contiguous memory */
-#define CAN0_MESSAGE_RAM_CONFIG_SIZE     600U
+typedef enum
+{
+    /* DMAC Channel 0 */
+    DMAC_CHANNEL_0 = 0,
+} DMAC_CHANNEL;
 
+typedef enum
+{
+    /* No event */
+    DMAC_TRANSFER_EVENT_NONE = 0,
+
+    /* Data was transferred successfully. */
+    DMAC_TRANSFER_EVENT_COMPLETE = 1,
+
+    /* Error while processing the request */
+    DMAC_TRANSFER_EVENT_ERROR = 2
+
+} DMAC_TRANSFER_EVENT;
+
+typedef enum
+{
+    /* CRC16 (CRC-CCITT): 0x1021 */
+    DMAC_CRC_TYPE_16 = 0x0,
+
+    /* CRC32 (IEEE 802.3): 0x04C11DB7*/
+    DMAC_CRC_TYPE_32 = 0x1
+
+} DMAC_CRC_POLYNOMIAL_TYPE;
+
+typedef enum
+{
+    /* Byte bus access. */
+    DMAC_CRC_BEAT_SIZE_BYTE     = 0x0,
+
+    /* Half-word bus access. */
+    DMAC_CRC_BEAT_SIZE_HWORD    = 0x1,
+
+    /* Word bus access. */
+    DMAC_CRC_BEAT_SIZE_WORD     = 0x2
+
+} DMAC_CRC_BEAT_SIZE;
+
+typedef struct
+{
+    /* CRCCTRL[CRCPOLY]: Polynomial Type (CRC16, CRC32) */
+    DMAC_CRC_POLYNOMIAL_TYPE polynomial_type;
+
+    /* CRCCHKSUM: Initial Seed for calculating the CRC */
+    uint32_t seed;
+} DMAC_CRC_SETUP;
+
+typedef uint32_t DMAC_CHANNEL_CONFIG;
+
+typedef void (*DMAC_CHANNEL_CALLBACK) (DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
+void DMAC_ChannelCallbackRegister (DMAC_CHANNEL channel, const DMAC_CHANNEL_CALLBACK eventHandler, const uintptr_t contextHandle);
 // *****************************************************************************
 // *****************************************************************************
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-void CAN0_Initialize (void);
-bool CAN0_MessageTransmit(uint32_t id, uint8_t length, uint8_t* data, CAN_MODE mode, CAN_MSG_TX_ATTRIBUTE msgAttr);
-bool CAN0_MessageReceive(uint32_t *id, uint8_t *length, uint8_t *data, uint16_t *timestamp,
-                                         CAN_MSG_RX_ATTRIBUTE msgAttr, CAN_MSG_RX_FRAME_ATTRIBUTE *msgFrameAttr);
-bool CAN0_TransmitEventFIFOElementGet(uint32_t *id, uint8_t *messageMarker, uint16_t *timestamp);
-CAN_ERROR CAN0_ErrorGet(void);
-void CAN0_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount);
-bool CAN0_InterruptGet(CAN_INTERRUPT_MASK interruptMask);
-void CAN0_InterruptClear(CAN_INTERRUPT_MASK interruptMask);
-bool CAN0_TxFIFOIsFull(void);
-void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress);
-void CAN0_SleepModeEnter(void);
-void CAN0_SleepModeExit(void);
-void CAN0_TxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle);
-void CAN0_RxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle, CAN_MSG_RX_ATTRIBUTE msgAttr);
+/* The following functions make up the methods (set of possible operations) of
+   this interface.
+*/
+void DMAC_Initialize( void );
+bool DMAC_ChannelTransfer (DMAC_CHANNEL channel, const void *srcAddr, const void *destAddr, size_t blockSize);
+bool DMAC_ChannelIsBusy ( DMAC_CHANNEL channel );
+void DMAC_ChannelDisable ( DMAC_CHANNEL channel );
+
+DMAC_CHANNEL_CONFIG  DMAC_ChannelSettingsGet ( DMAC_CHANNEL channel );
+bool  DMAC_ChannelSettingsSet ( DMAC_CHANNEL channel, DMAC_CHANNEL_CONFIG settings );
+uint16_t DMAC_ChannelGetTransferredCount( DMAC_CHANNEL channel );
+
+void DMAC_ChannelCRCSetup(DMAC_CHANNEL channel, DMAC_CRC_SETUP CRCSetup);
+uint32_t DMAC_CRCRead( void );
+
+uint32_t DMAC_CRCCalculate(void *buffer, uint32_t length, DMAC_CRC_SETUP CRCSetup);
+
+void DMAC_CRCDisable( void );
+void DMAC_ChannelSuspend ( DMAC_CHANNEL channel );
+void DMAC_ChannelResume ( DMAC_CHANNEL channel );
+DMAC_TRANSFER_EVENT DMAC_ChannelTransferStatusGet(DMAC_CHANNEL channel);
+
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
+
     }
+
 #endif
 // DOM-IGNORE-END
 
-#endif // PLIB_CAN0_H
-
-/*******************************************************************************
- End of File
-*/
+#endif //PLIB_DMAC_H

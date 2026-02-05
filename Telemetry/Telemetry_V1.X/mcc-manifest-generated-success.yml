@@ -6,6 +6,7 @@ creation_date: 2026-01-22T15:25:57.456+01:00[Europe/Berlin]
 operating_system: Windows 11
 mcc_mode: IDE
 mcc_mode_version: v6.25
+mcc_mode_version: v6.25
 device_name: ATSAMC21J18A
 compiler: XC32 5.00
 mcc_version: 5.6.3
