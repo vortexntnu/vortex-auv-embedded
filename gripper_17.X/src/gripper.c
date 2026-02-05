@@ -38,18 +38,16 @@ int read_encoders(uint8_t reg, uint8_t* data) {
 
 
 void set_servos_pwm(const uint8_t* pwm_data) {
-    uint16_t shoulder_duty = (pwm_data[0] << 8) | pwm_data[1];
-    uint16_t wrist_duty = (pwm_data[2] << 8) | pwm_data[3];
-    uint16_t grip_duty = (pwm_data[4] << 8) | pwm_data[5];
+    uint16_t pwm[3];
+    memcpy(pwm, pwm_data, sizeof(pwm));
 
-    uint32_t tcc_val =
-        (shoulder_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    uint32_t tcc_val = (pwm[0] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
     TCC0_PWM24bitDutySet(3, tcc_val);
 
-    tcc_val = (wrist_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    tcc_val = (pwm[1] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(0, tcc_val);
 
-    tcc_val = (grip_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
+    tcc_val = (pwm[2] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(1, tcc_val);
 }
 
