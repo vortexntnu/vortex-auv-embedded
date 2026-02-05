@@ -33,8 +33,8 @@
 
 */ // 16 cell voltage readings avaliable 
 
-#define bq_cs_group   (0U)          
-#define bq_cs_mask    (1UL << 18)   
+#define bq_cs_group   (0U)
+#define bq_cs_mask    (1UL << 7)    // PA07: CS (GPIO)
 
 #define R 0 // Read; Used in directcommands and Subcommands functions
 #define W 1 // Write; Used in directcommands and Subcommands functions

@@ -4,10 +4,6 @@
 # If you want to customize cmake behavior create a user.cmake in this
 # directory and add it to your version control system.
 
-if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/user.cmake)
-    include(user.cmake)
-endif()
-
 # format v1.00
 # {
 
@@ -17,6 +13,11 @@ set(CMAKE_SYSTEM_NAME "Generic")
 project(bms_default_project LANGUAGES C CXX ASM)
 
 include("${CMAKE_CURRENT_LIST_DIR}/.generated/main.cmake")
+
+if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/user.cmake)
+    include(user.cmake)
+endif()
+
 
 # }
 

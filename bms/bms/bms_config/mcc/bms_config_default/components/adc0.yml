@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: adc0
-coreVersion: 5.8.2
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:

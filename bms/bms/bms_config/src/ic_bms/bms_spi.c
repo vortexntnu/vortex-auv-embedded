@@ -17,9 +17,26 @@ static inline void _delay(uint32_t cycles){
 
     for (volatile uint32_t i=0; i<cycles; i++);
 }
+
+#define BQ_SPI_WAIT_MAX_LOOPS  (2000000UL)
+
+static bool bq_spi_wait_idle(void)
+{
+    uint32_t timeout = BQ_SPI_WAIT_MAX_LOOPS;
+
+    while (SERCOM0_SPI_IsBusy())
+    {
+        if (timeout-- == 0U)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
     
 
-void bq76942_Init(void)
+void bq76942_init(void)
 {
     // --- Chip select pin setup ---
     PORT_REGS->GROUP[bq_cs_group].PORT_DIRSET = bq_cs_mask;
@@ -46,6 +63,10 @@ bool Spi_TransferBytes(uint8_t *tx, uint8_t *rx, uint8_t length)
 
     bq_cs_low();
     bool ok = SERCOM0_SPI_WriteRead(tx, length, rx, length);
+    if (ok)
+    {
+        ok = bq_spi_wait_idle();
+    }
     bq_cs_high();
     
     return ok;
@@ -101,6 +122,10 @@ bool write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
      // Single SPI transfer with CS held low across all frames
      bq_cs_low();
      bool ok = SERCOM0_SPI_Write(tx_bytes, sizeof tx_bytes);
+     if (ok)
+     {
+         ok = bq_spi_wait_idle();
+     }
      bq_cs_high();
  
     return ok;
@@ -135,6 +160,10 @@ bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length)
 
     bq_cs_low();
     bool ok = SERCOM0_SPI_WriteRead(tx, sizeof tx, rx, sizeof rx);
+    if (ok)
+    {
+        ok = bq_spi_wait_idle();
+    }
     bq_cs_high();
     if (!ok) return false;
 
@@ -372,6 +401,40 @@ void read_cells_1to6(){
   }
   
     
+  bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC)
+  {
+      uint16_t raw;
+  
+      if (temp_dC == 0)
+          return false;
+  
+      if (!bq_direct_command(ts_cmd, &raw, 'R'))
+          return false;
+  
+      *temp_dC = (int16_t)raw - 2731;   // raw is signed 0.1 K -> 0.1 C
+  
+      return true;
+  }
+/*
+  void bms_sample_temps(void)
+{
+    int16_t t1_dC, t2_dC, t3_dC;
 
+    bms_read_ts_temp(TS1_TEMP, &t1_dC);
+    bms_read_ts_temp(TS2_TEMP, &t2_dC);
+    bms_read_ts_temp(TS3_TEMP, &t3_dC);
 
+}
+*/
 
+void bothoff_init(void)
+{
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[PIN_BOTHOFF] &= (uint8_t)(~PORT_PINCFG_PMUXEN_Msk); 
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_DIRSET = BOTHOFF_PIN_MASK; 
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_OUTCLR = BOTHOFF_PIN_MASK; 
+}
+
+void bothoff_high(void)
+{
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_OUTSET = BOTHOFF_PIN_MASK; 
+}

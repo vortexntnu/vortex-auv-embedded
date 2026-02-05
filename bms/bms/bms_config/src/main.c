@@ -27,6 +27,7 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 #include "ic_bms/bms_spi.h"
+#include "ic_bms/spi_test.h"
 
 #include <stdio.h>
 
@@ -50,11 +51,14 @@ int main ( void )
     /* Initialize all modules */
     SYS_Initialize ( NULL );
 
+    spi_test_run_and_print();
+
     bq76942_init();
     bms_set_protection_threshold();
     read_cells_1to6();
     bms_battery_status();
-    bms_sample_temps();
+  
+    //bms_sample_temps();
     
 
     while ( true )
