@@ -22,8 +22,8 @@ data:
     - children:
       - attributes:
           id: can0
-          x: '475'
-          y: '116'
+          x: '478'
+          y: '110'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
@@ -34,7 +34,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -44,7 +44,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -121,7 +121,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -129,6 +129,9 @@ data:
             id: can0
             value: '87.5'
           type: Dynamic
+        - attributes:
+            value: '75.0'
+          type: User
         type: Values
       type: Float
     DATA_TIME_QUANTA_PERIOD:
@@ -151,7 +154,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -159,6 +162,9 @@ data:
             id: can0
             value: '2'
           type: Dynamic
+        - attributes:
+            value: '0'
+          type: User
         type: Values
       type: Integer
     DBTP_DSJW:
@@ -168,8 +174,11 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '2'
           type: Dynamic
+        - attributes:
+            value: '5'
+          type: User
         type: Values
       type: Integer
     DBTP_DTSEG1:
@@ -179,7 +188,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '6'
+            value: '5'
           type: Dynamic
         type: Values
       type: Integer
@@ -190,7 +199,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '2'
           type: Dynamic
         type: Values
       type: Integer
@@ -224,7 +233,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -232,6 +241,9 @@ data:
             id: can0
             value: '2'
           type: Dynamic
+        - attributes:
+            value: '3'
+          type: User
         type: Values
       type: Integer
     NBTP_NSJW:
@@ -241,8 +253,11 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '6'
           type: Dynamic
+        - attributes:
+            value: '5'
+          type: User
         type: Values
       type: Integer
     NBTP_NTSEG1:
@@ -252,7 +267,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '30'
+            value: '17'
           type: Dynamic
         type: Values
       type: Integer
@@ -263,7 +278,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -274,7 +289,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '32'
+            value: '24'
           type: Dynamic
         type: Values
       type: Integer
@@ -287,7 +302,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -295,6 +310,9 @@ data:
             id: can0
             value: '96.875'
           type: Dynamic
+        - attributes:
+            value: '75.0'
+          type: User
         type: Values
       type: Float
     NOMINAL_TIME_QUANTA_PERIOD:
@@ -304,7 +322,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '62.500'
+            value: '83.333'
           type: Dynamic
         type: Values
       type: String

@@ -52,7 +52,7 @@
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.h</itemPath>
-                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.h</itemPath>
+                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.h</itemPath>
               </logicalFolder>
             </logicalFolder>
             <logicalFolder name="tc" displayName="tc" projectFiles="true">
@@ -274,6 +274,7 @@
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.c</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c</itemPath>
+                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.c</itemPath>
               </logicalFolder>
             </logicalFolder>
             <logicalFolder name="tc" displayName="tc" projectFiles="true">

@@ -23,7 +23,7 @@ data:
       - attributes:
           id: sercom0
           x: '20'
-          y: '88'
+          y: '91'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
