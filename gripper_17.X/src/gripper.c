@@ -3,36 +3,16 @@
 
 
 
-int read_encoders(uint8_t reg, uint8_t* data) {
+int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* out){
     static const uint8_t encoder_addresses[NUM_ENCODERS] = {
         SHOULDER_ADDR, WRIST_ADDR, GRIP_ADDR};
-    uint32_t timeout;
+    uint8_t encoder_addr = encoder_addresses[enc_num];
+    uint8_t* buf = out + enc_num;
 
-    for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
-        uint8_t buf[2] = {0xFF, 0xFF};
-
-        if (!SERCOM1_I2C_WriteRead(encoder_addresses[i], &reg, 1, buf, 2)) {
-            return -1;
-        }
-
-        timeout = I2C_TIMEOUT;
-
-        while (SERCOM1_I2C_IsBusy()) {
-            if (--timeout == 0) {
-                break;
-            }
-        }
-
-        if (timeout == 0 || (buf[0] == 0xFF && buf[1] == 0xFF)) {
-            data[2 * i] = 0xFF;
-            data[2 * i + 1] = 0xFF;
-            continue;
-        }
-
-        uint16_t raw_angle = (buf[0] << 6) | (buf[1] & 0x3F);
-        data[2 * i] = raw_angle >> 8;
-        data[2 * i + 1] = raw_angle & 0xFF;
+    if (!SERCOM1_I2C_WriteRead(encoder_addr, &reg, 1, buf, 2)) {
+        return -1;
     }
+
     return 0;
 }
 

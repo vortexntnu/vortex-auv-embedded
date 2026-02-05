@@ -7,6 +7,7 @@ uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
 struct state_context state_context;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 
+
 int main(void) {
     system_init();
 
@@ -19,6 +20,7 @@ int main(void) {
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_result_array,
                          sizeof(adc_result_array));
+    SERCOM1_I2C_CallbackRegister(i2c1_callback, (uintptr_t)&state_context.events);
     can_recieve(&state_context.rx_frame);
 
     WDT_Enable();

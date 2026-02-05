@@ -33,13 +33,14 @@ extern "C"{
  *
  *
  * @param[in]  reg   Register address to read from each encoder.
- * @param[out] data  Pointer to a buffer that will receive the angle data.
+ * @param[in]  enc_num   Encoder number
+ * @param[out] out  Pointer to a buffer that will receive the angle data.
  *                   Must be at least 2 * NUM_ENCODERS bytes long.
  *
  * @return  0  on success,
  *         -1  on failure
  */
-int read_encoders(uint8_t reg, uint8_t* data);
+int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* data);
 
 
 /**

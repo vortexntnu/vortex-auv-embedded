@@ -51,6 +51,7 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context);
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context);
+void i2c1_callback(uintptr_t context);
 
 
 

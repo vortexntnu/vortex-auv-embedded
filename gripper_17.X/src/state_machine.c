@@ -4,6 +4,9 @@
 #include "dma.h"
 #include "can1.h"
 
+
+static uint8_t encoder_num = 0;
+
 void state_machine(struct state_context* state_ctx) {
     uint32_t ev = state_ctx->events;
     state_ctx->events &= ~ev;
@@ -16,7 +19,11 @@ void state_machine(struct state_context* state_ctx) {
     if (ev & EVENT_READ_ENCODER) {
         state_ctx->tx_frame.id = CAN_SEND_ANGLES;
         state_ctx->tx_frame.len = 6;
-        read_encoders(ANGLE_REGISTER, state_ctx->tx_frame.buf);
+        read_encoders(ANGLE_REGISTER, encoder_num, state_ctx->tx_frame.buf);
+
+        if (encoder_num == 2){
+          encoder_num = 0;
+        }
     }
 
     if (ev & EVENT_TRANSMIT_ANGLES) {
@@ -60,6 +67,13 @@ void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
     volatile uint32_t* events = (volatile uint32_t*) context;
     *events |= EVENT_TRANSMIT_ANGLES;
 }
+
+void i2c1_callback(uintptr_t context){
+    encoder_num += 1;
+    volatile uint32_t* events = (volatile uint32_t*) context;
+    *events |= EVENT_READ_ENCODER;
+}
+
 
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
@@ -121,3 +135,4 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
             break;
     }
 }
+
