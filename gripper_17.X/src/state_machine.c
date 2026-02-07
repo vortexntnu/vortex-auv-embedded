@@ -22,6 +22,7 @@ void state_machine(struct state_context* state_ctx) {
         read_encoders(ANGLE_REGISTER, encoder_num, state_ctx->tx_frame.buf);
 
         if (encoder_num == 2){
+          ev |= EVENT_TRANSMIT_ANGLES;
           encoder_num = 0;
         }
     }
@@ -34,12 +35,12 @@ void state_machine(struct state_context* state_ctx) {
 }
 
 void can_rx_callback(uintptr_t context) {
-    struct can_rx_frame* rx_frame = (struct can_rx_frame*)context;
+    struct state_context* state_ctx = (struct state_context*) context;
 
     if (CAN0_ErrorGet()) {
         return;
     }
-    switch (rx_frame->id) {
+    switch (state_ctx->rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
             break;
@@ -47,8 +48,7 @@ void can_rx_callback(uintptr_t context) {
             start_gripper();
             break;
         case SET_PWM:
-            set_servos_pwm(rx_frame->buf);
-            WDT_Clear();
+            state_ctx->events |= EVENT_SET_PWM;
             break;
         case RESET_MCU:
             NVIC_SystemReset();

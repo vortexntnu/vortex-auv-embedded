@@ -17,7 +17,6 @@ int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* out){
 }
 
 
-
 void set_servos_pwm(const uint8_t* pwm_data) {
     uint16_t pwm[3];
     memcpy(pwm, pwm_data, sizeof(pwm));

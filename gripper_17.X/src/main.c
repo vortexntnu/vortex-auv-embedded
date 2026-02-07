@@ -12,7 +12,7 @@ int main(void) {
     system_init();
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
-    CAN0_RxCallbackRegister(can_rx_callback, (uintptr_t)&state_context.rx_frame,
+    CAN0_RxCallbackRegister(can_rx_callback, (uintptr_t)&state_context,
                             CAN_MSG_ATTR_RX_FIFO0);
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, 0);
     TC0_TimerCallbackRegister(tc0_callback, (uintptr_t)&state_context.events);
