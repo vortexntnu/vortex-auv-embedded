@@ -7,19 +7,19 @@
 
 static uint8_t encoder_num = 0;
 
-void state_machine(struct state_context* state_ctx) {
-    uint32_t ev = state_ctx->events;
-    state_ctx->events &= ~ev;
+void state_machine(struct state_context* ctx) {
+    uint32_t ev = ctx->events;
+    ctx->events &= ~ev;
 
     if (ev & EVENT_SET_PWM) {
-        set_servos_pwm(state_ctx->rx_frame.buf);
+        set_servos_pwm(ctx->rx_frame.buf);
         WDT_Clear();
     }
 
     if (ev & EVENT_READ_ENCODER) {
-        state_ctx->tx_frame.id = CAN_SEND_ANGLES;
-        state_ctx->tx_frame.len = 6;
-        read_encoders(ANGLE_REGISTER, encoder_num, state_ctx->tx_frame.buf);
+        ctx->tx_frame.id = CAN_SEND_ANGLES;
+        ctx->tx_frame.len = 6;
+        read_encoders(ANGLE_REGISTER, encoder_num, ctx->tx_frame.buf);
 
         if (encoder_num == 2){
           ev |= EVENT_TRANSMIT_ANGLES;
@@ -28,19 +28,19 @@ void state_machine(struct state_context* state_ctx) {
     }
 
     if (ev & EVENT_TRANSMIT_ANGLES) {
-        can_transmit(&state_ctx->tx_frame);
+        can_transmit(&ctx->tx_frame);
     }
 
-    can_recieve(&state_ctx->rx_frame);
+    can_recieve(&ctx->rx_frame);
 }
 
 void can_rx_callback(uintptr_t context) {
-    struct state_context* state_ctx = (struct state_context*) context;
+    struct state_context* ctx = (struct state_context*) context;
 
     if (CAN0_ErrorGet()) {
         return;
     }
-    switch (state_ctx->rx_frame.id) {
+    switch (ctx->rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
             break;
@@ -48,7 +48,7 @@ void can_rx_callback(uintptr_t context) {
             start_gripper();
             break;
         case SET_PWM:
-            state_ctx->events |= EVENT_SET_PWM;
+            ctx->events |= EVENT_SET_PWM;
             break;
         case RESET_MCU:
             NVIC_SystemReset();
