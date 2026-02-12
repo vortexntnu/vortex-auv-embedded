@@ -18,16 +18,16 @@ int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* out){
 
 
 void set_servos_pwm(const uint8_t* pwm_data) {
-    uint16_t pwm[3];
-    memcpy(pwm, pwm_data, sizeof(pwm));
+    uint16_t duty_cycle_us[3];
+    memcpy(duty_cycle_us, pwm_data, sizeof(duty_cycle_us));
 
-    uint32_t tcc_val = (pwm[0] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
+    uint32_t tcc_val = (duty_cycle_us[0] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
     TCC0_PWM24bitDutySet(3, tcc_val);
 
-    tcc_val = (pwm[1] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
+    tcc_val = (duty_cycle_us[1] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(0, tcc_val);
 
-    tcc_val = (pwm[2] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
+    tcc_val = (duty_cycle_us[2] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
     TCC1_PWM24bitDutySet(1, tcc_val);
 }
 
