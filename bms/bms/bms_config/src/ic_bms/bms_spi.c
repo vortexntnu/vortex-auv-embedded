@@ -438,3 +438,10 @@ void bothoff_high(void)
 {
     PORT_REGS->GROUP[GPIO_GROUP_A].PORT_OUTSET = BOTHOFF_PIN_MASK; 
 }
+
+void can_wakeup_pin(void){
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[16U] &= (uint8_t)(~PORT_PINCFG_PMUXEN_Msk);
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_DIRCLR = (1u << 16U); // Set as input
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[16U] |= PORT_PINCFG_INEN_Msk; // Enable INPUT
+}
+

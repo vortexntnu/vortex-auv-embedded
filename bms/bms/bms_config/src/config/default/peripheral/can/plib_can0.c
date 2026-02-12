@@ -21,7 +21,7 @@
 
 //DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2021 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -59,20 +59,56 @@
 // *****************************************************************************
 // *****************************************************************************
 #define CAN_STD_ID_Msk        0x7FFU
-
-static volatile CAN_TX_FIFO_CALLBACK_OBJ can0TxFifoCallbackObj;
-static volatile CAN_TX_EVENT_FIFO_CALLBACK_OBJ can0TxEventFifoCallbackObj;
-static volatile CAN_RX_FIFO_CALLBACK_OBJ can0RxFifoCallbackObj[2];
-static volatile CAN_CALLBACK_OBJ can0CallbackObj;
+#define CAN_CALLBACK_TX_INDEX 3U
+#define NUM_RX_FIFOS 2U
+#define NUM_RX_BUFFER_ELEMENTS 8U
+static volatile CAN_RX_MSG can0RxMsg[NUM_RX_FIFOS][NUM_RX_BUFFER_ELEMENTS];
+static volatile CAN_CALLBACK_OBJ can0CallbackObj[4];
 static volatile CAN_OBJ can0Obj;
 
-static inline void CAN0_ZeroInitialize(volatile void* pData, size_t dataSize)
+/******************************************************************************
+Local Functions
+******************************************************************************/
+
+static void CANLengthToDlcGet(uint8_t length, uint8_t *dlc)
 {
-    volatile uint8_t* data = (volatile uint8_t*)pData;
-    for (uint32_t index = 0; index < dataSize; index++)
+    if (length <= 8U)
     {
-        data[index] = 0U;
+        *dlc = length;
     }
+    else if (length <= 12U)
+    {
+        *dlc = 0x9U;
+    }
+    else if (length <= 16U)
+    {
+        *dlc = 0xAU;
+    }
+    else if (length <= 20U)
+    {
+        *dlc = 0xBU;
+    }
+    else if (length <= 24U)
+    {
+        *dlc = 0xCU;
+    }
+    else if (length <= 32U)
+    {
+        *dlc = 0xDU;
+    }
+    else if (length <= 48U)
+    {
+        *dlc = 0xEU;
+    }
+    else
+    {
+        *dlc = 0xFU;
+    }
+}
+static uint8_t CANDlcToLengthGet(uint8_t dlc)
+{
+    const uint8_t msgLength[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
+    return msgLength[dlc];
 }
 
 // *****************************************************************************
@@ -109,18 +145,21 @@ void CAN0_Initialize(void)
     CAN0_REGS->CAN_CCCR |= CAN_CCCR_CCE_Msk;
 
     /* Set Data Bit Timing and Prescaler Register */
-    CAN0_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(0UL) | CAN_DBTP_DTSEG1(5UL) | CAN_DBTP_DBRP(2UL) | CAN_DBTP_DSJW(0UL);
+    CAN0_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(5UL) | CAN_DBTP_DTSEG1(16UL) | CAN_DBTP_DBRP(0UL) | CAN_DBTP_DSJW(4UL);
 
     /* Set Nominal Bit timing and Prescaler Register */
-    CAN0_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(29UL) | CAN_NBTP_NBRP(2UL) | CAN_NBTP_NSJW(0UL);
+    CAN0_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(5UL) | CAN_NBTP_NTSEG1(16UL) | CAN_NBTP_NBRP(3UL) | CAN_NBTP_NSJW(4UL);
 
     /* Receive Buffer / FIFO Element Size Configuration Register */
-    CAN0_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(0UL) | CAN_RXESC_F1DS(0UL);
+    CAN0_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(7UL);
     /* Transmit Buffer/FIFO Element Size Configuration Register */
-    CAN0_REGS->CAN_TXESC = CAN_TXESC_TBDS(0UL);
+    CAN0_REGS->CAN_TXESC = CAN_TXESC_TBDS(7UL);
 
     /* Global Filter Configuration Register */
-    CAN0_REGS->CAN_GFC = CAN_GFC_ANFS_REJECT | CAN_GFC_ANFE_REJECT;
+    CAN0_REGS->CAN_GFC = CAN_GFC_ANFS_RXF0 | CAN_GFC_ANFE_RXF0;
+
+    /* Timestamp Counter Configuration Register */
+    CAN0_REGS->CAN_TSCC = CAN_TSCC_TCP(0UL) | CAN_TSCC_TSS_INC;
 
     /* Set the operation mode */
     CAN0_REGS->CAN_CCCR |= CAN_CCCR_FDOE_Msk | CAN_CCCR_BRSE_Msk;
@@ -139,264 +178,229 @@ void CAN0_Initialize(void)
     CAN0_REGS->CAN_ILE = CAN_ILE_EINT0_Msk;
 
     /* Enable CAN interrupts */
-    CAN0_REGS->CAN_IE = CAN_IE_BOE_Msk | CAN_IE_ARAE_Msk | CAN_IE_PEDE_Msk | CAN_IE_PEAE_Msk | CAN_IE_WDIE_Msk
-                                      | CAN_IE_EWE_Msk | CAN_IE_EPE_Msk | CAN_IE_ELOE_Msk | CAN_IE_BEUE_Msk | CAN_IE_BECE_Msk
-                                       | CAN_IE_TFEE_Msk
-                                       | CAN_IE_TEFNE_Msk | CAN_IE_TEFLE_Msk | CAN_IE_TEFFE_Msk | CAN_IE_TCFE_Msk | CAN_IE_HPME_Msk
-                                       | CAN_IE_RF0NE_Msk | CAN_IE_RF0LE_Msk | CAN_IE_RF0FE_Msk
-                                       | CAN_IE_RF1NE_Msk | CAN_IE_RF1LE_Msk | CAN_IE_RF1FE_Msk
-                                      
-                                      | CAN_IE_MRAFE_Msk;
+    CAN0_REGS->CAN_IE = CAN_IE_BOE_Msk;
 
-    CAN0_ZeroInitialize(&can0Obj.msgRAMConfig, sizeof(CAN_MSG_RAM_CONFIG));
+    // Initialize the CAN PLib Object
+    can0Obj.txBufferIndex = 0U;
+    can0Obj.rxBufferIndex1 = 0U;
+    can0Obj.rxBufferIndex2 = 0U;
+    (void) memset(can0RxMsg, 0x00, sizeof(can0RxMsg));
+    (void) memset(&can0Obj.msgRAMConfig, 0x00, sizeof(CAN_MSG_RAM_CONFIG));
 }
-
 
 // *****************************************************************************
 /* Function:
-    bool CAN0_MessageTransmitFifo(uint8_t numberOfMessage, CAN_TX_BUFFER *txBuffer)
+    bool CAN0_MessageTransmit(uint32_t id, uint8_t length, uint8_t* data, CAN_MODE mode, CAN_MSG_TX_ATTRIBUTE msgAttr)
 
    Summary:
-    Transmit multiple messages into CAN bus from Tx FIFO.
+    Transmits a message into CAN bus.
 
    Precondition:
     CAN0_Initialize must have been called for the associated CAN instance.
 
    Parameters:
-    numberOfMessage - Total number of message.
-    txBuffer        - Pointer to Tx buffer
+    id      - 11-bit / 29-bit identifier (ID).
+    length  - length of data buffer in number of bytes.
+    data    - pointer to source data buffer
+    mode    - CAN mode Classic CAN or CAN FD without BRS or CAN FD with BRS
+    msgAttr - Data Frame or Remote frame using Tx FIFO or Tx Buffer
 
    Returns:
     Request status.
     true  - Request was successful.
     false - Request has failed.
 */
-bool CAN0_MessageTransmitFifo(uint8_t numberOfMessage, CAN_TX_BUFFER *txBuffer)
+bool CAN0_MessageTransmit(uint32_t id, uint8_t length, uint8_t* data, CAN_MODE mode, CAN_MSG_TX_ATTRIBUTE msgAttr)
 {
-    uint8_t  *txFifo = NULL;
-    uint8_t  *txBuf = (uint8_t *)txBuffer;
-    uint32_t bufferNumber = 0U;
-    uint8_t  tfqpi = 0U;
-    uint8_t  count = 0U;
-    bool transmitFifo_event = false;
+    uint8_t dlc = 0U;
+    uint8_t tfqpi = 0U;
+    can_txbe_registers_t *fifo = NULL;
+    static uint8_t messageMarker = 0U;
+    bool op_success = false;
+    (void) mode;
 
-    if (!(((numberOfMessage < 1U) || (numberOfMessage > 1U)) || (txBuffer == NULL)))
+    switch (msgAttr)
     {
-        tfqpi = (uint8_t)((CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFQPI_Msk) >> CAN_TXFQS_TFQPI_Pos);
-
-        for (count = 0U; count < numberOfMessage; count++)
-        {
-            txFifo = (uint8_t *)((uint8_t*)can0Obj.msgRAMConfig.txBuffersAddress + ((uint32_t)tfqpi * CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE));
-
-            (void) memcpy(txFifo, txBuf, CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE);
-
-            txBuf += CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE;
-            bufferNumber |= (1UL << tfqpi);
-            tfqpi++;
-            if (tfqpi == 1U)
+        case CAN_MSG_ATTR_TX_FIFO_DATA_FRAME:
+        case CAN_MSG_ATTR_TX_FIFO_RTR_FRAME:
+            /* The FIFO is not full */
+            if (0U == (CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFQF_Msk))
             {
-                tfqpi = 0U;
+                tfqpi = (uint8_t)((CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFQPI_Msk) >> CAN_TXFQS_TFQPI_Pos);
+                fifo = (can_txbe_registers_t *) ((uint8_t*)can0Obj.msgRAMConfig.txBuffersAddress + ((uint32_t)tfqpi * CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE));
+                op_success = true;
             }
+            break;
+        default:
+            /* Invalid Message Attribute */
+            break;
+    }
+    if (op_success)
+    {
+        /* If the id is longer than 11 bits, it is considered as extended identifier */
+        if (id > CAN_STD_ID_Msk)
+        {
+            /* An extended identifier is stored into ID */
+            fifo->CAN_TXBE_0 = (id & CAN_TXBE_0_ID_Msk) | CAN_TXBE_0_XTD_Msk;
+        }
+        else
+        {
+            /* A standard identifier is stored into ID[28:18] */
+            fifo->CAN_TXBE_0 = id << 18U;
+        }
+        if (length > 64U)
+        {
+            length = 64U;
         }
 
-        __DSB();
+        CANLengthToDlcGet(length, &dlc);
 
-        /* Set Transmission request */
-        CAN0_REGS->CAN_TXBAR = bufferNumber;
+        fifo->CAN_TXBE_1 = CAN_TXBE_1_DLC((uint32_t)dlc);
 
-        transmitFifo_event = true;
+        if(mode == CAN_MODE_FD_WITH_BRS)
+        {
+            fifo->CAN_TXBE_1 |= CAN_TXBE_1_FDF_Msk | CAN_TXBE_1_BRS_Msk;
+        }
+        else if (mode == CAN_MODE_FD_WITHOUT_BRS)
+        {
+            fifo->CAN_TXBE_1 |= CAN_TXBE_1_FDF_Msk;
+        }
+        else
+        {
+            /* Do nothing */
+        }
+        if ((msgAttr == CAN_MSG_ATTR_TX_BUFFER_DATA_FRAME) || (msgAttr == CAN_MSG_ATTR_TX_FIFO_DATA_FRAME))
+        {
+            /* copy the data into the payload */
+            (void) memcpy((uint8_t *)&fifo->CAN_TXBE_DATA, data, length);
+        }
+        else if ((msgAttr == CAN_MSG_ATTR_TX_BUFFER_RTR_FRAME) || (msgAttr == CAN_MSG_ATTR_TX_FIFO_RTR_FRAME))
+        {
+            fifo->CAN_TXBE_0 |= CAN_TXBE_0_RTR_Msk;
+        }
+        else
+        {
+            /* Do nothing */
+        }
+
+        messageMarker++;
+        fifo->CAN_TXBE_1 |= (((uint32_t)(messageMarker) << CAN_TXBE_1_MM_Pos) & CAN_TXBE_1_MM_Msk) | CAN_TXBE_1_EFC_Msk;
+
+        CAN0_REGS->CAN_TXBTIE = 1UL << tfqpi;
+
+        /* request the transmit */
+        CAN0_REGS->CAN_TXBAR = 1UL << tfqpi;
+
+        CAN0_REGS->CAN_IE |= CAN_IE_TCE_Msk;
     }
-    return transmitFifo_event;
+    return op_success;
 }
 
 // *****************************************************************************
 /* Function:
-    uint8_t CAN0_TxFifoFreeLevelGet(void)
+    bool CAN0_MessageReceive(uint32_t *id, uint8_t *length, uint8_t *data, uint16_t *timestamp,
+                                             CAN_MSG_RX_ATTRIBUTE msgAttr, CAN_MSG_RX_FRAME_ATTRIBUTE *msgFrameAttr)
 
    Summary:
-    Returns Tx FIFO Free Level.
+    Receives a message from CAN bus.
 
    Precondition:
     CAN0_Initialize must have been called for the associated CAN instance.
 
    Parameters:
-    None.
-
-   Returns:
-    Tx FIFO Free Level.
-*/
-uint8_t CAN0_TxFifoFreeLevelGet(void)
-{
-    return (uint8_t)(CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFFL_Msk);
-}
-
-// *****************************************************************************
-/* Function:
-    bool CAN0_TxBufferIsBusy(uint8_t bufferNumber)
-
-   Summary:
-    Check if Transmission request is pending for the specific Tx buffer.
-
-   Precondition:
-    CAN0_Initialize must have been called for the associated CAN instance.
-
-   Parameters:
-    None.
-
-   Returns:
-    true  - Transmission request is pending.
-    false - Transmission request is not pending.
-*/
-bool CAN0_TxBufferIsBusy(uint8_t bufferNumber)
-{
-    return ((CAN0_REGS->CAN_TXBRP & (1UL << bufferNumber)) != 0U);
-}
-
-// *****************************************************************************
-/* Function:
-    bool CAN0_TxEventFifoRead(uint8_t numberOfTxEvent, CAN_TX_EVENT_FIFO *txEventFifo)
-
-   Summary:
-    Read Tx Event FIFO for the transmitted messages.
-
-   Precondition:
-    CAN0_Initialize must have been called for the associated CAN instance.
-
-   Parameters:
-    numberOfTxEvent - Total number of Tx Event
-    txEventFifo     - Pointer to Tx Event FIFO
+    id           - Pointer to 11-bit / 29-bit identifier (ID) to be received.
+    length       - Pointer to data length in number of bytes to be received.
+    data         - pointer to destination data buffer
+    timestamp    - Pointer to Rx message timestamp, timestamp value is 0 if timestamp is disabled
+    msgAttr      - Message to be read from Rx FIFO0 or Rx FIFO1 or Rx Buffer
+    msgFrameAttr - Data frame or Remote frame to be received
 
    Returns:
     Request status.
     true  - Request was successful.
     false - Request has failed.
 */
-bool CAN0_TxEventFifoRead(uint8_t numberOfTxEvent, CAN_TX_EVENT_FIFO *txEventFifo)
+bool CAN0_MessageReceive(uint32_t *id, uint8_t *length, uint8_t *data, uint16_t *timestamp,
+                                         CAN_MSG_RX_ATTRIBUTE msgAttr, CAN_MSG_RX_FRAME_ATTRIBUTE *msgFrameAttr)
 {
-    uint8_t txefgi     = 0U;
-    uint8_t count      = 0U;
-    uint8_t *txEvent   = NULL;
-    uint8_t *txEvtFifo = (uint8_t *)txEventFifo;
-    bool txFifo_event = false;
+    uint8_t bufferIndex = 0U;
+    bool status = false;
 
-    if (txEventFifo != NULL)
+    switch (msgAttr)
     {
-        /* Read data from the Rx FIFO0 */
+        case CAN_MSG_ATTR_RX_FIFO0:
+            bufferIndex = (uint8_t)((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0GI_Msk) >> CAN_RXF0S_F0GI_Pos);
+            can0RxMsg[msgAttr][bufferIndex].rxId = id;
+            can0RxMsg[msgAttr][bufferIndex].rxBuffer = data;
+            can0RxMsg[msgAttr][bufferIndex].rxsize = length;
+            can0RxMsg[msgAttr][bufferIndex].timestamp = timestamp;
+            can0RxMsg[msgAttr][bufferIndex].msgFrameAttr = msgFrameAttr;
+            CAN0_REGS->CAN_IE |= CAN_IE_RF0NE_Msk;
+            status = true;
+            break;
+        default:
+            /* Do nothing */
+            break;
+    }
+    return status;
+}
+
+// *****************************************************************************
+/* Function:
+    bool CAN0_TransmitEventFIFOElementGet(uint32_t *id, uint8_t *messageMarker, uint16_t *timestamp)
+
+   Summary:
+    Get the Transmit Event FIFO Element for the transmitted message.
+
+   Precondition:
+    CAN0_Initialize must have been called for the associated CAN instance.
+
+   Parameters:
+    id            - Pointer to 11-bit / 29-bit identifier (ID) to be received.
+    messageMarker - Pointer to Tx message message marker number to be received
+    timestamp     - Pointer to Tx message timestamp to be received, timestamp value is 0 if Timestamp is disabled
+
+   Returns:
+    Request status.
+    true  - Request was successful.
+    false - Request has failed.
+*/
+bool CAN0_TransmitEventFIFOElementGet(uint32_t *id, uint8_t *messageMarker, uint16_t *timestamp)
+{
+    can_txefe_registers_t *txEventFIFOElement = NULL;
+    uint8_t txefgi = 0U;
+    bool status = false;
+
+    /* Check if Tx Event FIFO Element available */
+    if ((CAN0_REGS->CAN_TXEFS & CAN_TXEFS_EFFL_Msk) != 0U)
+    {
+        /* Get a pointer to Tx Event FIFO Element */
         txefgi = (uint8_t)((CAN0_REGS->CAN_TXEFS & CAN_TXEFS_EFGI_Msk) >> CAN_TXEFS_EFGI_Pos);
-        for (count = 0U; count < numberOfTxEvent; count++)
+        txEventFIFOElement = (can_txefe_registers_t *) ((uint8_t *)can0Obj.msgRAMConfig.txEventFIFOAddress + ((uint32_t)txefgi * sizeof(can_txefe_registers_t)));
+
+        /* Check if it's a extended message type */
+        if (0U != (txEventFIFOElement->CAN_TXEFE_0 & CAN_TXEFE_0_XTD_Msk))
         {
-            txEvent = (uint8_t *) ((uint8_t *)can0Obj.msgRAMConfig.txEventFIFOAddress + ((uint32_t)txefgi * sizeof(CAN_TX_EVENT_FIFO)));
+            *id = txEventFIFOElement->CAN_TXEFE_0 & CAN_TXEFE_0_ID_Msk;
+        }
+        else
+        {
+            *id = (txEventFIFOElement->CAN_TXEFE_0 >> 18U) & CAN_STD_ID_Msk;
+        }
 
-            (void) memcpy(txEvtFifo, txEvent, sizeof(CAN_TX_EVENT_FIFO));
+        *messageMarker = (uint8_t)((txEventFIFOElement->CAN_TXEFE_1 & CAN_TXEFE_1_MM_Msk) >> CAN_TXEFE_1_MM_Pos);
 
-            if ((count + 1U) == numberOfTxEvent)
-            {
-                break;
-            }
-            txEvtFifo += sizeof(CAN_TX_EVENT_FIFO);
-            txefgi++;
-            if (txefgi == 1U)
-            {
-                txefgi = 0U;
-            }
+        /* Get timestamp from transmitted message */
+        if (timestamp != NULL)
+        {
+            *timestamp = (uint16_t)(txEventFIFOElement->CAN_TXEFE_1 & CAN_TXEFE_1_TXTS_Msk);
         }
 
         /* Ack the Tx Event FIFO position */
         CAN0_REGS->CAN_TXEFA = CAN_TXEFA_EFAI((uint32_t)txefgi);
 
-        txFifo_event = true;
-    }
-    return txFifo_event;
-}
-
-
-// *****************************************************************************
-/* Function:
-    bool CAN0_MessageReceiveFifo(CAN_RX_FIFO_NUM rxFifoNum, uint8_t numberOfMessage, CAN_RX_BUFFER *rxBuffer)
-
-   Summary:
-    Read messages from Rx FIFO0/FIFO1.
-
-   Precondition:
-    CAN0_Initialize must have been called for the associated CAN instance.
-
-   Parameters:
-    rxFifoNum       - Rx FIFO number
-    numberOfMessage - Total number of message
-    rxBuffer        - Pointer to Rx buffer
-
-   Returns:
-    Request status.
-    true  - Request was successful.
-    false - Request has failed.
-*/
-bool CAN0_MessageReceiveFifo(CAN_RX_FIFO_NUM rxFifoNum, uint8_t numberOfMessage, CAN_RX_BUFFER *rxBuffer)
-{
-    uint8_t rxgi = 0U;
-    uint8_t count = 0U;
-    uint8_t *rxFifo = NULL;
-    uint8_t *rxBuf = (uint8_t *)rxBuffer;
-    bool status = false;
-
-    if (rxBuffer != NULL)
-    {
-        switch (rxFifoNum)
-        {
-            case CAN_RX_FIFO_0:
-                /* Read data from the Rx FIFO0 */
-                rxgi = (uint8_t)((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0GI_Msk) >> CAN_RXF0S_F0GI_Pos);
-                for (count = 0U; count < numberOfMessage; count++)
-                {
-                    rxFifo = (uint8_t *) ((uint8_t *)can0Obj.msgRAMConfig.rxFIFO0Address + ((uint32_t)rxgi * CAN0_RX_FIFO0_ELEMENT_SIZE));
-
-                    (void) memcpy(rxBuf, rxFifo, CAN0_RX_FIFO0_ELEMENT_SIZE);
-
-                    if ((count + 1U) == numberOfMessage)
-                    {
-                        break;
-                    }
-                    rxBuf += CAN0_RX_FIFO0_ELEMENT_SIZE;
-                    rxgi++;
-                    if (rxgi == 1U)
-                    {
-                        rxgi = 0U;
-                    }
-                }
-
-                /* Ack the fifo position */
-                CAN0_REGS->CAN_RXF0A = CAN_RXF0A_F0AI((uint32_t)rxgi);
-
-                status = true;
-                break;
-            case CAN_RX_FIFO_1:
-                /* Read data from the Rx FIFO1 */
-                rxgi = (uint8_t)((CAN0_REGS->CAN_RXF1S & CAN_RXF1S_F1GI_Msk) >> CAN_RXF1S_F1GI_Pos);
-                for (count = 0U; count < numberOfMessage; count++)
-                {
-                    rxFifo = (uint8_t *) ((uint8_t *)can0Obj.msgRAMConfig.rxFIFO1Address + ((uint32_t)rxgi * CAN0_RX_FIFO1_ELEMENT_SIZE));
-
-                    (void) memcpy(rxBuf, rxFifo, CAN0_RX_FIFO1_ELEMENT_SIZE);
-
-                    if ((count + 1U) == numberOfMessage)
-                    {
-                        break;
-                    }
-                    rxBuf += CAN0_RX_FIFO1_ELEMENT_SIZE;
-                    rxgi++;
-                    if (rxgi == 1U)
-                    {
-                        rxgi = 0U;
-                    }
-                }
-                /* Ack the fifo position */
-                CAN0_REGS->CAN_RXF1A = CAN_RXF1A_F1AI((uint32_t)rxgi);
-
-                status = true;
-                break;
-            default:
-                /* Do nothing */
-                break;
-        }
+        /* Tx Event FIFO Element read successfully, so return true */
+        status = true;
     }
     return status;
 }
@@ -462,6 +466,71 @@ void CAN0_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount)
 
 // *****************************************************************************
 /* Function:
+    bool CAN0_InterruptGet(CAN_INTERRUPT_MASK interruptMask)
+
+   Summary:
+    Returns the Interrupt status.
+
+   Precondition:
+    CAN0_Initialize must have been called for the associated CAN instance.
+
+   Parameters:
+    interruptMask - Interrupt source number
+
+   Returns:
+    true - Requested interrupt is occurred.
+    false - Requested interrupt is not occurred.
+*/
+bool CAN0_InterruptGet(CAN_INTERRUPT_MASK interruptMask)
+{
+    return ((CAN0_REGS->CAN_IR & (uint32_t)interruptMask) != 0x0U);
+}
+
+// *****************************************************************************
+/* Function:
+    void CAN0_InterruptClear(CAN_INTERRUPT_MASK interruptMask)
+
+   Summary:
+    Clears Interrupt status.
+
+   Precondition:
+    CAN0_Initialize must have been called for the associated CAN instance.
+
+   Parameters:
+    interruptMask - Interrupt to be cleared
+
+   Returns:
+    None
+*/
+void CAN0_InterruptClear(CAN_INTERRUPT_MASK interruptMask)
+{
+    CAN0_REGS->CAN_IR = (uint32_t)interruptMask;
+}
+
+// *****************************************************************************
+/* Function:
+    bool CAN0_TxFIFOIsFull(void)
+
+   Summary:
+    Returns true if Tx FIFO is full otherwise false.
+
+   Precondition:
+    CAN0_Initialize must have been called for the associated CAN instance.
+
+   Parameters:
+    None
+
+   Returns:
+    true  - Tx FIFO is full.
+    false - Tx FIFO is not full.
+*/
+bool CAN0_TxFIFOIsFull(void)
+{
+    return ((CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFQF_Msk) == CAN_TXFQS_TFQF_Msk);
+}
+
+// *****************************************************************************
+/* Function:
     void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress)
 
    Summary:
@@ -479,7 +548,6 @@ void CAN0_ErrorCountGet(uint8_t *txErrorCount, uint8_t *rxErrorCount)
    Returns:
     None
 */
-/* MISRA C-2012 Rule 11.3 violated 4 times below. Deviation record ID - H3_MISRAC_2012_R_11_3_DR_1*/
 void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress)
 {
     uint32_t offset = 0U;
@@ -500,25 +568,19 @@ void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress)
     can0Obj.msgRAMConfig.rxFIFO0Address = (can_rxf0e_registers_t *)msgRAMConfigBaseAddr;
     offset = CAN0_RX_FIFO0_SIZE;
     /* Receive FIFO 0 Configuration Register */
-    CAN0_REGS->CAN_RXF0C = CAN_RXF0C_F0S(1UL) | CAN_RXF0C_F0WM(0UL) | CAN_RXF0C_F0OM_Msk |
+    CAN0_REGS->CAN_RXF0C = CAN_RXF0C_F0S(8UL) | CAN_RXF0C_F0WM(0UL) | CAN_RXF0C_F0OM_Msk |
             CAN_RXF0C_F0SA((uint32_t)can0Obj.msgRAMConfig.rxFIFO0Address);
-
-    can0Obj.msgRAMConfig.rxFIFO1Address = (can_rxf1e_registers_t *)(msgRAMConfigBaseAddr + offset);
-    offset += CAN0_RX_FIFO1_SIZE;
-    /* Receive FIFO 1 Configuration Register */
-    CAN0_REGS->CAN_RXF1C = CAN_RXF1C_F1S(1UL) | CAN_RXF1C_F1WM(0UL) | CAN_RXF1C_F1OM_Msk |
-            CAN_RXF1C_F1SA((uint32_t)can0Obj.msgRAMConfig.rxFIFO1Address);
 
     can0Obj.msgRAMConfig.txBuffersAddress = (can_txbe_registers_t *)(msgRAMConfigBaseAddr + offset);
     offset += CAN0_TX_FIFO_BUFFER_SIZE;
     /* Transmit Buffer/FIFO Configuration Register */
-    CAN0_REGS->CAN_TXBC = CAN_TXBC_TFQS(1UL) |
+    CAN0_REGS->CAN_TXBC = CAN_TXBC_TFQS(8UL) |
             CAN_TXBC_TBSA((uint32_t)can0Obj.msgRAMConfig.txBuffersAddress);
 
     can0Obj.msgRAMConfig.txEventFIFOAddress =  (can_txefe_registers_t *)(msgRAMConfigBaseAddr + offset);
     offset += CAN0_TX_EVENT_FIFO_SIZE;
     /* Transmit Event FIFO Configuration Register */
-    CAN0_REGS->CAN_TXEFC = CAN_TXEFC_EFWM(0UL) | CAN_TXEFC_EFS(1UL) |
+    CAN0_REGS->CAN_TXEFC = CAN_TXEFC_EFWM(0UL) | CAN_TXEFC_EFS(8UL) |
             CAN_TXEFC_EFSA((uint32_t)can0Obj.msgRAMConfig.txEventFIFOAddress);
 
 
@@ -532,8 +594,6 @@ void CAN0_MessageRAMConfigSet(uint8_t *msgRAMConfigBaseAddress)
         /* Wait for configuration complete */
     }
 }
-/* MISRAC 2012 deviation block end for Rule 11.3*/
-
 
 
 
@@ -560,135 +620,9 @@ void CAN0_SleepModeExit(void)
     }
 }
 
-bool CAN0_BitTimingCalculationGet(CAN_BIT_TIMING_SETUP *setup, CAN_BIT_TIMING *bitTiming)
-{
-    bool status = false;
-    uint32_t numOfTimeQuanta;
-    uint8_t tseg1;
-    float temp1;
-    float temp2;
-
-    if ((setup != NULL) && (bitTiming != NULL))
-    {
-        if (setup->nominalBitTimingSet == true)
-        {
-            numOfTimeQuanta = CAN0_CLOCK_FREQUENCY / (setup->nominalBitRate * ((uint32_t)setup->nominalPrescaler + 1U));
-            if ((numOfTimeQuanta >= 4U) && (numOfTimeQuanta <= 385U))
-            {
-                if (setup->nominalSamplePoint < 50.0f)
-                {
-                    setup->nominalSamplePoint = 50.0f;
-                }
-                temp1 = (float)numOfTimeQuanta;
-                temp2 = (temp1 * setup->nominalSamplePoint) / 100.0f;
-                tseg1 = (uint8_t)temp2;
-                bitTiming->nominalBitTiming.nominalTimeSegment2 = (uint8_t)(numOfTimeQuanta - tseg1 - 1U);
-                bitTiming->nominalBitTiming.nominalTimeSegment1 = tseg1 - 2U;
-                bitTiming->nominalBitTiming.nominalSJW = bitTiming->nominalBitTiming.nominalTimeSegment2;
-                bitTiming->nominalBitTiming.nominalPrescaler = setup->nominalPrescaler;
-                bitTiming->nominalBitTimingSet = true;
-                status = true;
-            }
-            else
-            {
-                bitTiming->nominalBitTimingSet = false;
-            }
-        }
-        if (setup->dataBitTimingSet == true)
-        {
-            numOfTimeQuanta = CAN0_CLOCK_FREQUENCY / (setup->dataBitRate * ((uint32_t)setup->dataPrescaler + 1U));
-            if ((numOfTimeQuanta >= 4U) && (numOfTimeQuanta <= 49U))
-            {
-                if (setup->dataSamplePoint < 50.0f)
-                {
-                    setup->dataSamplePoint = 50.0f;
-                }
-                temp1 = (float)numOfTimeQuanta;
-                temp2 = (temp1 * setup->dataSamplePoint) / 100.0f;
-                tseg1 = (uint8_t)temp2;
-                bitTiming->dataBitTiming.dataTimeSegment2 = (uint8_t)(numOfTimeQuanta - tseg1 - 1U);
-                bitTiming->dataBitTiming.dataTimeSegment1 = tseg1 - 2U;
-                bitTiming->dataBitTiming.dataSJW = bitTiming->dataBitTiming.dataTimeSegment2;
-                bitTiming->dataBitTiming.dataPrescaler = setup->dataPrescaler;
-                bitTiming->dataBitTimingSet = true;
-                status = true;
-            }
-            else
-            {
-                bitTiming->dataBitTimingSet = false;
-                status = false;
-            }
-        }
-    }
-
-    return status;
-}
-
-bool CAN0_BitTimingSet(CAN_BIT_TIMING *bitTiming)
-{
-    bool status = false;
-    bool nominalBitTimingSet = false;
-    bool dataBitTimingSet = false;
-
-    if ((bitTiming->nominalBitTimingSet == true)
-    && (bitTiming->nominalBitTiming.nominalTimeSegment1 >= 0x1U)
-    && (bitTiming->nominalBitTiming.nominalTimeSegment2 <= 0x7FU)
-    && (bitTiming->nominalBitTiming.nominalPrescaler <= 0x1FFU)
-    && (bitTiming->nominalBitTiming.nominalSJW <= 0x7FU))
-    {
-        nominalBitTimingSet = true;
-    }
-
-    if  ((bitTiming->dataBitTimingSet == true)
-    &&  ((bitTiming->dataBitTiming.dataTimeSegment1 >= 0x1U) && (bitTiming->dataBitTiming.dataTimeSegment1 <= 0x1FU))
-    &&  (bitTiming->dataBitTiming.dataTimeSegment2 <= 0xFU)
-    &&  (bitTiming->dataBitTiming.dataPrescaler <= 0x1FU)
-    &&  (bitTiming->dataBitTiming.dataSJW <= 0xFU))
-    {
-        dataBitTimingSet = true;
-    }
-
-    if ((nominalBitTimingSet == true) || (dataBitTimingSet == true))
-    {
-        /* Start CAN initialization */
-        CAN0_REGS->CAN_CCCR = CAN_CCCR_INIT_Msk;
-        while ((CAN0_REGS->CAN_CCCR & CAN_CCCR_INIT_Msk) != CAN_CCCR_INIT_Msk)
-        {
-            /* Wait for initialization complete */
-        }
-
-        /* Set CCE to unlock the configuration registers */
-        CAN0_REGS->CAN_CCCR |= CAN_CCCR_CCE_Msk;
-
-        if (dataBitTimingSet == true)
-        {
-            /* Set Data Bit Timing and Prescaler Register */
-            CAN0_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(bitTiming->dataBitTiming.dataTimeSegment2) | CAN_DBTP_DTSEG1(bitTiming->dataBitTiming.dataTimeSegment1) | CAN_DBTP_DBRP(bitTiming->dataBitTiming.dataPrescaler) | CAN_DBTP_DSJW(bitTiming->dataBitTiming.dataSJW);
-        }
-        if (nominalBitTimingSet == true)
-        {
-            /* Set Nominal Bit timing and Prescaler Register */
-            CAN0_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(bitTiming->nominalBitTiming.nominalTimeSegment2) | CAN_NBTP_NTSEG1(bitTiming->nominalBitTiming.nominalTimeSegment1) | CAN_NBTP_NBRP(bitTiming->nominalBitTiming.nominalPrescaler) | CAN_NBTP_NSJW(bitTiming->nominalBitTiming.nominalSJW);
-        }
-
-        /* Set the operation mode */
-        CAN0_REGS->CAN_CCCR |= CAN_CCCR_FDOE_Msk | CAN_CCCR_BRSE_Msk;
-
-
-        CAN0_REGS->CAN_CCCR &= ~CAN_CCCR_INIT_Msk;
-        while ((CAN0_REGS->CAN_CCCR & CAN_CCCR_INIT_Msk) == CAN_CCCR_INIT_Msk)
-        {
-            /* Wait for initialization complete */
-        }
-        status = true;
-    }
-    return status;
-}
-
-
 // *****************************************************************************
 /* Function:
-    void CAN0_TxFifoCallbackRegister(CAN_TX_FIFO_CALLBACK callback, uintptr_t contextHandle)
+    void CAN0_TxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle)
 
    Summary:
     Sets the pointer to the function (and it's context) to be called when the
@@ -699,100 +633,6 @@ bool CAN0_BitTimingSet(CAN_BIT_TIMING *bitTiming)
 
    Parameters:
     callback - A pointer to a function with a calling signature defined
-    by the CAN_TX_FIFO_CALLBACK data type.
-
-    contextHandle - A value (usually a pointer) passed (unused) into the function
-    identified by the callback parameter.
-
-   Returns:
-    None.
-*/
-void CAN0_TxFifoCallbackRegister(CAN_TX_FIFO_CALLBACK callback, uintptr_t contextHandle)
-{
-    if (callback != NULL)
-    {
-        can0TxFifoCallbackObj.callback = callback;
-        can0TxFifoCallbackObj.context = contextHandle;
-    }
-}
-
-// *****************************************************************************
-/* Function:
-    void CAN0_TxEventFifoCallbackRegister(CAN_TX_EVENT_FIFO_CALLBACK callback, uintptr_t contextHandle)
-
-   Summary:
-    Sets the pointer to the function (and it's context) to be called when the
-    given CAN's transfer events occur.
-
-   Precondition:
-    CAN0_Initialize must have been called for the associated CAN instance.
-
-   Parameters:
-    callback - A pointer to a function with a calling signature defined
-    by the CAN_TX_EVENT_FIFO_CALLBACK data type.
-
-    contextHandle - A value (usually a pointer) passed (unused) into the function
-    identified by the callback parameter.
-
-   Returns:
-    None.
-*/
-void CAN0_TxEventFifoCallbackRegister(CAN_TX_EVENT_FIFO_CALLBACK callback, uintptr_t contextHandle)
-{
-    if (callback != NULL)
-    {
-        can0TxEventFifoCallbackObj.callback = callback;
-        can0TxEventFifoCallbackObj.context = contextHandle;
-
-    }
-}
-
-
-// *****************************************************************************
-/* Function:
-    void CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_NUM rxFifoNum, CAN_RX_FIFO_CALLBACK callback, uintptr_t contextHandle)
-
-   Summary:
-    Sets the pointer to the function (and it's context) to be called when the
-    given CAN's transfer events occur.
-
-   Precondition:
-    CAN0_Initialize must have been called for the associated CAN instance.
-
-   Parameters:
-    rxFifoNum - Rx FIFO Number
-
-    callback  - A pointer to a function with a calling signature defined
-    by the CAN_RX_FIFO_CALLBACK data type.
-
-    contextHandle - A value (usually a pointer) passed (unused) into the function
-    identified by the callback parameter.
-
-   Returns:
-    None.
-*/
-void CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_NUM rxFifoNum, CAN_RX_FIFO_CALLBACK callback, uintptr_t contextHandle)
-{
-    if (callback != NULL)
-    {
-        can0RxFifoCallbackObj[rxFifoNum].callback = callback;
-        can0RxFifoCallbackObj[rxFifoNum].context = contextHandle;
-    }
-}
-
-// *****************************************************************************
-/* Function:
-    void CAN0_CallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle)
-
-   Summary:
-    Sets the pointer to the function (and it's context) to be called when the
-    given CAN's transfer events occur.
-
-   Precondition:
-    CAN0_Initialize must have been called for the associated CAN instance.
-
-   Parameters:
-    callback  - A pointer to a function with a calling signature defined
     by the CAN_CALLBACK data type.
 
     contextHandle - A value (usually a pointer) passed (unused) into the function
@@ -801,12 +641,44 @@ void CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_NUM rxFifoNum, CAN_RX_FIFO_CALLBACK
    Returns:
     None.
 */
-void CAN0_CallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle)
+void CAN0_TxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle)
 {
     if (callback != NULL)
     {
-        can0CallbackObj.callback = callback;
-        can0CallbackObj.context = contextHandle;
+        can0CallbackObj[CAN_CALLBACK_TX_INDEX].callback = callback;
+        can0CallbackObj[CAN_CALLBACK_TX_INDEX].context = contextHandle;
+    }
+}
+
+// *****************************************************************************
+/* Function:
+    void CAN0_RxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle, CAN_MSG_RX_ATTRIBUTE msgAttr)
+
+   Summary:
+    Sets the pointer to the function (and it's context) to be called when the
+    given CAN's transfer events occur.
+
+   Precondition:
+    CAN0_Initialize must have been called for the associated CAN instance.
+
+   Parameters:
+    callback - A pointer to a function with a calling signature defined
+    by the CAN_CALLBACK data type.
+
+    contextHandle - A value (usually a pointer) passed (unused) into the function
+    identified by the callback parameter.
+
+    msgAttr   - Message to be read from Rx FIFO0 or Rx FIFO1 or Rx Buffer
+
+   Returns:
+    None.
+*/
+void CAN0_RxCallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle, CAN_MSG_RX_ATTRIBUTE msgAttr)
+{
+    if (callback != NULL)
+    {
+        can0CallbackObj[msgAttr].callback = callback;
+        can0CallbackObj[msgAttr].context = contextHandle;
     }
 }
 
@@ -837,47 +709,93 @@ void CAN0_CallbackRegister(CAN_CALLBACK callback, uintptr_t contextHandle)
 */
 void __attribute__((used)) CAN0_InterruptHandler(void)
 {
-    uint8_t numberOfMessage = 0;
-    uint8_t numberOfTxEvent = 0;
-
+    uint8_t length = 0U;
+    uint8_t rxgi = 0U;
+    uint8_t bufferIndex = 0U;
+    bool testCondition = false;
+    can_rxf0e_registers_t *rxf0eFifo = NULL;
     uint32_t ir = CAN0_REGS->CAN_IR;
 
-    /* Additional temporary variable used to prevent MISRA violations (Rule 13.x) */
-    uintptr_t context;
-
-    if ((ir & (~(CAN_IR_RF0N_Msk | CAN_IR_RF1N_Msk | CAN_IR_TFE_Msk | CAN_IR_TEFN_Msk))) != 0U)
+    /* Check if error occurred */
+    if ((ir & CAN_IR_BO_Msk) != 0U)
     {
-        CAN0_REGS->CAN_IR = (ir & (~(CAN_IR_RF0N_Msk | CAN_IR_RF1N_Msk | CAN_IR_TFE_Msk | CAN_IR_TEFN_Msk)));
-        if (can0CallbackObj.callback != NULL)
-        {
-            context = can0CallbackObj.context;
-            can0CallbackObj.callback(ir, context);
-        }
+        CAN0_REGS->CAN_IR = CAN_IR_BO_Msk;
     }
     /* New Message in Rx FIFO 0 */
     if ((ir & CAN_IR_RF0N_Msk) != 0U)
     {
         CAN0_REGS->CAN_IR = CAN_IR_RF0N_Msk;
+        CAN0_REGS->CAN_IE &= (~CAN_IE_RF0NE_Msk);
 
-        numberOfMessage = (uint8_t)(CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0FL_Msk);
-
-        if (can0RxFifoCallbackObj[CAN_RX_FIFO_0].callback != NULL)
+        if ((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0FL_Msk) != 0U)
         {
-            context = can0RxFifoCallbackObj[CAN_RX_FIFO_0].context;
-            can0RxFifoCallbackObj[CAN_RX_FIFO_0].callback(numberOfMessage, context);
+            /* Read data from the Rx FIFO0 */
+            rxgi = (uint8_t)((CAN0_REGS->CAN_RXF0S & CAN_RXF0S_F0GI_Msk) >> CAN_RXF0S_F0GI_Pos);
+            rxf0eFifo = (can_rxf0e_registers_t *) ((uint8_t *)can0Obj.msgRAMConfig.rxFIFO0Address + ((uint32_t)rxgi * CAN0_RX_FIFO0_ELEMENT_SIZE));
+
+            /* Get received identifier */
+            if ((rxf0eFifo->CAN_RXF0E_0 & CAN_RXF0E_0_XTD_Msk) != 0U)
+            {
+                *can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].rxId = rxf0eFifo->CAN_RXF0E_0 & CAN_RXF0E_0_ID_Msk;
+            }
+            else
+            {
+                *can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].rxId = (rxf0eFifo->CAN_RXF0E_0 >> 18U) & CAN_STD_ID_Msk;
+            }
+
+            /* Check RTR and FDF bits for Remote/Data Frame */
+            testCondition = ((rxf0eFifo->CAN_RXF0E_0 & CAN_RXF0E_0_RTR_Msk) != 0U);
+            testCondition = ((rxf0eFifo->CAN_RXF0E_1 & CAN_RXF0E_1_FDF_Msk) == 0U) && testCondition;
+            if (testCondition)
+            {
+                *can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].msgFrameAttr = CAN_MSG_RX_REMOTE_FRAME;
+            }
+            else
+            {
+                *can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
+            }
+
+            /* Get received data length */
+            length = CANDlcToLengthGet((uint8_t)((rxf0eFifo->CAN_RXF0E_1 & CAN_RXF0E_1_DLC_Msk) >> CAN_RXF0E_1_DLC_Pos));
+
+            /* Copy data to user buffer */
+            (void) memcpy(can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].rxBuffer, (uint8_t *)&rxf0eFifo->CAN_RXF0E_DATA, length);
+            *can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].rxsize = length;
+
+            /* Get timestamp from received message */
+            if (can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].timestamp != NULL)
+            {
+                *can0RxMsg[CAN_MSG_ATTR_RX_FIFO0][rxgi].timestamp = (uint16_t)(rxf0eFifo->CAN_RXF0E_1 & CAN_RXF0E_1_RXTS_Msk);
+            }
+
+            /* Ack the fifo position */
+            CAN0_REGS->CAN_RXF0A = CAN_RXF0A_F0AI((uint32_t)rxgi);
+
+            if (can0CallbackObj[CAN_MSG_ATTR_RX_FIFO0].callback != NULL)
+            {
+                can0CallbackObj[CAN_MSG_ATTR_RX_FIFO0].callback(can0CallbackObj[CAN_MSG_ATTR_RX_FIFO0].context);
+            }
         }
     }
-    /* New Message in Rx FIFO 1 */
-    if ((ir & CAN_IR_RF1N_Msk) != 0U)
+
+    /* TX Completed */
+    if ((ir & CAN_IR_TC_Msk) != 0U)
     {
-        CAN0_REGS->CAN_IR = CAN_IR_RF1N_Msk;
-
-        numberOfMessage = (uint8_t)(CAN0_REGS->CAN_RXF1S & CAN_RXF1S_F1FL_Msk);
-
-        if (can0RxFifoCallbackObj[CAN_RX_FIFO_1].callback != NULL)
+        CAN0_REGS->CAN_IR = CAN_IR_TC_Msk;
+        CAN0_REGS->CAN_IE &= (~CAN_IE_TCE_Msk);
+        for (bufferIndex = 0U; bufferIndex < (CAN0_TX_FIFO_BUFFER_SIZE/CAN0_TX_FIFO_BUFFER_ELEMENT_SIZE); bufferIndex++)
         {
-            context = can0RxFifoCallbackObj[CAN_RX_FIFO_1].context;
-            can0RxFifoCallbackObj[CAN_RX_FIFO_1].callback(numberOfMessage, context);
+            uint32_t txbufferMask = (1UL << ((uint32_t)bufferIndex & 0x1FU));
+            testCondition = ((CAN0_REGS->CAN_TXBTO & txbufferMask) != 0U);
+            testCondition = ((CAN0_REGS->CAN_TXBTIE & txbufferMask) != 0U) && testCondition;
+            if (testCondition)
+            {
+                CAN0_REGS->CAN_TXBTIE &= ~txbufferMask;
+            }
+        }
+        if (can0CallbackObj[CAN_CALLBACK_TX_INDEX].callback != NULL)
+        {
+            can0CallbackObj[CAN_CALLBACK_TX_INDEX].callback(can0CallbackObj[CAN_CALLBACK_TX_INDEX].context);
         }
     }
 
@@ -885,26 +803,20 @@ void __attribute__((used)) CAN0_InterruptHandler(void)
     if ((ir & CAN_IR_TFE_Msk) != 0U)
     {
         CAN0_REGS->CAN_IR = CAN_IR_TFE_Msk;
-        if (can0TxFifoCallbackObj.callback != NULL)
+        uint8_t getIndex = (uint8_t)((CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFGI_Msk) >> CAN_TXFQS_TFGI_Pos);
+        uint8_t putIndex = (uint8_t)((CAN0_REGS->CAN_TXFQS & CAN_TXFQS_TFQPI_Msk) >> CAN_TXFQS_TFQPI_Pos);
+        uint8_t fifoIndex = getIndex;
+        while(true)
         {
-            context = can0TxFifoCallbackObj.context;
-            can0TxFifoCallbackObj.callback(context);
-        }
-    }
-    /* Tx Event FIFO new entry */
-    if ((ir & CAN_IR_TEFN_Msk) != 0U)
-    {
-        CAN0_REGS->CAN_IR = CAN_IR_TEFN_Msk;
-
-        numberOfTxEvent = (uint8_t)(CAN0_REGS->CAN_TXEFS & CAN_TXEFS_EFFL_Msk);
-
-        if (can0TxEventFifoCallbackObj.callback != NULL)
-        {
-            context = can0TxEventFifoCallbackObj.context;
-            can0TxEventFifoCallbackObj.callback(numberOfTxEvent, context);
+            if (fifoIndex >= putIndex)
+            {
+                break;
+            }
+            fifoIndex++;
         }
     }
 }
+
 
 /*******************************************************************************
  End of File

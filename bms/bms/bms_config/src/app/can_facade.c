@@ -1,64 +1,76 @@
-#include "definitions.h"
-#include "can_facade.h"
+/*
+ Platform:
+    ATSAMC21 
 
-/* RX state */
-static volatile bool rx_ready = false;
-static CAN_RX_BUFFER rx_buf;
+ Company:
+    Vortex NTNU.
 
-/* CAN message RAM */
-static bool ram_bound = false;
-static uint8_t can_msg_ram[CAN0_MESSAGE_RAM_CONFIG_SIZE];
+ Author:
+    Markus Sandvik
 
-/* RX callback */
-void APP_CAN_RxCallback(uint8_t numberOfMessage, uintptr_t context)
-{
-    (void)context;
-    (void)numberOfMessage;
+ File Name:
+    can_facade.c
+ */
 
-    /* Fetch one message from FIFO0 */
-    if (CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, 1, &rx_buf))
-    {
-        rx_ready = true;
-        /* Re-arm is implicit; FIFO is re-used after ack inside plib */
-    }
-}
-
-/* Init */
-void CAN_Init(void)
-{
-    if (!ram_bound)
-    {
-        CAN0_MessageRAMConfigSet(can_msg_ram);
-        ram_bound = true;
-    }
-
-    /* Accept all standard/extended frames into FIFO0 (override MCC default reject). */
-    CAN0_REGS->CAN_GFC = CAN_GFC_ANFS_RXF0 | CAN_GFC_ANFE_RXF0;
-
-    /* Register RX callback on FIFO0 */
-    CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, APP_CAN_RxCallback, (uintptr_t)NULL);
-
-    /* Optional: relax global filters if needed (left as-is for now) */
-}
-
-/* Send a standard 11-bit ID data frame */
-bool CAN_Send(uint32_t id, const uint8_t *data, uint8_t len)
-{
-    if (len > 8U || data == NULL)
-        return false;
-
-    CAN_TX_BUFFER tx = {0};
-    tx.id  = (id & 0x7FFU) << 18;  /* standard ID format */
-    tx.xtd = 0;
-    tx.rtr = 0;
-    tx.dlc = len & 0xFU;
-    tx.brs = 0;
-    tx.fdf = 0;
-    tx.efc = 0;
-    tx.mm  = 0;
-    for (uint8_t i = 0; i < len; i++)
-        tx.data[i] = data[i];
-
-    /* Single-message transmit via FIFO */
-    return CAN0_MessageTransmitFifo(1, &tx);
-}
+ #include "definitions.h"
+ #include "can_facade.h"
+ 
+ /* ===== RX variables ===== */
+ volatile bool rxReady = false;
+ 
+ uint32_t rx_messageID = 0;
+ uint8_t  rx_message[64] = {0};
+ uint8_t  rx_messageLength = 0;
+ uint16_t timestamp = 0;
+ 
+ static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
+ 
+ /* ===== CAN RAM ===== */
+ static bool s_ram_bound = false;
+ static uint8_t s_can_msg_ram[CAN0_MESSAGE_RAM_CONFIG_SIZE];
+ 
+ /* ===== ISR callback ===== */
+ void APP_CAN_Callback(uintptr_t context)
+ {
+     (void)context;
+ 
+     rxReady = true;
+     
+     printf("Callback");
+ 
+     /* Re-arm RX */
+     CAN0_MessageReceive(&rx_messageID,
+                         &rx_messageLength,
+                         rx_message,
+                         &timestamp,
+                         CAN_MSG_ATTR_RX_FIFO0,
+                         &msgFrameAttr);
+ }
+ 
+ /* ===== Init ===== */
+ void CAN_Init(void)
+ {
+     if (!s_ram_bound)
+     {
+         CAN0_MessageRAMConfigSet(s_can_msg_ram);
+         s_ram_bound = true;
+     }
+ 
+     CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)NULL, CAN_MSG_ATTR_RX_FIFO0);
+ 
+     CAN0_MessageReceive(&rx_messageID,
+                         &rx_messageLength,
+                         rx_message,
+                         &timestamp,
+                         CAN_MSG_ATTR_RX_FIFO0,
+                         &msgFrameAttr);
+ }
+ 
+ /* ===== Send ===== */
+ bool CAN_Send(uint32_t id, uint8_t *data, uint8_t len)
+ {
+     const CAN_MODE mode = CAN_MODE_FD_WITHOUT_BRS;
+     const CAN_MSG_TX_ATTRIBUTE attr = CAN_MSG_ATTR_TX_FIFO_DATA_FRAME;
+ 
+     return CAN0_MessageTransmit(id, len, data, mode, attr);
+ }

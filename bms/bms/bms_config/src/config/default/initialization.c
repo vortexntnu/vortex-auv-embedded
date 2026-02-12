@@ -170,20 +170,18 @@ void SYS_Initialize ( void* data )
 
     SERCOM1_I2C_Initialize();
 
-    EVSYS_Initialize();
-
     SERCOM0_SPI_Initialize();
 
-    CAN1_Initialize();
-
-    SERCOM4_USART_Initialize();
-
-    CAN0_Initialize();
+    EVSYS_Initialize();
 
 
     ADC0_Initialize();
 
     ADC1_Initialize();
+    CAN0_Initialize();
+
+    SERCOM4_USART_Initialize();
+
 
     NVIC_Initialize();
 

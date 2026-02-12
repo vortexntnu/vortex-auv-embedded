@@ -28,6 +28,7 @@
 #include "definitions.h"                // SYS function prototypes
 #include "ic_bms/bms_spi.h"
 #include "ic_bms/spi_test.h"
+#include "app/can_facade.h"
 
 #include <stdio.h>
 
@@ -38,11 +39,11 @@
 // Section: Main Entry Point
 // *****************************************************************************
 // *****************************************************************************
-
-static inline void _delay(uint32_t cycles){
-
-    for (volatile uint32_t i=0; i<cycles; i++);
-}
+extern volatile bool rxReady;
+extern uint32_t rx_messageID;
+extern uint8_t  rx_message[64];
+extern uint8_t  rx_messageLength;
+extern uint16_t timestamp;
 
 
 

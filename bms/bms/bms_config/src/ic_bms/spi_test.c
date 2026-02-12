@@ -75,7 +75,7 @@ static bool spi_test_write_reg_exact(uint8_t reg_addr, const uint8_t *data, uint
 
     for (uint8_t i = 0U; i < length; i++)
     {
-        uint8_t cmd = (uint8_t)(0x80U | ((reg_addr + i) & 0x7FU));
+        uint8_t cmd = (uint8_t)(0x80U | (uint8_t)((reg_addr + i) & 0x7FU));
         uint8_t pair[2] = {cmd, data[i]};
         tx_bytes[3U * i + 0U] = cmd;
         tx_bytes[3U * i + 1U] = data[i];
@@ -118,7 +118,7 @@ static bool spi_test_read_reg_exact(uint8_t reg_addr, uint8_t *data, uint8_t len
 
     for (uint8_t i = 1U; i < frames; i++)
     {
-        uint8_t cmd = (i < (uint8_t)(frames - 1U)) ? (uint8_t)((reg_addr + i) & 0x7FU) : 0x00U;
+        uint8_t cmd = (i < (uint8_t)(frames - 1U)) ? (uint8_t)((reg_addr + i) & 0x7FU) : (uint8_t)0x00U;
         uint8_t pair[2] = {cmd, 0x00U};
         tx[3U * i + 0U] = pair[0];
         tx[3U * i + 1U] = pair[1];
@@ -172,4 +172,4 @@ void spi_driver_self_test_run(void)
     printf("read_reg_exact(0x10, len=3): %s\n", ok_read ? "OK" : "FAIL");
     spi_test_print_bytes("read_reg data", rd_data, sizeof(rd_data));
     printf("Note: this confirms MCU SPI framing/path only; real BQ register behavior needs the BQ IC connected.\n");
-|}
+}

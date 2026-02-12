@@ -37,7 +37,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -45,6 +45,9 @@ data:
             id: can0
             value: '2'
           type: Dynamic
+        - attributes:
+            value: '3'
+          type: User
         type: Values
       type: Integer
     NOMINAL_SAMPLE_POINT:
@@ -56,7 +59,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -64,6 +67,9 @@ data:
             id: can0
             value: '96.875'
           type: Dynamic
+        - attributes:
+            value: '75.0'
+          type: User
         type: Values
       type: Float
     NBTP_TOTAL_TIME_QUANTA:
@@ -73,7 +79,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '32'
+            value: '24'
           type: Dynamic
         type: Values
       type: Integer
@@ -84,7 +90,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '30'
+            value: '17'
           type: Dynamic
         type: Values
       type: Integer
@@ -95,7 +101,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -106,8 +112,11 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '6'
           type: Dynamic
+        - attributes:
+            value: '5'
+          type: User
         type: Values
       type: Integer
     CALCULATED_NOMINAL_BITRATE:
@@ -128,7 +137,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '62.500'
+            value: '83.333'
           type: Dynamic
         type: Values
       type: String
@@ -149,7 +158,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -160,7 +169,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '8'
+            value: '24'
           type: Dynamic
         type: Values
       type: Integer
@@ -171,7 +180,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '6'
+            value: '17'
           type: Dynamic
         type: Values
       type: Integer
@@ -182,7 +191,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -193,8 +202,11 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '6'
           type: Dynamic
+        - attributes:
+            value: '5'
+          type: User
         type: Values
       type: Integer
     CALCULATED_DATA_BITRATE:
@@ -215,7 +227,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '62.500'
+            value: '20.833'
           type: Dynamic
         type: Values
       type: String
@@ -249,7 +261,7 @@ data:
             id: source
           children:
           - type: Value
-            value: ../peripheral/can_u2003/templates/plib_can_interrupt.h.ftl
+            value: ../peripheral/can_u2003/templates/plib_can_legacy.h.ftl
           type: String
         type: Attributes
       type: File
@@ -262,7 +274,7 @@ data:
             id: source
           children:
           - type: Value
-            value: ../peripheral/can_u2003/templates/plib_can_interrupt.c.ftl
+            value: ../peripheral/can_u2003/templates/plib_can_legacy.c.ftl
           type: String
         type: Attributes
       type: File
@@ -285,7 +297,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -293,6 +305,9 @@ data:
             id: can0
             value: '2'
           type: Dynamic
+        - attributes:
+            value: '0'
+          type: User
         type: Values
       type: Integer
     DATA_SAMPLE_POINT:
@@ -304,7 +319,7 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
@@ -312,6 +327,9 @@ data:
             id: can0
             value: '87.5'
           type: Dynamic
+        - attributes:
+            value: '75.0'
+          type: User
         type: Values
       type: Float
     AUTO_DATA_BIT_TIMING_CALCULATION:
@@ -320,7 +338,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -344,4 +362,165 @@ data:
           type: User
         type: Values
       type: Integer
+    headerFile:
+      attributes:
+        id: headerFile
+      children:
+      - children:
+        - attributes:
+            id: source
+          children:
+          - type: Value
+            value: ../peripheral/can_u2003/templates/plib_can_common_legacy.h
+          type: String
+        type: Attributes
+      type: File
+    CAN_GENERATE_LEGACY_APIS:
+      attributes:
+        id: CAN_GENERATE_LEGACY_APIS
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    RXF0_WATERMARK:
+      attributes:
+        id: RXF0_WATERMARK
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    RXF0_ELEMENTS:
+      attributes:
+        id: RXF0_ELEMENTS
+      children:
+      - children:
+        - attributes:
+            value: '8'
+          type: User
+        type: Values
+      type: Integer
+    RXF0_BYTES_CFG:
+      attributes:
+        id: RXF0_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
+    RXF1_USE:
+      attributes:
+        id: RXF1_USE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    RXBUF_USE:
+      attributes:
+        id: RXBUF_USE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    TX_FIFO_WATERMARK:
+      attributes:
+        id: TX_FIFO_WATERMARK
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TX_FIFO_ELEMENTS:
+      attributes:
+        id: TX_FIFO_ELEMENTS
+      children:
+      - children:
+        - attributes:
+            value: '8'
+          type: User
+        type: Values
+      type: Integer
+    TX_FIFO_BYTES_CFG:
+      attributes:
+        id: TX_FIFO_BYTES_CFG
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '7'
+          type: User
+        type: Values
+      type: KeyValueSet
+    FILTERS_STD_NOMATCH:
+      attributes:
+        id: FILTERS_STD_NOMATCH
+      children:
+      - children:
+        - attributes:
+            value: '0'
+          type: User
+        type: Values
+      type: KeyValueSet
+    FILTERS_EXT_NOMATCH:
+      attributes:
+        id: FILTERS_EXT_NOMATCH
+      children:
+      - children:
+        - attributes:
+            value: '0'
+          type: User
+        type: Values
+      type: KeyValueSet
+    TIMESTAMP_ENABLE:
+      attributes:
+        id: TIMESTAMP_ENABLE
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    RXF0_OVERWRITE:
+      attributes:
+        id: RXF0_OVERWRITE
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}
