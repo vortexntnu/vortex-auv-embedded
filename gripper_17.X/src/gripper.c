@@ -2,6 +2,31 @@
 #include <string.h>
 
 
+typedef void (*tcc_set_fn_t)(uint8_t channel, uint32_t duty);
+
+typedef struct {
+    tcc_set_fn_t set_duty;
+    uint8_t channel;
+} servo_map_t;
+
+static const servo_map_t servo_map[] = {
+    { TCC0_PWM24bitDutySet, 3 }, // servo 0
+    { TCC1_PWM24bitDutySet, 0 }, // servo 1
+    { TCC1_PWM24bitDutySet, 1 }, // servo 2
+};
+
+void set_servos_pwm(const uint8_t* pwm_data, uint8_t num_servos) {
+    uint16_t duty_cycle_us[3];
+    memcpy(duty_cycle_us, pwm_data, sizeof duty_cycle_us);
+
+    for (uint8_t i = 0; i < num_servos; i++) {
+        uint32_t tcc_val =
+            ((uint32_t)duty_cycle_us[i] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
+        servo_map[i].set_duty(servo_map[i].channel, tcc_val);
+    }
+}
+
+
 
 int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* out){
     static const uint8_t encoder_addresses[NUM_ENCODERS] = {
@@ -16,20 +41,6 @@ int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* out){
     return 0;
 }
 
-
-void set_servos_pwm(const uint8_t* pwm_data) {
-    uint16_t duty_cycle_us[3];
-    memcpy(duty_cycle_us, pwm_data, sizeof(duty_cycle_us));
-
-    uint32_t tcc_val = (duty_cycle_us[0] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
-    TCC0_PWM24bitDutySet(3, tcc_val);
-
-    tcc_val = (duty_cycle_us[1] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
-    TCC1_PWM24bitDutySet(0, tcc_val);
-
-    tcc_val = (duty_cycle_us[2] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
-    TCC1_PWM24bitDutySet(1, tcc_val);
-}
 
 
 

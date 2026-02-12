@@ -12,7 +12,7 @@ void state_machine(struct state_context* ctx) {
     ctx->events &= ~ev;
 
     if (ev & EVENT_SET_PWM) {
-        set_servos_pwm(ctx->rx_frame.buf);
+        set_servos_pwm(ctx->rx_frame.buf, ctx->rx_frame.len / 2);
         WDT_Clear();
     }
 

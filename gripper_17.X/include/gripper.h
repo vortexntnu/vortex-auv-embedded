@@ -47,10 +47,11 @@ int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* data);
  * @brief Set servo PWM duty cycles.
  *
  * @param[in] pwm_data  Pointer to an array containing the PWM duty values
- *                      for each servo channel. Array length must match
- *                      the number of servos.
+ *                      in microseconds. Must be little endian and contain 
+ *                      duty cycle values for up to three servos
+ * @param[in] num_servos Number of servos in use
  */
-void set_servos_pwm(const uint8_t* pwm_data);
+void set_servos_pwm(const uint8_t* pwm_data, uint8_t num_servos);
 
 
 static inline void stop_gripper(void) {
