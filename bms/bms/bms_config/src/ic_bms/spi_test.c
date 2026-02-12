@@ -172,4 +172,4 @@ void spi_driver_self_test_run(void)
     printf("read_reg_exact(0x10, len=3): %s\n", ok_read ? "OK" : "FAIL");
     spi_test_print_bytes("read_reg data", rd_data, sizeof(rd_data));
     printf("Note: this confirms MCU SPI framing/path only; real BQ register behavior needs the BQ IC connected.\n");
-}
+|}
