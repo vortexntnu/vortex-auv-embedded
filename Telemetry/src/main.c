@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "definitions.h"
 #include "led_facade.h"
@@ -49,6 +50,7 @@
 // *****************************************************************************
 
 #define LED_CMD_STDID  (0x469u)
+#define PRESSURE_TEMP_STDID (0x200u) // CAN ID (TEMP VALUE) used for sending pressure and temperature data
 
 /* RX variables defined in CAN_facade.c */
 extern volatile bool rxReady;
@@ -97,6 +99,10 @@ int main(void)
     float pressure_sum = 0.0f;
     float temp_sum = 0.0f;
     uint32_t samples = 0;
+
+    #define MAX_SAMPLES 64
+    static float pressure_buf[MAX_SAMPLES];
+    static float temp_buf[MAX_SAMPLES];
     
     timing_tc2_init_5hz(); 
     
@@ -165,6 +171,13 @@ int main(void)
             pressure_sum += pressure;
             temp_sum += temp;
             samples++;
+            if (samples < MAX_SAMPLES) {
+                pressure_buf[samples] = pressure;
+                temp_buf[samples] = temp;
+                samples++;
+            } else {
+                /* Buffer full; drop the newest sample */
+            }
         } else {
             wsen_reset();
         }
@@ -176,13 +189,28 @@ int main(void)
                 pressure_avg = pressure_sum / samples;
                 temp_avg = temp_sum / samples;
             }
-            pressure_sum = 0.0f;
-            temp_sum = 0.0f;
-            samples = 0;
+
 
             bool fast = false, slow = false;
             leakdet_update(&leak_detector, pressure_avg, temp_avg, &fast,
                            &slow);
+
+            /* Send all buffered samples over CAN at 5Hz (one CAN frame per sample)
+             * Each frame payload (8 bytes): [pressure(float,4)] [temp(float,4)]
+             */
+            if (samples > 0) {
+                for (uint32_t i = 0; i < samples; i++) {
+                    uint8_t can_payload[8];
+                    memcpy(&can_payload[0], &pressure_buf[i], sizeof(float));
+                    memcpy(&can_payload[4], &temp_buf[i], sizeof(float));
+                    CAN_Send(PRESSURE_TEMP_STDID, can_payload, sizeof(can_payload));
+                }
+                printf("Sent %u CAN telemetry frames ID 0x%03x (pressure/temp)\r\n",
+                       (unsigned)samples, (unsigned)PRESSURE_TEMP_STDID);
+
+            pressure_sum = 0.0f;
+            temp_sum = 0.0f;
+            samples = 0;
 
             if (fast) {
                 // TODO: handle fast leak
