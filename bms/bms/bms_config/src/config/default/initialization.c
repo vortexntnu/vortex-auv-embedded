@@ -174,14 +174,16 @@ void SYS_Initialize ( void* data )
 
     EVSYS_Initialize();
 
+    SERCOM4_USART_Initialize();
+
+    CAN0_Initialize();
+
+    RTC_Initialize();
+
 
     ADC0_Initialize();
 
     ADC1_Initialize();
-    CAN0_Initialize();
-
-    SERCOM4_USART_Initialize();
-
 
     NVIC_Initialize();
 

@@ -213,7 +213,7 @@ bool bq_direct_command(uint8_t command, uint16_t *data, char type)
 bool bq_command_only(uint16_t subcmd){
 
 
-     // Send 0x3E/0x3F in one SPI frame (lead’s request)
+     // Send 0x3E/0x3F in one SPI frame
      uint8_t two[2] = {
         (uint8_t)(subcmd & 0xFF), 
         (uint8_t)((subcmd >> 8) & 0xFF)
@@ -376,33 +376,38 @@ void bms_battery_status(void){
 
 }
 
-void read_cells_1to6(){
 
-    const uint8_t CellVoltageAddr[6]={CELL_1_VOLTAGE, CELL_2_VOLTAGE, CELL_3_VOLTAGE, CELL_4_VOLTAGE, CELL_5_VOLTAGE, CELL_6_VOLTAGE};
-    uint16_t raw = 0;
-    float voltage = 0.0f;
-    uint8_t i = 0;
-  
-    for (i=0; i<6; i++){
-      if (bq_direct_command(CellVoltageAddr[i], &raw , R))
-      {
-        voltage = raw*0.001f; // Convert mV to V
-        printf("Cell %u Voltage: %.3f V\n", i+1, voltage);
-      }
-      else {
-      {
-        printf("Failed to read Cell %u Voltage\n", i+1);  
-      }
-      }
-  
-  
+bool read_cells_1to6(uint16_t cell_mV[6])
+{
+    const uint8_t addr[6] = {
+        CELL_1_VOLTAGE, CELL_2_VOLTAGE, CELL_3_VOLTAGE,
+        CELL_4_VOLTAGE, CELL_5_VOLTAGE, CELL_6_VOLTAGE
+    };
+    uint16_t raw = 0U;
+    uint8_t i;
+    bool ok = true;
+
+    if (cell_mV == NULL) 
+        return false;
+
+    for (i = 0U; i < 6U; i++)
+    {
+        if (bq_direct_command(addr[i], &raw, R))
+        {
+            cell_mV[i] = raw; // mV
+        }
+        else
+        {
+            cell_mV[i] = 0U;
+            ok = false;
+        }
     }
-  
-  }
+    return ok;
+}
+
   
     
-  bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC)
-  {
+bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC){
       uint16_t raw;
   
       if (temp_dC == 0)

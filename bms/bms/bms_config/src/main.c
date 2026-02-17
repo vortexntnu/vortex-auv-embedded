@@ -29,8 +29,10 @@
 #include "ic_bms/bms_spi.h"
 #include "ic_bms/spi_test.h"
 #include "app/can_facade.h"
+#include "app/can_telemetry.h"
 
 #include <stdio.h>
+#include <sys/types.h>
 
 
 
@@ -46,18 +48,33 @@ extern uint8_t  rx_messageLength;
 extern uint16_t timestamp;
 
 
+static void TelemetryRtcCb(RTC_TIMER32_INT_MASK intCause, uintptr_t context)
+{
+    (void)intCause;
+    (void)context;
+    CAN_telemetry_tickISR();
+}
+
+
 
 int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
+    CAN_Init();
+    CAN_telemetry_init();
+    RTC_Timer32CallbackRegister(TelemetryRtcCb, 0);
+    RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
+    RTC_Timer32Start();
+
+    
 
     spi_driver_self_test_run();
 
     bq76942_init();
     bms_set_protection_threshold();
-    read_cells_1to6();
     bms_battery_status();
+
   
     //bms_sample_temps();
     
@@ -66,6 +83,7 @@ int main ( void )
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
+        CAN_voltage_send();
     }
 
     

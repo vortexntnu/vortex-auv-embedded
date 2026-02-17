@@ -12,8 +12,9 @@
     can_facade.c
  */
 
- #include "definitions.h"
- #include "can_facade.h"
+#include "definitions.h"
+#include "peripheral/port/plib_port.h"
+#include "can_facade.h"
  
  /* ===== RX variables ===== */
  volatile bool rxReady = false;
@@ -50,6 +51,10 @@
  /* ===== Init ===== */
  void CAN_Init(void)
  {
+
+   STB_OutputEnable();
+   STB_Clear();
+   CAN_RX_WAKEUP_InputEnable();
      if (!s_ram_bound)
      {
          CAN0_MessageRAMConfigSet(s_can_msg_ram);
