@@ -1,0 +1,629 @@
+configVersion: 1.0.0
+componentName: core
+coreVersion: 5.8.4
+device: ATSAMC21J18A
+library: []
+dependency:
+- dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
+  name: core
+  type: module
+  version: ''
+- dependencyPackage: ''
+  name: csp
+  type: package
+  version: v3.23.0
+customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
+data:
+  attachments: {}
+  elementPosition: {}
+  symbols:
+    MAIN_C:
+      attributes:
+        id: MAIN_C
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    CoreMainFile:
+      attributes:
+        id: CoreMainFile
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    INITIALIZATION_C:
+      attributes:
+        id: INITIALIZATION_C
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    CoreSysInitFile:
+      attributes:
+        id: CoreSysInitFile
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    STARTUP_C:
+      attributes:
+        id: STARTUP_C
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    CoreSysStartupFile:
+      attributes:
+        id: CoreSysStartupFile
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    LIBC_SYSCALLS_C:
+      attributes:
+        id: LIBC_SYSCALLS_C
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    CoreSysCallsFile:
+      attributes:
+        id: CoreSysCallsFile
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    INTERRUPTS_C:
+      attributes:
+        id: INTERRUPTS_C
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    INTERRUPTS_H:
+      attributes:
+        id: INTERRUPTS_H
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    CoreSysIntFile:
+      attributes:
+        id: CoreSysIntFile
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    EXCEPTIONS_C:
+      attributes:
+        id: EXCEPTIONS_C
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    CoreSysExceptionFile:
+      attributes:
+        id: CoreSysExceptionFile
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    DEBUG_CONSOLE_C:
+      attributes:
+        id: DEBUG_CONSOLE_C
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    CoreSysStdioSyscallsFile:
+      attributes:
+        id: CoreSysStdioSyscallsFile
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    XC32_LINKER_PREPROC_MARCOS:
+      attributes:
+        id: XC32_LINKER_PREPROC_MARCOS
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: Setting
+    PAC_HEADER:
+      attributes:
+        id: PAC_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    PAC_SOURCE:
+      attributes:
+        id: PAC_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    PAC_SYS_DEF:
+      attributes:
+        id: PAC_SYS_DEF
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    PAC_SYS_INIT:
+      attributes:
+        id: PAC_SYS_INIT
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    PAC_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: PAC_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_0_3_ENABLE:
+      attributes:
+        id: NVIC_0_3_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PAC_INTERRUPT_ENABLE:
+      attributes:
+        id: PAC_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_0_3_HANDLER_LOCK:
+      attributes:
+        id: NVIC_0_3_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PAC_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: PAC_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_0_3_HANDLER:
+      attributes:
+        id: NVIC_0_3_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PAC_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    PAC_INTERRUPT_HANDLER:
+      attributes:
+        id: PAC_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PAC_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    PAC_USE:
+      attributes:
+        id: PAC_USE
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PAC_INTERRRUPT_MODE:
+      attributes:
+        id: PAC_INTERRRUPT_MODE
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    LINKER_SCRIPT:
+      attributes:
+        id: LINKER_SCRIPT
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    ADD_LINKER_FILE:
+      attributes:
+        id: ADD_LINKER_FILE
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    APP_START_ADDRESS:
+      attributes:
+        id: APP_START_ADDRESS
+      children:
+      - children:
+        - attributes:
+            id: can_bootloader
+            value: '1000'
+          type: Dynamic
+        type: Values
+      type: String
+    NVMCTRL_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: NVMCTRL_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_6_0_ENABLE:
+      attributes:
+        id: NVIC_6_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVMCTRL_INTERRUPT_ENABLE:
+      attributes:
+        id: NVMCTRL_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: nvmctrl
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_6_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_6_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVMCTRL_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: NVMCTRL_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: nvmctrl
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_6_0_HANDLER:
+      attributes:
+        id: NVIC_6_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: NVMCTRL_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    NVMCTRL_INTERRUPT_HANDLER:
+      attributes:
+        id: NVMCTRL_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: nvmctrl
+            value: NVMCTRL_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    MCLK_AHB_INITIAL_VALUE:
+      attributes:
+        id: MCLK_AHB_INITIAL_VALUE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1dff'
+          type: Dynamic
+        type: Values
+      type: String
+    CAN0_CLOCK_FREQUENCY:
+      attributes:
+        id: CAN0_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_26_FREQ:
+      attributes:
+        id: GCLK_ID_26_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_26_CHEN:
+      attributes:
+        id: GCLK_ID_26_CHEN
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    CAN0_CLOCK_ENABLE:
+      attributes:
+        id: CAN0_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    CAN0_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: CAN0_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_15_0_ENABLE:
+      attributes:
+        id: NVIC_15_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    CAN0_INTERRUPT_ENABLE:
+      attributes:
+        id: CAN0_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_15_0_HANDLER:
+      attributes:
+        id: NVIC_15_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: CAN0_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    CAN0_INTERRUPT_HANDLER:
+      attributes:
+        id: CAN0_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: CAN0_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    NVIC_15_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_15_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    CAN0_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: CAN0_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+  userData:
+    children:
+    - attributes:
+        canvasHeight: '0'
+        canvasWidth: '0'
+      type: GraphSettings
+    - children:
+      - attributes:
+          id: profile0
+          name: Main
+        type: Profile
+      type: PowerProfiles
+    type: UserData
