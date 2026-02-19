@@ -37,7 +37,7 @@
  
      rxReady = true;
      
-     printf("Callback");
+    
  
      /* Re-arm RX */
      CAN0_MessageReceive(&rx_messageID,
@@ -54,6 +54,7 @@
 
    STB_OutputEnable();
    STB_Clear();
+   //////////////////////
    CAN_RX_WAKEUP_InputEnable();
      if (!s_ram_bound)
      {

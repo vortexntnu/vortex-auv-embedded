@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: rtc
+componentName: nvmctrl
 coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: rtc
+  name: nvmctrl
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,31 +21,11 @@ data:
     children:
     - children:
       - attributes:
-          id: rtc
-          x: '496'
-          y: '340'
+          id: nvmctrl
+          x: '339'
+          y: '7'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
-  symbols:
-    RTC_MODE0_MATCHCLR:
-      attributes:
-        id: RTC_MODE0_MATCHCLR
-      children:
-      - children:
-        - attributes:
-            value: 'true'
-          type: User
-        type: Values
-      type: Boolean
-    RTC_MODE0_TIMER_COMPARE:
-      attributes:
-        id: RTC_MODE0_TIMER_COMPARE
-      children:
-      - children:
-        - attributes:
-            value: '101'
-          type: User
-        type: Values
-      type: Hex
+  symbols: {}
   userData: {}

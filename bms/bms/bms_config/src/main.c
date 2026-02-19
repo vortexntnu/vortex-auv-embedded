@@ -45,7 +45,7 @@ extern volatile bool rxReady;
 extern uint32_t rx_messageID;
 extern uint8_t  rx_message[64];
 extern uint8_t  rx_messageLength;
-extern uint16_t timestamp;
+
 
 
 static void TelemetryRtcCb(RTC_TIMER32_INT_MASK intCause, uintptr_t context)
@@ -69,11 +69,12 @@ int main ( void )
 
     
 
-    spi_driver_self_test_run();
+    //spi_driver_self_test_run(); 
 
     bq76942_init();
     bms_set_protection_threshold();
     bms_battery_status();
+   
 
   
     //bms_sample_temps();
@@ -84,6 +85,10 @@ int main ( void )
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
         CAN_voltage_send();
+        CAN_bothoff_rx();
+        
+        
+        
     }
 
     

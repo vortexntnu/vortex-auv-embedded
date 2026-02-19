@@ -383,14 +383,14 @@ bool read_cells_1to6(uint16_t cell_mV[6])
         CELL_1_VOLTAGE, CELL_2_VOLTAGE, CELL_3_VOLTAGE,
         CELL_4_VOLTAGE, CELL_5_VOLTAGE, CELL_6_VOLTAGE
     };
-    uint16_t raw = 0U;
+    uint16_t raw = 0;
     uint8_t i;
     bool ok = true;
 
     if (cell_mV == NULL) 
         return false;
 
-    for (i = 0U; i < 6U; i++)
+    for (i = 0; i < 6; i++)
     {
         if (bq_direct_command(addr[i], &raw, R))
         {
@@ -398,7 +398,7 @@ bool read_cells_1to6(uint16_t cell_mV[6])
         }
         else
         {
-            cell_mV[i] = 0U;
+            cell_mV[i] = 0;
             ok = false;
         }
     }
@@ -434,18 +434,18 @@ bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC){
 
 void bothoff_init(void)
 {
-    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[PIN_BOTHOFF] &= (uint8_t)(~PORT_PINCFG_PMUXEN_Msk); 
-    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_DIRSET = BOTHOFF_PIN_MASK; 
-    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_OUTCLR = BOTHOFF_PIN_MASK; 
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[PIN_BOTHOFF] &= (uint8_t)(~PORT_PINCFG_PMUXEN_Msk); // GPIO mode
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_DIRSET = BOTHOFF_PIN_MASK; // Set as output
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_OUTCLR = BOTHOFF_PIN_MASK;  // Set LOW to turn bothoff ON
 }
 
 void bothoff_high(void)
 {
-    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_OUTSET = BOTHOFF_PIN_MASK; 
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_OUTSET = BOTHOFF_PIN_MASK; // Set HIGH to turn bothoff OFF
 }
 
 void can_wakeup_pin(void){
-    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[16U] &= (uint8_t)(~PORT_PINCFG_PMUXEN_Msk);
+    PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[16U] &= (uint8_t)(~PORT_PINCFG_PMUXEN_Msk); 
     PORT_REGS->GROUP[GPIO_GROUP_A].PORT_DIRCLR = (1u << 16U); // Set as input
     PORT_REGS->GROUP[GPIO_GROUP_A].PORT_PINCFG[16U] |= PORT_PINCFG_INEN_Msk; // Enable INPUT
 }

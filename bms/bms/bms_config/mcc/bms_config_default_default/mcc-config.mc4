@@ -78,7 +78,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/rtc/plib_rtc.h
   hash: 92e9a13ceda691e011ad7efff84d616e8466f744723f8135850fc171fd53ac3b
 - file: ../src/config/default/peripheral/rtc/plib_rtc_timer.c
-  hash: 4a4a7c2350c37f32423dcf769c5d1e1d1d4dca3c83fd9b846c95c5368fda37ac
+  hash: 23efd5b08dbe8c73a689fcf4291823b6c896acebbdfb7bf2ac5386ec5d86fec0
 - file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c
   hash: 5ad6a7aecfa835077677e73fc771c2d82f35bdf4da9b54b499203176295ed534
 - file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.h

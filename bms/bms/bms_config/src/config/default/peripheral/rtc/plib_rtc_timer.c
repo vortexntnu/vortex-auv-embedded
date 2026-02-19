@@ -63,7 +63,7 @@ void RTC_Initialize(void)
     {
        /* Wait for Synchronization */
     }
-   RTC_REGS->MODE0.RTC_COMP = 0x101U;
+   RTC_REGS->MODE0.RTC_COMP = 0x65U;
     while((RTC_REGS->MODE0.RTC_SYNCBUSY & RTC_MODE0_SYNCBUSY_COMP0_Msk) == RTC_MODE0_SYNCBUSY_COMP0_Msk)
     {
         /* Wait for Synchronization after writing Compare Value */
