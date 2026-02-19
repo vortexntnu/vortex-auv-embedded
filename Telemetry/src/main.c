@@ -39,7 +39,6 @@
 #include "ws2812_port_sercom0_harmony.h"
 
 #include "leak_sensor_eic.h"
-#include "led_facade.h"
 #include "pressure_calc.h"
 #include "wsen_pads_port_sercom3.h"
 
@@ -51,6 +50,8 @@
 
 #define LED_CMD_STDID  (0x469u)
 #define PRESSURE_TEMP_STDID (0x200u) // CAN ID (TEMP VALUE) used for sending pressure and temperature data
+#define SLOW_LEAK_ALARM_STDID (0x101u) // CAN ID (TEMP VALUE) used for sending slow leakage alarms
+#define FAST_LEAK_ALARM_STDID (0x102u) // TEMP VALUE
 
 /* RX variables defined in CAN_facade.c */
 extern volatile bool rxReady;
@@ -194,7 +195,15 @@ int main(void)
             bool fast = false, slow = false;
             leakdet_update(&leak_detector, pressure_avg, temp_avg, &fast,
                            &slow);
-
+            if (fast) {
+                uint8_t can_payload[8] = {0};
+                CAN_Send(FAST_LEAK_ALARM_STDID, can_payload, sizeof(can_payload));
+            }
+            if (slow) {
+                uint8_t can_payload[8] = {0};
+                CAN_Send(SLOW_LEAK_ALARM_STDID, can_payload, sizeof(can_payload));
+            }        
+                           
             /* Send all buffered samples over CAN at 5Hz (one CAN frame per sample)
              * Each frame payload (8 bytes): [pressure(float,4)] [temp(float,4)]
              */
@@ -212,16 +221,11 @@ int main(void)
             temp_sum = 0.0f;
             samples = 0;
 
-            if (fast) {
-                // TODO: handle fast leak
             }
-            if (slow) {
-                // TODO: handle slow leak
-            }        
         }
-    }
     return (EXIT_FAILURE);
 
+    }
 }
 
 /*******************************************************************************
