@@ -91,6 +91,7 @@
 
 typedef uint16_t NVMCTRL_ERROR;
 
+typedef void (*NVMCTRL_CALLBACK)(uintptr_t context);
 
 void NVMCTRL_Initialize(void);
 
@@ -122,6 +123,7 @@ void NVMCTRL_RegionUnlock (uint32_t address);
 
 void NVMCTRL_SecurityBitSet(void);
 
+void NVMCTRL_CallbackRegister ( NVMCTRL_CALLBACK callback, uintptr_t context );
 
 bool NVMCTRL_USER_ROW_PageWrite( uint32_t *data, const uint32_t address );
 

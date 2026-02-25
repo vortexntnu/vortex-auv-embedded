@@ -4,7 +4,7 @@
 
 
 project: can_bootloader_config_default
-creation_date: 2026-02-19T12:54:37.277+01:00[Europe/Berlin]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+creation_date: 2026-02-24T15:11:16.215+01:00[Europe/Berlin]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
 operating_system: Windows 11
 mcc_mode: VSCodePlugin            # [IDE|Standalone|Headless]
 mcc_version: v5.6.4

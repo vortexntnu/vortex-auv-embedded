@@ -412,7 +412,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -423,18 +423,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    NVMCTRL_INTERRUPT_ENABLE:
-      attributes:
-        id: NVMCTRL_INTERRUPT_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: nvmctrl
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -445,18 +434,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    NVMCTRL_INTERRUPT_HANDLER_LOCK:
-      attributes:
-        id: NVMCTRL_INTERRUPT_HANDLER_LOCK
-      children:
-      - children:
-        - attributes:
-            id: nvmctrl
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -467,18 +445,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: NVMCTRL_Handler
-          type: Dynamic
-        type: Values
-      type: String
-    NVMCTRL_INTERRUPT_HANDLER:
-      attributes:
-        id: NVMCTRL_INTERRUPT_HANDLER
-      children:
-      - children:
-        - attributes:
-            id: nvmctrl
-            value: NVMCTRL_Handler
+            value: NVMCTRL_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -614,6 +581,39 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    NVMCTRL_INTERRUPT_ENABLE:
+      attributes:
+        id: NVMCTRL_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: nvmctrl
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVMCTRL_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: NVMCTRL_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: nvmctrl
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVMCTRL_INTERRUPT_HANDLER:
+      attributes:
+        id: NVMCTRL_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: nvmctrl
+            value: NVMCTRL_InterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
   userData:
     children:
     - attributes:

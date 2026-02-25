@@ -44,8 +44,8 @@ data:
     - children:
       - attributes:
           id: can0
-          x: '10'
-          y: '248'
+          x: '7'
+          y: '125'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
