@@ -18,10 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ad7606_driver.h"
+#include "stm32h7xx_hal.h"
+#include "stm32h7xx_hal_gpio.h"
+#include "stm32h7xx_hal_gpio_ex.h"
+#include "stm32h7xx_hal_spi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,7 +83,51 @@ static void MX_RTC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+#define MSG_LEN 100
 static struct ad7606_device ad7606_dev;
+static uint8_t rx_buf[100];
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
+    if (hspi->Instance == SPI1) {
+        // rx_buf now contains MSG_LEN bytes
+        // process(rx_buf, MSG_LEN);
+        char msg[] = "test\r\n";
+        HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
+        // re-arm for next message
+        HAL_SPI_Receive_DMA(&hspi1, rx_buf, MSG_LEN);
+    }
+}
+void SPI_SendDummyByte(void)
+{
+    uint8_t dummy_tx = 0x00;
+    uint8_t dummy_rx;
+
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);  // CS LOW
+    
+    for (int i = 0; i < 20; i++){
+        HAL_SPI_TransmitReceive(&hspi6, &dummy_tx, &dummy_rx, 1, 10);
+    }
+
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); 
+}
+
+void SPI_SendDummyBuffer(uint16_t numBytes)
+{
+    static uint8_t dummy_tx[256];
+    static uint8_t dummy_rx[256];
+
+    if(numBytes > 256) numBytes = 256;
+
+    // memset(dummy_tx, 0x00, numBytes);
+
+
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);  // CS LOW
+    HAL_SPI_TransmitReceive(&hspi6, dummy_tx, dummy_rx, numBytes, 10);
+
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); 
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -128,7 +177,11 @@ int main(void) {
     MX_RTC_Init();
     /* USER CODE BEGIN 2 */
 
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);   // CS LOW
     struct ad7606_register reg;
+
+    reg.oversampling = 0;
+    reg.bandwith = 0xFF;
     struct ad7606_config cfg = {
         .status_header = false,
         .external_oversampling_clock = false,
@@ -136,12 +189,33 @@ int main(void) {
         .operation_mode = OPERATION_NORMAL,
     };
 
-    ad7606_init(&ad7606_dev, &reg, &cfg);
+    struct ad7606_channel channels[8] = {
+        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
+        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
+        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
+        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
+    };
+
+    uint8_t msg[] = "USART1 OK\r\n";
+    HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
+
+    // ad7606_init(&ad7606_dev, &reg, &cfg, channels, &hspi6);
+
+    uint8_t data[100];
+    HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)data, 10);
+
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
+        HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
+
+        // HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);   // CS LOW
+        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_RESET);  // CS LOW
+        SPI_SendDummyBuffer(100);
+        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_SET);  // CS LOW
+        HAL_Delay(100);
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
@@ -222,16 +296,18 @@ void PeriphCommonClock_Config(void) {
     /** Initializes the peripherals clock
      */
     PeriphClkInitStruct.PeriphClockSelection =
-        RCC_PERIPHCLK_SPI6 | RCC_PERIPHCLK_SPI4 | RCC_PERIPHCLK_SPI5 |
+        RCC_PERIPHCLK_SPI6 | RCC_PERIPHCLK_SPI3 | RCC_PERIPHCLK_SPI2 |
+        RCC_PERIPHCLK_SPI1 | RCC_PERIPHCLK_SPI4 | RCC_PERIPHCLK_SPI5 |
         RCC_PERIPHCLK_FDCAN;
-    PeriphClkInitStruct.PLL2.PLL2M = 32;
+    PeriphClkInitStruct.PLL2.PLL2M = 16;
     PeriphClkInitStruct.PLL2.PLL2N = 120;
-    PeriphClkInitStruct.PLL2.PLL2P = 2;
-    PeriphClkInitStruct.PLL2.PLL2Q = 2;
+    PeriphClkInitStruct.PLL2.PLL2P = 4;
+    PeriphClkInitStruct.PLL2.PLL2Q = 4;
     PeriphClkInitStruct.PLL2.PLL2R = 2;
-    PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_0;
+    PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_1;
     PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
     PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+    PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL2;
     PeriphClkInitStruct.Spi45ClockSelection = RCC_SPI45CLKSOURCE_PLL2;
     PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
     PeriphClkInitStruct.Spi6ClockSelection = RCC_SPI6CLKSOURCE_PLL2;
@@ -700,6 +776,19 @@ static void MX_GPIO_Init(void) {
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
     /* USER CODE BEGIN MX_GPIO_Init_2 */
+    GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_6;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* USER CODE END MX_GPIO_Init_2 */
 }

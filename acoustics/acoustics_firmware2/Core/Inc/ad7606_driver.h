@@ -80,9 +80,8 @@ struct ad7606_device {
 void ad7606_init(struct ad7606_device* dev,
                  struct ad7606_register* reg,
                  struct ad7606_config* cfg,
+                 struct ad7606_channel* channels,
                  SPI_HandleTypeDef* hspi_master);
-
-void ad7606_set_config(struct ad7606_config* cfg, uint8_t* config);
 
 void ad7606_set_registers(struct ad7606_register* registers,
                           struct ad7606_config* config,
