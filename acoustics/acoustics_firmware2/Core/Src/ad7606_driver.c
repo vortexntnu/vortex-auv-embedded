@@ -10,39 +10,32 @@ static inline void set_config(struct ad7606_config* cfg, uint8_t* config) {
     *config |= (cfg->operation_mode) & (0x4);
 }
 
-static void set_channel_range(uint8_t* ranges,
-                              struct ad7606_register* registers,
-                              uint8_t num_channels) {
-    int end = num_channels >> 1;
-
-    for (int i = 0; i < end; i++) {
-        registers->channel_range[i] =
-            (ranges[2 * i + 1] << 4) | (ranges[2 * i] & 0xFF);
-    }
-}
-
 void ad7606_init(struct ad7606_device* dev,
                  struct ad7606_register* reg,
-                 struct ad7606_config* cfg) {
+                 struct ad7606_config* cfg,
+                 SPI_HandleTypeDef* hspi_master) {
     set_config(cfg, &reg->config);
     dev->registers = reg;
+
+    HAL_SPI_Transmit(hspi_master, (void*)reg, sizeof(*reg), 10);
 }
 
 void ad7606_set_registers(struct ad7606_register* registers,
                           struct ad7606_config* config,
-                          uint8_t* channel_range,
-                          uint8_t* channel_gain,
-                          uint8_t* channel_offset,
-                          uint8_t* channel_phase,
+                          struct ad7606_channel* channels,
                           uint8_t num_channels) {
     registers->config_address = AD7606_CONFIG_ADDRESS;
     set_config(config, &registers->config);
-    set_channel_range(channel_range, registers, num_channels);
-    memcpy(&registers->channel_gain, channel_gain, num_channels);
-    memcpy(&registers->channel_offset, channel_offset, num_channels);
-    memcpy(&registers->channel_phase, channel_phase, num_channels);
+
+    for (int i = 0; i < num_channels; i += 2) {
+        registers->channel_range[i] =
+            (channels[2 * i + 1].range << 4) | (channels[2 * i].range & 0xFF);
+    }
+
+    for (int i = 0; i < num_channels; i++) {
+        registers->channel_gain[i] = channels->gain;
+        registers->channel_offset[i] = channels->offset;
+        registers->channel_phase[i] = channels->phase;
+    }
 }
 
-static inline void ad7606_send_registers(struct ad7606_device* dev, struct ad7606_register* reg, SPI_HandleTypeDef* hspi_master){
-    HAL_SPI_Transmit_DMA(hspi_master, (void*) reg, sizeof(*reg));
-}
