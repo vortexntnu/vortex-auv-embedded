@@ -75,11 +75,6 @@
 #define GPIO_PA07_PIN                  PORT_PIN_PA07
 
 /*** Macros for CAN_RX_WAKEUP pin ***/
-#define CAN_RX_WAKEUP_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 14U))
-#define CAN_RX_WAKEUP_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 14U))
-#define CAN_RX_WAKEUP_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 14U))
-#define CAN_RX_WAKEUP_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 14U))
-#define CAN_RX_WAKEUP_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 14U))
 #define CAN_RX_WAKEUP_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 14U)) & 0x01U)
 #define CAN_RX_WAKEUP_PIN                  PORT_PIN_PA14
 

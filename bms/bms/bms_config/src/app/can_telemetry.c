@@ -1,8 +1,7 @@
 #include "app/can_telemetry.h"
 #include "app/can_facade.h"
 #include "ic_bms/bms_spi.h"
-
-
+#include "samc21j18a.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -10,10 +9,6 @@ extern volatile bool rxReady;
 extern uint32_t rx_messageID;
 extern uint8_t  rx_message[64];
 extern uint8_t  rx_messageLength;
-
-
-
-
 
 
 static volatile bool flag_vol_tx = false;
@@ -104,7 +99,6 @@ void CAN_bothoff_rx(void)
         bothoff_init();
         bothoff_high();
     }
-    
     
 }
 
