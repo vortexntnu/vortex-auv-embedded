@@ -416,7 +416,6 @@ int write(int handle, void* buffer, size_t count) {
     return (int)count;
 }
 
-#ifdef DEBUG
 void print_can_frame(uint32_t rx_id, uint8_t rx_len, uint16_t timestamp, uint8_t* rx_buf) {
     printf(" New Message Received\r\n");
     uint8_t length = rx_len;
@@ -429,6 +428,5 @@ void print_can_frame(uint32_t rx_id, uint8_t rx_len, uint16_t timestamp, uint8_t
         printf("0x%x ", rx_buf[rx_len - length--]);
     }
 }
-#endif
 
 

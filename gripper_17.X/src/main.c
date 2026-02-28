@@ -25,6 +25,8 @@ int main(void) {
 
     WDT_Enable();
 
+    printf("Start Gripper\r\n");
+
     while (true) {
         PM_IdleModeEnter();
         state_machine(&state_context);

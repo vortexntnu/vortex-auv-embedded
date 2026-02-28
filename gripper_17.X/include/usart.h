@@ -428,9 +428,8 @@ USART_ERROR SERCOM0_USART_ErrorGet(void);
  
 uint32_t SERCOM0_USART_FrequencyGet(void);
 
-#ifdef DEBUG
-void print_can_frame(void);
-#endif
+
+void print_can_frame(uint32_t rx_id, uint8_t rx_len, uint16_t timestamp, uint8_t* rx_buf);
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
