@@ -1,9 +1,10 @@
 #include "state_machine.h"
 #include <stdint.h>
+#include <stdio.h>
+#include "can1.h"
+#include "usart.h"
 #include "can_common.h"
 #include "dma.h"
-#include "can1.h"
-
 
 static uint8_t encoder_num = 0;
 
@@ -12,18 +13,19 @@ void state_machine(struct state_context* ctx) {
     ctx->events &= ~ev;
 
     if (ev & EVENT_SET_PWM) {
-        set_servos_pwm(ctx->rx_frame.buf, ctx->rx_frame.len / 2);
+        set_servos_pwm(ctx->rx_frame.buf, 2);
         WDT_Clear();
     }
 
     if (ev & EVENT_READ_ENCODER) {
+        // printf("Read encoders\r\n");
         ctx->tx_frame.id = CAN_SEND_ANGLES;
         ctx->tx_frame.len = 6;
         read_encoders(ANGLE_REGISTER, encoder_num, ctx->tx_frame.buf);
 
-        if (encoder_num == 2){
-          ev |= EVENT_TRANSMIT_ANGLES;
-          encoder_num = 0;
+        if (encoder_num == 2) {
+            ev |= EVENT_TRANSMIT_ANGLES;
+            encoder_num = 0;
         }
     }
 
@@ -35,11 +37,13 @@ void state_machine(struct state_context* ctx) {
 }
 
 void can_rx_callback(uintptr_t context) {
-    struct state_context* ctx = (struct state_context*) context;
+    struct state_context* ctx = (struct state_context*)context;
 
-    if (CAN0_ErrorGet()) {
-        return;
-    }
+    // print_can_frame(ctx->rx_frame.id, ctx->rx_frame.len, ctx->rx_frame.timestamp, ctx->rx_frame.buf);
+    // CAN_ERROR err = CAN0_ErrorGet();
+    // if (err) {
+    //     return;
+    // }
     switch (ctx->rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
@@ -59,24 +63,33 @@ void can_rx_callback(uintptr_t context) {
 }
 
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    volatile uint32_t* events = (volatile uint32_t*) context;
+    volatile uint32_t* events = (volatile uint32_t*)context;
     *events |= EVENT_READ_ENCODER;
 }
 
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    volatile uint32_t* events = (volatile uint32_t*) context;
+    volatile uint32_t* events = (volatile uint32_t*)context;
     *events |= EVENT_TRANSMIT_ANGLES;
 }
 
-void i2c1_callback(uintptr_t context){
-    encoder_num += 1;
-    volatile uint32_t* events = (volatile uint32_t*) context;
+void i2c1_callback(uintptr_t context) {
+    SERCOM_I2C_ERROR err = SERCOM1_I2C_ErrorGet();
+
+    if (err == SERCOM_I2C_ERROR_NONE){
+        encoder_num += 1;
+        // printf("Success\r\n");
+    }
+    else {
+        // printf("I2C error %d\r\n", err);
+    }
+
+    volatile uint32_t* events = (volatile uint32_t*)context;
     *events |= EVENT_READ_ENCODER;
 }
 
-
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
+    printf("entering dmac callback\r\n");
     uint16_t* adc_results = (uint16_t*)MyDmacContext;
     static uint8_t servo = SERVO_1;
 
@@ -98,11 +111,11 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
          * /*/
         /*    0.4;*/
 
-        /*printf(*/
-        /*    "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "*/
-        /*    "\n\r",*/
-        /*    adc_result_array[sample], (int)input_voltage,*/
-        /*    (int)((input_voltage - (int)input_voltage) * 100.0));*/
+        printf(
+            "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "
+            "\n\r",
+            adc_results[sample], (int)input_voltage,
+            (int)((input_voltage - (int)input_voltage) * 100.0));
     }
     input_voltage = input_voltage / TRANSFER_SIZE;
 
@@ -135,4 +148,3 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
             break;
     }
 }
-

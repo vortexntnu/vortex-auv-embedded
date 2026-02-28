@@ -17,7 +17,7 @@ static const servo_map_t servo_map[] = {
 
 void set_servos_pwm(const uint8_t* pwm_data, uint8_t num_servos) {
     uint16_t duty_cycle_us[3];
-    memcpy(duty_cycle_us, pwm_data, sizeof duty_cycle_us);
+    memcpy(duty_cycle_us, pwm_data, sizeof(duty_cycle_us));
 
     for (uint8_t i = 0; i < num_servos; i++) {
         uint32_t tcc_val =
