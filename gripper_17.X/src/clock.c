@@ -97,10 +97,11 @@ void CLOCK_Initialize(void) {
     }
 
     /* Selection of the Generator and write Lock for TC0 TC1 */
-    GCLK_REGS->GCLK_PCHCTRL[30] = GCLK_PCHCTRL_GEN(0x0UL)  | GCLK_PCHCTRL_CHEN_Msk;
+    GCLK_REGS->GCLK_PCHCTRL[30] =
+        GCLK_PCHCTRL_GEN(0x0UL) | GCLK_PCHCTRL_CHEN_Msk;
 
-    while ((GCLK_REGS->GCLK_PCHCTRL[30] & GCLK_PCHCTRL_CHEN_Msk) != GCLK_PCHCTRL_CHEN_Msk)
-    {
+    while ((GCLK_REGS->GCLK_PCHCTRL[30] & GCLK_PCHCTRL_CHEN_Msk) !=
+           GCLK_PCHCTRL_CHEN_Msk) {
         /* Wait for synchronization */
     }
 
@@ -161,6 +162,7 @@ void CLOCK_Initialize(void) {
     // MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 10) | (1 << 9) | (1 << 3) |
     //                            (1 << 1) | (1 << 2) | (1 << 4);
 
-    MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 16) | (1 << 12) | (1 << 10) | (1 << 9) | (1 << 6) |
-                               (1 << 3) | (1 << 1) | (1 << 2) | (1 << 4) | (1 << 0);
+    MCLK_REGS->MCLK_APBCMASK = 0x40029U | (1 << 16) | (1 << 13) | (1 << 12) |
+                               (1 << 10) | (1 << 9) | (1 << 6) | (1 << 3) |
+                               (1 << 1) | (1 << 2) | (1 << 4) | (1 << 0);
 }

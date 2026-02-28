@@ -67,8 +67,8 @@ static void nvic_init(void) {
     // NVIC_SetPriority(TCC1_IRQn, 3);
     // NVIC_EnableIRQ(TCC1_IRQn);
 
-    // NVIC_SetPriority(TCC0_IRQn, 3);
-    // NVIC_EnableIRQ(TCC0_IRQn);
+    NVIC_SetPriority(TCC0_IRQn, 3);
+    NVIC_EnableIRQ(TCC0_IRQn);
 
     // I2C 3
     NVIC_SetPriority(SERCOM0_IRQn, 3);
@@ -93,6 +93,9 @@ static void nvic_init(void) {
 
     NVIC_SetPriority(TC0_IRQn, 3);
     NVIC_EnableIRQ(TC0_IRQn);
+
+    NVIC_SetPriority(TC1_IRQn, 3);
+    NVIC_EnableIRQ(TC1_IRQn);
 
     __DMB();
     __enable_irq();
