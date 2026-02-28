@@ -19,13 +19,13 @@
 #define EVENT_SET_PWM (1 << 3)
 #define EVENT_READ_ENCODER (1 << 4)
 #define EVENT_START_GRIPPER (1 << 5)
-#define EVENT_TRANSMIT_ANGLES (1 << 3)
+#define EVENT_TRANSMIT_ANGLES (1 << 6)
 
 typedef enum {
     STOP_GRIPPER = 0x469,
-    START_GRIPPER,
-    SET_PWM,
-    RESET_MCU,
+    START_GRIPPER = 0x46A,
+    SET_PWM = 0x46B,
+    RESET_MCU = 0x46C,
 } CAN_RX_ID;
 
 typedef enum {
