@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include "stm32h7xx_hal.h"
 
-
 #define AD7606_CONFIG_ADDRESS 0x02
 
 #ifdef __cplusplus
@@ -66,22 +65,28 @@ struct ad7606_register {
     uint8_t channel_phase[8];
 };
 
+struct ad7606_channel {
+    uint8_t range;
+    uint8_t gain;
+    uint8_t offset;
+    uint8_t phase;
+};
+
 struct ad7606_device {
     struct ad7606_register* registers;
     ad7606_data_ready on_ready; /* user callback when out[half] is filled */
 };
 
-void ad7606_init(struct ad7606_device* dev);
-
-void ad7606_set_config(struct ad7606_config* cfg, uint8_t* config);
+void ad7606_init(struct ad7606_device* dev,
+                 struct ad7606_register* reg,
+                 struct ad7606_config* cfg,
+                 struct ad7606_channel* channels,
+                 SPI_HandleTypeDef* hspi_master);
 
 void ad7606_set_registers(struct ad7606_register* registers,
                           struct ad7606_config* config,
-                          uint8_t* channel_range,
-                          uint8_t* channel_gain,
-                          uint8_t* channel_offset,
-                          uint8_t* channel_phase,
-                          uint8_t num_channels); 
+                          struct ad7606_channel* channels,
+                          uint8_t num_channels);
 
 #ifdef __cplusplus
 }
