@@ -29,8 +29,13 @@ void set_servos_pwm(const uint8_t* pwm_data, uint8_t num_servos) {
 
 
 int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* out){
+#if NUM_ENCODERS == 3
     static const uint8_t encoder_addresses[NUM_ENCODERS] = {
         SHOULDER_ADDR, WRIST_ADDR, GRIP_ADDR};
+#else
+    static const uint8_t encoder_addresses[NUM_ENCODERS] = {
+        WRIST_ADDR, GRIP_ADDR};
+#endif
     uint8_t encoder_addr = encoder_addresses[enc_num];
     uint8_t* buf = out + enc_num;
 

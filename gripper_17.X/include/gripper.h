@@ -18,7 +18,7 @@
 #define GRIP_ADDR 0x42
 #define ANGLE_REGISTER 0xFE
 #define I2C_TIMEOUT 100000
-#define NUM_ENCODERS 3
+#define NUM_ENCODERS 2
 
 #define RTC_COMPARE_VAL 50
 
