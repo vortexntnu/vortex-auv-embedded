@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "state_machine.h"
 #include "system_init.h"
 
@@ -21,6 +22,8 @@ void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     duty1 += increment1;
     duty2 += increment1;
     duty3 += increment1;
+
+    printf("Duty %ld", duty1);
 
     if (duty1 > PWM_MAX) {
         duty1 = PWM_MAX;
@@ -60,9 +63,9 @@ int main(void) {
     TC1_TimerCallbackRegister(tc1_callback, (uintptr_t)&state_context.events);
 
     TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-                         (const void*)adc_result_array,
-                         sizeof(adc_result_array));
+    // DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+    //                      (const void*)adc_result_array,
+    //                      sizeof(adc_result_array));
     SERCOM1_I2C_CallbackRegister(i2c1_callback, (uintptr_t)&state_context.events);
     can_recieve(&state_context.rx_frame);
 
