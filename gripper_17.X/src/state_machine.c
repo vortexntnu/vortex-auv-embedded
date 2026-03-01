@@ -7,30 +7,36 @@
 #include "dma.h"
 
 static uint8_t encoder_num = 0;
+static bool read_failed = true;
+
 
 void state_machine(struct state_context* ctx) {
     uint32_t ev = ctx->events;
     ctx->events &= ~ev;
 
     if (ev & EVENT_SET_PWM) {
-        set_servos_pwm(ctx->rx_frame.buf, 2);
+        set_servos_pwm(ctx->rx_frame.buf, NUM_ENCODERS);
         WDT_Clear();
     }
 
     if (ev & EVENT_READ_ENCODER) {
-        // printf("Read encoders\r\n");
+
         ctx->tx_frame.id = CAN_SEND_ANGLES;
         ctx->tx_frame.len = 6;
         read_encoders(ANGLE_REGISTER, encoder_num, ctx->tx_frame.buf);
 
-        if (encoder_num == 2) {
-            ev |= EVENT_TRANSMIT_ANGLES;
-            encoder_num = 0;
-        }
     }
 
-    if (ev & EVENT_TRANSMIT_ANGLES) {
+
+    if (read_failed && (encoder_num != 0)) {
+        uint8_t prev_enc = encoder_num - 1;
+        ctx->tx_frame.buf[2*prev_enc] = 0xFF;
+        ctx->tx_frame.buf[2*prev_enc + 1] = 0xFF;
+    }
+
+    if (ev & EVENT_TRANSMIT_ANGLES || (encoder_num == NUM_ENCODERS)) {
         can_transmit(&ctx->tx_frame);
+        encoder_num = 0;
     }
 
     can_recieve(&ctx->rx_frame);
@@ -76,14 +82,21 @@ void i2c1_callback(uintptr_t context) {
     SERCOM_I2C_ERROR err = SERCOM1_I2C_ErrorGet();
 
     if (err == SERCOM_I2C_ERROR_NONE){
-        encoder_num += 1;
-        // printf("Success\r\n");
-    }
-    else {
-        // printf("I2C error %d\r\n", err);
+        read_failed = false;
+    } else {
+        read_failed = true;
     }
 
+    encoder_num += 1;
+
     volatile uint32_t* events = (volatile uint32_t*)context;
+
+
+    if (encoder_num == 3) {
+        *events |= EVENT_TRANSMIT_ANGLES;
+        return;
+    }
+
     *events |= EVENT_READ_ENCODER;
 }
 
