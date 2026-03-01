@@ -65,7 +65,7 @@ def _run_julia_batch(*, batch_path: Path) -> None:
         )
 
 
-def _random_pinger_pos(
+def _random_drone_pos(
     rng: np.random.Generator,
     pinger_pos: list[float],
     sea_depth: float,
@@ -77,13 +77,19 @@ def _random_pinger_pos(
     pinger = np.asarray(pinger_pos, dtype=float)
     min_z = -float(sea_depth) + 0.2
     max_z = -0.2
-
     for _ in range(max_attempts):
-        direction = rng.normal(size=3)
-        direction /= np.linalg.norm(direction)
-        radius = rng.uniform(min_distance, max_distance)
-        candidate = pinger + direction * radius
-        if min_z <= candidate[2] <= max_z:
+        r = rng.uniform(min_distance, max_distance)
+        max_down = min(min_z - pinger[2],-r)
+        max_up = min(max_z - pinger[2],r)
+        max_phi = np.arcsin(max_up/r)
+        min_phi = np.arcsin(max_down/r)
+        theta = rng.uniform(0, 2*np.pi)
+        phi = rng.uniform(min_phi, max_phi)
+        x = r * np.cos(phi) * np.cos(theta)
+        y = r * np.cos(phi) * np.sin(theta)
+        z = r * np.sin(phi)
+        candidate = pinger + np.array([x, y, z])
+        if (min_z <= candidate[2] <= max_z) and (min_distance <= np.linalg.norm(candidate - pinger) <= max_distance):
             return candidate.tolist()
 
     raise RuntimeError("Failed to sample a valid pinger position within constraints.")
@@ -93,8 +99,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generate premade hydrophone CSV test data using the Julia simulator.")
     parser.add_argument("-n", "--count", type=int, default=100, help="Number of datasets to generate.")
     parser.add_argument("--seed", type=int, default=12345, help="RNG seed for reproducible pinger positions.")
-    parser.add_argument("--min-distance", type=float, default=4.0, help="Minimum pinger distance from drone [m].")
-    parser.add_argument("--max-distance", type=float, default=25.0, help="Maximum pinger distance from drone [m].")
+    parser.add_argument("--min-distance", type=float, default=4, help="Minimum pinger distance from drone [m].")
+    parser.add_argument("--max-distance", type=float, default=25, help="Maximum pinger distance from drone [m].")
     args = parser.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -107,7 +113,7 @@ def main() -> None:
     items: list[dict[str, str]] = []
 
     for i in range(args.count):
-        drone_pos = _random_pinger_pos(
+        drone_pos = _random_drone_pos(
             rng,
             pinger_pos,
             base_config["sea_depth"],

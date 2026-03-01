@@ -13,6 +13,7 @@ from functions import (
     compute_snr_db,
     signal_fft_power,
     angle_between_directions_deg,
+    tdoa_localization
 )
 
 from julia_functions import (
@@ -52,11 +53,13 @@ def run_capture(
     verbose: bool = True,
     hydrophone_data_path: str | None = "hydrophones_data.csv",
     inject_faulty_detection: bool = False,
-) -> tuple[FrameStore, tuple[Any, float, Any, float]]:
+    skip: bool = False,
+) -> tuple[FrameStore, tuple[Any, float, Any, float, Any, float]]:
     config = load_simulation_config_json(config_path)
     hydro_pos = config["hydrophones_pos"]
     drone_pos = np.array(config["drone_pos"])
     pinger_pos = np.array(config["pinger_pos"])
+    real_arrival_times = config.get("arrival_times", None)
 
     c = 1538.9235842
 
@@ -95,7 +98,7 @@ def run_capture(
 
     # Positions relative to drone
     for i in range(5):
-        hydro_pos[i] = np.array(hydro_pos[i]) - drone_pos
+        hydro_pos[i] = np.array(hydro_pos[i])# + drone_pos
 
     pinger_direction = pinger_pos - drone_pos
     pinger_direction = pinger_direction / np.linalg.norm(pinger_direction)
@@ -136,11 +139,12 @@ def run_capture(
     pinger_found = False
 
     estimated_position = None
-    position_error_deg = 180.0
+    position_error_deg = None
     estimated_direction = None
-    direction_error = 180.0
+    direction_error = None
     absolute_estimated_position = None
-    position_error = float('inf')
+    position_error = None
+    relative_position_error = None
 
     SNR_threshold = 10**(5/10)  # 7 dB
 
@@ -149,7 +153,19 @@ def run_capture(
 
     detected_indices_history = []
 
+    skip = True
+    skipped = False
+
     for i in range(ADC_out[0].shape[0]):
+        if skip and not skipped and real_arrival_times is not None:
+            min_real_time = min(real_arrival_times)
+            skip_samples = int((min_real_time * effective_sampling_rate) - warmup_samples)
+            if skip_samples > 0:
+                if verbose:
+                    print(f"Skipping first {skip_samples} samples to reach pinger arrival...")
+                i += skip_samples
+                skipped = True
+        
         for j in range(ADC_out.shape[0]):
             buffers[j] = buffer_add_sample(ADC_out[j], buffers[j], i)
 
@@ -243,34 +259,47 @@ def run_capture(
                             detected_indices[k] += offset
                             print(f"Corrupted by: {offset} indexes.")
 
-                print("Detected Indices:", detected_indices)
                 times_of_arrival = detected_indices.astype(float) / effective_sampling_rate
                 abs_times_of_arrival = times_of_arrival + ((i // block_size)-3)*block_size / effective_sampling_rate
-                print("Times of Arrival (ms):", np.round(abs_times_of_arrival * 1000, 2))
+                if verbose:
+                    print("Detected Indices:", detected_indices)
+                    print("Times of Arrival (ms):", np.round(abs_times_of_arrival * 1000, 2))
+                if real_arrival_times is not None:
+                    if verbose:
+                        print("Real Times of Arrival (ms):", np.round(np.array(real_arrival_times) * 1000, 2))
 
-                estimated_position = TDOA_pos_solve(hydro_pos, times_of_arrival, c)
+
+                
+
+                estimated_position, estimated_covariance = tdoa_localization(hydro_pos, times_of_arrival, c)
+                estimated_distance = np.linalg.norm(estimated_position)
                 position_error_deg = angle_between_directions_deg(estimated_position, pinger_direction)
-                absolute_estimated_position = estimated_position + drone_pos - pinger_pos
-                position_error = np.linalg.norm(absolute_estimated_position)/np.linalg.norm(pinger_pos - drone_pos)
+                absolute_estimated_position = estimated_position + drone_pos + hydro_pos[0]
+                position_error = np.linalg.norm(absolute_estimated_position)
+                relative_position_error = position_error / np.linalg.norm(pinger_pos - drone_pos)
 
                 estimated_direction = TDOA_direction_solve(hydro_pos, times_of_arrival, c)
+                estimated_direction = estimated_direction / np.linalg.norm(estimated_direction)
                 direction_error = angle_between_directions_deg(estimated_direction, pinger_direction)
 
                 if verbose:
-                    print("")
+                    print("==== Frame Results ====")
                     print(
                         f"Frame {i // block_size}: "
                         f"Pos Error: {position_error_deg:.2f}°, "
                         f"Dir Error: {direction_error:.2f}°, "
                         f"SNR: {10*np.log10(SNR):.2f} dB"
                     )
+                    print("==== Capture Results ====")
                     print(f"    Pinger Position:    {pinger_pos}")
                     print(f"    Drone Position:     {drone_pos}")
-                    print(f"    Estimated Position: {absolute_estimated_position}")
-                    print(f"    Position Error:     {100*position_error:.2f}%")
+                    print(f"    Dist from Pinger:   {np.linalg.norm(pinger_pos - drone_pos):.2f} m")
+                    print(f"    Estimated Distance: {estimated_distance:.2f} m")
+                    print(f"    Estimated Position :{estimated_position} (relative to drone)")
+                    print(f"    Estimated Position: {absolute_estimated_position} (absolute)")
+                    print(f"    Position Error:     {100*position_error:.2f} cm ({100*relative_position_error:.2f}%)")
                     print(f"    Real Direction:     {pinger_direction}")
                     print(f"    Estimated Direction:{estimated_direction}")
-
                 pinger_found = True
 
             # ==== Store frame data ====
@@ -388,3 +417,4 @@ def run_capture(
     )
 
     return store, (estimated_position, position_error_deg, estimated_direction, direction_error,absolute_estimated_position,position_error)
+

@@ -7,9 +7,9 @@ from pathlib import Path
 # =====================
 # Edit these variables
 # =====================
-INDEX = 42  # Dataset index N (config_N.json / data_N.csv)
+INDEX = 6  # Dataset index N (config_N.json / data_N.csv)
 TDOA_METHOD = "envelope_envelope"
-SHOW_GUI = False
+SHOW_GUI = True
 QUIET = False
 FPS = 10
 FAULTY = False
@@ -17,13 +17,14 @@ EXPORT_NPZ = ""  # e.g. "case_98.npz" (empty string disables)
 
 # Optional: override paths (normally you don't need to)
 BASE_DIR = Path(__file__).resolve().parent
-TEST_DATA_DIR = BASE_DIR / "tests" / "test_data"
+TEST_DATA_DIR = BASE_DIR / "errors_analysis" / "test_data" #"tests" 
 FULLSTACK_SCRIPT = BASE_DIR / "fullstack_prototype.py"
 
+R = 15  # Range modifier (only for naming convenience)
 
 def main() -> int:
-    config_path = TEST_DATA_DIR / f"config_{INDEX}.json"
-    data_path = TEST_DATA_DIR / f"data_{INDEX}.csv"
+    config_path = TEST_DATA_DIR / f"config_{INDEX}_{R}.json"
+    data_path = TEST_DATA_DIR / f"data_{INDEX}_{R}.csv"
 
     if not config_path.exists():
         raise SystemExit(f"Config not found: {config_path}")

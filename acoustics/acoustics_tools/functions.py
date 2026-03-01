@@ -6,64 +6,66 @@ import scipy.signal as scpy
 import os
 
 
-def TDOA_pos_solve(r,t,c):
+def TDOA_pos_solve(r, t, c):
     """
     Functions for TDOA based localization and signal processing
 
     Parameters
     ----------
     r : list of np.arrays
-        receiver positions
+        receiver positions (3D)
     t : list of floats
         time of arrivals
     c : float
         speed of sound in medium
     """
+    r = [np.asarray(ri, dtype=float).reshape(-1) for ri in r]
+    t = np.asarray(t, dtype=float).reshape(-1)
 
-    #Generate linear system on form Ap = b so that we can solve for p
+    if len(r) != len(t):
+        raise ValueError(f"len(r) must equal len(t), got {len(r)} and {len(t)}")
+    if any(ri.shape[0] != 3 for ri in r):
+        raise ValueError("Each receiver position r[i] must be 3D (shape (3,))")
+    if len(t) < 5:
+        # 4 unknowns => need at least 4 equations => n-1 >= 4 => n >= 5
+        raise ValueError("Need at least 5 receivers for this 4-unknown linear TDOA formulation")
+
     n = len(t)
     A = []
     b = []
 
-    for i in range(1,n):
-        Ai = 2*(r[0]-r[i])
-        bi = c**2*(t[i]**2-t[0]**2) + np.dot(r[0],r[0]) - np.dot(r[i],r[i])
+    for i in range(1, n):
+        delta_d = c * (t[i] - t[0])
+
+        Ai = 2 * (r[0] - r[i])
+        Ai = np.append(Ai, -2 * delta_d)  # NOTE: matches 2*(Δd0-Δdi) with Δd0=0
+        bi = (np.dot(r[0], r[0]) - np.dot(r[i], r[i]) + delta_d**2)
 
         A.append(Ai)
         b.append(bi)
 
-    A = np.array(A)
-    b = np.array(b)
+    A = np.asarray(A, dtype=float)
+    b = np.asarray(b, dtype=float)
 
-    #Use least squares to make a system that is easier to solve and fixes other things
+    AT = A.T
+    M = AT @ A + np.identity(4) * 1e-6
+    y = AT @ b
 
-    AT = A.T #Transpose
-    M = np.matmul(AT,A) + np.identity(3)*10**-6
-    y = np.matmul(AT,b)
-
-    #now we solve Mp = y wher M is Semi positive definite and symetrical
-    #for this we use cholesky
-    
     L = np.linalg.cholesky(M)
+    x = np.zeros(4)
+    for i in range(4):
+        x[i] = (y[i] - np.dot(L[i][:i], x[:i])) / L[i][i]
+
     LT = L.T
+    p = np.zeros(4)
+    for i in range(3, -1, -1):
+        p[i] = (x[i] - np.dot(LT[i][i + 1:], p[i + 1:])) / LT[i][i]
 
-    #solve L*L^T * p = y by first solving L*x = y for x, then solving L^T * p = L*x for p
-    #since L and L^T are triangular this is trivial
+    D0 = p[3]
+    P = p[:3]
+    return P, D0
 
-    x = np.zeros(3)
 
-    for i in range(3):
-        x[i] = (y[i]-np.dot(L[i][:i],x[:i]))/L[i][i]
-
-    p = np.zeros(3)
-
-    for i in range(2,-1,-1):
-        p[i] = (x[i]-np.dot(LT[i][i+1:],p[i+1:]))/LT[i][i]
-
-    if p[2] > 0:
-        p[2] = -p[2]
-    
-    return p
 
 def TDOA_direction_solve(r,t,c):
     """
@@ -120,6 +122,140 @@ def TDOA_direction_solve(r,t,c):
         p[i] = (x[i]-np.dot(LT[i][i+1:],p[i+1:]))/LT[i][i]
     
     return p
+
+def tdoa_localization(sensors, times, c,
+                      huber_delta=0.2,
+                      max_iter=16,
+                      lambda0=1e-3,
+                      tdoa_std=1e-5):
+    """
+    Full TDOA pipeline:
+    - Linear initial estimate
+    - Levenberg-Marquardt refinement
+    - Huber robust loss
+    - Error covariance estimation
+
+    Parameters
+    ----------
+    sensors : (5,3) ndarray
+        Hydrophone positions
+    times   : (5,) ndarray
+        Arrival times
+    c       : float
+        Speed of sound
+    huber_delta : float
+        Huber threshold (meters)
+    max_iter : int
+        LM max iterations
+    lambda0 : float
+        Initial LM damping
+    tdoa_std : float
+        Standard deviation of TDOA distances (meters)
+
+    Returns
+    -------
+    p_est : (3,) ndarray
+        Estimated source position
+    cov_p : (3,3) ndarray
+        Estimated position covariance
+    """
+
+    # -------------------------------
+    # Step 0: precompute TDOAs
+    # -------------------------------
+    s0 = sensors[0]
+    t0 = times[0]
+    d = c * (times[1:] - t0)   # distances relative to reference
+
+    # -------------------------------
+    # Step 1: Linear initial estimate
+    # -------------------------------
+    A = np.zeros((4,3))
+    b = np.zeros(4)
+    for i in range(1,5):
+        diff = sensors[i] - s0
+        A[i-1,:] = 2 * diff
+        b[i-1] = np.dot(sensors[i],sensors[i]) - np.dot(s0,s0) - d[i-1]**2
+
+    # Least squares solution
+    """ p0, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
+    p = p0.copy() """
+
+    U, S, Vh = np.linalg.svd(A,compute_uv=True,full_matrices=True)
+    S_inv = np.zeros((3,4))
+    for i in range(3):
+        if S[i] > 1e-12:
+            S_inv[i,i] = 1.0 / S[i]
+    
+    p = Vh.T @ S_inv @ U.T @ b
+
+    lam = lambda0
+
+    # -------------------------------
+    # Step 2: LM iterations with Huber
+    # -------------------------------
+    def compute_residual_and_jacobian(p):
+        residual = np.zeros(4)
+        J = np.zeros((4,3))
+        dist0 = np.linalg.norm(p - s0)
+        u0 = (p - s0) / max(dist0, 1e-6)
+        for i in range(1,5):
+            si = sensors[i]
+            diff = p - si
+            dist_i = np.linalg.norm(diff)
+            ui = diff / max(dist_i, 1e-6)
+            residual[i-1] = (dist_i - dist0) - d[i-1]
+            J[i-1,:] = ui - u0
+        return residual, J
+
+    residual, J = compute_residual_and_jacobian(p)
+    err = residual @ residual
+
+    for _ in range(max_iter):
+        # Huber weights
+        w = np.ones_like(residual)
+        mask = np.abs(residual) > huber_delta
+        w[mask] = huber_delta / np.abs(residual[mask])
+
+        # Weighted residuals and Jacobian
+        W_sqrt = np.sqrt(w)
+        residual_w = residual * W_sqrt
+        J_w = J * W_sqrt[:, np.newaxis]
+
+        # LM step
+        JTJ = J_w.T @ J_w
+        JTr = J_w.T @ residual_w
+        H_lm = JTJ + lam * np.eye(3)
+        delta_p = np.linalg.solve(H_lm, JTr)
+
+        # Candidate update
+        p_candidate = p - delta_p
+        residual_new, J_new = compute_residual_and_jacobian(p_candidate)
+        err_new = residual_new @ residual_new
+
+        if err_new < err:
+            # Accept
+            p = p_candidate
+            residual = residual_new
+            J = J_new
+            err = err_new
+            lam *= 0.3
+        else:
+            lam *= 10.0
+
+    # -------------------------------
+    # Step 3: Error covariance
+    # -------------------------------
+    # Using weighted Jacobian at final solution
+    w = np.ones_like(residual)
+    mask = np.abs(residual) > huber_delta
+    w[mask] = huber_delta / np.abs(residual[mask])
+    W_sqrt = np.sqrt(w)
+    J_w = J * W_sqrt[:, np.newaxis]
+
+    cov_p = tdoa_std**2 * np.linalg.inv(J_w.T @ J_w)
+
+    return p, cov_p
 
 def adc_oversampling(signal,s):
     """
@@ -405,8 +541,41 @@ def CFAR_Thresholding(signal, window_size, guard_size, p_fa):
 
     return thresholded_signal, threshold_line
 
-#def 
 def angle_between_directions_deg(dir1, dir2):
+    """Calculate the (unsigned) angle in degrees between two direction vectors.
+
+    Robust implementation using atan2(||cross||, dot), returning [0, 180].
+
+    Parameters
+    ----------
+    dir1 : np.ndarray
+        First direction vector.
+    dir2 : np.ndarray
+        Second direction vector.
+
+    Returns
+    -------
+    float
+        Angle between the two directions in degrees.
+    """
+    dir1 = np.asarray(dir1, dtype=float)
+    dir2 = np.asarray(dir2, dtype=float)
+
+    n1 = np.linalg.norm(dir1)
+    n2 = np.linalg.norm(dir2)
+    if n1 == 0 or n2 == 0:
+        return float("nan")
+
+    a = dir1 / n1
+    b = dir2 / n2
+
+    dot = float(np.clip(np.dot(a, b), -1.0, 1.0))
+    cross_norm = float(np.linalg.norm(np.cross(a, b)))
+
+    return float(np.degrees(np.arctan2(cross_norm, dot)))
+
+#def 
+def angle_between_directions_deg2(dir1, dir2):
     """Calculate the angle in degrees between two direction vectors.
 
     Parameters

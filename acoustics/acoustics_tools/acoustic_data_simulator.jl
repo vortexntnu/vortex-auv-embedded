@@ -258,6 +258,9 @@ if verbose
     println("")
 end
 
+arrival_times = [first(arrivals(pm, pinger, hydrophones[i])).t for i ∈ eachindex(hydrophones)]
+print("Arrival times at hydrophones (s): \n", arrival_times, "\n")
+
 if noise_type == "white"
     noise = WhiteGaussianNoise(noise_level)
 elseif noise_type == "red"
@@ -392,6 +395,8 @@ end
 
 save_all_to_single_csv(hydrophones_data; filename = hydrophone_data_path === nothing ? "hydrophones_data.csv" : hydrophone_data_path)
 vprintln("Simulation data saved to $(hydrophone_data_path === nothing ? "hydrophones_data.csv" : hydrophone_data_path).\n")
+
+return arrival_times
 end
 
 function default_simulation_config()
@@ -422,7 +427,18 @@ function main()
     println("Starting Acoustic Data Simulator...\n")
 
     cfg = config_from_json(config_path)
-    simulate_hydrophone_data(cfg, hydrophone_data_path, verbose)
+    # After running the simulation and obtaining arrival_times:
+    arrival_times = simulate_hydrophone_data(cfg, hydrophone_data_path, verbose)
+
+    #print(typeof(arrival_times))
+
+    # Add arrival_times to the config JSON and save
+    cfg_json = JSON3.read(read(config_path, String))
+    cfg_dict = Dict(cfg_json)  # Convert to mutable Dict
+    cfg_dict[:arrival_times] = arrival_times
+    open(config_path, "w") do f
+        write(f, JSON3.write(cfg_dict; indent=2))
+    end
 
     println("Acoustic Data Simulation completed.\n")
 end
@@ -460,7 +476,14 @@ function run_test_batch(batch_path::AbstractString)
         end
 
         cfg = config_from_json(config_path)
-        simulate_hydrophone_data(cfg, output_csv, verbose)
+        arrival_times = simulate_hydrophone_data(cfg, output_csv, verbose)
+        cfg_json = JSON3.read(read(config_path, String))
+        cfg_dict = Dict(cfg_json)  # Convert to mutable Dict
+        cfg_dict[:arrival_times] = arrival_times
+        open(config_path, "w") do f
+            write(f, JSON3.write(cfg_dict; indent=2))
+        end
+        println("[$i/$n] Completed.\n")
     end
 
     println("Acoustic Data Simulation batch completed.\n")
@@ -487,4 +510,3 @@ function multi_run_simulations(config_path::AbstractString, num_runs::Int64; out
 end
 
 #main()
-
