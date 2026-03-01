@@ -6,7 +6,7 @@
 #if NUM_ENCODERS == 3
     static const uint8_t encoder_addresses[NUM_ENCODERS] = {
         SHOULDER_ADDR, WRIST_ADDR, GRIP_ADDR};
-#if NUM_ENCODERS == 2
+#elif NUM_ENCODERS == 2
     static const uint8_t encoder_addresses[NUM_ENCODERS] = {
         WRIST_ADDR, GRIP_ADDR};
 #else

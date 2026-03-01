@@ -15,8 +15,14 @@ void state_machine(struct state_context* ctx) {
     ctx->events &= ~ev;
 
     if (ev & EVENT_SET_PWM) {
-        set_servos_pwm(ctx->rx_frame.buf, NUM_ENCODERS);
         WDT_Clear();
+        if (set_servos_pwm(ctx->rx_frame.buf, NUM_ENCODERS)){
+          struct can_tx_frame tx;
+          tx.id = 0x46B;
+          tx.len = 1; 
+          tx.buf[0] = 1;
+          can_transmit(&tx);
+        }
     }
 
     if (ev & EVENT_READ_ENCODER) {
