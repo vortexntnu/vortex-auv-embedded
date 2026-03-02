@@ -46,7 +46,20 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+#define MASTER_SPI spi_handle_array[5]
+#define DOUTH spi_handle_array[5]
+#define DOUTA spi_handle_array[1]
+#define DOUTB spi_handle_array[4]
+#define DOUTC spi_handle_array[3]
+#define DOUTD spi_handle_array[0]
+#define DOUTE spi_handle_array[2]
 
+#define CS GPIOE, GPIO_PIN_9
+#define CONVST GPIOE, GPIO_PIN_14
+#define GREEN_LED GPIOD, GPIO_PIN_11
+#define YELLOW_LED GPIOD, GPIO_PIN_12
+#define BUSY GPIOE, GPIO_PIN_8
+#define FRSTDATA GPIOE, GPIO_PIN7
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

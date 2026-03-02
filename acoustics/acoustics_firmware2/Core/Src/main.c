@@ -191,16 +191,14 @@ void ad7606_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Handl
 	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET); // Green LED Off
 	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET); // Yellow LED On
 	uint8_t data_frames[len*2];
-	uint16_t data_frames_16[len];
 
 	printf("\r\n");
 
 	for(int i = 0; i < len; i++){
 		uint8_t address = ad7606_reg_table[i*2];
 		uint8_t register_data = ad7606_reg_table[i*2+1];
-		uint16_t data_frame = construct_SPI_frame(0, 0, address, register_data);
+		uint16_t data_frame = ad7606_construct_SPI_frame(0, 0, address, register_data);
         uint16_t data_frame_received;
-		data_frames_16[i] = data_frame;
 		data_frames[2*i] =  (data_frame >> 8) & 0xFF;
 		data_frames[2*i + 1] =  (data_frame) & 0xFF;
 
@@ -212,7 +210,7 @@ void ad7606_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Handl
 
 	uint8_t address = 0x00;
 	uint8_t register_data = 0x00;
-	uint16_t data_frame = construct_SPI_frame(0, 0, address, register_data);
+	uint16_t data_frame = ad7606_construct_SPI_frame(0, 0, address, register_data);
 	uint16_t data_frame_received;
 
 	HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received,  1);
@@ -234,7 +232,7 @@ void ad7606_read_registers(SPI_HandleTypeDef* hspi_master_send,SPI_HandleTypeDef
 	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET); // Green LED Off
 	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET); // Yellow LED On
 
-	uint16_t data_frame = construct_SPI_frame(0, 1, 0x00, 0);
+	uint16_t data_frame = ad7606_construct_SPI_frame(0, 1, 0x00, 0);
 	printf("\r\n");
 	printf("Reading Address: 0x00, ");
 
@@ -242,7 +240,7 @@ void ad7606_read_registers(SPI_HandleTypeDef* hspi_master_send,SPI_HandleTypeDef
 
 	for(int i = 0x01; i <= 0x2F; i++){
 		uint8_t address = i;
-		uint16_t data_frame = construct_SPI_frame(0, 1, address, 0);
+		uint16_t data_frame = ad7606_construct_SPI_frame(0, 1, address, 0);
         uint16_t data_frame_received;
 
 		HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received, 1);
@@ -268,6 +266,8 @@ int _write(int file, char *ptr, int len)
     HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
     return len;
 }
+
+SPI_HandleTypeDef* spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
 
 /* USER CODE END 0 */
 
@@ -362,7 +362,7 @@ int main(void)
     while (1) {
     	int16_t received_data[6] = {0,0,0,0,0,0};
     	uint16_t garbage = 0;
-    	uint16_t data_frame = construct_SPI_frame(1, 1, 0x00, 0);
+    	uint16_t data_frame = ad7606_construct_SPI_frame(1, 1, 0x00, 0);
     	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_SET);
     	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_RESET);
     	while(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_8));
@@ -373,7 +373,7 @@ int main(void)
     	HAL_SPI_Receive_DMA(&hspi3, (uint8_t*)&received_data[4], 1);
     	HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)&received_data[2], 1);
     	HAL_SPI_Receive_DMA(&hspi5, (uint8_t*)&received_data[1], 1);
-		HAL_SPI_TransmitReceive(&hspi6, (const uint8_t*)&data_frame, (const uint8_t*)&received_data[5], 1, 10);
+		HAL_SPI_TransmitReceive(&hspi6, (const uint8_t*)&data_frame, (uint8_t*)&received_data[5], 1, 10);
 		//*/
 
     	/*
@@ -412,7 +412,7 @@ int main(void)
     	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
 
     	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&garbage, 1);
+    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[5], 1);
     	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
     	*/
 

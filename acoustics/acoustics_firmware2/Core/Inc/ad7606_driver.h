@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include "stm32h7xx_hal.h"
+#include "stm32h7xx.h"
 
 #define AD7606_CONFIG_ADDRESS 0x02
 
@@ -77,6 +78,8 @@ struct ad7606_device {
     ad7606_data_ready on_ready; /* user callback when out[half] is filled */
 };
 
+
+
 void ad7606_init(struct ad7606_device* dev,
                  struct ad7606_register* reg,
                  struct ad7606_config* cfg,
@@ -90,7 +93,11 @@ void ad7606_set_registers(struct ad7606_register* registers,
 
 void ad7606_init_from_arrays(SPI_HandleTypeDef* hspi_master);
 
-uint16_t construct_SPI_frame(uint8_t read_enable, uint8_t read_write, uint8_t adc_register_address, uint8_t data);
+uint16_t ad7606_construct_SPI_frame(uint8_t read_enable, uint8_t read_write, uint8_t adc_register_address, uint8_t data);
+
+void ad7606_DOUT8_read_adc(int16_t received_data[6],SPI_HandleTypeDef* spi_handle_array[6]);
+
+void ad7606_DOUT1_read_adc(int16_t received_data[6],SPI_HandleTypeDef* spi_handle_array[6]);
 
 #ifdef __cplusplus
 }
