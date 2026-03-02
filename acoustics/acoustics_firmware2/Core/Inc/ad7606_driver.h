@@ -88,6 +88,10 @@ void ad7606_set_registers(struct ad7606_register* registers,
                           struct ad7606_channel* channels,
                           uint8_t num_channels);
 
+void ad7606_init_from_arrays(SPI_HandleTypeDef* hspi_master);
+
+uint16_t construct_SPI_frame(uint8_t read_enable, uint8_t read_write, uint8_t adc_register_address, uint8_t data);
+
 #ifdef __cplusplus
 }
 #endif
