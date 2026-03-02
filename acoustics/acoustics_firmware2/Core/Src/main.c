@@ -136,130 +136,7 @@ void SPI_SendDummyBuffer(uint16_t numBytes)
     HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); 
 }
 
-void ad7606_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_HandleTypeDef* hspi_master_receive) {
 
-	// copy from register tool start
-	const uint8_t ad7606_reg_table[] =
-	{
-	    0x02, 0x1A,
-	    0x03, 0x44,
-	    0x04, 0x44,
-	    0x05, 0x44,
-	    0x06, 0x64,
-	    0x07, 0xFF,
-	    0x08, 0x03,
-	    0x2B, 0x10,
-	    0x2C, 0x05,
-	    0x09, 0x00,
-	    0x0A, 0x00,
-	    0x0B, 0x00,
-	    0x0C, 0x00,
-	    0x0D, 0x00,
-	    0x0E, 0x00,
-	    0x0F, 0x00,
-	    0x10, 0x00,
-	    0x11, 0x80,
-	    0x12, 0x80,
-	    0x13, 0x80,
-	    0x14, 0x80,
-	    0x15, 0x80,
-	    0x16, 0x80,
-	    0x17, 0x80,
-	    0x18, 0x80,
-	    0x19, 0x00,
-	    0x1A, 0x00,
-	    0x1B, 0x00,
-	    0x1C, 0x00,
-	    0x1D, 0x00,
-	    0x1E, 0x00,
-	    0x1F, 0x00,
-	    0x20, 0x00,
-	    0x21, 0x01,
-	    0x22, 0x00,
-	    0x23, 0x00,
-	    0x24, 0x00,
-	    0x28, 0x00,
-	    0x29, 0x00,
-	    0x2A, 0x00,
-	};
-
-	int len = 40;
-
-	// copy from register tool end
-
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET); // CS LOW
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET); // Green LED Off
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET); // Yellow LED On
-	uint8_t data_frames[len*2];
-
-	printf("\r\n");
-
-	for(int i = 0; i < len; i++){
-		uint8_t address = ad7606_reg_table[i*2];
-		uint8_t register_data = ad7606_reg_table[i*2+1];
-		uint16_t data_frame = ad7606_construct_SPI_frame(0, 0, address, register_data);
-        uint16_t data_frame_received;
-		data_frames[2*i] =  (data_frame >> 8) & 0xFF;
-		data_frames[2*i + 1] =  (data_frame) & 0xFF;
-
-		HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received,  1);
-		HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
-		printf("Received: 0x%04X\r\n", data_frame_received);
-		printf("Sending Address: %02X, Data: %02X\r\n", data_frames[2*i], data_frames[2*i + 1]);
-	}
-
-	uint8_t address = 0x00;
-	uint8_t register_data = 0x00;
-	uint16_t data_frame = ad7606_construct_SPI_frame(0, 0, address, register_data);
-	uint16_t data_frame_received;
-
-	HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received,  1);
-	HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10); 
-	printf("Received: 0x%04X\r\n", data_frame_received);
-	printf("Sending Address: %02X, Data: %02X\r\n", address, register_data);
-
-	printf("\r\n");
-
-	//HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)data_frames_16,  len, 10);
-
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET); // Green LED On
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET); // Yellow LED Off
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); // CS High
-}
-
-void ad7606_read_registers(SPI_HandleTypeDef* hspi_master_send,SPI_HandleTypeDef* hspi_master_receive) {
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET); // CS LOW
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET); // Green LED Off
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET); // Yellow LED On
-
-	uint16_t data_frame = ad7606_construct_SPI_frame(0, 1, 0x00, 0);
-	printf("\r\n");
-	printf("Reading Address: 0x00, ");
-
-	HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
-
-	for(int i = 0x01; i <= 0x2F; i++){
-		uint8_t address = i;
-		uint16_t data_frame = ad7606_construct_SPI_frame(0, 1, address, 0);
-        uint16_t data_frame_received;
-
-		HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received, 1);
-		HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
-		printf("Received: 0x%04X\r\n", data_frame_received);
-		printf("Reading Address: 0x%02X, ",address);
-	}
-
-	uint16_t data_frame_received;
-	HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received, 1);
-	HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
-	printf("Received: 0x%04X\r\n", data_frame_received);
-
-	printf("\r\n");
-
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET); // Green LED On
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET); // Yellow LED Off
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); // CS High
-}
 
 int _write(int file, char *ptr, int len)
 {
@@ -267,7 +144,7 @@ int _write(int file, char *ptr, int len)
     return len;
 }
 
-SPI_HandleTypeDef* spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
+SPI_HandleTypeDef* const spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
 
 /* USER CODE END 0 */
 
@@ -319,11 +196,7 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
-    //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET); // Green LED On
-    //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET); // Yellow LED On
-    //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET); // RED LED On
-
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);   // CS High
+    HAL_GPIO_WritePin(CS, GPIO_PIN_SET);   // CS High
     struct ad7606_register reg;
 
     reg.oversampling = 0;
@@ -347,13 +220,11 @@ int main(void)
 
     // ad7606_init(&ad7606_dev, &reg, &cfg, channels, &hspi6);
 
-    ad7606_init_from_arrays_debug(&hspi6, &hspi2);
-    //ad7606_init_from_arrays(&hspi6);
+    //ad7606_init_from_arrays_debug(&hspi6, &hspi2);
+    ad7606_init_from_arrays(MASTER_SPI);
     //ad7606_read_registers(&hspi6, &hspi2);
 
-
-    uint8_t data[100];
-    //HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)data, 10);
+    //uint8_t data[100];
 
   /* USER CODE END 2 */
 
@@ -361,69 +232,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
     while (1) {
     	int16_t received_data[6] = {0,0,0,0,0,0};
-    	uint16_t garbage = 0;
-    	uint16_t data_frame = ad7606_construct_SPI_frame(1, 1, 0x00, 0);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_SET);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_RESET);
-    	while(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_8));
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	///*
-    	HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&received_data[3], 1);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[0], 1);
-    	HAL_SPI_Receive_DMA(&hspi3, (uint8_t*)&received_data[4], 1);
-    	HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)&received_data[2], 1);
-    	HAL_SPI_Receive_DMA(&hspi5, (uint8_t*)&received_data[1], 1);
-		HAL_SPI_TransmitReceive(&hspi6, (const uint8_t*)&data_frame, (uint8_t*)&received_data[5], 1, 10);
-		//*/
 
-    	/*
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[0], 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[1], 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[2], 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[3], 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[4], 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&garbage, 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&garbage, 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
-    	HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&received_data[5], 1);
-    	HAL_SPI_Transmit(&hspi6, (const uint8_t*)&data_frame, 1, 10);
-    	*/
-
-    	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
+    	ad7606_DOUT8_read_adc(received_data, spi_handle_array);
 
 		printf("DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTH:%d\r\n",received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5]);
 
-        // HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);   // CS LOW
-        //HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_RESET);  // CS LOW
-        //SPI_SendDummyBuffer(100);
-        //HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, GPIO_PIN_SET);  // CS LOW
         HAL_Delay(10);
     /* USER CODE END WHILE */
 
@@ -447,7 +260,7 @@ void SystemClock_Config(void)
 
   /** Configure the main internal regulator output voltage
   */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
@@ -465,7 +278,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 60;
+  RCC_OscInitStruct.PLL.PLLN = 96;
   RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 5;
   RCC_OscInitStruct.PLL.PLLR = 2;
@@ -490,7 +303,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -511,7 +324,7 @@ void PeriphCommonClock_Config(void)
                               |RCC_PERIPHCLK_SPI4|RCC_PERIPHCLK_SPI5
                               |RCC_PERIPHCLK_FDCAN;
   PeriphClkInitStruct.PLL2.PLL2M = 16;
-  PeriphClkInitStruct.PLL2.PLL2N = 120;
+  PeriphClkInitStruct.PLL2.PLL2N = 128;
   PeriphClkInitStruct.PLL2.PLL2P = 4;
   PeriphClkInitStruct.PLL2.PLL2Q = 4;
   PeriphClkInitStruct.PLL2.PLL2R = 2;
