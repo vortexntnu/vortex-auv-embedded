@@ -27,7 +27,7 @@ with open(OUTPUT_FILE, "w") as f:
         f.write(f"    {addr}, {value},\n")
 
     f.write("};\n\n")
-    f.write(f"int len = {len(pairs)};\n")
+    f.write(f"int conf_len = {len(pairs)};\n")
 
 print(f"Converted {len(pairs)} register pairs.")
 print(f"Output written to {OUTPUT_FILE}")

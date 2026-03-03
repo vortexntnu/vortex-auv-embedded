@@ -9,46 +9,46 @@
 // copy from register tool start
 const uint8_t ad7606_reg_table[] =
 {
-	0x02, 0x1A,
-	0x03, 0x44,
-	0x04, 0x44,
-	0x05, 0x44,
-	0x06, 0x64,
-	0x07, 0xFF,
-	0x08, 0x03,
-	0x2B, 0x10,
-	0x2C, 0x05,
-	0x09, 0x00,
-	0x0A, 0x00,
-	0x0B, 0x00,
-	0x0C, 0x00,
-	0x0D, 0x00,
-	0x0E, 0x00,
-	0x0F, 0x00,
-	0x10, 0x00,
-	0x11, 0x80,
-	0x12, 0x80,
-	0x13, 0x80,
-	0x14, 0x80,
-	0x15, 0x80,
-	0x16, 0x80,
-	0x17, 0x80,
-	0x18, 0x80,
-	0x19, 0x00,
-	0x1A, 0x00,
-	0x1B, 0x00,
-	0x1C, 0x00,
-	0x1D, 0x00,
-	0x1E, 0x00,
-	0x1F, 0x00,
-	0x20, 0x00,
-	0x21, 0x01,
-	0x22, 0x00,
-	0x23, 0x00,
-	0x24, 0x00,
-	0x28, 0x00,
-	0x29, 0x00,
-	0x2A, 0x00,
+    0x02, 0x18,
+    0x03, 0x44,
+    0x04, 0x44,
+    0x05, 0x44,
+    0x06, 0x44,
+    0x07, 0xFF,
+    0x08, 0x03,
+    0x09, 0x00,
+    0x0A, 0x00,
+    0x0B, 0x00,
+    0x0C, 0x00,
+    0x0D, 0x00,
+    0x0E, 0x00,
+    0x0F, 0x00,
+    0x10, 0x00,
+    0x11, 0x80,
+    0x12, 0x80,
+    0x13, 0x80,
+    0x14, 0x80,
+    0x15, 0x80,
+    0x16, 0x80,
+    0x17, 0x80,
+    0x18, 0x80,
+    0x19, 0x00,
+    0x1A, 0x00,
+    0x1B, 0x00,
+    0x1C, 0x00,
+    0x1D, 0x00,
+    0x1E, 0x00,
+    0x1F, 0x00,
+    0x20, 0x00,
+    0x21, 0x01,
+    0x22, 0x00,
+    0x23, 0x00,
+    0x24, 0x00,
+    0x28, 0x00,
+    0x29, 0x00,
+    0x2A, 0x00,
+    0x2B, 0x00,
+    0x2C, 0x00,
 };
 
 int conf_len = 40;
@@ -167,72 +167,97 @@ uint16_t ad7606_construct_SPI_frame(uint8_t read_enable, uint8_t read_write, uin
 	return data_frame;
 }
 
-void ad7606_DOUT8_read_adc(int16_t received_data[6],SPI_HandleTypeDef* const spi_handle_array[6]){
-	uint16_t data_frame = ad7606_construct_SPI_frame(1, 1, 0x00, 0);
+void ad7606_DOUT8_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
+	uint16_t data_frame = 0xFFFF;
+
+	HAL_StatusTypeDef status_array[5];
+
+	status_array[0] = HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[0], 1);
+	status_array[1] = HAL_SPI_Receive_DMA(DOUTB, (uint8_t*)&received_data[1], 1);
+	status_array[2] = HAL_SPI_Receive_DMA(DOUTC, (uint8_t*)&received_data[2], 1);
+	status_array[3] = HAL_SPI_Receive_DMA(DOUTD, (uint8_t*)&received_data[3], 1);
+	status_array[4] = HAL_SPI_Receive_DMA(DOUTE, (uint8_t*)&received_data[4], 1);
+
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
 	while(HAL_GPIO_ReadPin(BUSY));
+
 	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&data_frame, (uint8_t*)&received_data[7], 1, 10);
+	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
 
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[0], 1);
-	HAL_SPI_Receive_DMA(DOUTB, (uint8_t*)&received_data[1], 1);
-	HAL_SPI_Receive_DMA(DOUTC, (uint8_t*)&received_data[2], 1);
-	HAL_SPI_Receive_DMA(DOUTD, (uint8_t*)&received_data[3], 1);
-	HAL_SPI_Receive_DMA(DOUTE, (uint8_t*)&received_data[4], 1);
-	HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&data_frame, (uint8_t*)&received_data[5], 1, 10);
+	bool busy = true;
+	while(busy){
+		busy = false;
+		for(int i = 0; i < 5; i++){
+			busy |= (status_array[i] == HAL_BUSY);
+		}
+	}
 
+}
+
+// I have no idea why both DOUT8 and DOUT1 work with the same ADC config
+void ad7606_DOUT1_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
+	uint16_t data_frame[] = {
+			0xFFFF,
+			0xFFFF,
+			0xFFFF,
+			0xFFFF,
+			0xFFFF,
+			0xFFFF,
+			0xFFFF,
+			0xFFFF
+	};
+
+	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data, 8);
+
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
+	while(HAL_GPIO_ReadPin(BUSY));
+
+	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 8, 10);
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
 }
 
+void ad7606_DOUT4_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
+	struct data_storage {
+		int16_t douta_buffer[2];
+		int16_t doutb_buffer[2];
+		int16_t doutc_buffer[2];
+		int16_t doutd_buffer[2];
+	};
 
-// I have no idea why both DOUT8 and DOUT1 work with the same ADC config
-void ad7606_DOUT1_read_adc(int16_t received_data[6],SPI_HandleTypeDef* const spi_handle_array[6]){
-	uint16_t garbage = 0;
-	uint16_t data_frame = ad7606_construct_SPI_frame(1, 1, 0x00, 0);
+	struct data_storage my_storage = {
+		{0,0},
+		{0,0},
+		{0,0},
+		{0,0}
+	};
+
+	uint16_t data_frame[] = {0xFFFF, 0xFFFF};
+
+	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&my_storage.douta_buffer, 2);
+	HAL_SPI_Receive_DMA(DOUTB, (uint8_t*)&my_storage.doutb_buffer, 2);
+	HAL_SPI_Receive_DMA(DOUTC, (uint8_t*)&my_storage.doutc_buffer, 2);
+	HAL_SPI_Receive_DMA(DOUTD, (uint8_t*)&my_storage.doutd_buffer, 2);
+
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
 	while(HAL_GPIO_ReadPin(BUSY));
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[0], 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
 
 	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[1], 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
+	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 2, 10);
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
 
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[2], 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[3], 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[4], 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&garbage, 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&garbage, 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[5], 1);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 1, 10);
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+	received_data[0] = my_storage.douta_buffer[0];
+	received_data[1] = my_storage.douta_buffer[1];
+	received_data[2] = my_storage.doutb_buffer[0];
+	received_data[3] = my_storage.doutb_buffer[1];
+	received_data[4] = my_storage.doutc_buffer[0];
+	received_data[5] = my_storage.doutc_buffer[1];
+	received_data[6] = my_storage.doutd_buffer[0];
+	received_data[7] = my_storage.doutd_buffer[1];
 }
 
 void ad7606_read_registers(SPI_HandleTypeDef* hspi_master_send, SPI_HandleTypeDef* hspi_master_receive) {

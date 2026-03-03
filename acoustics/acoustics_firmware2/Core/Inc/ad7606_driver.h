@@ -97,9 +97,11 @@ void ad7606_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Handl
 
 uint16_t ad7606_construct_SPI_frame(uint8_t read_enable, uint8_t read_write, uint8_t adc_register_address, uint8_t data);
 
-void ad7606_DOUT8_read_adc(int16_t received_data[6],SPI_HandleTypeDef* const spi_handle_array[6]);
+void ad7606_DOUT8_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]);
 
-void ad7606_DOUT1_read_adc(int16_t received_data[6],SPI_HandleTypeDef* const spi_handle_array[6]);
+void ad7606_DOUT4_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]);
+
+void ad7606_DOUT1_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]);
 
 void ad7606_read_registers(SPI_HandleTypeDef* hspi_master_send, SPI_HandleTypeDef* hspi_master_receive);
 

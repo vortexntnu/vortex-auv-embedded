@@ -66,7 +66,6 @@ void SPI3_IRQHandler(void);
 void SPI4_IRQHandler(void);
 void SPI5_IRQHandler(void);
 void SPI6_IRQHandler(void);
-void DMAMUX1_OVR_IRQHandler(void);
 void BDMA_Channel0_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 

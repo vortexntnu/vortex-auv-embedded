@@ -220,7 +220,7 @@ int main(void)
 
     // ad7606_init(&ad7606_dev, &reg, &cfg, channels, &hspi6);
 
-    //ad7606_init_from_arrays_debug(&hspi6, &hspi2);
+    //ad7606_init_from_arrays_debug(MASTER_SPI, DOUTA);
     ad7606_init_from_arrays(MASTER_SPI);
     //ad7606_read_registers(&hspi6, &hspi2);
 
@@ -231,13 +231,17 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     while (1) {
-    	int16_t received_data[6] = {0,0,0,0,0,0};
+    	int16_t received_data[] = {0,0,0,0,0,0,0,0};
 
-    	ad7606_DOUT8_read_adc(received_data, spi_handle_array);
+    	ad7606_DOUT8_read_adc(spi_handle_array, received_data);
 
-		printf("DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTH:%d\r\n",received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5]);
+    	//ad7606_DOUT4_read_adc(spi_handle_array, received_data);
 
-        HAL_Delay(10);
+    	//ad7606_DOUT1_read_adc(spi_handle_array, received_data);
+
+		printf("DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTF:%d,DOUTG:%d,DOUTH:%d\r\n",received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5],received_data[6],received_data[7]);
+
+        HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -325,8 +329,8 @@ void PeriphCommonClock_Config(void)
                               |RCC_PERIPHCLK_FDCAN;
   PeriphClkInitStruct.PLL2.PLL2M = 16;
   PeriphClkInitStruct.PLL2.PLL2N = 128;
-  PeriphClkInitStruct.PLL2.PLL2P = 4;
-  PeriphClkInitStruct.PLL2.PLL2Q = 4;
+  PeriphClkInitStruct.PLL2.PLL2P = 8;
+  PeriphClkInitStruct.PLL2.PLL2Q = 8;
   PeriphClkInitStruct.PLL2.PLL2R = 2;
   PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_1;
   PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
@@ -802,9 +806,6 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
-  /* DMAMUX1_OVR_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMAMUX1_OVR_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMAMUX1_OVR_IRQn);
 
 }
 
