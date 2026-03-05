@@ -54,13 +54,18 @@ extern "C" {
 #define DOUTD spi_handle_array[0]
 #define DOUTE spi_handle_array[2]
 
+#define FRSTDATA GPIOE, GPIO_PIN_7
+#define BUSY GPIOE, GPIO_PIN_8
+#define BUSY_INT GPIO_PIN_8
 #define CS GPIOE, GPIO_PIN_9
 #define CONVST GPIOE, GPIO_PIN_14
+
 #define GREEN_LED GPIOD, GPIO_PIN_11
 #define YELLOW_LED GPIOD, GPIO_PIN_12
-#define BUSY GPIOE, GPIO_PIN_8
-#define FRSTDATA GPIOE, GPIO_PIN7
+
 /* USER CODE END EM */
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);

@@ -22,10 +22,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ad7606_driver.h"
+#include "acoustics.h"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_gpio.h"
 #include "stm32h7xx_hal_gpio_ex.h"
 #include "stm32h7xx_hal_spi.h"
+#include "arm_math_types.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -46,6 +48,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+CRC_HandleTypeDef hcrc;
+
 FDCAN_HandleTypeDef hfdcan1;
 
 RTC_HandleTypeDef hrtc;
@@ -62,6 +66,9 @@ DMA_HandleTypeDef hdma_spi3_rx;
 DMA_HandleTypeDef hdma_spi4_rx;
 DMA_HandleTypeDef hdma_spi5_rx;
 DMA_HandleTypeDef hdma_spi6_rx;
+DMA_HandleTypeDef hdma_spi6_tx;
+
+TIM_HandleTypeDef htim1;
 
 UART_HandleTypeDef huart1;
 
@@ -85,6 +92,8 @@ static void MX_SPI5_Init(void);
 static void MX_SPI6_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_RTC_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -93,8 +102,30 @@ static void MX_RTC_Init(void);
 /* USER CODE BEGIN 0 */
 
 #define MSG_LEN 100
-static struct ad7606_device ad7606_dev;
+#define BLOCK_LEN 64
+#define N_BLOCKS 5
+#define BUFFER_LEN N_BLOCKS*BLOCK_LEN
+#define N_SACRIFICAL_BLOCKS 2
+#define WORKSPACE_LEN (N_BLOCKS - N_SACRIFICAL_BLOCKS) * BLOCK_LEN
+#define N_HYDROPHONES 5
+
+q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN] = {0};
+int16_t diagnostics_buffer[N_BLOCKS][BLOCK_LEN] = {0};
+HAL_StatusTypeDef buffer_DMA_status[5] = {HAL_OK};
+
+SPI_HandleTypeDef* const spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
+SPI_HandleTypeDef* const dout_channels_array[6] = {DOUTA, DOUTB, DOUTC, DOUTD, DOUTE, DOUTH};
+
+
+static struct ad7606_device my_ADC;
+static struct ad7606_registers ADC_regs;
 static uint8_t rx_buf[100];
+
+void init_hyrdophone_buffers(){
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		buffer_DMA_status[i] = HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&hydrophone_buffers[i], BUFFER_LEN);
+	}
+}
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
     if (hspi->Instance == SPI1) {
@@ -106,6 +137,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
         HAL_SPI_Receive_DMA(&hspi1, rx_buf, MSG_LEN);
     }
 }
+
 void SPI_SendDummyByte(void)
 {
     uint8_t dummy_tx = 0x00;
@@ -144,8 +176,33 @@ int _write(int file, char *ptr, int len)
     return len;
 }
 
-SPI_HandleTypeDef* const spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
+void delay(volatile uint32_t count)
+{
+    while(count--) __NOP();
+}
 
+void DWT_Init(void)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable DWT
+    DWT->CYCCNT = 0;                                // Reset cycle counter
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;             // Enable cycle counter
+}
+
+void DWT_Delay_ms(uint32_t ms)
+{
+    uint32_t start = DWT->CYCCNT;
+    uint32_t cycles = (SystemCoreClock / 1000) * ms;
+
+    while ((DWT->CYCCNT - start) < cycles);
+}
+
+void DWT_Delay_us(uint32_t us)
+{
+    uint32_t start = DWT->CYCCNT;
+    uint32_t cycles = (SystemCoreClock / 1000000) * us;
+
+    while ((DWT->CYCCNT - start) < cycles);
+}
 /* USER CODE END 0 */
 
 /**
@@ -178,6 +235,7 @@ int main(void)
   PeriphCommonClock_Config();
 
   /* USER CODE BEGIN SysInit */
+  DWT_Init();
 
   /* USER CODE END SysInit */
 
@@ -194,50 +252,109 @@ int main(void)
   MX_SPI6_Init();
   MX_USART1_UART_Init();
   MX_RTC_Init();
+  MX_TIM1_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
-    HAL_GPIO_WritePin(CS, GPIO_PIN_SET);   // CS High
-    struct ad7606_register reg;
+	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);   // CS High
 
-    reg.oversampling = 0;
-    reg.bandwith = 0xFF;
-    struct ad7606_config cfg = {
-        .status_header = false,
-        .external_oversampling_clock = false,
-        .dout_format = DOUT_8,
-        .operation_mode = OPERATION_NORMAL,
-    };
+	uint8_t msg[] = "USART1 OK\r\n";
+	HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
+	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
 
-    struct ad7606_channel channels[8] = {
-        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
-        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
-        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
-        {RANGE_SE_0_TO_12_5V, 1, 0x80, 0}, {RANGE_SE_0_TO_12_5V, 1, 0x80, 0},
-    };
+	// ad7606_init(&ad7606_dev, &reg, &cfg, channels, &hspi6);
 
-    uint8_t msg[] = "USART1 OK\r\n";
-    HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
+	{
+		struct ad7606_pins pins = {
+				.cs = {CS},
+				.busy = {BUSY},
+				.frstdata = {FRSTDATA},
+				.convst = {CONVST},
+		};
 
-    // ad7606_init(&ad7606_dev, &reg, &cfg, channels, &hspi6);
+		struct ad7606_spi spi = {
+				.douta = DOUTA,
+				.doutb = DOUTB,
+				.doutc = DOUTC,
+				.doutd = DOUTD,
+				.doute = DOUTE,
+				.doutf = NULL,
+				.doutg = NULL,
+				.douth = DOUTH,
+				.sdi   = MASTER_SPI,
+		};
 
-    //ad7606_init_from_arrays_debug(MASTER_SPI, DOUTA);
-    ad7606_init_from_arrays(MASTER_SPI);
-    //ad7606_read_registers(&hspi6, &hspi2);
+		struct ad7606_config config = {
+			.status_header = false,
+			.external_oversampling_clock = false,
+			.dout_format = AD7606_DOUT_8,
+			.operation_mode = AD7606_OPERATION_NORMAL,
+		};
 
-    //uint8_t data[100];
+		struct ad7606_channel channels[8];
+		for(int i = 0; i < 8; i++){
+		    struct ad7606_channel ch = {
+		        .open_detect    = false,
+		        .high_bandwidth = true,
+		        .range          = AD7606_RANGE_SE_PM_12_5V,
+				.gain 			= 0,
+				.phase 			= 0,
+				.offset 		= 0,
+		    };
+		    channels[i] = ch;
+		}
+
+		struct ad7606_oversampling oversampling = {
+				.oversampling_ratio = 3,
+				.oversampling_padding = 0,
+		};
+
+		struct ad7606_digital_diagnostics digital_diagnostics = {
+				.rom_CRC_err_en = true,
+				.mm_CRC_err_en = false,
+				.int_CRC_err_en = false,
+				.spi_write_err_en = false,
+				.spi_read_err_en = false,
+				.busy_stuck_high_err_en = false,
+				.clk_fs_os_en = false,
+				.interface_check_en = false,
+		};
+
+		struct ad7606_settings settings = {
+				.config = config,
+				.digital_diagnostics = digital_diagnostics,
+				.oversampling = oversampling,
+		};
+
+		for(int i = 0; i < 8; i++){
+			settings.channels[i] = channels[i];
+		}
+
+		ad7606_init(&my_ADC, &ADC_regs, pins, spi, settings);
+	}
+
+
+
+
+	//acoustics_init_from_arrays_debug(MASTER_SPI, DOUTA);
+	//acoustics_init_from_arrays(MASTER_SPI);
+	//acoustics_read_registers(&hspi6, &hspi2);
+	//uint8_t data[100];
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+    //Error_Handler();
     while (1) {
     	int16_t received_data[] = {0,0,0,0,0,0,0,0};
 
-    	ad7606_DOUT8_read_adc(spi_handle_array, received_data);
+    	acoustics_DOUT8_read_adc(spi_handle_array, received_data);
 
-    	//ad7606_DOUT4_read_adc(spi_handle_array, received_data);
+    	//acoustics_DOUT4_read_adc(spi_handle_array, received_data);
 
-    	//ad7606_DOUT1_read_adc(spi_handle_array, received_data);
+    	//acoustics_DOUT1_read_adc(spi_handle_array, received_data);
 
 		printf("DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTF:%d,DOUTG:%d,DOUTH:%d\r\n",received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5],received_data[6],received_data[7]);
 
@@ -329,8 +446,8 @@ void PeriphCommonClock_Config(void)
                               |RCC_PERIPHCLK_FDCAN;
   PeriphClkInitStruct.PLL2.PLL2M = 16;
   PeriphClkInitStruct.PLL2.PLL2N = 128;
-  PeriphClkInitStruct.PLL2.PLL2P = 8;
-  PeriphClkInitStruct.PLL2.PLL2Q = 8;
+  PeriphClkInitStruct.PLL2.PLL2P = 4;
+  PeriphClkInitStruct.PLL2.PLL2Q = 4;
   PeriphClkInitStruct.PLL2.PLL2R = 2;
   PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_1;
   PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
@@ -343,6 +460,37 @@ void PeriphCommonClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+  hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+  hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+  hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+  hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
 }
 
 /**
@@ -692,7 +840,7 @@ static void MX_SPI6_Init(void)
   hspi6.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi6.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi6.Init.NSS = SPI_NSS_SOFT;
-  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi6.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi6.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi6.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -714,6 +862,85 @@ static void MX_SPI6_Init(void)
   /* USER CODE BEGIN SPI6_Init 2 */
 
   /* USER CODE END SPI6_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 2;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 644;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 1;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.BreakFilter = 0;
+  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
+  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+  sBreakDeadTimeConfig.Break2Filter = 0;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+  HAL_TIM_MspPostInit(&htim1);
 
 }
 
@@ -778,6 +1005,9 @@ static void MX_BDMA_Init(void)
   /* BDMA_Channel0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(BDMA_Channel0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(BDMA_Channel0_IRQn);
+  /* BDMA_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(BDMA_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(BDMA_Channel1_IRQn);
 
 }
 
@@ -835,7 +1065,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0|GPIO_PIN_1, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9|GPIO_PIN_14, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
@@ -853,14 +1083,20 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PE7 PE8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8;
+  /*Configure GPIO pin : PE7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PE9 PE14 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_14;
+  /*Configure GPIO pin : PE8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PE9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -934,7 +1170,12 @@ void Error_Handler(void)
     /* User can add his own implementation to report the HAL error return state
      */
     __disable_irq();
-    while (1) {
+    HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
+    while(1){
+    	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
+    	DWT_Delay_ms(500);
+    	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
+    	DWT_Delay_ms(500);
     }
   /* USER CODE END Error_Handler_Debug */
 }

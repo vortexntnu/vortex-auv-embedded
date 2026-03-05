@@ -61,6 +61,7 @@ extern DMA_HandleTypeDef hdma_spi3_rx;
 extern DMA_HandleTypeDef hdma_spi4_rx;
 extern DMA_HandleTypeDef hdma_spi5_rx;
 extern DMA_HandleTypeDef hdma_spi6_rx;
+extern DMA_HandleTypeDef hdma_spi6_tx;
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi3;
@@ -375,6 +376,20 @@ void BDMA_Channel0_IRQHandler(void)
   /* USER CODE BEGIN BDMA_Channel0_IRQn 1 */
 
   /* USER CODE END BDMA_Channel0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles BDMA channel1 global interrupt.
+  */
+void BDMA_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN BDMA_Channel1_IRQn 0 */
+
+  /* USER CODE END BDMA_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_spi6_tx);
+  /* USER CODE BEGIN BDMA_Channel1_IRQn 1 */
+
+  /* USER CODE END BDMA_Channel1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

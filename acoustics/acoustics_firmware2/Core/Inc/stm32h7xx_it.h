@@ -67,6 +67,7 @@ void SPI4_IRQHandler(void);
 void SPI5_IRQHandler(void);
 void SPI6_IRQHandler(void);
 void BDMA_Channel0_IRQHandler(void);
+void BDMA_Channel1_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */
