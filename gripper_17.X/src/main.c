@@ -12,7 +12,7 @@ static uint16_t adc_result_array[TRANSFER_SIZE];
 
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     /* duty cycle values */
-    static int8_t increment1 = 10;
+    static int8_t increment1 = 1;
     static uint32_t duty1 = 9000;
     static uint32_t duty2 = 9000;
     static uint32_t duty3 = 9000;
