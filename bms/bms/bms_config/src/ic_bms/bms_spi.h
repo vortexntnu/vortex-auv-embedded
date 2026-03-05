@@ -17,6 +17,7 @@
 #define CELL_4_VOLTAGE 0x1A
 #define CELL_5_VOLTAGE 0x1C
 #define CELL_6_VOLTAGE 0x1E
+#define CC2_CURRENT 0x3A
 
 
 /*
@@ -63,7 +64,7 @@
 #define CUV_THRESHOLD_MV   3000
 #define CUV_DELAY_MS       300
 
-// Addresses
+// Threshold Addresses
 #define COV_THRESHOLD_ADDR 0x9278
 #define COV_DELAY_ADDR     0x9279
 #define CUV_THRESHOLD_ADDR 0x9275
@@ -97,8 +98,10 @@ void bms_battery_status(void);
 bool read_cells_1to6(uint16_t cell_mV[6]);
 void bms_sample_temps(void);
 bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC);
+bool bms_current_read(int16_t *current_userA);
 void bothoff_init(void);
 void bothoff_high(void);
+void bothoff_low(void);
 
 
 

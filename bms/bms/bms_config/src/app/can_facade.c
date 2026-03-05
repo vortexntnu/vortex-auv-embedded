@@ -56,10 +56,10 @@
    STB_Clear();
    //////////////////////
    
-     if (!s_ram_bound)
+     if (!s_ram_bound) 
      {
-         CAN0_MessageRAMConfigSet(s_can_msg_ram);
-         s_ram_bound = true;
+         CAN0_MessageRAMConfigSet(s_can_msg_ram); // Bind the CAN message RAM to the driver
+         s_ram_bound = true; 
      }
  
      CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)NULL, CAN_MSG_ATTR_RX_FIFO0);

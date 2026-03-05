@@ -19,7 +19,8 @@
 void CAN_telemetry_init(void);
 void CAN_telemetry_tickISR(void);   // call from timer/RTC callback
 void CAN_voltage_send(void);        // call from main loop
-void CAN_bothoff_rx(void);          
+void CAN_temp_send(void);
+
 
 
 #endif
