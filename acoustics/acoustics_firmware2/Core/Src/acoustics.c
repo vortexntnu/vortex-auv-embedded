@@ -6,6 +6,13 @@
 #include <stm32h7xx_hal_spi.h>
 #include <sys/_stdint.h>
 
+static volatile uint8_t _dma_transfers_complete = 0;
+static const uint8_t _dma_transfer_count = 5;
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
+    _dma_transfers_complete++;
+}
+
 // copy from register tool start
 const uint8_t ad7606_reg_table[] =
 {
@@ -132,7 +139,7 @@ void acoustics_DOUT_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16
 
 	uint16_t data_frames[8/dout_n];
 	for(int i = 0; i < 8/dout_n; i++){
-		 data_frames[i] = 0xFFFF;
+		 data_frames[i] = 0x0000;
 	}
 
 	HAL_StatusTypeDef status_array[5];
@@ -181,35 +188,39 @@ void acoustics_DOUT_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16
 }
 
 void acoustics_DOUT8_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
-	uint16_t data_frame = 0xFFFF;
+	uint16_t data_frame = 0x0000;
+	_dma_transfers_complete = 0; // reset counter before starting
 
-	HAL_StatusTypeDef status_array[5];
-
-	status_array[0] = HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[0], 1);
-	status_array[1] = HAL_SPI_Receive_DMA(DOUTB, (uint8_t*)&received_data[1], 1);
-	status_array[2] = HAL_SPI_Receive_DMA(DOUTC, (uint8_t*)&received_data[2], 1);
-	status_array[3] = HAL_SPI_Receive_DMA(DOUTD, (uint8_t*)&received_data[3], 1);
-	status_array[4] = HAL_SPI_Receive_DMA(DOUTE, (uint8_t*)&received_data[4], 1);
-
-	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
-	while(HAL_GPIO_ReadPin(BUSY));
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&data_frame, (uint8_t*)&received_data[7], 1, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+	SPI_HandleTypeDef* my_spi_handle_array[5] = {
+			DOUTA,
+			DOUTB,
+			DOUTC,
+			DOUTD,
+			DOUTE
+	};
 
 	bool busy = true;
 	while(busy){
 		busy = false;
 		for(int i = 0; i < 5; i++){
-			busy |= (status_array[i] == HAL_BUSY);
+			busy |= (HAL_SPI_Receive_DMA(my_spi_handle_array[i], (uint8_t*)&received_data[i], 1) == HAL_BUSY);
 		}
 	}
 
-	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
+	while(!HAL_GPIO_ReadPin(BUSY));
+	while(HAL_GPIO_ReadPin(BUSY));
 
+	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&data_frame, (uint8_t*)&received_data[7], 1, 10);
+
+	while(_dma_transfers_complete < _dma_transfer_count);
+
+	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
 }
 
 void acoustics_DOUT4_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
@@ -227,7 +238,7 @@ void acoustics_DOUT4_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int1
 		{0,0}
 	};
 
-	uint16_t data_frame[] = {0xFFFF, 0xFFFF};
+	uint16_t data_frame[] = {0x0000, 0x0000};
 
 	HAL_StatusTypeDef status_array[4];
 
@@ -264,10 +275,10 @@ void acoustics_DOUT4_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int1
 
 void acoustics_DOUT2_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
 	uint16_t data_frame[] = {
-			0xFFFF,
-			0xFFFF,
-			0xFFFF,
-			0xFFFF
+			0x0000,
+			0x0000,
+			0x0000,
+			0x0000
 	};
 
 	HAL_StatusTypeDef status_array[2];
@@ -294,19 +305,22 @@ void acoustics_DOUT2_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int1
 
 void acoustics_DOUT1_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
 	uint16_t data_frame[] = {
-			0xFFFF,
-			0xFFFF,
-			0xFFFF,
-			0xFFFF,
-			0xFFFF,
-			0xFFFF,
-			0xFFFF,
-			0xFFFF
+			0x0000,
+			0x0000,
+			0x0000,
+			0x0000,
+			0x0000,
+			0x0000,
+			0x0000,
+			0x0000
 	};
 
-	HAL_StatusTypeDef status_array[1];
-
-	status_array[0] = HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data, 8);
+	bool busy = true;
+	HAL_StatusTypeDef status;
+	while(busy){
+		status = HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data, 8);
+		busy = (status == HAL_BUSY);
+	}
 
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
@@ -316,13 +330,7 @@ void acoustics_DOUT1_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int1
 	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 8, 10);
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
 
-	bool busy = true;
-	while(busy){
-		busy = false;
-		for(int i = 0; i < 1; i++){
-			busy |= (status_array[i] == HAL_BUSY);
-		}
-	}
+
 }
 
 void acoustics_read_registers(SPI_HandleTypeDef* hspi_master_send, SPI_HandleTypeDef* hspi_master_receive) {

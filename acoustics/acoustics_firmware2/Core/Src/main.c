@@ -127,16 +127,16 @@ void init_hyrdophone_buffers(){
 	}
 }
 
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
-    if (hspi->Instance == SPI1) {
-        // rx_buf now contains MSG_LEN bytes
-        // process(rx_buf, MSG_LEN);
-        //har msg[] = "test\r\n";
-        //HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
-        // re-arm for next message
-        HAL_SPI_Receive_DMA(&hspi1, rx_buf, MSG_LEN);
-    }
-}
+//void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
+//    if (hspi->Instance == SPI1) {
+//        // rx_buf now contains MSG_LEN bytes
+//        // process(rx_buf, MSG_LEN);
+//        //har msg[] = "test\r\n";
+//        //HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
+//        // re-arm for next message
+//        //HAL_SPI_Receive_DMA(&hspi1, rx_buf, MSG_LEN);
+//    }
+//}
 
 void SPI_SendDummyByte(void)
 {
@@ -255,7 +255,6 @@ int main(void)
   MX_TIM1_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
-
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);   // CS High
 
 	uint8_t msg[] = "USART1 OK\r\n";
@@ -263,7 +262,6 @@ int main(void)
 	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
 
 	// ad7606_init(&ad7606_dev, &reg, &cfg, channels, &hspi6);
-
 	{
 		struct ad7606_pins pins = {
 				.cs = {CS},
@@ -299,7 +297,7 @@ int main(void)
 		        .range          = AD7606_RANGE_SE_PM_12_5V,
 				.gain 			= 0,
 				.phase 			= 0,
-				.offset 		= 0,
+				.offset 		= 0x80,
 		    };
 		    channels[i] = ch;
 		}
@@ -315,7 +313,7 @@ int main(void)
 				.int_CRC_err_en = false,
 				.spi_write_err_en = false,
 				.spi_read_err_en = false,
-				.busy_stuck_high_err_en = false,
+				.busy_stuck_high_err_en = true,
 				.clk_fs_os_en = false,
 				.interface_check_en = false,
 		};
@@ -350,7 +348,8 @@ int main(void)
     while (1) {
     	int16_t received_data[] = {0,0,0,0,0,0,0,0};
 
-    	acoustics_DOUT8_read_adc(spi_handle_array, received_data);
+
+     	acoustics_DOUT8_read_adc(spi_handle_array, received_data);
 
     	//acoustics_DOUT4_read_adc(spi_handle_array, received_data);
 
@@ -879,8 +878,6 @@ static void MX_TIM1_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
   /* USER CODE BEGIN TIM1_Init 1 */
 
@@ -901,10 +898,6 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
-  {
-    Error_Handler();
-  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
@@ -912,35 +905,9 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 1;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 0;
-  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-  sBreakDeadTimeConfig.BreakFilter = 0;
-  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
-  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-  sBreakDeadTimeConfig.Break2Filter = 0;
-  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
-  HAL_TIM_MspPostInit(&htim1);
 
 }
 
@@ -1065,7 +1032,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0|GPIO_PIN_1, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9|GPIO_PIN_14, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
@@ -1095,8 +1062,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PE9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  /*Configure GPIO pins : PE9 PE14 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_14;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
