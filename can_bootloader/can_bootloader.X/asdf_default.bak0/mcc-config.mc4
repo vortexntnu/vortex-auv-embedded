@@ -1,0 +1,13 @@
+configVersion: 1.0.0
+coreVersion: 5.8.4
+spaHostVersion: 1.2.1
+device: ATSAMC21J18A
+deviceLibrary: {}
+groupModules: []
+modules:
+- cmsis
+- core
+- dfp
+- evsys
+- nvmctrl
+generatedFileHashHistoryMap: []
