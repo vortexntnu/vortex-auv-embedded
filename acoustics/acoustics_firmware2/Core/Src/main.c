@@ -23,12 +23,17 @@
 /* USER CODE BEGIN Includes */
 #include "ad7606_driver.h"
 #include "acoustics.h"
+#include "utils.h"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_gpio.h"
 #include "stm32h7xx_hal_gpio_ex.h"
 #include "stm32h7xx_hal_spi.h"
+#include "stm32h7xx_hal_fdcan.h"
 #include "arm_math_types.h"
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,75 +105,118 @@ static void MX_CRC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-#define MSG_LEN 100
-#define BLOCK_LEN 64
-#define N_BLOCKS 5
-#define BUFFER_LEN N_BLOCKS*BLOCK_LEN
-#define N_SACRIFICAL_BLOCKS 2
-#define WORKSPACE_LEN (N_BLOCKS - N_SACRIFICAL_BLOCKS) * BLOCK_LEN
-#define N_HYDROPHONES 5
-
 q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN] = {0};
-int16_t diagnostics_buffer[N_BLOCKS][BLOCK_LEN] = {0};
-HAL_StatusTypeDef buffer_DMA_status[5] = {HAL_OK};
+q15_t diagnostics_sample __attribute__((section(".SRAM4")));
 
 SPI_HandleTypeDef* const spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
 SPI_HandleTypeDef* const dout_channels_array[6] = {DOUTA, DOUTB, DOUTC, DOUTD, DOUTE, DOUTH};
 
-
 static struct ad7606_device my_ADC;
 static struct ad7606_registers ADC_regs;
-static uint8_t rx_buf[100];
 
-void init_hyrdophone_buffers(){
+volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
+
+uint16_t buffer_remaining = BUFFER_LEN;
+uint16_t buffer_current_idx = 0;
+uint16_t buffer_latest_idx = BUFFER_LEN;
+uint16_t buffer_current_block = 0;
+uint16_t buffer_latest_block = N_BLOCKS;
+uint16_t buffer_current_block_idx = 0;
+uint16_t buffer_latest_block_idx = BLOCK_LEN;
+
+void start_convst(void){
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
+}
+
+void update_buffer_idx(void){
+	buffer_remaining = __HAL_DMA_GET_COUNTER(&hdma_spi2_rx);
+
+	buffer_current_idx = BUFFER_LEN - buffer_remaining;
+	buffer_latest_idx = (buffer_current_idx == 0) ? (BUFFER_LEN - 1) : (buffer_current_idx - 1);
+
+	buffer_current_block = buffer_current_idx/BLOCK_LEN;
+	buffer_latest_block = buffer_latest_idx/BLOCK_LEN;
+
+	buffer_current_block_idx = buffer_current_idx%BLOCK_LEN;
+	buffer_latest_block_idx = buffer_latest_idx%BLOCK_LEN;
+
+}
+
+void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx){
+	update_buffer_idx();
+	if(idx == buffer_current_idx){
+		idx = buffer_latest_idx;
+	}
 	for(int i = 0; i < N_HYDROPHONES; i++){
-		buffer_DMA_status[i] = HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&hydrophone_buffers[i], BUFFER_LEN);
+		data_array[i] = ((q15_t*)hydrophone_buffers[i])[idx];
 	}
 }
 
-//void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
-//    if (hspi->Instance == SPI1) {
-//        // rx_buf now contains MSG_LEN bytes
-//        // process(rx_buf, MSG_LEN);
-//        //har msg[] = "test\r\n";
-//        //HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
-//        // re-arm for next message
-//        //HAL_SPI_Receive_DMA(&hspi1, rx_buf, MSG_LEN);
-//    }
-//}
-
-void SPI_SendDummyByte(void)
-{
-    uint8_t dummy_tx = 0x00;
-    uint8_t dummy_rx;
-
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);  // CS LOW
-    
-    for (int i = 0; i < 20; i++){
-        HAL_SPI_TransmitReceive(&hspi6, &dummy_tx, &dummy_rx, 1, 10);
-    }
-
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); 
+void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx){
+	update_buffer_idx();
+	if(block == buffer_current_block){
+		block = buffer_latest_block;
+		if(idx == buffer_current_block_idx){
+			idx = buffer_latest_block_idx;
+		}
+	}
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		data_array[i] = hydrophone_buffers[i][block][idx];
+	}
 }
 
-void SPI_SendDummyBuffer(uint16_t numBytes)
-{
-    static uint8_t dummy_tx[256];
-    static uint8_t dummy_rx[256];
-
-    if(numBytes > 256) numBytes = 256;
-
-    // memset(dummy_tx, 0x00, numBytes);
-
-
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);  // CS LOW
-    HAL_SPI_TransmitReceive(&hspi6, dummy_tx, dummy_rx, numBytes, 10);
-
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); 
+void read_newest_hydrophone_data(q15_t data_array[N_HYDROPHONES]){
+	update_buffer_idx();
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		data_array[i] = hydrophone_buffers[i][buffer_latest_block][buffer_latest_block_idx];
+	}
 }
 
+void init_hyrdophone_buffers(void){
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		if(HAL_SPI_GetState(dout_channels_array[i]) != HAL_SPI_STATE_READY){
+		    HAL_SPI_DMAStop(dout_channels_array[i]);
+		}
+		dout_channels_array[i]->hdmarx->Init.Mode = DMA_CIRCULAR;
+		HAL_DMA_Init(dout_channels_array[i]->hdmarx);
 
+		HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&hydrophone_buffers[i], BUFFER_LEN);
+		dma_channel_state[i] = DMA_SPI_CIRCULAR;
+	}
+}
+
+bool all_dma_complete(void){
+	bool all_complete = true;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		all_complete &= (dma_channel_state[i] == DMA_SPI_COMPLETE);
+	}
+	return all_complete;
+}
+
+bool all_dma_idle(void){
+	bool all_idle = true;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		all_idle &= (dma_channel_state[i] == DMA_SPI_IDLE);
+	}
+	return all_idle;
+}
+
+bool dma_busy(void){
+	bool busy = false;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		busy |= (dma_channel_state[i] == DMA_SPI_RUNNING);
+	}
+	return busy;
+}
+
+bool dma_error(void){
+	bool error = false;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		error |= (dma_channel_state[i] == DMA_SPI_ERROR);
+	}
+	return error;
+}
 
 int _write(int file, char *ptr, int len)
 {
@@ -176,32 +224,62 @@ int _write(int file, char *ptr, int len)
     return len;
 }
 
-void delay(volatile uint32_t count)
+volatile uint8_t new_data = false;
+
+// __attribute__((used))
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    while(count--) __NOP();
+    if (GPIO_Pin == BUSY_Pin)
+    {
+        HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+
+        HAL_StatusTypeDef status = HAL_SPI_TransmitReceive_IT(
+            MASTER_SPI,
+            (uint8_t*)&READ_CONVST,
+            (uint8_t*)&diagnostics_sample,
+            1
+        );
+
+        if (status != HAL_OK)
+        {
+            // Deassert CS so we don't leave the bus in a bad state
+            HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+        }
+    }
 }
 
-void DWT_Init(void)
-{
-    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable DWT
-    DWT->CYCCNT = 0;                                // Reset cycle counter
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;             // Enable cycle counter
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
+    if(hspi->Instance == MASTER_SPI->Instance){
+        HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+        new_data = true;
+    }
 }
 
-void DWT_Delay_ms(uint32_t ms)
-{
-    uint32_t start = DWT->CYCCNT;
-    uint32_t cycles = (SystemCoreClock / 1000) * ms;
-
-    while ((DWT->CYCCNT - start) < cycles);
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+    for (int i = 0; i < N_HYDROPHONES; i++) {
+        if (hspi->Instance == dout_channels_array[i]->Instance) {
+            dma_channel_state[i] = DMA_SPI_COMPLETE;
+            break;
+        }
+    }
 }
 
-void DWT_Delay_us(uint32_t us)
-{
-    uint32_t start = DWT->CYCCNT;
-    uint32_t cycles = (SystemCoreClock / 1000000) * us;
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
+    for (int i = 0; i < N_HYDROPHONES; i++) {
+        if (hspi->Instance == dout_channels_array[i]->Instance) {
+            dma_channel_state[i] = DMA_SPI_ERROR;
+            break;
+        }
+    }
+}
 
-    while ((DWT->CYCCNT - start) < cycles);
+void change_buffers_to_normal(void){
+    for(int i = 0; i < N_HYDROPHONES; i++){
+        HAL_SPI_DMAStop(dout_channels_array[i]);
+        dout_channels_array[i]->hdmarx->Init.Mode = DMA_NORMAL;
+        HAL_DMA_Init(dout_channels_array[i]->hdmarx);
+        dma_channel_state[i] = DMA_SPI_IDLE;
+    }
 }
 /* USER CODE END 0 */
 
@@ -235,7 +313,7 @@ int main(void)
   PeriphCommonClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  DWT_Init();
+  utils_DWT_init();
 
   /* USER CODE END SysInit */
 
@@ -255,13 +333,14 @@ int main(void)
   MX_TIM1_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
+
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);   // CS High
+
 
 	uint8_t msg[] = "USART1 OK\r\n";
 	HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
 	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
 
-	// ad7606_init(&ad7606_dev, &reg, &cfg, channels, &hspi6);
 	{
 		struct ad7606_pins pins = {
 				.cs = {CS},
@@ -331,9 +410,13 @@ int main(void)
 		ad7606_init(&my_ADC, &ADC_regs, pins, spi, settings);
 	}
 
+	EXIT_REGISTER_MODE = 0x0000;
+	EXIT_ADC_MODE = 0x4100;
 
+	init_hyrdophone_buffers();
 
-
+	__HAL_TIM_SET_AUTORELOAD(&htim1, 3838);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 	//acoustics_init_from_arrays_debug(MASTER_SPI, DOUTA);
 	//acoustics_init_from_arrays(MASTER_SPI);
 	//acoustics_read_registers(&hspi6, &hspi2);
@@ -343,21 +426,21 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
-    //Error_Handler();
     while (1) {
-    	int16_t received_data[] = {0,0,0,0,0,0,0,0};
+    	q15_t received_data[] = {0,0,0,0,0,0,0,0};
+    	//start_convst();
+    	while(!new_data) __NOP();
 
+    	read_newest_hydrophone_data(received_data);
 
-     	acoustics_DOUT8_read_adc(spi_handle_array, received_data);
+//    	HAL_GPIO_WritePin(CS,GPIO_PIN_RESET);
+//		HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&READ_CONVST, (uint8_t*)&diagnostics_sample, 1, 1);
+//		HAL_GPIO_WritePin(CS,GPIO_PIN_SET);
+		received_data[7] = diagnostics_sample;
 
-    	//acoustics_DOUT4_read_adc(spi_handle_array, received_data);
+		printf("IDX:%d,DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTF:%d,DOUTG:%d,DOUTH:%d\r\n",buffer_latest_idx,received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5],received_data[6],received_data[7]);
 
-    	//acoustics_DOUT1_read_adc(spi_handle_array, received_data);
-
-		printf("DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTF:%d,DOUTG:%d,DOUTH:%d\r\n",received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5],received_data[6],received_data[7]);
-
-        HAL_Delay(100);
+        //HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -825,6 +908,7 @@ static void MX_SPI6_Init(void)
 {
 
   /* USER CODE BEGIN SPI6_Init 0 */
+	HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, GPIO_PIN_SET);   // SCK High
 
   /* USER CODE END SPI6_Init 0 */
 
@@ -839,7 +923,7 @@ static void MX_SPI6_Init(void)
   hspi6.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi6.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi6.Init.NSS = SPI_NSS_SOFT;
-  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   hspi6.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi6.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi6.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -852,7 +936,7 @@ static void MX_SPI6_Init(void)
   hspi6.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
   hspi6.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
   hspi6.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
-  hspi6.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+  hspi6.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
   hspi6.Init.IOSwap = SPI_IO_SWAP_DISABLE;
   if (HAL_SPI_Init(&hspi6) != HAL_OK)
   {
@@ -878,14 +962,16 @@ static void MX_TIM1_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
   /* USER CODE BEGIN TIM1_Init 1 */
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 2;
+  htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 644;
+  htim1.Init.Period = 1919; //3838;//
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -898,6 +984,10 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
@@ -905,9 +995,35 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 3;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.BreakFilter = 0;
+  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
+  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+  sBreakDeadTimeConfig.Break2Filter = 0;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
+  HAL_TIM_MspPostInit(&htim1);
 
 }
 
@@ -989,19 +1105,19 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
   /* DMA1_Stream2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
   /* DMA1_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA1_Stream4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
 
 }
@@ -1029,52 +1145,40 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0|GPIO_PIN_1, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9|GPIO_PIN_14, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, LEDG_Pin|LEDY_Pin|LEDR_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PF0 PF1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PF2 PF3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+  /*Configure GPIO pin : FRSTDATA_Pin */
+  GPIO_InitStruct.Pin = FRSTDATA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+  HAL_GPIO_Init(FRSTDATA_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PE7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PE8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  /*Configure GPIO pin : BUSY_Pin */
+  GPIO_InitStruct.Pin = BUSY_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  HAL_GPIO_Init(BUSY_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PE9 PE14 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_14;
+  /*Configure GPIO pin : CS_Pin */
+  GPIO_InitStruct.Pin = CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  HAL_GPIO_Init(CS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PD11 PD12 PD13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13;
+  /*Configure GPIO pins : LEDG_Pin LEDY_Pin LEDR_Pin */
+  GPIO_InitStruct.Pin = LEDG_Pin|LEDY_Pin|LEDR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(BUSY_EXTI_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(BUSY_EXTI_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
     GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14;
@@ -1136,13 +1240,14 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state
      */
+	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
     __disable_irq();
     HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
     while(1){
     	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
-    	DWT_Delay_ms(500);
+    	utils_DWT_delay_ms(500);
     	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
-    	DWT_Delay_ms(500);
+    	utils_DWT_delay_ms(500);
     }
   /* USER CODE END Error_Handler_Debug */
 }

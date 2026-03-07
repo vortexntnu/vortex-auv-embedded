@@ -6,12 +6,9 @@
 #include <stm32h7xx_hal_spi.h>
 #include <sys/_stdint.h>
 
-static volatile uint8_t _dma_transfers_complete = 0;
-static const uint8_t _dma_transfer_count = 5;
 
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
-    _dma_transfers_complete++;
-}
+__attribute__((section(".SRAM4"))) uint16_t EXIT_REGISTER_MODE = 0x0000;
+__attribute__((section(".SRAM4"))) uint16_t EXIT_ADC_MODE = 0x4100;
 
 // copy from register tool start
 const uint8_t ad7606_reg_table[] =
@@ -62,7 +59,12 @@ static int conf_len = 40;
 
 // copy from register tool end
 
+// Interrupts and shit
+
+
+// Functions and shit
 uint16_t acoustics_construct_SPI_frame(uint8_t read_enable, uint8_t read_write, uint8_t adc_register_address, uint8_t data){
+
 	// read_enable set true to read and false to enable write
 	// read_write set true to read and false to write
 	uint16_t data_frame = 0x00;
@@ -73,6 +75,7 @@ uint16_t acoustics_construct_SPI_frame(uint8_t read_enable, uint8_t read_write, 
 	return data_frame;
 }
 
+// should really just be used for debugging and testing as it is not optimal
 void acoustics_init_from_arrays(SPI_HandleTypeDef* hspi_master) {
 
 	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET); // CS LOW
@@ -99,6 +102,11 @@ void acoustics_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Ha
 	uint8_t data_frames[conf_len*2];
 
 	printf("\r\n");
+	{
+		uint16_t data_frame = acoustics_construct_SPI_frame(0, 1, 0x01, 0x00);
+		HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
+	}
+
 
 	for(int i = 0; i < conf_len; i++){
 		uint8_t address = ad7606_reg_table[i*2];
@@ -130,8 +138,7 @@ void acoustics_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Ha
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET); // CS High
 }
 
-// should really just be used for debugging and testing as it is not optimal
-void acoustics_DOUT_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8],int dout_n){
+void acoustics_DOUT_read_adc(int16_t received_data[8],int dout_n){
 
 	if(8 % dout_n){
 		Error_Handler(); //dout_n should only be either 8, 4, 2 or 1
@@ -187,23 +194,13 @@ void acoustics_DOUT_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16
 
 }
 
-void acoustics_DOUT8_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
-	uint16_t data_frame = 0x0000;
-	_dma_transfers_complete = 0; // reset counter before starting
-
-	SPI_HandleTypeDef* my_spi_handle_array[5] = {
-			DOUTA,
-			DOUTB,
-			DOUTC,
-			DOUTD,
-			DOUTE
-	};
+void acoustics_DOUT8_read_adc(int16_t received_data[8]){
 
 	bool busy = true;
 	while(busy){
 		busy = false;
 		for(int i = 0; i < 5; i++){
-			busy |= (HAL_SPI_Receive_DMA(my_spi_handle_array[i], (uint8_t*)&received_data[i], 1) == HAL_BUSY);
+			busy |= (HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&received_data[i], 1) == HAL_BUSY);
 		}
 	}
 
@@ -214,16 +211,16 @@ void acoustics_DOUT8_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int1
 	while(HAL_GPIO_ReadPin(BUSY));
 
 	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&data_frame, (uint8_t*)&received_data[7], 1, 10);
+	HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&READ_CONVST, (uint8_t*)&received_data[7], 1, 10);
 
-	while(_dma_transfers_complete < _dma_transfer_count);
+	while(dma_busy());
 
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
 
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
 }
 
-void acoustics_DOUT4_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
+void acoustics_DOUT4_read_adc(int16_t received_data[8]){
 	struct data_storage {
 		int16_t douta_buffer[2];
 		int16_t doutb_buffer[2];
@@ -273,7 +270,7 @@ void acoustics_DOUT4_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int1
 	received_data[7] = my_storage.doutd_buffer[1];
 }
 
-void acoustics_DOUT2_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
+void acoustics_DOUT2_read_adc(int16_t received_data[8]){
 	uint16_t data_frame[] = {
 			0x0000,
 			0x0000,
@@ -303,7 +300,7 @@ void acoustics_DOUT2_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int1
 	}
 }
 
-void acoustics_DOUT1_read_adc(SPI_HandleTypeDef* const spi_handle_array[6], int16_t received_data[8]){
+void acoustics_DOUT1_read_adc(int16_t received_data[8]){
 	uint16_t data_frame[] = {
 			0x0000,
 			0x0000,

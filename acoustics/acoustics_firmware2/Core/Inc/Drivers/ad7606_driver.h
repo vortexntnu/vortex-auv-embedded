@@ -7,8 +7,6 @@
 #include <stm32h7xx_hal.h>
 #include <stm32h7xx.h>
 
-#define AD7606_CONFIG_ADDRESS 0x02
-
 #ifdef __cplusplus
 extern "C" {
 #endif

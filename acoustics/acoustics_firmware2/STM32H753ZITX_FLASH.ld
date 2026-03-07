@@ -165,6 +165,14 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >RAM_D1
+  
+  /* SRAM4 section for BDMA buffers */
+  .sram4 (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.SRAM4)
+    . = ALIGN(4);
+  } >RAM_D3
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

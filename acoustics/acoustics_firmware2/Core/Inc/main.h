@@ -31,21 +31,24 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "arm_math_types.h"
+#include <stdbool.h>
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef enum {
+    DMA_SPI_IDLE,
+	DMA_SPI_RUNNING,
+	DMA_SPI_COMPLETE,
+	DMA_SPI_ERROR,
+	DMA_SPI_CIRCULAR,
+} DMA_SPI_ChannelState;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
-/* USER CODE END EC */
-
-/* Exported macro ------------------------------------------------------------*/
-/* USER CODE BEGIN EM */
 #define MASTER_SPI spi_handle_array[5]
 #define DOUTH spi_handle_array[5]
 #define DOUTA spi_handle_array[1]
@@ -63,16 +66,62 @@ extern "C" {
 #define GREEN_LED GPIOD, GPIO_PIN_11
 #define YELLOW_LED GPIOD, GPIO_PIN_12
 
+#define BLOCK_LEN 			64
+#define N_BLOCKS 			5
+
+#define BUFFER_LEN 			(N_BLOCKS * BLOCK_LEN)
+#define N_SACRIFICAL_BLOCKS 2
+#define WORKSPACE_LEN 		((N_BLOCKS - N_SACRIFICAL_BLOCKS) * BLOCK_LEN)
+#define N_HYDROPHONES 		5
+
+extern SPI_HandleTypeDef* const spi_handle_array[6];
+extern SPI_HandleTypeDef* const dout_channels_array[6];
+
+extern volatile DMA_SPI_ChannelState dma_channel_state[(N_HYDROPHONES) + 1];
+extern q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
+extern int16_t diagnostics_buffer[N_BLOCKS][BLOCK_LEN];
+/* USER CODE END EC */
+
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
+
+
 /* USER CODE END EM */
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 int _write(int file, char *ptr, int len);
+bool all_dma_complete(void);
+bool all_dma_idle(void);
+bool dma_error(void);
+bool dma_busy(void);
+void update_buffer_idx(void);
+void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx);
+void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx);
+void read_newest_hydrophone_data(q15_t data_array[N_HYDROPHONES]);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define FRSTDATA_Pin GPIO_PIN_7
+#define FRSTDATA_GPIO_Port GPIOE
+#define BUSY_Pin GPIO_PIN_8
+#define BUSY_GPIO_Port GPIOE
+#define BUSY_EXTI_IRQn EXTI9_5_IRQn
+#define CS_Pin GPIO_PIN_9
+#define CS_GPIO_Port GPIOE
+#define CONVST_Pin GPIO_PIN_14
+#define CONVST_GPIO_Port GPIOE
+#define LEDG_Pin GPIO_PIN_11
+#define LEDG_GPIO_Port GPIOD
+#define LEDY_Pin GPIO_PIN_12
+#define LEDY_GPIO_Port GPIOD
+#define LEDR_Pin GPIO_PIN_13
+#define LEDR_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 
