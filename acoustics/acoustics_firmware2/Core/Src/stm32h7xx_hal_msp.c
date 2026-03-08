@@ -556,7 +556,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     hdma_spi6_rx.Init.Request = BDMA_REQUEST_SPI6_RX;
     hdma_spi6_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
     hdma_spi6_rx.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_spi6_rx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_spi6_rx.Init.MemInc = DMA_MINC_DISABLE;
     hdma_spi6_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
     hdma_spi6_rx.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
     hdma_spi6_rx.Init.Mode = DMA_NORMAL;
@@ -573,7 +573,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     hdma_spi6_tx.Init.Request = BDMA_REQUEST_SPI6_TX;
     hdma_spi6_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_spi6_tx.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_spi6_tx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_spi6_tx.Init.MemInc = DMA_MINC_DISABLE;
     hdma_spi6_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
     hdma_spi6_tx.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
     hdma_spi6_tx.Init.Mode = DMA_NORMAL;

@@ -24,12 +24,17 @@
 #include "ad7606_driver.h"
 #include "acoustics.h"
 #include "utils.h"
+#include "spi6_dma.h"
+
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_gpio.h"
 #include "stm32h7xx_hal_gpio_ex.h"
 #include "stm32h7xx_hal_spi.h"
 #include "stm32h7xx_hal_fdcan.h"
+
 #include "arm_math_types.h"
+#include "arm_math.h"
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -43,7 +48,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define FFT_SIZE BLOCK_LEN  // match this to your buffer size
+#define SAMPLE_RATE_HZ 62500
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -100,7 +106,7 @@ static void MX_RTC_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-
+static inline void RearmBDMA_Fast(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -116,6 +122,13 @@ static struct ad7606_registers ADC_regs;
 
 volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
 
+__attribute__((section(".DTCM"))) q15_t fft_output[FFT_SIZE * 2];
+__attribute__((section(".DTCM"))) q15_t fft_input[FFT_SIZE];
+__attribute__((section(".DTCM"))) q15_t mag[FFT_SIZE / 2];
+__attribute__((section(".DTCM"))) arm_rfft_instance_q15 fft_instance;
+const float bin_resolution = SAMPLE_RATE_HZ / (float)FFT_SIZE;
+
+
 uint16_t buffer_remaining = BUFFER_LEN;
 uint16_t buffer_current_idx = 0;
 uint16_t buffer_latest_idx = BUFFER_LEN;
@@ -123,6 +136,10 @@ uint16_t buffer_current_block = 0;
 uint16_t buffer_latest_block = N_BLOCKS;
 uint16_t buffer_current_block_idx = 0;
 uint16_t buffer_latest_block_idx = BLOCK_LEN;
+
+double reading_to_voltage(int reading){
+	return reading * 381.5 / 1000000;
+}
 
 void start_convst(void){
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
@@ -231,37 +248,74 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == BUSY_Pin)
     {
-        HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+//        HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+//        SET_BIT(MASTER_SPI->Instance->CR1, SPI_CR1_CSTART);
 
-        HAL_StatusTypeDef status = HAL_SPI_TransmitReceive_IT(
-            MASTER_SPI,
-            (uint8_t*)&READ_CONVST,
-            (uint8_t*)&diagnostics_sample,
-            1
-        );
-
-        if (status != HAL_OK)
-        {
-            // Deassert CS so we don't leave the bus in a bad state
-            HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+        // In your ISR or wherever you trigger a transfer:
+        if (!SPI6_IsBusy()) {
+            SPI6_Transfer16(0x1234);
         }
+//        HAL_StatusTypeDef status = HAL_SPI_TransmitReceive_IT(
+//            MASTER_SPI,
+//            (uint8_t*)&READ_CONVST,
+//            (uint8_t*)&diagnostics_sample,
+//            1
+//        );
+//
+//        if (status != HAL_OK)
+//        {
+//            // Deassert CS so we don't leave the bus in a bad state
+//            HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+//        }
     }
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
     if(hspi->Instance == MASTER_SPI->Instance){
         HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-        new_data = true;
+        //CLEAR_BIT(MASTER_SPI->Instance->CR1, SPI_CR1_CSTART);
     }
 }
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-    for (int i = 0; i < N_HYDROPHONES; i++) {
-        if (hspi->Instance == dout_channels_array[i]->Instance) {
-            dma_channel_state[i] = DMA_SPI_COMPLETE;
-            break;
-        }
-    }
+	if(hspi->Instance == DOUTA->Instance){
+		new_data = true;
+	}
+
+//    for (int i = 0; i < N_HYDROPHONES; i++) {
+//        if ((hspi->Instance == dout_channels_array[i]->Instance) && (dma_channel_state[i] != DMA_SPI_CIRCULAR)) {
+//            dma_channel_state[i] = DMA_SPI_COMPLETE;
+//            break;
+//        }
+//    }
+}
+
+void DMA_TxCplt(DMA_HandleTypeDef *hdma)
+{
+  if(hdma == MASTER_SPI->hdmatx){
+    // CS high — transfer done
+        HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+
+        // Clear SPI EOT + TXTF so next CSTART works
+        WRITE_REG(MASTER_SPI->Instance->IFCR,
+                  SPI_IFCR_EOTC | SPI_IFCR_TXTFC);
+
+        new_data = true;
+
+        // Fast re-arm: ~5 register writes, no HAL overhead
+        RearmBDMA_Fast();
+  }
+    //CLEAR_BIT(MASTER_SPI->Instance->CR1, SPI_CR1_CSTART);
+    // TSIZE=1 already stopped SPI
+    // BDMA reloads automatically in circular mode
+}
+
+void DMA_Error(DMA_HandleTypeDef *hdma)
+{
+    // Handle error — at minimum deassert CS
+    HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+    Error_Handler();
+    // Optionally log hdma->ErrorCode
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
@@ -281,6 +335,88 @@ void change_buffers_to_normal(void){
         dma_channel_state[i] = DMA_SPI_IDLE;
     }
 }
+
+static inline void RearmBDMA_Fast(void)
+{
+    BDMA_Channel_TypeDef *rx_ch = (BDMA_Channel_TypeDef *)MASTER_SPI->hdmarx->Instance;
+    BDMA_Channel_TypeDef *tx_ch = (BDMA_Channel_TypeDef *)MASTER_SPI->hdmatx->Instance;
+
+    // Disable both BDMA channels briefly to reload
+    rx_ch->CCR &= ~BDMA_CCR_EN;
+    tx_ch->CCR &= ~BDMA_CCR_EN;
+
+    // Clear all BDMA interrupt flags for both channels
+    {
+        uint32_t rx_idx = ((uint32_t)rx_ch - (uint32_t)BDMA_Channel0) /
+                          ((uint32_t)BDMA_Channel1 - (uint32_t)BDMA_Channel0);
+        uint32_t tx_idx = ((uint32_t)tx_ch - (uint32_t)BDMA_Channel0) /
+                          ((uint32_t)BDMA_Channel1 - (uint32_t)BDMA_Channel0);
+        BDMA->IFCR = (0xFUL << (4U * rx_idx)) | (0xFUL << (4U * tx_idx));
+    }
+
+    // Reload transfer count = 1
+    rx_ch->CNDTR = 1;
+    tx_ch->CNDTR = 1;
+
+    // Re-enable both channels (TX first so data is ready when SPI clocks)
+    tx_ch->CCR |= BDMA_CCR_EN;
+    rx_ch->CCR |= BDMA_CCR_EN;
+}
+
+static void MasterSpi_Setup(void)
+{
+	if(HAL_SPI_GetState(MASTER_SPI) != HAL_SPI_STATE_READY){
+		HAL_SPI_DMAStop(MASTER_SPI);
+	}
+    // Use NORMAL mode, not circular
+    MASTER_SPI->hdmarx->Init.Mode   = DMA_NORMAL;
+    MASTER_SPI->hdmarx->Init.MemInc = DMA_MINC_DISABLE;
+    HAL_DMA_Init(MASTER_SPI->hdmarx);
+
+
+    MASTER_SPI->hdmatx->Init.Mode   = DMA_NORMAL;
+    MASTER_SPI->hdmatx->Init.MemInc = DMA_MINC_DISABLE;
+    HAL_DMA_Init(MASTER_SPI->hdmatx);
+
+    // Register callbacks
+    MASTER_SPI->hdmarx->XferCpltCallback     = NULL; //DMA_RxCplt
+    MASTER_SPI->hdmarx->XferErrorCallback    = DMA_Error;
+    MASTER_SPI->hdmarx->XferHalfCpltCallback = NULL;
+    MASTER_SPI->hdmarx->XferAbortCallback    = NULL;
+
+    MASTER_SPI->hdmatx->XferCpltCallback     = DMA_TxCplt;
+    MASTER_SPI->hdmatx->XferHalfCpltCallback = NULL;
+    MASTER_SPI->hdmatx->XferErrorCallback    = DMA_Error;
+    MASTER_SPI->hdmatx->XferAbortCallback    = NULL;
+
+    // Set TSIZE = 1
+    MODIFY_REG(MASTER_SPI->Instance->CR2, SPI_CR2_TSIZE, 1U);
+
+    // Initial DMA arm (first time uses HAL)
+    HAL_DMA_Start_IT(MASTER_SPI->hdmarx,
+                     (uint32_t)&MASTER_SPI->Instance->RXDR,
+                     (uint32_t)&diagnostics_sample,
+                     1U);
+
+    HAL_DMA_Start_IT(MASTER_SPI->hdmatx,
+                     (uint32_t)&READ_CONVST,
+                     (uint32_t)&MASTER_SPI->Instance->TXDR,
+                     1U);
+
+    // Enable SPI DMA requests
+    SET_BIT(MASTER_SPI->Instance->CFG1, SPI_CFG1_RXDMAEN | SPI_CFG1_TXDMAEN);
+
+    // Enable SPI
+    __HAL_SPI_ENABLE(MASTER_SPI);
+}
+
+
+
+// In your application file — implement the callback:
+//void SPI6_TransferCpltCallback(uint16_t rx_data) {
+//    // rx_data is the received word — CS is already high by this point
+//
+//}
 /* USER CODE END 0 */
 
 /**
@@ -370,6 +506,29 @@ int main(void)
 
 		struct ad7606_channel channels[8];
 		for(int i = 0; i < 8; i++){
+//			AD7606_MUX_CTRL_TEMP,
+//			AD7606_MUX_CTRL_2V5_REF,
+//			AD7606_MUX_CTRL_1V8_ALDO,
+//			AD7606_MUX_CTRL_1V8_DLDO,
+//			AD7606_MUX_CTRL_V_DRIVE,
+//			AD7606_MUX_CTRL_A_GND,
+//			AD7606_MUX_CTRL_AV_CC;
+			AD7606_CHANNEL_MUX_CTRL mux_ctrl = AD7606_MUX_CTRL_A_IN; // = (i != 8) ? (AD7606_MUX_CTRL_A_IN) : (AD7606_MUX_CTRL_TEMP);
+			switch(i){
+			case(2):
+				mux_ctrl = AD7606_MUX_CTRL_2V5_REF;
+			break;
+			case(3):
+				mux_ctrl = AD7606_MUX_CTRL_AV_CC;
+			break;
+			case(4):
+				mux_ctrl = AD7606_MUX_CTRL_V_DRIVE;
+			break;
+			case(7):
+				mux_ctrl = AD7606_MUX_CTRL_TEMP;
+			break;
+
+			}
 		    struct ad7606_channel ch = {
 		        .open_detect    = false,
 		        .high_bandwidth = true,
@@ -377,6 +536,7 @@ int main(void)
 				.gain 			= 0,
 				.phase 			= 0,
 				.offset 		= 0x80,
+				.mux_ctrl 		= mux_ctrl,
 		    };
 		    channels[i] = ch;
 		}
@@ -409,36 +569,74 @@ int main(void)
 
 		ad7606_init(&my_ADC, &ADC_regs, pins, spi, settings);
 	}
-
+	arm_rfft_init_q15(&fft_instance, FFT_SIZE, 0, 1);
 	EXIT_REGISTER_MODE = 0x0000;
 	EXIT_ADC_MODE = 0x4100;
 
 	init_hyrdophone_buffers();
 
+//	// Arm BDMA directly
+//	HAL_DMA_Start_IT(&hdma_spi6_rx, (uint32_t)&hspi6.Instance->RXDR,
+//	                  (uint32_t)&diagnostics_sample, 1);
+//	HAL_DMA_Start_IT(&hdma_spi6_tx, (uint32_t)&EXIT_REGISTER_MODE,
+//	                  (uint32_t)&hspi6.Instance->TXDR, 1);
+//
+//	// Enable SPI DMA requests
+//	SET_BIT(hspi6.Instance->CFG1, SPI_CFG1_TXDMAEN | SPI_CFG1_RXDMAEN);
+//
+//	// Enable SPI error interrupts so HAL error handling still works
+//	__HAL_SPI_ENABLE_IT(&hspi6, (SPI_IT_OVR | SPI_IT_UDR | SPI_IT_FRE | SPI_IT_MODF));
+//
+//	// Enable SPI — but don't set CSTART yet
+//	__HAL_SPI_ENABLE(&hspi6);
+//
+//	// Set SPI handle state so HAL doesn't think it's uninitialized
+//	hspi6.State = HAL_SPI_STATE_BUSY_TX_RX;
+
+	MasterSpi_Setup();
+
+	// Call your modified version — sets up BDMA, enables SPI, but doesn't set CSTART
+//	SPI_TransmitReceive_DMA_NoStart(
+//	    MASTER_SPI,
+//	    (uint8_t*)&READ_CONVST,
+//	    (uint8_t*)&diagnostics_sample,
+//	    1
+//	);
+
 	__HAL_TIM_SET_AUTORELOAD(&htim1, 3838);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
-	//acoustics_init_from_arrays_debug(MASTER_SPI, DOUTA);
-	//acoustics_init_from_arrays(MASTER_SPI);
-	//acoustics_read_registers(&hspi6, &hspi2);
-	//uint8_t data[100];
+
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     while (1) {
-    	q15_t received_data[] = {0,0,0,0,0,0,0,0};
+    	//q15_t received_data[8] = {0};
     	//start_convst();
     	while(!new_data) __NOP();
+    	q15_t max_val;
+    	uint32_t max_idx;
+    	//float dominant_freq;
+    	update_buffer_idx();
+    	arm_rfft_q15(&fft_instance, hydrophone_buffers[0][buffer_latest_block_idx], fft_output);
+    	arm_cmplx_mag_q15(fft_output, mag, FFT_SIZE / 2);
+    	arm_max_q15(mag, FFT_SIZE / 2, &max_val, &max_idx);
+    	printf("Peak_bin:%lu\tFrequency:%d\r\n", max_idx, (int)(max_idx * bin_resolution));
 
-    	read_newest_hydrophone_data(received_data);
+//    	read_newest_hydrophone_data(received_data);
+//		received_data[7] = diagnostics_sample;
+//		printf("\r\nIDX:%d\t",buffer_latest_idx);
+//		for(int i = 0; i < 8; i++){
+//			double voltage = reading_to_voltage(received_data[i]);
+//			int whole = (int)voltage;
+//			int frac  = (int)((voltage - whole) * 1000);  // 3 decimal places
+//			printf("\tV%d:%d.%03d",i, whole, frac);
+//
+//		}
+		new_data = false;
 
-//    	HAL_GPIO_WritePin(CS,GPIO_PIN_RESET);
-//		HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&READ_CONVST, (uint8_t*)&diagnostics_sample, 1, 1);
-//		HAL_GPIO_WritePin(CS,GPIO_PIN_SET);
-		received_data[7] = diagnostics_sample;
-
-		printf("IDX:%d,DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTF:%d,DOUTG:%d,DOUTH:%d\r\n",buffer_latest_idx,received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5],received_data[6],received_data[7]);
+		//printf("IDX:%d,DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTF:%d,DOUTG:%d,DOUTH:%d\r\n",buffer_latest_idx,received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5],received_data[6],received_data[7]);
 
         //HAL_Delay(100);
     /* USER CODE END WHILE */

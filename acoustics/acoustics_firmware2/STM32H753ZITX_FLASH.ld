@@ -173,6 +173,11 @@ SECTIONS
     *(.SRAM4)
     . = ALIGN(4);
   } >RAM_D3
+  
+  .DTCM (NOLOAD) :
+  {
+    *(.DTCM)
+  } >DTCMRAM
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

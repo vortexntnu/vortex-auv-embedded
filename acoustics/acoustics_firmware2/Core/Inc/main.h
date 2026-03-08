@@ -103,6 +103,9 @@ void update_buffer_idx(void);
 void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx);
 void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx);
 void read_newest_hydrophone_data(q15_t data_array[N_HYDROPHONES]);
+HAL_StatusTypeDef SPI_TransmitReceive_DMA_NoStart(SPI_HandleTypeDef *hspi, const uint8_t *pTxData, uint8_t *pRxData,
+                                              uint16_t Size);
+
 
 /* USER CODE END EFP */
 
