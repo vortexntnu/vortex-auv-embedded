@@ -7,8 +7,8 @@
 #include <sys/_stdint.h>
 
 
-BDMA_RAM const uint16_t EXIT_REGISTER_MODE = 0x0000;
-BDMA_RAM const uint16_t EXIT_ADC_MODE = 0x4100;
+const uint16_t EXIT_REGISTER_MODE = 0x0000;
+const uint16_t EXIT_ADC_MODE = 0x4100;
 
 // copy from register tool start
 const uint8_t ad7606_reg_table[] =

@@ -24,6 +24,7 @@
 #include "ad7606_driver.h"
 #include "acoustics.h"
 #include "utils.h"
+#include "spi6_autotransfer.h"
 
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_gpio.h"
@@ -48,7 +49,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define FFT_SIZE BLOCK_LEN  // match this to your buffer size
-#define SAMPLE_RATE_HZ 62500
+#define SAMPLE_RATE_HZ 125000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,6 +80,7 @@ DMA_HandleTypeDef hdma_spi6_rx;
 DMA_HandleTypeDef hdma_spi6_tx;
 
 TIM_HandleTypeDef htim1;
+DMA_HandleTypeDef hdma_tim1_ch4;
 
 UART_HandleTypeDef huart1;
 
@@ -139,36 +141,54 @@ static void MX_CRC_Init(void);
 
 volatile uint8_t new_data = false;
 
-// __attribute__((used))
+// In your 125kHz timer/BUSY interrupt:
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if (GPIO_Pin == BUSY_Pin)
+    if (GPIO_Pin == BUSY_INT)
     {
-        HAL_SPI_TransmitReceive_IT(
-            MASTER_SPI,
-            (uint8_t*)&READ_CONVST,
-            (uint8_t*)&diagnostics_sample,
-            1
-        );
+        // Kick next transfer — non-blocking, returns in ~5 cycles
+        SPI6_Kick();
     }
 }
 
+void SPI6_RxCallback(void){
+	if (SPI6->SR & SPI_SR_EOT)
+	{
+		spi6_rx_buffer = *(volatile uint16_t*)&SPI6->RXDR;
+
+		// Clear EOT and TXTF flags
+		SPI6->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
+	}
+}
+
+
+// __attribute__((used))
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+//{
+//
+//	__NOP();
+////    if (GPIO_Pin == BUSY_Pin)
+////    {
+////        HAL_SPI_TransmitReceive_IT(
+////            MASTER_SPI,
+////            (uint8_t*)&READ_CONVST,
+////            (uint8_t*)&diagnostics_sample,
+////            1
+////        );
+////    }
+//}
+
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
-    if(hspi->Instance == MASTER_SPI->Instance){
-    	//__NOP();
-    }
+//    if(hspi->Instance == MASTER_SPI->Instance){
+//    	//__NOP();
+//    }
+	__NOP();
 }
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 	if(hspi->Instance == DOUTA->Instance){
 		new_data = true;
 	}
-}
-
-void DMA_Error(DMA_HandleTypeDef *hdma)
-{
-    HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-    Error_Handler();
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
@@ -338,10 +358,11 @@ int main(void)
 	}
 	arm_rfft_init_q15(&fft_instance, FFT_SIZE, 0, 1);
 
+	SPI6_DirectInit();
+
 	init_hyrdophone_buffers();
 
-    HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	__HAL_TIM_SET_AUTORELOAD(&htim1, 3838);
+	__HAL_TIM_SET_AUTORELOAD(&htim1, 3838/2);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
 
@@ -350,7 +371,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     while (1) {
-    	//q15_t received_data[8] = {0};
+
+    	q15_t received_data[8] = {0};
     	//start_convst();
     	while(!new_data) __NOP();
     	q15_t max_val;
@@ -366,7 +388,7 @@ int main(void)
 //		received_data[7] = diagnostics_sample;
 //		printf("\r\nIDX:%d\t",buffer_latest_idx);
 //		for(int i = 0; i < 8; i++){
-//			double voltage = reading_to_voltage(received_data[i]);
+//			double voltage = ad7606_reading_to_voltage(&my_ADC,0,received_data[i]);
 //			int whole = (int)voltage;
 //			int frac  = (int)((voltage - whole) * 1000);  // 3 decimal places
 //			printf("\tV%d:%d.%03d",i, whole, frac);
@@ -898,7 +920,6 @@ static void MX_TIM1_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_IC_InitTypeDef sConfigIC = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
@@ -921,10 +942,6 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_IC_Init(&htim1) != HAL_OK)
-  {
-    Error_Handler();
-  }
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -933,14 +950,6 @@ static void MX_TIM1_Init(void)
   sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  if (HAL_TIM_IC_ConfigChannel(&htim1, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1051,6 +1060,7 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
+  __HAL_RCC_DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Stream0_IRQn interrupt configuration */
@@ -1068,6 +1078,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+  /* DMA2_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+  /* DMAMUX1_OVR_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMAMUX1_OVR_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMAMUX1_OVR_IRQn);
 
 }
 
@@ -1126,23 +1142,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(BUSY_EXTI_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(BUSY_EXTI_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(BUSY_EXTI_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-    GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
-    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = GPIO_PIN_6;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE END MX_GPIO_Init_2 */
 }

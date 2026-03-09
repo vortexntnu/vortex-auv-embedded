@@ -74,7 +74,7 @@ typedef enum {
 #define WORKSPACE_LEN 		((N_BLOCKS - N_SACRIFICAL_BLOCKS) * BLOCK_LEN)
 #define N_HYDROPHONES 		5
 
-//#define BDMA_RAM __attribute__((section(".SRAM4")))
+#define BDMA_RAM __attribute__((section(".SRAM4")))
 #define TCM __attribute__((section(".DTCM")))
 
 extern SPI_HandleTypeDef* const spi_handle_array[6];
@@ -92,7 +92,7 @@ extern uint16_t buffer_latest_block;
 extern uint16_t buffer_current_block_idx;
 extern uint16_t buffer_latest_block_idx;
 
-extern SPI_HandleTypeDef hspi1;
+//extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi3;
 extern SPI_HandleTypeDef hspi4;
@@ -123,6 +123,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void SPI6_RxCallback(void);
 int _write(int file, char *ptr, int len);
 /* USER CODE END EFP */
 
@@ -142,7 +143,7 @@ int _write(int file, char *ptr, int len);
 #define LEDY_GPIO_Port GPIOD
 #define LEDR_Pin GPIO_PIN_13
 #define LEDR_GPIO_Port GPIOD
-#define BDMA_RAM __attribute__((section(".SRAM4")))
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

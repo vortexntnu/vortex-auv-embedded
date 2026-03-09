@@ -151,7 +151,7 @@ struct ad7606_device {
     struct ad7606_registers* registers;
     struct ad7606_spi spi_handles;
     struct ad7606_pins pins;
-    struct ad7606_settings* settings;
+//    struct ad7606_settings* settings;
 };
 
 extern const struct ad7606_registers ad7606_default_registers;
