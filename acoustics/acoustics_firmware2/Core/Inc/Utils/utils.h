@@ -15,4 +15,7 @@ void utils_DWT_init(void);
 void utils_DWT_delay_ms(uint32_t ms);
 void utils_DWT_delay_us(uint32_t us);
 
+double reading_to_voltage(int reading);
+double voltage_to_temp(double voltage);
+
 #endif /* INC_UTILS_UTILS_H_ */

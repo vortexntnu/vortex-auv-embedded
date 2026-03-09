@@ -7,8 +7,8 @@
 #include <sys/_stdint.h>
 
 
-__attribute__((section(".SRAM4"))) uint16_t EXIT_REGISTER_MODE = 0x0000;
-__attribute__((section(".SRAM4"))) uint16_t EXIT_ADC_MODE = 0x4100;
+BDMA_RAM const uint16_t EXIT_REGISTER_MODE = 0x0000;
+BDMA_RAM const uint16_t EXIT_ADC_MODE = 0x4100;
 
 // copy from register tool start
 const uint8_t ad7606_reg_table[] =
@@ -73,6 +73,105 @@ uint16_t acoustics_construct_SPI_frame(uint8_t read_enable, uint8_t read_write, 
 	data_frame |= ((data & 0xFF) << 0);
 
 	return data_frame;
+}
+
+int _write(int file, char *ptr, int len)
+{
+    HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+    return len;
+}
+
+void start_convst(void){
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
+}
+
+void update_buffer_idx(void){
+	buffer_remaining = __HAL_DMA_GET_COUNTER(&hdma_spi2_rx);
+
+	buffer_current_idx = BUFFER_LEN - buffer_remaining;
+	buffer_latest_idx = (buffer_current_idx == 0) ? (BUFFER_LEN - 1) : (buffer_current_idx - 1);
+
+	buffer_current_block = buffer_current_idx/BLOCK_LEN;
+	buffer_latest_block = buffer_latest_idx/BLOCK_LEN;
+
+	buffer_current_block_idx = buffer_current_idx%BLOCK_LEN;
+	buffer_latest_block_idx = buffer_latest_idx%BLOCK_LEN;
+}
+
+void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx){
+	update_buffer_idx();
+	if(idx == buffer_current_idx){
+		idx = buffer_latest_idx;
+	}
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		data_array[i] = ((q15_t*)hydrophone_buffers[i])[idx];
+	}
+}
+
+void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx){
+	update_buffer_idx();
+	if(block == buffer_current_block){
+		block = buffer_latest_block;
+		if(idx == buffer_current_block_idx){
+			idx = buffer_latest_block_idx;
+		}
+	}
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		data_array[i] = hydrophone_buffers[i][block][idx];
+	}
+}
+
+void read_newest_hydrophone_data(q15_t data_array[N_HYDROPHONES]){
+	update_buffer_idx();
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		data_array[i] = hydrophone_buffers[i][buffer_latest_block][buffer_latest_block_idx];
+	}
+}
+
+void init_hyrdophone_buffers(void){
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		if(HAL_SPI_GetState(dout_channels_array[i]) != HAL_SPI_STATE_READY){
+		    HAL_SPI_DMAStop(dout_channels_array[i]);
+		}
+		dout_channels_array[i]->hdmarx->Init.Mode = DMA_CIRCULAR;
+		HAL_DMA_Init(dout_channels_array[i]->hdmarx);
+
+		HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&hydrophone_buffers[i], BUFFER_LEN);
+		dma_channel_state[i] = DMA_SPI_CIRCULAR;
+	}
+}
+
+bool all_dma_complete(void){
+	bool all_complete = true;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		all_complete &= (dma_channel_state[i] == DMA_SPI_COMPLETE);
+	}
+	return all_complete;
+}
+
+bool all_dma_idle(void){
+	bool all_idle = true;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		all_idle &= (dma_channel_state[i] == DMA_SPI_IDLE);
+	}
+	return all_idle;
+}
+
+bool dma_busy(void){
+	bool busy = false;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		busy |= (dma_channel_state[i] == DMA_SPI_RUNNING);
+	}
+	return busy;
+}
+
+bool dma_error(void){
+	bool error = false;
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		error |= (dma_channel_state[i] == DMA_SPI_ERROR);
+	}
+	return error;
 }
 
 // should really just be used for debugging and testing as it is not optimal

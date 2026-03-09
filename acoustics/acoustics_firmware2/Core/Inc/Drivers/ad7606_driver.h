@@ -107,13 +107,6 @@ struct ad7606_registers {
 	struct ad7606_register id;
 };
 
-struct ad7606_device {
-    struct ad7606_registers* registers;
-    struct ad7606_spi spi_handles;
-    struct ad7606_pins pins;
-    ad7606_data_ready on_ready; /* user callback when out[half] is filled */
-};
-
 struct ad7606_config {
     bool status_header;
     bool external_oversampling_clock;
@@ -154,6 +147,15 @@ struct ad7606_settings {
 	struct ad7606_config config;
 };
 
+struct ad7606_device {
+    struct ad7606_registers* registers;
+    struct ad7606_spi spi_handles;
+    struct ad7606_pins pins;
+    struct ad7606_settings* settings;
+};
+
+extern const struct ad7606_registers ad7606_default_registers;
+
 // Public
 void ad7606_init(struct ad7606_device* device,
 				 struct ad7606_registers* registers,
@@ -162,11 +164,19 @@ void ad7606_init(struct ad7606_device* device,
 				 struct ad7606_settings settings);
 void ad7606_set_registers(struct ad7606_device* device,
 						  struct ad7606_settings settings);
+
 uint8_t ad7606_read_register(const struct ad7606_device* const device, const struct ad7606_register reg);
+
 void ad7606_write_to_register(struct ad7606_device* device, struct ad7606_register reg);
+
 HAL_StatusTypeDef ad7606_write_to_register_DMA(struct ad7606_device* device, struct ad7606_register reg);
+
 void ad7606_spi_tx_complete_handler(SPI_HandleTypeDef *hspi);
+
 uint16_t ad7606_construct_SPI_frame(uint8_t command_bit, uint8_t read_write_bit, struct ad7606_register target_register);
+
+double ad7606_reading_to_voltage(struct ad7606_device* device, uint8_t channel_id, int16_t reading);
+double ad7606_voltage_to_temp(double voltage);
 
 #ifdef __cplusplus
 }

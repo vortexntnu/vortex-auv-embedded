@@ -1,45 +1,11 @@
 #include <ad7606_driver.h>
-//#include "main.h" // refactor eventually so this won't be needed
 #include <stdio.h>
 #include <stm32h753xx.h>
 #include <stm32h7xx_hal_gpio.h>
 #include <stm32h7xx_hal_spi.h>
 #include <sys/_stdint.h>
 
-#define AD7606_MAX_DEVICES 6  // adjust as needed
-
-#define CS device->pins.cs.GPIO_port, device->pins.cs.GPIO_pin
-#define BUSY device->pins.busy.GPIO_port, device->pins.busy.GPIO_pin
-#define FRSTDATA device->pins.frstdata.GPIO_port, device->pins.frstdata.GPIO_pin
-#define CONVST device->pins.convst.GPIO_port, device->pins.convst.GPIO_pin
-
-#define SDI device->spi_handles.sdi
-#define DOUTA device->spi_handles.douta
-#define DOUTB device->spi_handles.doutb
-#define DOUTC device->spi_handles.doutc
-#define DOUTD device->spi_handles.doutd
-#define DOUTE device->spi_handles.doute
-#define DOUTF device->spi_handles.doutf
-#define DOUTG device->spi_handles.doutg
-#define DOUTH device->spi_handles.douth
-
-// Private (static - internal use only, not exposed in header)
-static void ad7606_register_device(struct ad7606_device* device);
-static void ad7606_set_spi(struct ad7606_device* device, struct ad7606_spi spi_handles);
-static void ad7606_set_pins(struct ad7606_device* device, struct ad7606_pins pins);
-static void ad7606_set_config(struct ad7606_device* device, struct ad7606_config config);
-static void ad7606_set_channels(struct ad7606_device* device, struct ad7606_channel channels[8]);
-static void ad7606_set_digital_diagnostics(struct ad7606_device* device, struct ad7606_digital_diagnostics diagnostics);
-static void ad7606_set_oversampling(struct ad7606_device* device, struct ad7606_oversampling oversampling);
-static void ad7606_write_all_registers(struct ad7606_device* device);
-
-static struct ad7606_device* _ad7606_devices[AD7606_MAX_DEVICES] = {0};
-static uint8_t _ad7606_device_count = 0;
-
-const static uint16_t EXIT_REGISTER_MODE = 0x0000;
-const static uint16_t EXIT_ADC_MODE = 0x4100;
-
-struct ad7606_registers ad7606_default_registers =
+const struct ad7606_registers ad7606_default_registers =
 {
     { 0x01, 0x00, true },
     { 0x02, 0x08, false },
@@ -97,7 +63,41 @@ struct ad7606_registers ad7606_default_registers =
     { 0x2F, 0x31, true },
 };
 
-static int conf_len = 44;
+static uint8_t conf_len = 44;
+// copy end
+
+#define AD7606_MAX_DEVICES 6  // adjust as needed
+
+#define CS device->pins.cs.GPIO_port, device->pins.cs.GPIO_pin
+#define BUSY device->pins.busy.GPIO_port, device->pins.busy.GPIO_pin
+#define FRSTDATA device->pins.frstdata.GPIO_port, device->pins.frstdata.GPIO_pin
+#define CONVST device->pins.convst.GPIO_port, device->pins.convst.GPIO_pin
+
+#define SDI device->spi_handles.sdi
+#define DOUTA device->spi_handles.douta
+#define DOUTB device->spi_handles.doutb
+#define DOUTC device->spi_handles.doutc
+#define DOUTD device->spi_handles.doutd
+#define DOUTE device->spi_handles.doute
+#define DOUTF device->spi_handles.doutf
+#define DOUTG device->spi_handles.doutg
+#define DOUTH device->spi_handles.douth
+
+// Private (static - internal use only, not exposed in header)
+static void ad7606_register_device(struct ad7606_device* device);
+static void ad7606_set_spi(struct ad7606_device* device, struct ad7606_spi spi_handles);
+static void ad7606_set_pins(struct ad7606_device* device, struct ad7606_pins pins);
+static void ad7606_set_config(struct ad7606_device* device, struct ad7606_config config);
+static void ad7606_set_channels(struct ad7606_device* device, struct ad7606_channel channels[8]);
+static void ad7606_set_digital_diagnostics(struct ad7606_device* device, struct ad7606_digital_diagnostics diagnostics);
+static void ad7606_set_oversampling(struct ad7606_device* device, struct ad7606_oversampling oversampling);
+static void ad7606_write_all_registers(struct ad7606_device* device);
+
+static struct ad7606_device* _ad7606_devices[AD7606_MAX_DEVICES] = {0};
+static uint8_t _ad7606_device_count = 0;
+
+const static uint16_t EXIT_REGISTER_MODE = 0x0000;
+const static uint16_t EXIT_ADC_MODE = 0x4100;
 
 // Public
 void ad7606_init(struct ad7606_device* device,
@@ -254,4 +254,14 @@ static void ad7606_write_all_registers(struct ad7606_device* device){
 	HAL_SPI_Transmit(SDI, (const uint8_t*)data_frames, conf_len, 1);
 	HAL_SPI_Transmit(SDI, (const uint8_t*)&EXIT_REGISTER_MODE, 1, 1);
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET); // CS High
+}
+
+double ad7606_reading_to_voltage(struct ad7606_device* device, uint8_t channel_id, int16_t reading){
+
+
+	return reading * 381.5 / 1000000;
+}
+
+double ad7606_voltage_to_temp(double voltage){
+	return (voltage - 0.18353)/0.000480 + 25;
 }

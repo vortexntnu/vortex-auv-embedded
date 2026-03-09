@@ -381,35 +381,26 @@ void SPI6_IRQHandler(void)
 /**
   * @brief This function handles BDMA channel0 global interrupt.
   */
-//void BDMA_Channel0_IRQHandler(void)
-//{
-//  /* USER CODE BEGIN BDMA_Channel0_IRQn 0 */
-//	BDMA->IFCR = BDMA_IFCR_CTCIF0;
-//  /* USER CODE END BDMA_Channel0_IRQn 0 */
-//  //HAL_DMA_IRQHandler(&hdma_spi6_rx);
-//  /* USER CODE BEGIN BDMA_Channel0_IRQn 1 */
-//
-//  /* USER CODE END BDMA_Channel0_IRQn 1 */
-//}
+void BDMA_Channel0_IRQHandler(void)
+{
+  /* USER CODE BEGIN BDMA_Channel0_IRQn 0 */
+
+  /* USER CODE END BDMA_Channel0_IRQn 1 */
+}
 
 /**
   * @brief This function handles BDMA channel1 global interrupt.
   */
-//void BDMA_Channel1_IRQHandler(void)
-//{
-//  /* USER CODE BEGIN BDMA_Channel1_IRQn 0 */
-//	if (BDMA->ISR & BDMA_ISR_TCIF1)
-//	    {
-//	        BDMA->IFCR = BDMA_IFCR_CTCIF1;      // Clear flag
-//	        // spi6_rx_buf now holds the received 16-bit word
-//	        // Process it here or set a flag — keep it short
-//	    }
-//  /* USER CODE END BDMA_Channel1_IRQn 0 */
-//  //HAL_DMA_IRQHandler(&hdma_spi6_tx);
-//  /* USER CODE BEGIN BDMA_Channel1_IRQn 1 */
+void BDMA_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN BDMA_Channel1_IRQn 0 */
+
+  /* USER CODE END BDMA_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_spi6_tx);
+  /* USER CODE BEGIN BDMA_Channel1_IRQn 1 */
 //
-//  /* USER CODE END BDMA_Channel1_IRQn 1 */
-//}
+  /* USER CODE END BDMA_Channel1_IRQn 1 */
+}
 
 /* USER CODE BEGIN 1 */
 

@@ -74,12 +74,41 @@ typedef enum {
 #define WORKSPACE_LEN 		((N_BLOCKS - N_SACRIFICAL_BLOCKS) * BLOCK_LEN)
 #define N_HYDROPHONES 		5
 
+//#define BDMA_RAM __attribute__((section(".SRAM4")))
+#define TCM __attribute__((section(".DTCM")))
+
 extern SPI_HandleTypeDef* const spi_handle_array[6];
 extern SPI_HandleTypeDef* const dout_channels_array[6];
 
 extern volatile DMA_SPI_ChannelState dma_channel_state[(N_HYDROPHONES) + 1];
 extern q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
 extern int16_t diagnostics_buffer[N_BLOCKS][BLOCK_LEN];
+
+extern uint16_t buffer_remaining;
+extern uint16_t buffer_current_idx;
+extern uint16_t buffer_latest_idx;
+extern uint16_t buffer_current_block;
+extern uint16_t buffer_latest_block;
+extern uint16_t buffer_current_block_idx;
+extern uint16_t buffer_latest_block_idx;
+
+extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
+extern SPI_HandleTypeDef hspi3;
+extern SPI_HandleTypeDef hspi4;
+extern SPI_HandleTypeDef hspi5;
+extern SPI_HandleTypeDef hspi6;
+extern DMA_HandleTypeDef hdma_spi1_rx;
+extern DMA_HandleTypeDef hdma_spi2_rx;
+extern DMA_HandleTypeDef hdma_spi3_rx;
+extern DMA_HandleTypeDef hdma_spi4_rx;
+extern DMA_HandleTypeDef hdma_spi5_rx;
+extern DMA_HandleTypeDef hdma_spi6_rx;
+extern DMA_HandleTypeDef hdma_spi6_tx;
+
+extern TIM_HandleTypeDef htim1;
+
+extern UART_HandleTypeDef huart1;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -95,18 +124,6 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 int _write(int file, char *ptr, int len);
-bool all_dma_complete(void);
-bool all_dma_idle(void);
-bool dma_error(void);
-bool dma_busy(void);
-void update_buffer_idx(void);
-void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx);
-void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx);
-void read_newest_hydrophone_data(q15_t data_array[N_HYDROPHONES]);
-HAL_StatusTypeDef SPI_TransmitReceive_DMA_NoStart(SPI_HandleTypeDef *hspi, const uint8_t *pTxData, uint8_t *pRxData,
-                                              uint16_t Size);
-
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -125,7 +142,7 @@ HAL_StatusTypeDef SPI_TransmitReceive_DMA_NoStart(SPI_HandleTypeDef *hspi, const
 #define LEDY_GPIO_Port GPIOD
 #define LEDR_Pin GPIO_PIN_13
 #define LEDR_GPIO_Port GPIOD
-
+#define BDMA_RAM __attribute__((section(".SRAM4")))
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

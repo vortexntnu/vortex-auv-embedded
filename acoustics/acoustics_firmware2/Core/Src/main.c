@@ -24,7 +24,6 @@
 #include "ad7606_driver.h"
 #include "acoustics.h"
 #include "utils.h"
-#include "spi6_dma.h"
 
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_gpio.h"
@@ -84,7 +83,31 @@ TIM_HandleTypeDef htim1;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN] = {0};
+volatile BDMA_RAM q15_t diagnostics_sample;
 
+SPI_HandleTypeDef* const spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
+SPI_HandleTypeDef* const dout_channels_array[6] = {DOUTA, DOUTB, DOUTC, DOUTD, DOUTE, DOUTH};
+
+static struct ad7606_device my_ADC;
+static struct ad7606_registers ADC_regs;
+
+volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
+
+TCM q15_t fft_output[FFT_SIZE * 2];
+TCM q15_t fft_input[FFT_SIZE];
+TCM q15_t mag[FFT_SIZE / 2];
+TCM arm_rfft_instance_q15 fft_instance;
+const float bin_resolution = SAMPLE_RATE_HZ / (float)FFT_SIZE;
+
+
+uint16_t buffer_remaining = BUFFER_LEN;
+uint16_t buffer_current_idx = 0;
+uint16_t buffer_latest_idx = BUFFER_LEN;
+uint16_t buffer_current_block = 0;
+uint16_t buffer_latest_block = N_BLOCKS;
+uint16_t buffer_current_block_idx = 0;
+uint16_t buffer_latest_block_idx = BLOCK_LEN;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -106,140 +129,13 @@ static void MX_RTC_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-static inline void RearmBDMA_Fast(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN] = {0};
-q15_t diagnostics_sample __attribute__((section(".SRAM4")));
-
-SPI_HandleTypeDef* const spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
-SPI_HandleTypeDef* const dout_channels_array[6] = {DOUTA, DOUTB, DOUTC, DOUTD, DOUTE, DOUTH};
-
-static struct ad7606_device my_ADC;
-static struct ad7606_registers ADC_regs;
-
-volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
-
-__attribute__((section(".DTCM"))) q15_t fft_output[FFT_SIZE * 2];
-__attribute__((section(".DTCM"))) q15_t fft_input[FFT_SIZE];
-__attribute__((section(".DTCM"))) q15_t mag[FFT_SIZE / 2];
-__attribute__((section(".DTCM"))) arm_rfft_instance_q15 fft_instance;
-const float bin_resolution = SAMPLE_RATE_HZ / (float)FFT_SIZE;
 
 
-uint16_t buffer_remaining = BUFFER_LEN;
-uint16_t buffer_current_idx = 0;
-uint16_t buffer_latest_idx = BUFFER_LEN;
-uint16_t buffer_current_block = 0;
-uint16_t buffer_latest_block = N_BLOCKS;
-uint16_t buffer_current_block_idx = 0;
-uint16_t buffer_latest_block_idx = BLOCK_LEN;
-
-double reading_to_voltage(int reading){
-	return reading * 381.5 / 1000000;
-}
-
-void start_convst(void){
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
-}
-
-void update_buffer_idx(void){
-	buffer_remaining = __HAL_DMA_GET_COUNTER(&hdma_spi2_rx);
-
-	buffer_current_idx = BUFFER_LEN - buffer_remaining;
-	buffer_latest_idx = (buffer_current_idx == 0) ? (BUFFER_LEN - 1) : (buffer_current_idx - 1);
-
-	buffer_current_block = buffer_current_idx/BLOCK_LEN;
-	buffer_latest_block = buffer_latest_idx/BLOCK_LEN;
-
-	buffer_current_block_idx = buffer_current_idx%BLOCK_LEN;
-	buffer_latest_block_idx = buffer_latest_idx%BLOCK_LEN;
-
-}
-
-void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx){
-	update_buffer_idx();
-	if(idx == buffer_current_idx){
-		idx = buffer_latest_idx;
-	}
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		data_array[i] = ((q15_t*)hydrophone_buffers[i])[idx];
-	}
-}
-
-void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx){
-	update_buffer_idx();
-	if(block == buffer_current_block){
-		block = buffer_latest_block;
-		if(idx == buffer_current_block_idx){
-			idx = buffer_latest_block_idx;
-		}
-	}
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		data_array[i] = hydrophone_buffers[i][block][idx];
-	}
-}
-
-void read_newest_hydrophone_data(q15_t data_array[N_HYDROPHONES]){
-	update_buffer_idx();
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		data_array[i] = hydrophone_buffers[i][buffer_latest_block][buffer_latest_block_idx];
-	}
-}
-
-void init_hyrdophone_buffers(void){
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		if(HAL_SPI_GetState(dout_channels_array[i]) != HAL_SPI_STATE_READY){
-		    HAL_SPI_DMAStop(dout_channels_array[i]);
-		}
-		dout_channels_array[i]->hdmarx->Init.Mode = DMA_CIRCULAR;
-		HAL_DMA_Init(dout_channels_array[i]->hdmarx);
-
-		HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&hydrophone_buffers[i], BUFFER_LEN);
-		dma_channel_state[i] = DMA_SPI_CIRCULAR;
-	}
-}
-
-bool all_dma_complete(void){
-	bool all_complete = true;
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		all_complete &= (dma_channel_state[i] == DMA_SPI_COMPLETE);
-	}
-	return all_complete;
-}
-
-bool all_dma_idle(void){
-	bool all_idle = true;
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		all_idle &= (dma_channel_state[i] == DMA_SPI_IDLE);
-	}
-	return all_idle;
-}
-
-bool dma_busy(void){
-	bool busy = false;
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		busy |= (dma_channel_state[i] == DMA_SPI_RUNNING);
-	}
-	return busy;
-}
-
-bool dma_error(void){
-	bool error = false;
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		error |= (dma_channel_state[i] == DMA_SPI_ERROR);
-	}
-	return error;
-}
-
-int _write(int file, char *ptr, int len)
-{
-    HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
-    return len;
-}
 
 volatile uint8_t new_data = false;
 
@@ -248,32 +144,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == BUSY_Pin)
     {
-//        HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-//        SET_BIT(MASTER_SPI->Instance->CR1, SPI_CR1_CSTART);
-
-        // In your ISR or wherever you trigger a transfer:
-        if (!SPI6_IsBusy()) {
-            SPI6_Transfer16(0x1234);
-        }
-//        HAL_StatusTypeDef status = HAL_SPI_TransmitReceive_IT(
-//            MASTER_SPI,
-//            (uint8_t*)&READ_CONVST,
-//            (uint8_t*)&diagnostics_sample,
-//            1
-//        );
-//
-//        if (status != HAL_OK)
-//        {
-//            // Deassert CS so we don't leave the bus in a bad state
-//            HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-//        }
+        HAL_SPI_TransmitReceive_IT(
+            MASTER_SPI,
+            (uint8_t*)&READ_CONVST,
+            (uint8_t*)&diagnostics_sample,
+            1
+        );
     }
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
     if(hspi->Instance == MASTER_SPI->Instance){
-        HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-        //CLEAR_BIT(MASTER_SPI->Instance->CR1, SPI_CR1_CSTART);
+    	//__NOP();
     }
 }
 
@@ -281,41 +163,12 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 	if(hspi->Instance == DOUTA->Instance){
 		new_data = true;
 	}
-
-//    for (int i = 0; i < N_HYDROPHONES; i++) {
-//        if ((hspi->Instance == dout_channels_array[i]->Instance) && (dma_channel_state[i] != DMA_SPI_CIRCULAR)) {
-//            dma_channel_state[i] = DMA_SPI_COMPLETE;
-//            break;
-//        }
-//    }
-}
-
-void DMA_TxCplt(DMA_HandleTypeDef *hdma)
-{
-  if(hdma == MASTER_SPI->hdmatx){
-    // CS high — transfer done
-        HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-        // Clear SPI EOT + TXTF so next CSTART works
-        WRITE_REG(MASTER_SPI->Instance->IFCR,
-                  SPI_IFCR_EOTC | SPI_IFCR_TXTFC);
-
-        new_data = true;
-
-        // Fast re-arm: ~5 register writes, no HAL overhead
-        RearmBDMA_Fast();
-  }
-    //CLEAR_BIT(MASTER_SPI->Instance->CR1, SPI_CR1_CSTART);
-    // TSIZE=1 already stopped SPI
-    // BDMA reloads automatically in circular mode
 }
 
 void DMA_Error(DMA_HandleTypeDef *hdma)
 {
-    // Handle error — at minimum deassert CS
     HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
     Error_Handler();
-    // Optionally log hdma->ErrorCode
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
@@ -335,88 +188,6 @@ void change_buffers_to_normal(void){
         dma_channel_state[i] = DMA_SPI_IDLE;
     }
 }
-
-static inline void RearmBDMA_Fast(void)
-{
-    BDMA_Channel_TypeDef *rx_ch = (BDMA_Channel_TypeDef *)MASTER_SPI->hdmarx->Instance;
-    BDMA_Channel_TypeDef *tx_ch = (BDMA_Channel_TypeDef *)MASTER_SPI->hdmatx->Instance;
-
-    // Disable both BDMA channels briefly to reload
-    rx_ch->CCR &= ~BDMA_CCR_EN;
-    tx_ch->CCR &= ~BDMA_CCR_EN;
-
-    // Clear all BDMA interrupt flags for both channels
-    {
-        uint32_t rx_idx = ((uint32_t)rx_ch - (uint32_t)BDMA_Channel0) /
-                          ((uint32_t)BDMA_Channel1 - (uint32_t)BDMA_Channel0);
-        uint32_t tx_idx = ((uint32_t)tx_ch - (uint32_t)BDMA_Channel0) /
-                          ((uint32_t)BDMA_Channel1 - (uint32_t)BDMA_Channel0);
-        BDMA->IFCR = (0xFUL << (4U * rx_idx)) | (0xFUL << (4U * tx_idx));
-    }
-
-    // Reload transfer count = 1
-    rx_ch->CNDTR = 1;
-    tx_ch->CNDTR = 1;
-
-    // Re-enable both channels (TX first so data is ready when SPI clocks)
-    tx_ch->CCR |= BDMA_CCR_EN;
-    rx_ch->CCR |= BDMA_CCR_EN;
-}
-
-static void MasterSpi_Setup(void)
-{
-	if(HAL_SPI_GetState(MASTER_SPI) != HAL_SPI_STATE_READY){
-		HAL_SPI_DMAStop(MASTER_SPI);
-	}
-    // Use NORMAL mode, not circular
-    MASTER_SPI->hdmarx->Init.Mode   = DMA_NORMAL;
-    MASTER_SPI->hdmarx->Init.MemInc = DMA_MINC_DISABLE;
-    HAL_DMA_Init(MASTER_SPI->hdmarx);
-
-
-    MASTER_SPI->hdmatx->Init.Mode   = DMA_NORMAL;
-    MASTER_SPI->hdmatx->Init.MemInc = DMA_MINC_DISABLE;
-    HAL_DMA_Init(MASTER_SPI->hdmatx);
-
-    // Register callbacks
-    MASTER_SPI->hdmarx->XferCpltCallback     = NULL; //DMA_RxCplt
-    MASTER_SPI->hdmarx->XferErrorCallback    = DMA_Error;
-    MASTER_SPI->hdmarx->XferHalfCpltCallback = NULL;
-    MASTER_SPI->hdmarx->XferAbortCallback    = NULL;
-
-    MASTER_SPI->hdmatx->XferCpltCallback     = DMA_TxCplt;
-    MASTER_SPI->hdmatx->XferHalfCpltCallback = NULL;
-    MASTER_SPI->hdmatx->XferErrorCallback    = DMA_Error;
-    MASTER_SPI->hdmatx->XferAbortCallback    = NULL;
-
-    // Set TSIZE = 1
-    MODIFY_REG(MASTER_SPI->Instance->CR2, SPI_CR2_TSIZE, 1U);
-
-    // Initial DMA arm (first time uses HAL)
-    HAL_DMA_Start_IT(MASTER_SPI->hdmarx,
-                     (uint32_t)&MASTER_SPI->Instance->RXDR,
-                     (uint32_t)&diagnostics_sample,
-                     1U);
-
-    HAL_DMA_Start_IT(MASTER_SPI->hdmatx,
-                     (uint32_t)&READ_CONVST,
-                     (uint32_t)&MASTER_SPI->Instance->TXDR,
-                     1U);
-
-    // Enable SPI DMA requests
-    SET_BIT(MASTER_SPI->Instance->CFG1, SPI_CFG1_RXDMAEN | SPI_CFG1_TXDMAEN);
-
-    // Enable SPI
-    __HAL_SPI_ENABLE(MASTER_SPI);
-}
-
-
-
-// In your application file — implement the callback:
-//void SPI6_TransferCpltCallback(uint16_t rx_data) {
-//    // rx_data is the received word — CS is already high by this point
-//
-//}
 /* USER CODE END 0 */
 
 /**
@@ -469,10 +240,6 @@ int main(void)
   MX_TIM1_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);   // CS High
-
-
 	uint8_t msg[] = "USART1 OK\r\n";
 	HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
 	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
@@ -570,39 +337,10 @@ int main(void)
 		ad7606_init(&my_ADC, &ADC_regs, pins, spi, settings);
 	}
 	arm_rfft_init_q15(&fft_instance, FFT_SIZE, 0, 1);
-	EXIT_REGISTER_MODE = 0x0000;
-	EXIT_ADC_MODE = 0x4100;
 
 	init_hyrdophone_buffers();
 
-//	// Arm BDMA directly
-//	HAL_DMA_Start_IT(&hdma_spi6_rx, (uint32_t)&hspi6.Instance->RXDR,
-//	                  (uint32_t)&diagnostics_sample, 1);
-//	HAL_DMA_Start_IT(&hdma_spi6_tx, (uint32_t)&EXIT_REGISTER_MODE,
-//	                  (uint32_t)&hspi6.Instance->TXDR, 1);
-//
-//	// Enable SPI DMA requests
-//	SET_BIT(hspi6.Instance->CFG1, SPI_CFG1_TXDMAEN | SPI_CFG1_RXDMAEN);
-//
-//	// Enable SPI error interrupts so HAL error handling still works
-//	__HAL_SPI_ENABLE_IT(&hspi6, (SPI_IT_OVR | SPI_IT_UDR | SPI_IT_FRE | SPI_IT_MODF));
-//
-//	// Enable SPI — but don't set CSTART yet
-//	__HAL_SPI_ENABLE(&hspi6);
-//
-//	// Set SPI handle state so HAL doesn't think it's uninitialized
-//	hspi6.State = HAL_SPI_STATE_BUSY_TX_RX;
-
-	MasterSpi_Setup();
-
-	// Call your modified version — sets up BDMA, enables SPI, but doesn't set CSTART
-//	SPI_TransmitReceive_DMA_NoStart(
-//	    MASTER_SPI,
-//	    (uint8_t*)&READ_CONVST,
-//	    (uint8_t*)&diagnostics_sample,
-//	    1
-//	);
-
+    HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
 	__HAL_TIM_SET_AUTORELOAD(&htim1, 3838);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
@@ -1160,6 +898,7 @@ static void MX_TIM1_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
@@ -1169,7 +908,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 1919; //3838;//
+  htim1.Init.Period = 1919;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -1182,6 +921,10 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_IC_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -1190,6 +933,14 @@ static void MX_TIM1_Init(void)
   sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim1, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1343,7 +1094,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LEDG_Pin|LEDY_Pin|LEDR_Pin, GPIO_PIN_RESET);
