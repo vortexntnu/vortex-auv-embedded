@@ -168,16 +168,16 @@
                      displayName="asdf_default"
                      projectFiles="true">
         <logicalFolder name="components" displayName="components" projectFiles="true">
-          <itemPath>asdf_default/components/core.yml</itemPath>
-          <itemPath>asdf_default/components/dsu.yml</itemPath>
-          <itemPath>asdf_default/components/nvmctrl.yml</itemPath>
-          <itemPath>asdf_default/components/can0.yml</itemPath>
-          <itemPath>asdf_default/components/can_bootloader.yml</itemPath>
           <itemPath>asdf_default/components/evsys.yml</itemPath>
+          <itemPath>asdf_default/components/dfp.yml</itemPath>
+          <itemPath>asdf_default/components/can_bootloader.yml</itemPath>
+          <itemPath>asdf_default/components/stdio.yml</itemPath>
+          <itemPath>asdf_default/components/can0.yml</itemPath>
           <itemPath>asdf_default/components/sercom4.yml</itemPath>
           <itemPath>asdf_default/components/cmsis.yml</itemPath>
-          <itemPath>asdf_default/components/dfp.yml</itemPath>
-          <itemPath>asdf_default/components/stdio.yml</itemPath>
+          <itemPath>asdf_default/components/nvmctrl.yml</itemPath>
+          <itemPath>asdf_default/components/dsu.yml</itemPath>
+          <itemPath>asdf_default/components/core.yml</itemPath>
         </logicalFolder>
         <itemPath>asdf_default/mcc-config.mc4</itemPath>
       </logicalFolder>
@@ -250,8 +250,8 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>EdbgTool</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>4.50</languageToolchainVersion>
-        <platform>2</platform>
+        <languageToolchainVersion>5.00</languageToolchainVersion>
+        <platform>3</platform>
       </toolsSet>
       <packs>
         <pack name="SAMC21_DFP" vendor="Microchip" version="3.8.119"/>

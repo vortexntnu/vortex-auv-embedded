@@ -61,5 +61,4 @@ Thumbs.db
 # IDE workspace files (NetBeans-based)
 *.iml
 .idea/
-*.vscode/
 
