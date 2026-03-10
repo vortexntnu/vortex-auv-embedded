@@ -3587,18 +3587,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: NonMaskableInt_Handler
-          type: Dynamic
-        type: Values
-      type: String
-    NonMaskableInt_INTERRUPT_HANDLER:
-      attributes:
-        id: NonMaskableInt_INTERRUPT_HANDLER
-      children:
-      - children:
-        - attributes:
-            id: eic
-            value: NonMaskableInt_Handler
+            value: NMI_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -5073,6 +5062,17 @@ data:
         - attributes:
             value: LED_1
           type: User
+        type: Values
+      type: String
+    NonMaskableInt_INTERRUPT_HANDLER:
+      attributes:
+        id: NonMaskableInt_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: eic
+            value: NMI_InterruptHandler
+          type: Dynamic
         type: Values
       type: String
   userData:

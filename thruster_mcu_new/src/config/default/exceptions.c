@@ -59,17 +59,6 @@
    implementations to these weak handler functions. Deviation record ID -  H3_MISRAC_2012_R_8_6_DR_1
 */
 
-
-/* Brief default interrupt handlers for core IRQs.*/
-void __attribute__((noreturn, weak)) NonMaskableInt_Handler(void)
-{
-#if defined(__DEBUG) || defined(__DEBUG_D) && defined(__XC32)
-    __builtin_software_breakpoint();
-#endif
-    while (true)
-    {
-    }
-}
  
 void __attribute__((noreturn, weak)) HardFault_Handler(void)
 {

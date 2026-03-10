@@ -184,6 +184,60 @@ typedef struct
 
 } EIC_CALLBACK_OBJ;
 
+// *****************************************************************************
+/* EIC NMI Interrupt Pin Callback Function Pointer Type
+
+  Summary:
+    Defines the data type and function signature of the EIC peripheral NMI
+    callback function.
+
+  Description:
+    This data type defines the function signature of the EIC peripheral NMI
+    callback function. The EIC peripheral will call back the client's function
+    with this signature when an interrupt condition has been sensed on the NMI
+    pin.
+
+  Function:
+    void (*EIC_NMI_CALLBACK)(uintptr_t context )
+
+  Precondition:
+    EIC_Initialize must have been called for the given EIC
+    peripheral instance and EIC_NMICallbackRegister must have been
+    called to set the function to be called.
+
+  Parameters:
+    context - Allows the caller to provide a context value (usually a pointer
+    to the callers context for multi-instance clients).
+
+  Returns:
+    None.
+
+  Example:
+    <code>
+
+    void EIC_NMICallback (uintptr_t context)
+    {
+        This means an interrupt condition has been sensed on the NMI Pin.
+    }
+
+    EIC_NMICallbackRegister(EIC_NMICallback, 0);
+    </code>
+
+  Remarks:
+    None.
+*/
+
+typedef void (*EIC_NMI_CALLBACK) (uintptr_t context);
+
+typedef struct
+{
+    /* NMI Callback Handler */
+    EIC_NMI_CALLBACK callback;
+
+    /* NMI Client context */
+    uintptr_t       context;
+
+} EIC_NMI_CALLBACK_OBJ;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -337,6 +391,43 @@ void EIC_InterruptDisable (EIC_PIN pin);
 
 void EIC_CallbackRegister(EIC_PIN pin, EIC_CALLBACK callback, uintptr_t context);
 
+
+// *****************************************************************************
+/* Function:
+    void EIC_NMICallbackRegister (EIC_NMI_CALLBACK callback, uintptr_t context);
+
+  Summary:
+    Registers the function to be called when an interrupt condition has been
+    sensed on the NMI pin.
+
+  Description
+    This function registers the callback function to be called when an interrupt
+    condition has been sensed on the NMI pin.
+
+  Precondition:
+    EIC_Initialize() must have been called first for the associated
+    instance.
+
+  Parameters:
+    callback - callback function pointer. Setting this to NULL will disable the
+    callback feature.
+
+    context - Allows the caller to provide a context value
+
+  Returns:
+    None.
+
+  Example:
+    <code>
+     Refer to the description of the EIC_NMI_CALLBACK data type for details on
+     API usage.
+    </code>
+
+  Remarks:
+    None.
+*/
+
+void EIC_NMICallbackRegister(EIC_NMI_CALLBACK callback, uintptr_t context);
 
 
 #ifdef __cplusplus // Provide C++ Compatibility
