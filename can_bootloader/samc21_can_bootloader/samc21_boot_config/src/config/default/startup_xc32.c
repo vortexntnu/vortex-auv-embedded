@@ -1,6 +1,6 @@
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -23,123 +23,76 @@
 *******************************************************************************/
 // DOM-IGNORE-END
 
+#include "definitions.h" /* for potential custom handler names */
 #include <libpic32c.h>
+#include <sys/cdefs.h>
 #include <stdbool.h>
-#include <stddef.h>
-#include "device.h"
-#include "interrupts.h"
-
-/*
- *  The MPLAB X Simulator does not yet support simulation of programming the
- *  GPNVM bits yet. We can remove this once it supports the FRDY bit.
- */
- /* MISRAC 2023 deviation block start */
-/* MISRA C-2023 Rule 21.1 deviated 1 time. Deviation record ID -  H3_MISRAC_2023_R_21_1_DR_1 */
-#ifdef __MPLAB_DEBUGGER_SIMULATOR
-#define __XC32_SKIP_STARTUP_GPNVM_WAIT
-#endif
-/* MISRAC 2023 deviation block end */
-
-/*
- *  This startup code relies on features that are specific to the MPLAB XC32
- *  toolchain. Do not use it with other toolchains.
- */
-#ifndef __XC32
-#warning This startup code is intended for use with the MPLAB XC32 Compiler only.
-#endif
 
 /* MISRAC 2023 deviation block start */
-/* MISRA C-2023 Rule 21.2 deviated 5 times. Deviation record ID -  H3_MISRAC_2023_R_21_2_DR_1 */
-/* MISRA C-2023 Rule 8.6 deviated 6 times.  Deviation record ID -  H3_MISRAC_2023_R_8_6_DR_1 */
-
-/* array initialization  function */
-extern void __attribute__((long_call)) __libc_init_array(void);
-
-/* Optional application-provided functions */
-extern void __attribute__((weak,long_call, alias("Dummy_App_Func"))) _on_reset(void);
-extern void __attribute__((weak,long_call, alias("Dummy_App_Func"))) _on_bootstrap(void);
-
-/* Reserved for use by the MPLAB XC32 Compiler */
-extern void __attribute__((weak,long_call, alias("Dummy_App_Func"))) __xc32_on_reset(void);
-extern void __attribute__((weak,long_call, alias("Dummy_App_Func"))) __xc32_on_bootstrap(void);
-
-/* Linker defined variables */
-extern uint32_t __svectors;
-#if defined (__REINIT_STACK_POINTER)
-extern uint32_t _stack;
-#endif
-
-/* MISRAC 2023 deviation block end */
-
+/* MISRA C-2023 Rule 21.2 deviated 1 times. Deviation record ID -  H3_MISRAC_2023_R_21_2_DR_1 */
+/* MISRA C-2023 Rule 8.6 deviated 8 times.  Deviation record ID -  H3_MISRAC_2023_R_8_6_DR_1 */
+/* Initialize segments */
+extern uint32_t _sfixed;
+extern void _stack(void);
 
 extern int main(void);
 
 
+/* Declaration of Reset handler (may be custom) */
+void __attribute__((noinline)) Reset_Handler(void);
+extern void (* const vectors[])(void);
 
-/* Brief default application function used as a weak reference */
-extern void Dummy_App_Func(void);
-void __attribute__((optimize("-O1"),long_call))Dummy_App_Func(void)
+__attribute__ ((used, section(".vectors")))
+void (* const vectors[])(void) =
 {
-    /* Do nothing */
-    return;
-}
+    &_stack,
+    Reset_Handler,
+};
 
 /**
  * \brief This is the code that gets called on processor reset.
  * To initialize the device, and call the main() routine.
  */
-void __attribute__((optimize("-O1"), section(".text.Reset_Handler"), long_call, noreturn)) Reset_Handler(void)
+
+/* Linker-defined symbols for data initialization. */
+extern uint32_t _sdata, _edata, _etext;
+extern uint32_t _sbss, _ebss;
+/* MISRAC 2023 deviation block end */
+
+
+void __attribute__((optimize("-O1"), noinline, section(".romfunc.Reset_Handler"))) Reset_Handler(void)
 {
-#ifdef SCB_VTOR_TBLOFF_Msk
-    uint32_t *pSrc;
-#endif
+    register uint32_t count;
 
-#if defined (__REINIT_STACK_POINTER)
-    /* Initialize SP from linker-defined _stack symbol. */
-    __set_MSP((uint32_t)&_stack);
-
-#ifdef SCB_VTOR_TBLOFF_Msk
-    /* Buy stack for locals */
-    __asm__ volatile ("sub sp, sp, #8" : : : "sp");
-#endif
-    __asm__ volatile ("add r7, sp, #0" : : : "r7");
-#endif
-
-    /* Call the optional application-provided _on_reset() function. */
-    _on_reset();
-
-    /* Reserved for use by MPLAB XC32. */
-    __xc32_on_reset();
-
-    /* Initialize data after TCM is enabled.
-     * Data initialization from the XC32 .dinit template */
-    __pic32c_data_initialization();
+    uint32_t *pSrc, *pDst;
+    uintptr_t src, dst;
 
 
-#  ifdef SCB_VTOR_TBLOFF_Msk
-    /*  Set the vector-table base address in FLASH */
-    pSrc = (uint32_t *) & __svectors;
-    SCB->VTOR = ((uint32_t) pSrc & SCB_VTOR_TBLOFF_Msk);
-#  endif /* SCB_VTOR_TBLOFF_Msk */
 
-    /* Initialize the C library */
-    __libc_init_array();
+    src = (uintptr_t)&_etext;
+    pSrc = (uint32_t *)src;      /* flash functions start after .text */
+    dst = (uintptr_t)&_sdata;
+    pDst = (uint32_t *)dst;      /* boundaries of .data area to init */
 
-    /* Call the optional application-provided _on_bootstrap() function. */
-    _on_bootstrap();
+    /* Init .data */
+    for (count = 0U; count < (((uint32_t)&_edata - (uint32_t)dst) / 4U); count++)
+    {
+        pDst[count] = pSrc[count];
+    }
 
-    /* Reserved for use by MPLAB XC32. */
-    __xc32_on_bootstrap();
+    /* Init .bss */
+    dst = (uintptr_t)&_sbss;
+    pDst = (uint32_t *)dst;
+    for (count = 0U; count < (((uint32_t)&_ebss - (uint32_t)dst) / 4U); count++)
+    {
+        pDst[count] = 0U;
+    }
 
-    /* Branch to application's main function */
+
+     /* Branch to application's main function */
     (void)main();
 
 #if (defined(__DEBUG) || defined(__DEBUG_D)) && defined(__XC32)
     __builtin_software_breakpoint();
 #endif
-
-    while (true)
-    {
-        /* Infinite loop */
-    }
 }

@@ -1,17 +1,19 @@
 /*******************************************************************************
- Debug Console Source file
+  Device Service Unit (DSU) PLIB
 
   Company:
     Microchip Technology Inc.
 
   File Name:
-    xc32_monitor.c
+    plib_dsu.h
 
   Summary:
-    debug console Source File
+    DSU PLIB Header File
 
   Description:
-    None
+    This file defines the interface to the DSU peripheral library.
+    This library provides access to and control of the associated
+    peripheral instance.
 
 *******************************************************************************/
 
@@ -37,37 +39,31 @@
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
+
+// DOM-IGNORE-BEGIN
+#ifndef PLIB_DSU_H
+#define PLIB_DSU_H
+
+// *****************************************************************************
+// Section: Included Files
+// *****************************************************************************
+// *****************************************************************************
+/* This section lists the other files that are included in this file.*/
+
+#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
-#include "definitions.h"
 
-extern int read(int handle, void *buffer, unsigned int len);
-extern int write(int handle, void * buffer, size_t count);
+#ifdef __cplusplus // Provide C++ Compatibility
+extern "C" {
+#endif
 
+// DOM-IGNORE-END
 
-int read(int handle, void *buffer, unsigned int len)
-{
-    int nChars = 0;
-    bool success = false;
-    if ((handle == 0)  && (len > 0U))
-    {
-        do
-        {
-            success = SERCOM4_USART_Read(buffer, 1);
-        }while( !success);
-        nChars = 1;
-    }
-    return nChars;
+bool DSU_CRCCalculate (uint32_t startAddress, size_t length, uint32_t crcSeed, uint32_t * crc);
+
+#ifdef __cplusplus // Provide C++ Compatibility
 }
+#endif
 
-int write(int handle, void * buffer, size_t count)
-{
-   bool success = false;
-   if (handle == 1)
-   {
-       do
-       {
-           success = SERCOM4_USART_Write(buffer, count);
-       }while( !success);
-   }
-   return (int)count;
-}
+#endif /* PLIB_DSU_H */

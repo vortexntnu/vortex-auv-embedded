@@ -1,6 +1,19 @@
+/*******************************************************************************
+  Bootloader Interrupt Header File
+
+  File Name:
+    bootloader_interrupt.h
+
+  Summary:
+    This file contains function prototype declarations.
+
+  Description:
+    This file contains function prototype declarations.
+ *******************************************************************************/
+
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2023 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -20,42 +33,19 @@
 * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
-*******************************************************************************/
+ *******************************************************************************/
 // DOM-IGNORE-END
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdbool.h>
-#include "device.h" /* for ARM CMSIS __BKPT() */
+// *****************************************************************************
+// *****************************************************************************
+// Section: Include Files
+// *****************************************************************************
+// *****************************************************************************
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef BOOTLOADER_INTERRUPT_H
+#define BOOTLOADER_INTERRUPT_H
 
+void NonMaskableInt_Handler(void);
+void HardFault_Handler(void);
 
-/* MISRAC 2023 deviation block start */
-/* MISRA C-2023 Rule 21.2 deviated twice.  Deviation record ID -  H3_MISRAC_2023_R_21_2_DR_1 */
-/* Harmony specific
- * We implement only the syscalls we want over the stubs provided by libpic32c
- */
-extern void _exit(int status);
-
-void _exit(int status)
-{
-    /* Software breakpoint */
-#ifdef __DEBUG
-    __BKPT(0);
-#endif
-
-    /* halt CPU */
-    while (true)
-    {
-    }
-}
-
-#ifdef __cplusplus
-}
-#endif
-
-/* MISRAC 2023 deviation block end */
+#endif      //BOOTLOADER_INTERRUPT_H

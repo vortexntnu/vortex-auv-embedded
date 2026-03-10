@@ -26,6 +26,7 @@
 #include <stdbool.h>                    // Defines true
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
+#include "peripheral/port/plib_port.h"
 
 
 // *****************************************************************************
@@ -38,6 +39,8 @@ int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
+
+    LED_Clear();
 
     while ( true )
     {

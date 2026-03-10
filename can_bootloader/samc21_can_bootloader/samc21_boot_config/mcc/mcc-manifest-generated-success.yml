@@ -2,7 +2,7 @@
 
 manifest_file_version: 1.0.0
 project: samc21_boot_config
-creation_date: 2026-03-10T15:47:39.856+01:00[Europe/Oslo]
+creation_date: 2026-03-10T16:09:50.787+01:00[Europe/Oslo]
 operating_system: Linux
 mcc_mode: VSCodePlugin
 mcc_mode_version: Unknown
@@ -20,3 +20,4 @@ packs: {name: SAMC21_DFP, version: 3.8.119}
 modules:
 - {name: csp, type: HARMONY, version: v3.25.1}
 - {name: CMSIS_5, type: HARMONY, version: 5.9.1-dev}
+- {name: bootloader, type: HARMONY, version: v3.9.0}

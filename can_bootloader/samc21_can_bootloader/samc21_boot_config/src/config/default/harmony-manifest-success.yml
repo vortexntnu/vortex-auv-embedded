@@ -4,7 +4,7 @@
 
 
 project: samc21_boot_config
-creation_date: 2026-03-10T15:47:39.859+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+creation_date: 2026-03-10T16:09:50.792+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
 operating_system: Linux
 mcc_mode: VSCodePlugin            # [IDE|Standalone|Headless]
 mcc_version: v5.6.4
@@ -16,6 +16,7 @@ compiler: NA
 modules:
     - {name: "csp", version: "v3.25.1"}
     - {name: "CMSIS_5", version: "5.9.1-dev"}
+    - {name: "bootloader", version: "v3.9.0"}
 
 packs:
     - {name: "SAMC21_DFP", version: "3.8.119"}

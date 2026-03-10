@@ -54,7 +54,11 @@
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
+#include "peripheral/pac/plib_pac.h"
 #include "peripheral/sercom/usart/plib_sercom4_usart.h"
+#include "peripheral/can/plib_can0.h"
+#include "bootloader/bootloader_can.h"
+#include "peripheral/dsu/plib_dsu.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility

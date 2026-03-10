@@ -3,9 +3,11 @@
     "configurations": [
         {
             "name": "default",
-            "id": "conf1",
+            "id": "",
             "device": "ATSAMC21J18A",
             "imagePath": "./out/samc21_can_bootloader/default.elf",
+            "toolProperties": "default-tool-base",
+            "tool": "EDBG",
             "packs": [
                 {
                     "name": "SAMC21_DFP",
@@ -19,18 +21,24 @@
                 }
             ],
             "fileSet": "default",
-            "toolchain": "default-XC32"
+            "toolchain": "default-XC32",
+            "userVariables": "default-uservariables"
         }
     ],
     "propertyGroups": [
+        {
+            "name": "default-uservariables",
+            "type": "uservariables",
+            "properties": {}
+        },
         {
             "name": "default-XC32",
             "type": "toolchain",
             "provider": "microchip.toolchains:xc32@4.60",
             "properties": {
                 "compiler.isolate-each-function": true,
-                "compiler.optimization-level": "-O1",
-                "compiler.place-data-into-section": true,
+                "compiler.optimization-level": "-O2",
+                "compiler.place-data-into-section": "false",
                 "linker.heap-size": "512",
                 "linker.remove-unused-sections": true,
                 "compiler++.isolate-each-function": true,
@@ -49,8 +57,14 @@
                     "samc21_boot_config/src/packs/CMSIS",
                     "samc21_boot_config/src/packs/CMSIS/CMSIS/Core/Include"
                 ],
-                "linker.no-device-startup-code": "true"
+                "linker.no-device-startup-code": "true",
+                "linker.no-startup-files": "true"
             }
+        },
+        {
+            "name": "default-tool-base",
+            "type": "tool",
+            "properties": {}
         }
     ],
     "fileSets": [
@@ -177,7 +191,20 @@
                 "samc21_boot_config/src/packs/CMSIS/CMSIS/Core/Include/cmsis_armclang_ltm.h",
                 "samc21_boot_config/src/packs/CMSIS/CMSIS/Core/Include/core_cm0plus.h",
                 "samc21_boot_config/src/packs/CMSIS/CMSIS/Core/Include/mpu_armv7.h",
-                "samc21_boot_config/src/packs/CMSIS/CMSIS/Core/Include/cachel1_armv7.h"
+                "samc21_boot_config/src/packs/CMSIS/CMSIS/Core/Include/cachel1_armv7.h",
+                "samc21_boot_config/src/config/default/peripheral/pac/plib_pac.h",
+                "samc21_boot_config/src/config/default/peripheral/pac/plib_pac.c",
+                "samc21_boot_config/src/config/default/peripheral/can/plib_can_common.h",
+                "samc21_boot_config/src/config/default/peripheral/can/plib_can0.c",
+                "samc21_boot_config/src/config/default/peripheral/can/plib_can0.h",
+                "samc21_boot_config/src/config/default/bootloader/bootloader_can.c",
+                "samc21_boot_config/src/config/default/bootloader/bootloader_can.h",
+                "samc21_boot_config/src/config/default/btl.ld",
+                "samc21_boot_config/src/config/default/bootloader/bootloader_common.c",
+                "samc21_boot_config/src/config/default/bootloader/bootloader_common.h",
+                "samc21_boot_config/src/config/default/bootloader/bootloader_interrupt.h",
+                "samc21_boot_config/src/config/default/peripheral/dsu/plib_dsu.h",
+                "samc21_boot_config/src/config/default/peripheral/dsu/plib_dsu.c"
             ]
         }
     ]

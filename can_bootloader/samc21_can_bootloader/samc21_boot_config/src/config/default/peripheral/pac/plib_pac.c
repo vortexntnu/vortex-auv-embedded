@@ -1,18 +1,24 @@
 /*******************************************************************************
-  System Exceptions File
+  Peripheral Access Controller (PAC) PLIB
 
-  File Name:
-    exceptions.c
+  Company
+    Microchip Technology Inc.
 
-  Summary:
-    This file contains a function which overrides the default _weak_ exception
-    handlers provided by the interrupt.c file.
+  File Name
+    plib_pac.c
 
-  Description:
-    This file redefines the default _weak_  exception handler with a more debug
-    friendly one. If an unexpected exception occurs the code will stop in a
-    while(1) loop.
- *******************************************************************************/
+  Summary
+    Source for PAC peripheral library interface Implementation.
+
+  Description
+    This file defines the interface to the PAC peripheral library. This
+    library provides access to and control of the associated peripheral
+    instance.
+
+  Remarks:
+    None.
+
+*******************************************************************************/
 
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
@@ -44,46 +50,42 @@
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-#include "interrupts.h"
-#include "definitions.h"
 
- 
+#include "plib_pac.h"
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Exception Handling Routine
+// Section: Global Data
 // *****************************************************************************
 // *****************************************************************************
-/* MISRAC 2023 deviation block start */
-/* MISRA C-2023 Rule 8.6 might be violated here if the users provide a strong
-   implementations to these weak handler functions. Deviation record ID -  H3_MISRAC_2023_R_8_6_DR_1
-*/
 
 
-/* Brief default interrupt handlers for core IRQs.*/
-void __attribute__((noreturn, weak)) NonMaskableInt_Handler(void)
+
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: PAC Interface Implementations
+// *****************************************************************************
+// *****************************************************************************
+
+void PAC_Initialize( void )
 {
-#if defined(__DEBUG) || defined(__DEBUG_D) && defined(__XC32)
-    __builtin_software_breakpoint();
-#endif
-    while (true)
-    {
-    }
-}
- 
-void __attribute__((noreturn, weak)) HardFault_Handler(void)
-{
-#if defined(__DEBUG) || defined(__DEBUG_D) && defined(__XC32)
-   __builtin_software_breakpoint();
-#endif
-   while (true)
-   {
-   }
 }
 
- 
-/* MISRAC 2023 deviation block end for rule 8.6 */
+bool PAC_PeripheralIsProtected( PAC_PERIPHERAL peripheral )
+{
+    bool status = false;
+    const volatile uint32_t *statusRegBaseAddr = (const volatile uint32_t*)( PAC_BASE_ADDRESS + PAC_STATUSA_REG_OFST);
 
-/*******************************************************************************
- End of File
- */
+    /* Verify if the peripheral is protected or not */
+    status = (((*(statusRegBaseAddr + ((uint32_t)peripheral / 32U))) & (1UL << ((uint32_t)peripheral % 32U))) != 0U);
+
+    return status;
+}
+
+void PAC_PeripheralProtectSetup( PAC_PERIPHERAL peripheral, PAC_PROTECTION operation )
+{
+    /* Set Peripheral Access Control */
+    PAC_REGS->PAC_WRCTRL = PAC_WRCTRL_PERID((uint32_t)peripheral) | PAC_WRCTRL_KEY((uint32_t)operation);
+}
+

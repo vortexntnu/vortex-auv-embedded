@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: nvmctrl
+componentName: stdio
 coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: nvmctrl
+  name: stdio
   type: module
   version: ''
 - dependencyPackage: ''
@@ -18,36 +18,47 @@ data:
     children:
     - children:
       - attributes:
-          id: NVMCTRL_MEMORY
+          id: UART
         children:
         - children:
           - attributes:
               id: targetComponentID
             children:
             - type: Value
-              value: can_bootloader
+              value: sercom4
             type: String
           - attributes:
               id: targetAttachmentID
             children:
             - type: Value
-              value: btl_MEMORY_dependency
+              value: SERCOM4_UART
             type: String
           type: Attributes
-        type: DirectCapability
+        type: DirectDependency
       type: Attachments
-    type: nvmctrl
-  elementPosition: {}
+    type: stdio
+  elementPosition:
+    attributes:
+      id: __ROOTVIEW
+    children:
+    - children:
+      - attributes:
+          id: stdio
+          x: '185'
+          y: '215'
+        type: ElementPosition
+      type: ElementPositions
+    type: ComponentGraph
   symbols:
-    INTERRUPT_ENABLE:
+    DEBUG_PERIPHERAL:
       attributes:
-        id: INTERRUPT_ENABLE
+        id: DEBUG_PERIPHERAL
       children:
       - children:
         - attributes:
-            id: can_bootloader
-            value: 'false'
+            id: stdio
+            value: sercom4
           type: Dynamic
         type: Values
-      type: Boolean
+      type: String
   userData: {}

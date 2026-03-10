@@ -48,7 +48,6 @@
 // *****************************************************************************
 
 #include <string.h>
-#include "interrupts.h"
 #include "plib_nvmctrl.h"
 
 
