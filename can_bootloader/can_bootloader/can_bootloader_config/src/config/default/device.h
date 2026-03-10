@@ -59,7 +59,7 @@
 #endif //DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS
 #include "samc21j18a.h"
 #pragma GCC diagnostic pop
-#include "device_cache.h"
+
 #include "toolchain_specifics.h"
 
 #endif //DEVICE_H

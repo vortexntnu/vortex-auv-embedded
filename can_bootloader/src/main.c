@@ -67,7 +67,7 @@ int main ( void )
     PORT_REGS->GROUP[0].PORT_DIR = (1 << 15);
     PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 15);
 
-    char test[] = "test123\r\n";
+    char test[] = "please funk\r\n";
     SERCOM4_USART_Write(test,sizeof(test));
 
     while (true)

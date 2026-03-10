@@ -45,8 +45,9 @@
 #ifndef BOOTLOADER_COMMON_H
 #define BOOTLOADER_COMMON_H
 
-#include "definitions.h"
-#include <device.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 #include "bootloader_interrupt.h"
 
 // *****************************************************************************

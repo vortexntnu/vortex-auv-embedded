@@ -1,12 +1,13 @@
 {
     "mplab.clangd.arguments": [
-        "--compile-commands-dir=${workspaceFolder}\\_build\\can_bootloader\\default"
+        "--compile-commands-dir=${workspaceFolder}/_build/can_bootloader/default"
     ],
-    "mplab.clangd.path": "c:\\Program Files\\Microchip\\xc32\\v5.00\\bin\\xc32-clangd.exe",
+    "mplab.clangd.path": "/opt/microchip/xc32/v4.60/bin/xc32-clangd",
     "memory-inspector.debugTypes": [
         "arm-debugger",
         "embedded-debug",
         "gdb",
         "mplab-core-da"
-    ]
+    ],
+    "C_Cpp.intelliSenseEngine": "disabled"
 }

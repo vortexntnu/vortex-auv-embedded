@@ -130,7 +130,7 @@ void SYS_Initialize ( void* data )
         NVMCTRL_Initialize();
 
 
-    PORT_Initialize();
+    //PORT_Initialize();
 
     if (bootloader_Trigger() == false)
     {
