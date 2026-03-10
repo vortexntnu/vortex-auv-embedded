@@ -94,11 +94,11 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
 static void message_handler(void);
 
 /**
- * @brief Logs raw ADC readings from the IMON pins for all 8 thruster channels.
+ * @brief Logs thruster current readings from the IMON pins for all 8 channels.
  * 
- * Reads ADC samples collected via DMA sleepwalking and prints the raw values.
- * The actual current conversion factor depends on the efuse IMON output characteristics
- * and is not yet determined - raw ADC values are logged for now.
+ * Reads ADC samples collected via DMA sleepwalking, converts to current using
+ * the efuse IMON transfer function: I_out = V_Imon / (G_Imon * R_Imon)
+ * where G_Imon = 18.31 uA/A and R_Imon = 4.6 kOhm for thrusters.
  */
 static void log_current(void);
 
@@ -258,10 +258,16 @@ static void message_handler(void) {
 }
 
 static void log_current(void) {
-    // Log raw ADC readings from IMON pins for each thruster channel. 
-    // TODO: Once IMON output is confirmed, convert raw ADC to actual current values.
+    const float ADC_VREF   = 3.3f;
+    const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
+    const float R_IMON     = 4600.0f;    // 4.6 kOhm sense resistor for thrusters
+    
     for (size_t i = 0; i < 8; i++) {
-        printf("IMON[%u] raw=%u\r\n", (unsigned)i, (unsigned)adc_result_array[i]);
+        float V_Imon = (float)adc_result_array[i] * ADC_VREF / 65535.0f;
+        float I_out  = V_Imon / (G_IMON * R_IMON);
+        
+        printf("IMON[%u] raw=%u  V=%.4f  I=%.3f A\r\n",
+               (unsigned)i, (unsigned)adc_result_array[i], (double)V_Imon, (double)I_out);
     }
 }
 
