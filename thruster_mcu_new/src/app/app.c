@@ -339,12 +339,12 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
 }
 
 void generate_pwm_signals() {
-    // PWM 4 | TCC1_WO2 | Working
-    // PWM 3 | TCC1_WO3 | Working
-    // PWM 8 | TCC0_WO2 | Working
-    // PWM 7 | TCC0_WO3 | Working
-    // PWM 6 | TCC0_WO4 | Pin not on devboard
-    // PWM 5 | TCC0_WO5 | Pin not on devboard
+    // PWM 4 | TCC1_WO2 | Pin not on devboard
+    // PWM 3 | TCC1_WO3 | Pin not on devboard
+    // PWM 8 | TCC0_WO2 | Not checked
+    // PWM 7 | TCC0_WO3 | Not checked
+    // PWM 6 | TCC0_WO4 | Not checked
+    // PWM 5 | TCC0_WO5 | Not checked
     // PWM 1 | TCC2_WO0 | Pin not on devboard
     // PWM 2 | TCC2_WO1 | Pin not on devboard
     // PWM 9 | TC3_ WO1 | PB01 | Working
