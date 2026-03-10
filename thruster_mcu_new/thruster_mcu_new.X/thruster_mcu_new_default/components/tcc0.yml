@@ -259,4 +259,14 @@ data:
           type: Float
         type: Attributes
       type: Float
+    TCC_DRVCTRL_INVEN2:
+      attributes:
+        id: TCC_DRVCTRL_INVEN2
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

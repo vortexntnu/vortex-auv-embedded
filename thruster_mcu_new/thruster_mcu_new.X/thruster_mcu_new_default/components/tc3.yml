@@ -34,7 +34,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '5'
+            value: '6'
           type: User
         type: Values
       type: KeyValueSet
@@ -45,7 +45,7 @@ data:
       - children:
         - attributes:
             id: tc3
-            value: '750000'
+            value: '187500'
           type: Dynamic
         type: Values
       type: Integer
@@ -97,7 +97,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '87.38133'
+            value: '349.52533'
           type: Float
         type: Attributes
       - children:
@@ -208,7 +208,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            value: '14999'
+            value: '65535'
           type: User
         type: Values
       type: Long
@@ -231,7 +231,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '14999'
+            value: '65535'
           type: Long
         - attributes:
             id: visible
@@ -242,8 +242,18 @@ data:
         type: Attributes
       - children:
         - attributes:
-            value: '7500'
+            value: '10000'
           type: User
         type: Values
       type: Long
+    TC_COMPARE_DRVCTRL_INVEN0:
+      attributes:
+        id: TC_COMPARE_DRVCTRL_INVEN0
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

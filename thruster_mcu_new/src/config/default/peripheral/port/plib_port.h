@@ -194,17 +194,8 @@
 #define PG_TH1_PIN                  PORT_PIN_PB31
 
 /*** Macros for PWM_9 pin ***/
-#define PWM_9_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 0U)) & 0x01U)
-#define PWM_9_PIN                  PORT_PIN_PB00
-
-/*** Macros for LED_3 pin ***/
-#define LED_3_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 1U))
-#define LED_3_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 1U))
-#define LED_3_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 1U))
-#define LED_3_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 1U))
-#define LED_3_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 1U))
-#define LED_3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 1U)) & 0x01U)
-#define LED_3_PIN                  PORT_PIN_PB01
+#define PWM_9_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 1U)) & 0x01U)
+#define PWM_9_PIN                  PORT_PIN_PB01
 
 /*** Macros for LED_2 pin ***/
 #define LED_2_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 2U))

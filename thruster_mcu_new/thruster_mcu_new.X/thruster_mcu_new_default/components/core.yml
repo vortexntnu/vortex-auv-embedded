@@ -1997,7 +1997,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x4'
+            value: '0x40'
           type: Dynamic
         type: Values
       type: String
@@ -2019,7 +2019,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1'
+            value: '0x0'
           type: Dynamic
         type: Values
       type: String
@@ -2030,7 +2030,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -2040,7 +2040,7 @@ data:
       children:
       - children:
         - attributes:
-            value: E
+            value: ''
           type: User
         type: Values
       type: String
@@ -2172,7 +2172,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x0'
+            value: '0x1'
           type: Dynamic
         type: Values
       type: String
@@ -2183,7 +2183,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -2205,7 +2205,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x5'
+            value: '0x55'
           type: Dynamic
         type: Values
       type: String
@@ -2226,7 +2226,7 @@ data:
       children:
       - children:
         - attributes:
-            value: ''
+            value: F
           type: User
         type: Values
       type: String
@@ -3942,7 +3942,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PMW_4
+            value: PWM_4
           type: User
         type: Values
       type: String
@@ -4744,36 +4744,6 @@ data:
           type: User
         type: Values
       type: String
-    PIN_61_MODE:
-      attributes:
-        id: PIN_61_MODE
-      children:
-      - children:
-        - attributes:
-            value: ''
-          type: User
-        type: Values
-      type: String
-    PIN_61_FUNCTION_TYPE:
-      attributes:
-        id: PIN_61_FUNCTION_TYPE
-      children:
-      - children:
-        - attributes:
-            value: TC3_WO0
-          type: User
-        type: Values
-      type: String
-    PIN_61_FUNCTION_NAME:
-      attributes:
-        id: PIN_61_FUNCTION_NAME
-      children:
-      - children:
-        - attributes:
-            value: PWM_9
-          type: User
-        type: Values
-      type: String
     PIN_62_MODE:
       attributes:
         id: PIN_62_MODE
@@ -4790,7 +4760,7 @@ data:
       children:
       - children:
         - attributes:
-            value: GPIO
+            value: TC3_WO1
           type: User
         type: Values
       type: String
@@ -4801,7 +4771,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x2'
+            value: '0x3'
           type: Dynamic
         type: Values
       type: String
@@ -4853,7 +4823,7 @@ data:
       children:
       - children:
         - attributes:
-            value: GPIO
+            value: E
           type: User
         type: Values
       type: String
@@ -4863,7 +4833,7 @@ data:
       children:
       - children:
         - attributes:
-            value: LED_3
+            value: PWM_9
           type: User
         type: Values
       type: String
@@ -5073,6 +5043,36 @@ data:
             id: eic
             value: NMI_InterruptHandler
           type: Dynamic
+        type: Values
+      type: String
+    PIN_46_MODE:
+      attributes:
+        id: PIN_46_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_46_FUNCTION_TYPE:
+      attributes:
+        id: PIN_46_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: TCC1_WO3
+          type: User
+        type: Values
+      type: String
+    PIN_46_FUNCTION_NAME:
+      attributes:
+        id: PIN_46_FUNCTION_NAME
+      children:
+      - children:
+        - attributes:
+            value: PWM_3
+          type: User
         type: Values
       type: String
   userData:

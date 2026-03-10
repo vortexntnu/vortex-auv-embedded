@@ -15,7 +15,7 @@ int main ( void ) {
     {
         /* Sleep until an interrupt occurs*/
         //PM_IdleModeEnter();
-
+        
         generate_pwm_signals();
         
         /* Run application logic */

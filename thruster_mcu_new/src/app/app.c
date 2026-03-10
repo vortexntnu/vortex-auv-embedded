@@ -13,7 +13,7 @@
 static const uint32_t TCC0_PERIOD               = 75000U;
 static const uint32_t TCC1_PERIOD               = 75000U;
 static const uint32_t TCC2_PERIOD               = 18500U;
-static const uint32_t TC3_PERIOD                = 20000U; 
+static const uint32_t TC3_PERIOD                = 65535; 
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 
@@ -339,30 +339,32 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
 }
 
 void generate_pwm_signals() {
-    // PWM 1 | TCC1_WO2 | Working
-    // PWM 2 | TCC1_WO3 | Working
-    // PWM 3 | TCC0_WO2 | Working
-    // PWM 4 | TCC0_WO3 | Working
-    // PWM 5 | TCC0_WO4 | Pin not on devboard
-    // PWM 6 | TCC0_WO5 | Pin not on devboard
-    // PWM 7 | TCC2_WO0 | Pin not on devboard
-    // PWM 8 | TCC2_WO1 | Pin not on devboard
-    // PWM 9 | TC3_ WO0 | PB00 | Not working!
-   
-    uint8_t instance = 3;
-    uint8_t channel = 1;
+    // PWM 4 | TCC1_WO2 | Working
+    // PWM 3 | TCC1_WO3 | Working
+    // PWM 8 | TCC0_WO2 | Working
+    // PWM 7 | TCC0_WO3 | Working
+    // PWM 6 | TCC0_WO4 | Pin not on devboard
+    // PWM 5 | TCC0_WO5 | Pin not on devboard
+    // PWM 1 | TCC2_WO0 | Pin not on devboard
+    // PWM 2 | TCC2_WO1 | Pin not on devboard
+    // PWM 9 | TC3_ WO1 | PB01 | Working
     
-    uint16_t pulse_us = 1100;
+    uint8_t instance = 3;
+    uint8_t channel = 0;
+    
+    uint16_t pulse_us = 1500;
     
     pulse_us = clamp(pulse_us, 1100, 1900);
     
+    //uint32_t ticks = us_to_ticks(TC3_PERIOD, pulse_us, LIGHT_PWM_PERIOD_US);
+     
     uint32_t ticks = us_to_ticks(TC3_PERIOD, pulse_us, LIGHT_PWM_PERIOD_US);
-        
+    bool ok = TC3_Compare16bitMatch1Set((uint16_t)ticks);
     //tcc_write(instance, channel, ticks);
     
-    TC3_Compare16bitMatch1Set(ticks);
+    //TC3_Compare16bitMatch1Set(ticks);
     
-    WDT_Clear();
+    //WDT_Clear();
     
     //TCC1_PWM24bitDutySet(1, 10000);
 }
