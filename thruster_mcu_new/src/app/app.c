@@ -103,16 +103,15 @@ static void message_handler(void);
 static void log_current(void);
 
 /**
- * @brief Sends an overcurrent fault message over CAN
+ * @brief Sends a fault message over CAN when an EIC FLT interrupt fires.
  * 
- * Constructs and transmits a 7-byte CAN FD fault message containing diagnostic information about the fault condition. 
+ * Constructs and transmits a CAN FD fault message identifying which thruster
+ * triggered a hardware fault via the FLT pin.
  * 
  * @param thruster_id Thruster identifier (0-7)
- * @param current Measured current value in Amperes
- * @param adc_raw Raw ADC reading 
  * @return true if message was transmitted successfully, false if not
  */
-static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc_raw);
+static bool send_thruster_fault(uint8_t thruster_id);
 
 /**
  * @brief Sets PWM outputs to their neutral/off position
@@ -267,22 +266,20 @@ static void log_current(void) {
 }
 
 
-static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc_raw) {
+static bool send_thruster_fault(uint8_t thruster_id) {
     CAN_TX_BUFFER *txBuffer = NULL;
     
     memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
-    txBuffer->id = WRITE_ID(0x45A); // Just a random ID
-    txBuffer->dlc = 8;           // DLC 8 -> 8 Byte Payload
+    txBuffer->id = WRITE_ID(0x45A);
+    txBuffer->dlc = 8;
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
     
     txBuffer->data[0] = thruster_id;
-    txBuffer->data[1] = 0x00; // Padding for alignment
-    memcpy(&txBuffer->data[2], &adc_raw, sizeof(uint16_t));
-    memcpy(&txBuffer->data[4], &current, sizeof(float)); 
-    
+    txBuffer->data[1] = 0x01; // Fault source: FLT pin (hardware fault)
+    // Bytes 2-7 reserved for future use (e.g. IMON reading once conversion is known)
     
     bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     if (!result) {
