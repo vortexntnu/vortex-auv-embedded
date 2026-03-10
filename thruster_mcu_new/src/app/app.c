@@ -94,12 +94,13 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
 static void message_handler(void);
 
 /**
- * @brief Monitors thruster current draw and shuts down on overcurrent condition.
+ * @brief Logs raw ADC readings from the IMON pins for all 8 thruster channels.
  * 
- * Reads ADC samples for all 8 thruster channels, calculates output current from
- * the voltage, and disables all thrusters if any channel exceeds the rated current limit.
+ * Reads ADC samples collected via DMA sleepwalking and prints the raw values.
+ * The actual current conversion factor depends on the efuse IMON output characteristics
+ * and is not yet determined - raw ADC values are logged for now.
  */
-static void check_overcurrent(void);
+static void log_current(void);
 
 /**
  * @brief Sends an overcurrent fault message over CAN
@@ -211,7 +212,7 @@ void app_init(void) {
 void app_task(void) {
     if (adc_dma_done) {
         adc_dma_done = false;
-        check_overcurrent();
+        log_current();
     }
     
     if (can_message_received) {
@@ -257,28 +258,14 @@ static void message_handler(void) {
     }
 }
 
-
-static void check_overcurrent(void) {
-    const float    ADC_VREF                  = 3.3f;
-    const float    G_IMON                    = 18.18e-6f; // Amplifier gain 18.18 uA/A -> in A/A
-    const float    R_IMON                    = 2550.0f;   // 2.55 kilo ohms resistor
-    const uint8_t  THRUSTER_RATED_CURRENT    = 15U;       // From TSD7 datasheet  
-    
-    for (size_t sample = 0; sample < 8; sample++) {
-        float V_Imon = (float)adc_result_array[sample] * ADC_VREF / 65535U;
-        float I_out = V_Imon / (G_IMON * R_IMON);
-
-        //printf("raw=%u  V_Imon=%.4f V  I_out=%.3f A\r\n",(unsigned)adc_result_array[sample], (double)((float)adc_result_array[sample]*ADC_VREF/4095.0f), (double)I_out);
-        if (I_out > THRUSTER_RATED_CURRENT) {
-            set_pwm_neutral(thrusters, 8);
-            
-            if (!send_thruster_fault(sample, I_out, adc_result_array[sample])) {
-                // Handle retransmission?
-            }
-            break;
-        }
+static void log_current(void) {
+    // Log raw ADC readings from IMON pins for each thruster channel. 
+    // TODO: Once IMON output is confirmed, convert raw ADC to actual current values.
+    for (size_t i = 0; i < 8; i++) {
+        printf("IMON[%u] raw=%u\r\n", (unsigned)i, (unsigned)adc_result_array[i]);
     }
 }
+
 
 static bool send_thruster_fault(uint8_t thruster_id, float current, uint16_t adc_raw) {
     CAN_TX_BUFFER *txBuffer = NULL;
