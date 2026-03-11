@@ -67,6 +67,7 @@ extern SPI_HandleTypeDef hspi4;
 extern SPI_HandleTypeDef hspi5;
 extern SPI_HandleTypeDef hspi6;
 extern DMA_HandleTypeDef hdma_tim1_ch4;
+extern DMA_HandleTypeDef hdma_usart1_tx;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -95,7 +96,23 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+    // Read the fault status registers
+    volatile uint32_t* sp = (uint32_t*)__get_MSP();
+    volatile uint32_t r0  = sp[0];
+    volatile uint32_t r1  = sp[1];
+    volatile uint32_t r2  = sp[2];
+    volatile uint32_t r3  = sp[3];
+    volatile uint32_t r12 = sp[4];
+    volatile uint32_t lr  = sp[5];
+    volatile uint32_t pc  = sp[6];  // <-- instruction that faulted
+    volatile uint32_t psr = sp[7];
+    volatile uint32_t CFSR = SCB->CFSR;   // Combined fault status
+    volatile uint32_t HFSR = SCB->HFSR;   // Hard fault status
+    volatile uint32_t MMFAR = SCB->MMFAR; // Mem manage fault address
+    volatile uint32_t BFAR = SCB->BFAR;   // Bus fault address
+    (void)CFSR; (void)HFSR; (void)MMFAR; (void)BFAR;
+    __BKPT(0); // Break here in debugger and inspect these variables
+    Error_Handler();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -280,6 +297,20 @@ void DMA1_Stream4_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream5 global interrupt.
+  */
+void DMA1_Stream5_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_tx);
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 1 */
+}
+
+/**
   * @brief This function handles EXTI line[9:5] interrupts.
   */
 void EXTI9_5_IRQHandler(void)
@@ -383,7 +414,7 @@ void SPI5_IRQHandler(void)
 void SPI6_IRQHandler(void)
 {
   /* USER CODE BEGIN SPI6_IRQn 0 */
-  SPI6_RxCallback();
+	ad7606_fast_spi_callback();
   /* USER CODE END SPI6_IRQn 0 */
   HAL_SPI_IRQHandler(&hspi6);
   /* USER CODE BEGIN SPI6_IRQn 1 */

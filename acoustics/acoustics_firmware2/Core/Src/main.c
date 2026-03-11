@@ -24,8 +24,6 @@
 #include "ad7606_driver.h"
 #include "acoustics.h"
 #include "utils.h"
-#include "spi6_autotransfer.h"
-
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_gpio.h"
 #include "stm32h7xx_hal_gpio_ex.h"
@@ -76,23 +74,25 @@ DMA_HandleTypeDef hdma_spi2_rx;
 DMA_HandleTypeDef hdma_spi3_rx;
 DMA_HandleTypeDef hdma_spi4_rx;
 DMA_HandleTypeDef hdma_spi5_rx;
-DMA_HandleTypeDef hdma_spi6_rx;
-DMA_HandleTypeDef hdma_spi6_tx;
 
 TIM_HandleTypeDef htim1;
 DMA_HandleTypeDef hdma_tim1_ch4;
 
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN] = {0};
-volatile BDMA_RAM q15_t diagnostics_sample;
+/* .DMA_BUFFERS section → RAM_D2 (0x30000000), covered by the non-cacheable MPU
+ * region. DMA writes bypass D-Cache and are immediately visible to the CPU.    */
+__attribute__((section(".DMA_BUFFERS"), aligned(32))) q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
+volatile uint16_t diagnostics_sample;
 
 SPI_HandleTypeDef* const spi_handle_array[6] = {&hspi1, &hspi2, &hspi3, &hspi4, &hspi5, &hspi6};
 SPI_HandleTypeDef* const dout_channels_array[6] = {DOUTA, DOUTB, DOUTC, DOUTD, DOUTE, DOUTH};
 
 static struct ad7606_device my_ADC;
-static struct ad7606_registers ADC_regs;
+static union ad7606_registers ADC_regs;
+static struct ad7606_settings ADC_settings;
 
 volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
 
@@ -118,7 +118,6 @@ void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_BDMA_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
@@ -131,7 +130,7 @@ static void MX_RTC_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-
+void my_MPU_Config(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -147,42 +146,29 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == BUSY_INT)
     {
         // Kick next transfer — non-blocking, returns in ~5 cycles
-        SPI6_Kick();
+    	ad7606_fast_spi_run(MASTER_SPI);
     }
 }
 
-void SPI6_RxCallback(void){
-	if (SPI6->SR & SPI_SR_EOT)
-	{
-		spi6_rx_buffer = *(volatile uint16_t*)&SPI6->RXDR;
 
-		// Clear EOT and TXTF flags
-		SPI6->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
-	}
-}
-
-
-// __attribute__((used))
-//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-//{
+//void SPI6_RxCallback(void){
+//	if (SPI6->SR & SPI_SR_EOT)
+//	{
+//		spi6_rx_buffer = *(volatile uint16_t*)&SPI6->RXDR;
 //
-//	__NOP();
-////    if (GPIO_Pin == BUSY_Pin)
-////    {
-////        HAL_SPI_TransmitReceive_IT(
-////            MASTER_SPI,
-////            (uint8_t*)&READ_CONVST,
-////            (uint8_t*)&diagnostics_sample,
-////            1
-////        );
-////    }
+//		// Clear EOT and TXTF flags
+//		SPI6->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
+//	}
 //}
 
+void print_binary(uint16_t value, uint8_t bits) {
+    for (int i = bits - 1; i >= 0; i--) {
+        printf("%c", (value >> i) & 1 ? '1' : '0');
+    }
+}
+
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
-//    if(hspi->Instance == MASTER_SPI->Instance){
-//    	//__NOP();
-//    }
-	__NOP();
+
 }
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
@@ -208,6 +194,19 @@ void change_buffers_to_normal(void){
         dma_channel_state[i] = DMA_SPI_IDLE;
     }
 }
+
+void SWO_Init(void)
+{
+    /* Enable ITM and DWT */
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+
+    /* ITM unlock */
+    ITM->LAR = 0xC5ACCE55;
+
+    /* Enable ITM port 0 */
+    ITM->TCR |= ITM_TCR_ITMENA_Msk;
+    ITM->TER |= (1UL << 0);  // Enable stimulus port 0
+}
 /* USER CODE END 0 */
 
 /**
@@ -230,7 +229,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  my_MPU_Config();
+  SWO_Init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -247,7 +247,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_BDMA_Init();
   MX_FDCAN1_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
@@ -272,7 +271,8 @@ int main(void)
 				.convst = {CONVST},
 		};
 
-		struct ad7606_spi spi = {
+		union ad7606_spi spi = {
+			.by_name = {
 				.douta = DOUTA,
 				.doutb = DOUTB,
 				.doutc = DOUTC,
@@ -282,6 +282,7 @@ int main(void)
 				.doutg = NULL,
 				.douth = DOUTH,
 				.sdi   = MASTER_SPI,
+			}
 		};
 
 		struct ad7606_config config = {
@@ -301,25 +302,13 @@ int main(void)
 //			AD7606_MUX_CTRL_A_GND,
 //			AD7606_MUX_CTRL_AV_CC;
 			AD7606_CHANNEL_MUX_CTRL mux_ctrl = AD7606_MUX_CTRL_A_IN; // = (i != 8) ? (AD7606_MUX_CTRL_A_IN) : (AD7606_MUX_CTRL_TEMP);
-			switch(i){
-			case(2):
-				mux_ctrl = AD7606_MUX_CTRL_2V5_REF;
-			break;
-			case(3):
-				mux_ctrl = AD7606_MUX_CTRL_AV_CC;
-			break;
-			case(4):
-				mux_ctrl = AD7606_MUX_CTRL_V_DRIVE;
-			break;
-			case(7):
+			if(i == 7){
 				mux_ctrl = AD7606_MUX_CTRL_TEMP;
-			break;
-
 			}
 		    struct ad7606_channel ch = {
 		        .open_detect    = false,
 		        .high_bandwidth = true,
-		        .range          = AD7606_RANGE_SE_PM_12_5V,
+		        .range          = AD7606_RANGE_SE_PM_10V,
 				.gain 			= 0,
 				.phase 			= 0,
 				.offset 		= 0x80,
@@ -344,25 +333,77 @@ int main(void)
 				.interface_check_en = false,
 		};
 
-		struct ad7606_settings settings = {
-				.config = config,
-				.digital_diagnostics = digital_diagnostics,
-				.oversampling = oversampling,
-		};
+		ADC_settings.config = config;
+		ADC_settings.digital_diagnostics = digital_diagnostics;
+		ADC_settings.oversampling = oversampling;
 
 		for(int i = 0; i < 8; i++){
-			settings.channels[i] = channels[i];
+			ADC_settings.channels[i] = channels[i];
 		}
 
-		ad7606_init(&my_ADC, &ADC_regs, pins, spi, settings);
+		my_ADC.cooked = true;
+		ad7606_init(&my_ADC, &ADC_regs, pins, spi, &ADC_settings, &diagnostics_sample);
+
+//		for(int i = 0; i < 44; i++){
+//			printf("Register %#04x:\t",my_ADC.registers->all[i].address);
+//			uint8_t data = ad7606_read_register(&my_ADC, my_ADC.registers->all[i]);
+//			print_binary(data,8);
+//			printf("\r\n");
+//		}
+
+
+		printf("ADC initialized. Status register:\t");
+		print_binary(ad7606_check_status(&my_ADC),8);
+		printf("\r\n");
+
+		printf("Digital diagnostics error register:\t");
+		print_binary(ad7606_check_digital_error(&my_ADC),8);
+		printf("\r\n");
+
+		uint8_t interface_check_result[8];
+		ad7606_check_interface(&my_ADC, interface_check_result);
+		printf("Interface check result:\r\n");
+		for(int i = 0; i < 8; i++){
+			printf("Channel V%d: ",i+1);
+		  switch(interface_check_result[i]){
+		  case 0xFF:
+			  printf("Not configured");
+			  break;
+		  case 0:
+			  printf("Fail");
+			  break;
+		  case 1:
+			  printf("Pass");
+			break;
+		  default:
+			printf("Unknown result");
+			break;
+		  }
+		  printf("\t\t\t");
+		  if(i%4 == 3) printf("\r\n");
+		}
+		printf("\r\n");
+
+		int lengths[8] = {
+				BUFFER_LEN,
+				BUFFER_LEN,
+				BUFFER_LEN,
+				BUFFER_LEN,
+				BUFFER_LEN,
+				0,
+				0,
+				0,
+		};
+		int16_t* buffers[8] = {NULL};
+		for(int i = 0; i < 5; i++) buffers[i] = (int16_t*)&hydrophone_buffers[i][0][0];
+		ad7606_enter_adc_mode(&my_ADC);
+		ad7606_init_output_buffers_DMA(&my_ADC, buffers, lengths);
+		//init_hyrdophone_buffers();
+		ad7606_fast_spi_init(&my_ADC);
 	}
+
 	arm_rfft_init_q15(&fft_instance, FFT_SIZE, 0, 1);
-
-	SPI6_DirectInit();
-
-	init_hyrdophone_buffers();
-
-	__HAL_TIM_SET_AUTORELOAD(&htim1, 3838/2);
+	
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
 
@@ -370,35 +411,63 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	utils_delay(10000000);
+	uint32_t counter = 0;
+	uint32_t sum = 0;
+	uint32_t our_value = 0;
+	q15_t max_val;
+	uint32_t max_idx;
+	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
     while (1) {
 
-    	q15_t received_data[8] = {0};
-    	//start_convst();
-    	while(!new_data) __NOP();
-    	q15_t max_val;
-    	uint32_t max_idx;
     	//float dominant_freq;
     	update_buffer_idx();
-    	arm_rfft_q15(&fft_instance, hydrophone_buffers[0][buffer_latest_block_idx], fft_output);
+    	memcpy(fft_input, &hydrophone_buffers[0][buffer_latest_block][0],FFT_SIZE);
+    	arm_rfft_q15(&fft_instance, fft_input, fft_output);
     	arm_cmplx_mag_q15(fft_output, mag, FFT_SIZE / 2);
-    	arm_max_q15(mag, FFT_SIZE / 2, &max_val, &max_idx);
-    	printf("Peak_bin:%lu\tFrequency:%d\r\n", max_idx, (int)(max_idx * bin_resolution));
+    	sum = 0;
+    	for(int i = 0; i < 15; i++){
+    		sum += mag[i]*mag[i];
+    	}
+    	for(int i = 17; i < FFT_SIZE/2; i++){
+			sum += mag[i]*mag[i];
+		}
+    	//sum /= 30;
+    	our_value = (mag[16]*mag[16] + mag[15]*mag[15]);
+    	if(our_value > sum){
+    		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
+    		HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
+    	    for (int i = 0; i < 5; i++) {
+    	        HAL_SPI_DMAStop(my_ADC.spi_handles[i]);
+    	    }
+    	    printf("data = [\r\n");
+    	    for(int i = 0; i < 5; i++){
+    	    	printf("\t[");
+    	    	for(int j = 0; j < N_BLOCKS; j++){
+    	    		for(int k = 0; k < BLOCK_LEN; k++){
+    	    			if(j == (N_BLOCKS-1) && k == (BLOCK_LEN-1)){
+    	    				printf("%d",hydrophone_buffers[i][j][k]);
+    	    			}else{
+    	    				printf("%d,",hydrophone_buffers[i][j][k]);
+    	    			}
+    	    		}
+    	    	}
+    			if(i == 4){
+    				printf("]\r\n");
+    			}else{
+    				printf("],\r\n");
+    			}
+    	    }
+    	    printf("]\r\n");
 
-//    	read_newest_hydrophone_data(received_data);
-//		received_data[7] = diagnostics_sample;
-//		printf("\r\nIDX:%d\t",buffer_latest_idx);
-//		for(int i = 0; i < 8; i++){
-//			double voltage = ad7606_reading_to_voltage(&my_ADC,0,received_data[i]);
-//			int whole = (int)voltage;
-//			int frac  = (int)((voltage - whole) * 1000);  // 3 decimal places
-//			printf("\tV%d:%d.%03d",i, whole, frac);
-//
-//		}
-		new_data = false;
+    	    __NOP();
+    	}
 
-		//printf("IDX:%d,DOUTA:%d,DOUTB:%d,DOUTC:%d,DOUTD:%d,DOUTE:%d,DOUTF:%d,DOUTG:%d,DOUTH:%d\r\n",buffer_latest_idx,received_data[0],received_data[1],received_data[2],received_data[3],received_data[4],received_data[5],received_data[6],received_data[7]);
+    	//printf("%d\t%d\t%d\t%d\r\n",counter++,buffer_latest_idx,buffer_latest_block,(int)(max_idx * bin_resolution));
+//    	if(!counter++){
+//    		printf("Block idx:\t%d\tPeak_bin:%lu\tFrequency:%d\r\n",buffer_latest_block ,max_idx, (int)(max_idx * bin_resolution));
+//    	}
 
-        //HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -643,7 +712,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
@@ -690,7 +759,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi2.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
@@ -737,7 +806,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi3.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
@@ -784,7 +853,7 @@ static void MX_SPI4_Init(void)
   hspi4.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi4.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi4.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi4.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi4.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi4.Init.NSS = SPI_NSS_SOFT;
   hspi4.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi4.Init.TIMode = SPI_TIMODE_DISABLE;
@@ -831,7 +900,7 @@ static void MX_SPI5_Init(void)
   hspi5.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi5.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi5.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi5.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi5.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi5.Init.NSS = SPI_NSS_SOFT;
   hspi5.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi5.Init.TIMode = SPI_TIMODE_DISABLE;
@@ -881,7 +950,7 @@ static void MX_SPI6_Init(void)
   hspi6.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi6.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi6.Init.NSS = SPI_NSS_SOFT;
-  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi6.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi6.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi6.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -954,7 +1023,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 3;
+  sConfigOC.Pulse = 10;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
@@ -1001,7 +1070,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 1000000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -1036,25 +1105,6 @@ static void MX_USART1_UART_Init(void)
 /**
   * Enable DMA controller clock
   */
-static void MX_BDMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_BDMA_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* BDMA_Channel0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(BDMA_Channel0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(BDMA_Channel0_IRQn);
-  /* BDMA_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(BDMA_Channel1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(BDMA_Channel1_IRQn);
-
-}
-
-/**
-  * Enable DMA controller clock
-  */
 static void MX_DMA_Init(void)
 {
 
@@ -1078,6 +1128,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -1151,7 +1204,42 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void my_MPU_Config(void)
+{
+    MPU_Region_InitTypeDef MPU_InitStruct = {0};
 
+    HAL_MPU_Disable();
+
+    // Region 1: RAM_D1 cacheable
+    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+    MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+    MPU_InitStruct.BaseAddress = 0x24000000;
+    MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
+    MPU_InitStruct.SubRegionDisable = 0x00;
+    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+    MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+    HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+    // Region 2: RAM_D2 non-cacheable (DMA buffers live here via .DMA_BUFFERS section)
+    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+    MPU_InitStruct.Number = MPU_REGION_NUMBER2;
+    MPU_InitStruct.BaseAddress = 0x30000000;
+    MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
+    MPU_InitStruct.SubRegionDisable = 0x00;
+    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+    HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+}
 /* USER CODE END 4 */
 
  /* MPU Configuration */

@@ -4,7 +4,7 @@
 #include <stm32h753xx.h>
 #include <stm32h7xx_hal_gpio.h>
 #include <stm32h7xx_hal_spi.h>
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 
 const uint16_t EXIT_REGISTER_MODE = 0x0000;
@@ -54,8 +54,7 @@ const uint8_t ad7606_reg_table[] =
     0x2B, 0x00,
     0x2C, 0x00,
 };
-
-static int conf_len = 40;
+#define N_REGS (sizeof(ad7606_reg_table)/2)
 
 // copy from register tool end
 
@@ -77,8 +76,16 @@ uint16_t acoustics_construct_SPI_frame(uint8_t read_enable, uint8_t read_write, 
 
 int _write(int file, char *ptr, int len)
 {
-    HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+    // Only send if ITM is enabled and debugger connected
+    if ((CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk) &&
+        (ITM->TCR & ITM_TCR_ITMENA_Msk))
+    {
+        for (int i = 0; i < len; i++)
+            ITM_SendChar((uint8_t)ptr[i]);
+    }
     return len;
+//	HAL_UART_Transmit_DMA(&huart1, (uint8_t*)ptr, len);
+//    return len;
 }
 
 void start_convst(void){
@@ -87,7 +94,7 @@ void start_convst(void){
 }
 
 void update_buffer_idx(void){
-	buffer_remaining = __HAL_DMA_GET_COUNTER(&hdma_spi2_rx);
+	buffer_remaining = __HAL_DMA_GET_COUNTER(DOUTA->hdmarx);
 
 	buffer_current_idx = BUFFER_LEN - buffer_remaining;
 	buffer_latest_idx = (buffer_current_idx == 0) ? (BUFFER_LEN - 1) : (buffer_current_idx - 1);
@@ -179,16 +186,16 @@ void acoustics_init_from_arrays(SPI_HandleTypeDef* hspi_master) {
 
 	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET); // CS LOW
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET); // Yellow LED On
-	uint16_t data_frames_16[conf_len];
+	uint16_t data_frames_16[N_REGS];
 
-	for(int i = 0; i < conf_len; i++){
+	for(int i = 0; i < N_REGS; i++){
 		uint8_t address = ad7606_reg_table[i*2];
 		uint8_t register_data = ad7606_reg_table[i*2+1];
 		uint16_t data_frame = acoustics_construct_SPI_frame(0, 0, address, register_data);
 		data_frames_16[i] = data_frame;
 	}
 
-	HAL_SPI_Transmit(hspi_master, (const uint8_t*)data_frames_16, conf_len, 10);
+	HAL_SPI_Transmit(hspi_master, (const uint8_t*)data_frames_16, N_REGS, 10);
 
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET); // Yellow LED Off
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET); // CS High
@@ -198,7 +205,7 @@ void acoustics_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Ha
 
 	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET); // CS LOW
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET); // Yellow LED On
-	uint8_t data_frames[conf_len*2];
+	uint8_t data_frames[N_REGS*2];
 
 	printf("\r\n");
 	{
@@ -207,7 +214,7 @@ void acoustics_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Ha
 	}
 
 
-	for(int i = 0; i < conf_len; i++){
+	for(int i = 0; i < N_REGS; i++){
 		uint8_t address = ad7606_reg_table[i*2];
 		uint8_t register_data = ad7606_reg_table[i*2+1];
 		uint16_t data_frame = acoustics_construct_SPI_frame(0, 0, address, register_data);
@@ -237,7 +244,7 @@ void acoustics_init_from_arrays_debug(SPI_HandleTypeDef* hspi_master_send,SPI_Ha
 	HAL_GPIO_WritePin(CS, GPIO_PIN_SET); // CS High
 }
 
-void acoustics_DOUT_read_adc(int16_t received_data[8],int dout_n){
+void acoustics_DOUT_read_adc(int16_t received_data[8],const int dout_n){
 
 	if(8 % dout_n){
 		Error_Handler(); //dout_n should only be either 8, 4, 2 or 1

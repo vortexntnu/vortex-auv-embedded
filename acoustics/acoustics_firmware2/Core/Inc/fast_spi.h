@@ -1,12 +1,12 @@
 /*
- * spi6_autotransfer.h
+ * fast_spi.h
  *
  *  Created on: 9. mar. 2026
  *      Author: vikin
  */
 
-#ifndef INC_SPI6_AUTOTRANSFER_H_
-#define INC_SPI6_AUTOTRANSFER_H_
+#ifndef INC_FAST_SPI_H_
+#define INC_FAST_SPI_H_
 
 #include "main.h"
 
@@ -17,4 +17,4 @@ void SPI6_Kick(void);
 extern volatile uint16_t spi6_tx_buffer;
 extern volatile uint16_t spi6_rx_buffer;
 
-#endif /* INC_SPI6_AUTOTRANSFER_H_ */
+#endif /* INC_FAST_SPI_H_ */

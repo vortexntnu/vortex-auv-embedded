@@ -178,6 +178,20 @@ SECTIONS
   {
     *(.DTCM)
   } >DTCMRAM
+  
+  .dma_buffers (NOLOAD) :
+{
+    . = ALIGN(32);
+    *(.DMA_BUFFERS)
+    . = ALIGN(32);
+} >RAM_D2
+
+.dma_buffers (NOLOAD) :
+{
+    . = ALIGN(4096);
+    *(.dma_buffers)
+    . = ALIGN(4096);
+} >RAM_D1
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

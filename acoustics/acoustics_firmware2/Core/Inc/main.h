@@ -31,6 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ad7606_driver.h"
+
 #include "arm_math_types.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -67,7 +69,7 @@ typedef enum {
 #define YELLOW_LED GPIOD, GPIO_PIN_12
 
 #define BLOCK_LEN 			64
-#define N_BLOCKS 			5
+#define N_BLOCKS 			4
 
 #define BUFFER_LEN 			(N_BLOCKS * BLOCK_LEN)
 #define N_SACRIFICAL_BLOCKS 2
@@ -125,6 +127,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 void SPI6_RxCallback(void);
 int _write(int file, char *ptr, int len);
+void my_MPU_Config(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
