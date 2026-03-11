@@ -34,6 +34,8 @@ extern "C" {
 #include "ad7606_driver.h"
 
 #include "arm_math_types.h"
+#include "arm_math.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 /* USER CODE END Includes */
@@ -51,6 +53,9 @@ typedef enum {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+#define FFT_SIZE BLOCK_LEN  // match this to your buffer size
+#define SAMPLE_RATE_HZ 125000
+
 #define MASTER_SPI spi_handle_array[5]
 #define DOUTH spi_handle_array[5]
 #define DOUTA spi_handle_array[1]
@@ -81,6 +86,11 @@ typedef enum {
 
 extern SPI_HandleTypeDef* const spi_handle_array[6];
 extern SPI_HandleTypeDef* const dout_channels_array[6];
+
+extern arm_rfft_instance_q15 fft_instance;
+extern q15_t fft_input[FFT_SIZE];
+extern q15_t fft_output[FFT_SIZE * 2];  // complex: [re0, im0, re1, im1, ...]
+extern q15_t mag[FFT_SIZE / 2];
 
 extern volatile DMA_SPI_ChannelState dma_channel_state[(N_HYDROPHONES) + 1];
 extern q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
