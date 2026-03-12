@@ -105,8 +105,10 @@ PLACE_IN_DTCM volatile uint8_t mdma_half = 0;
 PLACE_IN_DTCM volatile bool mdma_done_flag = false;
 
 PLACE_IN_DTCM arm_rfft_instance_q15 processing_fft_instance;
+PLACE_IN_DTCM arm_rfft_instance_q15 processing_ifft_instance;
 static PLACE_IN_AXI_SRAM q15_t processing_fft_input[PROCESSING_FFT_SIZE];
 static PLACE_IN_AXI_SRAM q15_t processing_fft_output[PROCESSING_FFT_SIZE * 2];
+static PLACE_IN_AXI_SRAM q15_t processing_workspace[N_HYDROPHONES][PROCESSING_FFT_SIZE];
 
 // CWT-specific buffers
 static PLACE_IN_AXI_SRAM q15_t cwt_kernel[PROCESSING_FFT_SIZE * 2];     // complex Morlet kernel (freq domain)
@@ -153,12 +155,13 @@ void cwt_build_morlet_kernel_q15(float32_t target_freq, float32_t fs)
 {
     float32_t f0 = 5.0f;  // Morlet center frequency (cycles, typical: 5-6)
     // scale = f0 / target_freq (in normalized units)
-    float32_t scale = f0 / (target_freq / fs * PROCESSING_FFT_SIZE);
+    float32_t omega0 = 2.0f * PI * f0;
+    float32_t scale = f0 / target_freq;  // time-domain scale
 
     for (uint32_t k = 0; k < PROCESSING_FFT_SIZE / 2; k++)
     {
-        float32_t freq_norm = (float32_t)k;  // bin index
-        float32_t arg = (scale * freq_norm - f0);
+        float32_t omega = 2.0f * PI * (float32_t)k * fs / PROCESSING_FFT_SIZE;
+        float32_t arg = (scale * omega - omega0);
         float32_t val = expf(-0.5f * arg * arg);
 
         // val is real-only kernel; clamp to q15 range [-1, 1)
@@ -193,7 +196,7 @@ void cwt_morlet_q15(const q15_t *input, q15_t *out_mag)
 
     // 4. Inverse FFT  →  cwt_result is complex interleaved
     //    Pass ifftFlag=1, bitReverseFlag=1
-    arm_rfft_q15(&processing_fft_instance, cwt_product, cwt_result);
+    arm_rfft_q15(&processing_ifft_instance, cwt_product, cwt_result);
     //    NOTE: CMSIS arm_rfft_q15 does not support in-place IFFT natively;
     //    if your version lacks IFFT, use arm_cfft_q15 instead (see note below)
 
@@ -204,7 +207,8 @@ void cwt_morlet_q15(const q15_t *input, q15_t *out_mag)
 
 void cwt_init(void)
 {
-    arm_rfft_init_q15(&processing_fft_instance, PROCESSING_FFT_SIZE, 0, 1); // forward FFT
+	arm_rfft_init_q15(&processing_fft_instance,  PROCESSING_FFT_SIZE, 0, 1); // forward
+	arm_rfft_init_q15(&processing_ifft_instance, PROCESSING_FFT_SIZE, 1, 1); // inverse
     cwt_build_morlet_kernel_q15((float32_t)TARGET_FREQUENCY_HZ, (float32_t)SAMPLING_FREQUENCY); // 30kHz target, 125kHz fs
     // adjust fs ^ to match your AD7606 config
 }
@@ -410,11 +414,13 @@ volatile uint32_t mdma_cycles;
 volatile uint32_t memcpy_cycles;
 volatile uint32_t detection_cycles;
 volatile uint32_t full_cycles;
+volatile uint32_t mdma_transfer_cycles;
 
 float mdma_us;
 float memcpy_us;
 float detection_us;
 float full_us;
+float mdma_transfer_us;
 
 void Benchmark(void) {
     uint32_t t_start;
@@ -424,6 +430,7 @@ void Benchmark(void) {
     const uint32_t BENCHMARK_N = 512;
 
     accumulator = 0;
+    uint64_t accumulator2 = 0;
     for(int i = 0; i < (int)BENCHMARK_N; i++){
         target_block = fast_get_detection_block_pos();
         processing_half = !mdma_half;
@@ -431,8 +438,12 @@ void Benchmark(void) {
         t_start = DWT_CYCCNT;
         MDMA_CopyBlock(hydrophone_buffers[0][target_block],detection_buffer[mdma_half]);
         accumulator += (DWT_CYCCNT - t_start)/BENCHMARK_N;
+		while(mdma_done_flag == false) __NOP();
+		accumulator2 += (DWT_CYCCNT - t_start)/BENCHMARK_N;
+		mdma_done_flag = false;
     }
     mdma_cycles = accumulator;
+    mdma_transfer_cycles = accumulator2;
 
 
     // --- Test 2: memcpy ---
@@ -461,10 +472,14 @@ void Benchmark(void) {
     for(int i = 0; i < (int)BENCHMARK_N; i++){
     t_start = DWT_CYCCNT;
     {
-        uint8_t target_block = fast_get_detection_block_pos();
-        uint8_t processing_half = !mdma_half;
-        MDMA_CopyBlock(hydrophone_buffers[0][target_block],detection_buffer[mdma_half]);
-        signal_present(processing_half);
+		uint8_t target_block = fast_get_detection_block_pos();
+		uint8_t processing_half = !mdma_half;
+		MDMA_CopyBlock(hydrophone_buffers[0][target_block],detection_buffer[mdma_half]);
+		signal_present(processing_half);
+		while(mdma_done_flag == false) {
+			__NOP();
+		}
+		mdma_done_flag = false;
     }
     accumulator += (DWT_CYCCNT - t_start)/BENCHMARK_N;
     }
@@ -474,7 +489,39 @@ void Benchmark(void) {
     memcpy_us = memcpy_cycles / 480.0f;
     detection_us = detection_cycles / 480.0f;
     full_us = full_cycles / 480.0f;
+    mdma_transfer_us = mdma_transfer_cycles / 480.0f;
 
+}
+
+void dump_hydrophone_buffers(void){
+    pos = 0;
+
+    pos += sprintf(print_buf + pos, "\r\ndata = [\r\n");
+
+    for(int i = 0; i < 5; i++){
+        pos += sprintf(print_buf + pos, "\t[");
+        for(int j = 0; j < N_BLOCKS; j++){
+            for(int k = 0; k < BLOCK_LEN; k++){
+                if(j == (N_BLOCKS-1) && k == (BLOCK_LEN-1)){
+                    pos += sprintf(print_buf + pos, "%d", hydrophone_buffers[i][j][k]);
+                } else {
+                    pos += sprintf(print_buf + pos, "%d,", hydrophone_buffers[i][j][k]);
+                }
+            }
+        }
+        pos += sprintf(print_buf + pos, (i == 4) ? "]\r\n" : "],\r\n");
+    }
+
+    pos += sprintf(print_buf + pos, "]\r\n\r\n");
+
+    // After building the buffer, verify pos before writing
+    if (pos > sizeof(print_buf)) {
+        // overflow happened — increase print_buf size
+        __asm("BKPT #0");
+    }
+
+    // Single ITM write instead of thousands of printf calls
+    _write(0, print_buf, pos);
 }
 /* USER CODE END 0 */
 
@@ -673,6 +720,7 @@ int main(void)
 	cwt_init();
 
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
 	utils_delay(1000000);
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
@@ -710,34 +758,17 @@ int main(void)
 			  printf("Signal detected\r\n");
 			}
 
-    	    pos = 0;
+			dump_hydrophone_buffers();
 
-    	    pos += sprintf(print_buf + pos, "\r\ndata = [\r\n");
 
-    	    for(int i = 0; i < 5; i++){
-    	        pos += sprintf(print_buf + pos, "\t[");
-    	        for(int j = 0; j < N_BLOCKS; j++){
-    	            for(int k = 0; k < BLOCK_LEN; k++){
-    	                if(j == (N_BLOCKS-1) && k == (BLOCK_LEN-1)){
-    	                    pos += sprintf(print_buf + pos, "%d", hydrophone_buffers[i][j][k]);
-    	                } else {
-    	                    pos += sprintf(print_buf + pos, "%d,", hydrophone_buffers[i][j][k]);
-    	                }
-    	            }
-    	        }
-    	        pos += sprintf(print_buf + pos, (i == 4) ? "]\r\n" : "],\r\n");
-    	    }
+			uint16_t workspace_idx = (target_block*BLOCK_LEN+BUFFER_LEN-WORKSPACE_LEN/2)%BUFFER_LEN;
 
-    	    pos += sprintf(print_buf + pos, "]\r\n\r\n");
+			for(int i = 0; i < N_HYDROPHONES; i++){
+				q15_t* buffer_flat = (q15_t*)hydrophone_buffers[i];
+	    	    memcpy(processing_workspace[i], &buffer_flat[workspace_idx], WORKSPACE_LEN*sizeof(q15_t));
+	    	    cwt_morlet_q15(processing_workspace[i], processing_workspace[i]);
+			}
 
-    	    // After building the buffer, verify pos before writing
-    	    if (pos > sizeof(print_buf)) {
-    	        // overflow happened — increase print_buf size
-    	        __asm("BKPT #0");
-    	    }
-
-    	    // Single ITM write instead of thousands of printf calls
-    	    _write(0, print_buf, pos);
     	    break;
     	}
 		  while(mdma_done_flag == false) {
@@ -1438,10 +1469,10 @@ static void MX_MDMA_Init(void)
   hmdma_mdma_channel0_sw_0.Init.TransferTriggerMode = MDMA_BLOCK_TRANSFER;
   hmdma_mdma_channel0_sw_0.Init.Priority = MDMA_PRIORITY_VERY_HIGH;
   hmdma_mdma_channel0_sw_0.Init.Endianness = MDMA_LITTLE_ENDIANNESS_PRESERVE;
-  hmdma_mdma_channel0_sw_0.Init.SourceInc = MDMA_SRC_INC_HALFWORD;
-  hmdma_mdma_channel0_sw_0.Init.DestinationInc = MDMA_DEST_INC_HALFWORD;
-  hmdma_mdma_channel0_sw_0.Init.SourceDataSize = MDMA_SRC_DATASIZE_HALFWORD;
-  hmdma_mdma_channel0_sw_0.Init.DestDataSize = MDMA_DEST_DATASIZE_HALFWORD;
+  hmdma_mdma_channel0_sw_0.Init.SourceInc = MDMA_SRC_INC_WORD;
+  hmdma_mdma_channel0_sw_0.Init.DestinationInc = MDMA_DEST_INC_WORD;
+  hmdma_mdma_channel0_sw_0.Init.SourceDataSize = MDMA_SRC_DATASIZE_WORD;
+  hmdma_mdma_channel0_sw_0.Init.DestDataSize = MDMA_DEST_DATASIZE_WORD;
   hmdma_mdma_channel0_sw_0.Init.DataAlignment = MDMA_DATAALIGN_PACKENABLE;
   hmdma_mdma_channel0_sw_0.Init.BufferTransferLength = 128;
   hmdma_mdma_channel0_sw_0.Init.SourceBurst = MDMA_SOURCE_BURST_SINGLE;
