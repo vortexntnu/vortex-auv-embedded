@@ -1,14 +1,15 @@
 #include "acoustics.h"
-#include <main.h>
-#include <stdio.h>
+#include "main.h"
+
 #include <stm32h753xx.h>
 #include <stm32h7xx_hal_gpio.h>
 #include <stm32h7xx_hal_spi.h>
 #include <stdint.h>
+#include <stdio.h>
 
 
-const uint16_t EXIT_REGISTER_MODE = 0x0000;
-const uint16_t EXIT_ADC_MODE = 0x4100;
+PLACE_IN_D3_SRAM const uint16_t EXIT_REGISTER_MODE = 0x0000;
+PLACE_IN_D3_SRAM const uint16_t EXIT_ADC_MODE = 0x4100;
 
 // copy from register tool start
 const uint8_t ad7606_reg_table[] =
@@ -93,58 +94,23 @@ void start_convst(void){
 	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
 }
 
-void update_buffer_idx(void){
-	buffer_remaining = __HAL_DMA_GET_COUNTER(DOUTA->hdmarx);
+uint8_t fast_get_detection_block_pos(void) {
+    uint16_t remaining     = (uint16_t)__HAL_DMA_GET_COUNTER(hspi2.hdmarx);
+    uint16_t current_idx = (BUFFER_LEN - remaining) % BUFFER_LEN; // claude might be wrong here
+    uint8_t  current_block = current_idx / BLOCK_LEN;
 
-	buffer_current_idx = BUFFER_LEN - buffer_remaining;
-	buffer_latest_idx = (buffer_current_idx == 0) ? (BUFFER_LEN - 1) : (buffer_current_idx - 1);
-
-	buffer_current_block = buffer_current_idx/BLOCK_LEN;
-	buffer_latest_block = buffer_latest_idx/BLOCK_LEN;
-
-	buffer_current_block_idx = buffer_current_idx%BLOCK_LEN;
-	buffer_latest_block_idx = buffer_latest_idx%BLOCK_LEN;
-}
-
-void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx){
-	update_buffer_idx();
-	if(idx == buffer_current_idx){
-		idx = buffer_latest_idx;
-	}
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		data_array[i] = ((q15_t*)hydrophone_buffers[i])[idx];
-	}
-}
-
-void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx){
-	update_buffer_idx();
-	if(block == buffer_current_block){
-		block = buffer_latest_block;
-		if(idx == buffer_current_block_idx){
-			idx = buffer_latest_block_idx;
-		}
-	}
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		data_array[i] = hydrophone_buffers[i][block][idx];
-	}
-}
-
-void read_newest_hydrophone_data(q15_t data_array[N_HYDROPHONES]){
-	update_buffer_idx();
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		data_array[i] = hydrophone_buffers[i][buffer_latest_block][buffer_latest_block_idx];
-	}
+    return (uint8_t)((current_block + N_BLOCKS - WORKSPACE_OFFSET)%N_BLOCKS);
 }
 
 void init_hyrdophone_buffers(void){
 	for(int i = 0; i < N_HYDROPHONES; i++){
-		if(HAL_SPI_GetState(dout_channels_array[i]) != HAL_SPI_STATE_READY){
-		    HAL_SPI_DMAStop(dout_channels_array[i]);
+		if(HAL_SPI_GetState(dout_channel_handles[i]) != HAL_SPI_STATE_READY){
+		    HAL_SPI_DMAStop(dout_channel_handles[i]);
 		}
-		dout_channels_array[i]->hdmarx->Init.Mode = DMA_CIRCULAR;
-		HAL_DMA_Init(dout_channels_array[i]->hdmarx);
+		dout_channel_handles[i]->hdmarx->Init.Mode = DMA_CIRCULAR;
+		HAL_DMA_Init(dout_channel_handles[i]->hdmarx);
 
-		HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&hydrophone_buffers[i], BUFFER_LEN);
+		HAL_SPI_Receive_DMA(dout_channel_handles[i], (uint8_t*)&hydrophone_buffers[i], BUFFER_LEN);
 		dma_channel_state[i] = DMA_SPI_CIRCULAR;
 	}
 }
@@ -298,174 +264,4 @@ void acoustics_DOUT_read_adc(int16_t received_data[8],const int dout_n){
 		}
 	}
 
-}
-
-void acoustics_DOUT8_read_adc(int16_t received_data[8]){
-
-	bool busy = true;
-	while(busy){
-		busy = false;
-		for(int i = 0; i < 5; i++){
-			busy |= (HAL_SPI_Receive_DMA(dout_channels_array[i], (uint8_t*)&received_data[i], 1) == HAL_BUSY);
-		}
-	}
-
-	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
-	while(!HAL_GPIO_ReadPin(BUSY));
-	while(HAL_GPIO_ReadPin(BUSY));
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(MASTER_SPI, (const uint8_t*)&READ_CONVST, (uint8_t*)&received_data[7], 1, 10);
-
-	while(dma_busy());
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
-}
-
-void acoustics_DOUT4_read_adc(int16_t received_data[8]){
-	struct data_storage {
-		int16_t douta_buffer[2];
-		int16_t doutb_buffer[2];
-		int16_t doutc_buffer[2];
-		int16_t doutd_buffer[2];
-	};
-
-	struct data_storage my_storage = {
-		{0,0},
-		{0,0},
-		{0,0},
-		{0,0}
-	};
-
-	uint16_t data_frame[] = {0x0000, 0x0000};
-
-	HAL_StatusTypeDef status_array[4];
-
-	status_array[0] = HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&my_storage.douta_buffer, 2);
-	status_array[1] = HAL_SPI_Receive_DMA(DOUTB, (uint8_t*)&my_storage.doutb_buffer, 2);
-	status_array[2] = HAL_SPI_Receive_DMA(DOUTC, (uint8_t*)&my_storage.doutc_buffer, 2);
-	status_array[3] = HAL_SPI_Receive_DMA(DOUTD, (uint8_t*)&my_storage.doutd_buffer, 2);
-
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
-	while(HAL_GPIO_ReadPin(BUSY));
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 2, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	bool busy = true;
-	while(busy){
-		busy = false;
-		for(int i = 0; i < 4; i++){
-			busy |= (status_array[i] == HAL_BUSY);
-		}
-	}
-
-	received_data[0] = my_storage.douta_buffer[0];
-	received_data[1] = my_storage.douta_buffer[1];
-	received_data[2] = my_storage.doutb_buffer[0];
-	received_data[3] = my_storage.doutb_buffer[1];
-	received_data[4] = my_storage.doutc_buffer[0];
-	received_data[5] = my_storage.doutc_buffer[1];
-	received_data[6] = my_storage.doutd_buffer[0];
-	received_data[7] = my_storage.doutd_buffer[1];
-}
-
-void acoustics_DOUT2_read_adc(int16_t received_data[8]){
-	uint16_t data_frame[] = {
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000
-	};
-
-	HAL_StatusTypeDef status_array[2];
-
-	status_array[0] = HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data[0], 4);
-	status_array[1] = HAL_SPI_Receive_DMA(DOUTB, (uint8_t*)&received_data[4], 4);
-
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
-	while(HAL_GPIO_ReadPin(BUSY));
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 4, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-	bool busy = true;
-	while(busy){
-		busy = false;
-		for(int i = 0; i < 2; i++){
-			busy |= (status_array[i] == HAL_BUSY);
-		}
-	}
-}
-
-void acoustics_DOUT1_read_adc(int16_t received_data[8]){
-	uint16_t data_frame[] = {
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000
-	};
-
-	bool busy = true;
-	HAL_StatusTypeDef status;
-	while(busy){
-		status = HAL_SPI_Receive_DMA(DOUTA, (uint8_t*)&received_data, 8);
-		busy = (status == HAL_BUSY);
-	}
-
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(CONVST, GPIO_PIN_RESET);
-	while(HAL_GPIO_ReadPin(BUSY));
-
-	HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(MASTER_SPI, (const uint8_t*)&data_frame, 8, 10);
-	HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
-
-
-}
-
-void acoustics_read_registers(SPI_HandleTypeDef* hspi_master_send, SPI_HandleTypeDef* hspi_master_receive) {
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET); // CS LOW
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET); // Green LED Off
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET); // Yellow LED On
-
-	uint16_t data_frame = acoustics_construct_SPI_frame(0, 1, 0x00, 0);
-	printf("\r\n");
-	printf("Reading Address: 0x00, ");
-
-	HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
-
-	for(int i = 0x01; i <= 0x2F; i++){
-		uint8_t address = i;
-		uint16_t data_frame = acoustics_construct_SPI_frame(0, 1, address, 0);
-		uint16_t data_frame_received;
-
-		HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received, 1);
-		HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
-		printf("Received: 0x%04X\r\n", data_frame_received);
-		printf("Reading Address: 0x%02X, ",address);
-	}
-
-	uint16_t data_frame_received;
-	HAL_SPI_Receive_DMA(hspi_master_receive, (uint8_t*)&data_frame_received, 1);
-	HAL_SPI_Transmit(hspi_master_send, (const uint8_t*)&data_frame,  1, 10);
-	printf("Received: 0x%04X\r\n", data_frame_received);
-
-	printf("\r\n");
-
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET); // Green LED On
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET); // Yellow LED Off
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET); // CS High
 }

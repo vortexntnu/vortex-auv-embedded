@@ -13,13 +13,14 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <stm32h7xx_hal.h>
+#include <stm32h7xx_hal_spi.h>
 #include <stm32h7xx.h>
 #include <main.h>
 
 // Exported Variables
 //__attribute__((section(".SRAM4")))
-extern BDMA_RAM const uint16_t EXIT_REGISTER_MODE;
-extern BDMA_RAM const uint16_t EXIT_ADC_MODE ;
+extern const uint16_t EXIT_REGISTER_MODE;
+extern const uint16_t EXIT_ADC_MODE ;
 
 // Exported Defines
 #define READ_CONVST EXIT_REGISTER_MODE
@@ -37,6 +38,7 @@ int _write(int file, char *ptr, int len);
 void start_convst(void);
 
 void update_buffer_idx(void);
+uint8_t fast_get_detection_block_pos(void);
 
 void read_hydrophone_buffers_at_idx(q15_t data_array[N_HYDROPHONES], uint16_t idx);
 void read_hydrophone_block_at_idx(q15_t data_array[N_HYDROPHONES],uint16_t block, uint16_t idx);

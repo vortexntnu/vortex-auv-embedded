@@ -32,6 +32,7 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ad7606_driver.h"
+#include "memory_placement.h"
 
 #include "arm_math_types.h"
 #include "arm_math.h"
@@ -53,58 +54,38 @@ typedef enum {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-#define FFT_SIZE BLOCK_LEN  // match this to your buffer size
-#define SAMPLE_RATE_HZ 125000
-
-#define MASTER_SPI spi_handle_array[5]
-#define DOUTH spi_handle_array[5]
-#define DOUTA spi_handle_array[1]
-#define DOUTB spi_handle_array[4]
-#define DOUTC spi_handle_array[3]
-#define DOUTD spi_handle_array[0]
-#define DOUTE spi_handle_array[2]
-
-#define FRSTDATA GPIOE, GPIO_PIN_7
-#define BUSY GPIOE, GPIO_PIN_8
-#define BUSY_INT GPIO_PIN_8
-#define CS GPIOE, GPIO_PIN_9
-#define CONVST GPIOE, GPIO_PIN_14
-
-#define GREEN_LED GPIOD, GPIO_PIN_11
-#define YELLOW_LED GPIOD, GPIO_PIN_12
-
 #define BLOCK_LEN 			64
-#define N_BLOCKS 			4
+#define N_BLOCKS 			  8
 
 #define BUFFER_LEN 			(N_BLOCKS * BLOCK_LEN)
-#define N_SACRIFICAL_BLOCKS 2
-#define WORKSPACE_LEN 		((N_BLOCKS - N_SACRIFICAL_BLOCKS) * BLOCK_LEN)
-#define N_HYDROPHONES 		5
+#define N_SACRIFICAL_BLOCKS 3
+#define WORKSPACE_OFFSET      3
+#define WORKSPACE_LEN 		  ((N_BLOCKS - N_SACRIFICAL_BLOCKS - 1) * BLOCK_LEN)
+#define N_HYDROPHONES 		  5
 
-#define BDMA_RAM __attribute__((section(".SRAM4")))
-#define TCM __attribute__((section(".DTCM")))
+#define DETECTION_FFT_SIZE BLOCK_LEN // match this to your buffer size
+#define PROCESSING_FFT_SIZE WORKSPACE_LEN  // match this to your buffer size
+#define SAMPLING_FREQUENCY 125000
+#define TARGET_FREQUENCY_HZ 30000
+#define BIN_RESOLUTION ((float)SAMPLE_RATE_HZ / (float)DETECTION_FFT_SIZE)
 
-extern SPI_HandleTypeDef* const spi_handle_array[6];
-extern SPI_HandleTypeDef* const dout_channels_array[6];
+#define LINEAR_THRESHOLD  3 // 5dB => 10^(5/10) ~= 3.16
 
-extern arm_rfft_instance_q15 fft_instance;
-extern q15_t fft_input[FFT_SIZE];
-extern q15_t fft_output[FFT_SIZE * 2];  // complex: [re0, im0, re1, im1, ...]
-extern q15_t mag[FFT_SIZE / 2];
+extern SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES];
+extern volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1];
 
-extern volatile DMA_SPI_ChannelState dma_channel_state[(N_HYDROPHONES) + 1];
 extern q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
-extern int16_t diagnostics_buffer[N_BLOCKS][BLOCK_LEN];
+extern volatile uint16_t diagnostics_sample;
 
-extern uint16_t buffer_remaining;
-extern uint16_t buffer_current_idx;
-extern uint16_t buffer_latest_idx;
-extern uint16_t buffer_current_block;
-extern uint16_t buffer_latest_block;
-extern uint16_t buffer_current_block_idx;
-extern uint16_t buffer_latest_block_idx;
+extern arm_rfft_instance_q15 detection_fft_instance;
+extern q15_t detection_buffer[2][BLOCK_LEN];
+extern q15_t detection_fft_output[DETECTION_FFT_SIZE * 2];
+extern q15_t magnitude_output[DETECTION_FFT_SIZE / 2];
+
+extern arm_rfft_instance_q15 processing_fft_instance;
 
 //extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi3;
 extern SPI_HandleTypeDef hspi4;
@@ -125,8 +106,22 @@ extern UART_HandleTypeDef huart1;
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+#define MASTER_SPI &hspi6
+#define DOUTH &hspi6
+#define DOUTA &hspi2
+#define DOUTB &hspi5
+#define DOUTC &hspi4
+#define DOUTD &hspi1
+#define DOUTE &hspi3
 
+#define FRSTDATA GPIOE, GPIO_PIN_7
+#define BUSY GPIOE, GPIO_PIN_8
+#define BUSY_INT GPIO_PIN_8
+#define CS GPIOE, GPIO_PIN_9
+#define CONVST GPIOE, GPIO_PIN_14
 
+#define GREEN_LED GPIOD, GPIO_PIN_11
+#define YELLOW_LED GPIOD, GPIO_PIN_12
 /* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -136,8 +131,10 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void SPI6_RxCallback(void);
+void MyMDMA_TransferCompleteCallback(MDMA_HandleTypeDef *hmdma);
 int _write(int file, char *ptr, int len);
 void my_MPU_Config(void);
+HAL_StatusTypeDef MDMA_CopyBlock(q15_t *src, q15_t *dst);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

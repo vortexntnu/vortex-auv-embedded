@@ -93,6 +93,8 @@ def run_capture(
 
     if verbose:
         print("Loaded simulation configuration.")
+        print(f"Effective Sampling Rate: {effective_sampling_rate:.2f} Hz")
+        print(f"Detection Area Diameter: {detection_area_diameter} samples")
         print(f"Block Size Set To: {block_size} samples")
         print(f"Total Buffer Size Per Hydrophone: {buffer_size} samples")
 
@@ -146,7 +148,7 @@ def run_capture(
     position_error = None
     relative_position_error = None
 
-    SNR_threshold = 10**(5/10)  # 7 dB
+    SNR_threshold = 10**(5/10)  # 5 dB
 
     if verbose:
         print("Running simulation and collecting buffer states...")

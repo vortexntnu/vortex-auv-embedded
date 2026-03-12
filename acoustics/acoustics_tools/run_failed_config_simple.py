@@ -17,14 +17,14 @@ EXPORT_NPZ = ""  # e.g. "case_98.npz" (empty string disables)
 
 # Optional: override paths (normally you don't need to)
 BASE_DIR = Path(__file__).resolve().parent
-TEST_DATA_DIR = BASE_DIR / "errors_analysis" / "test_data" #"tests" 
+TEST_DATA_DIR = BASE_DIR / "tests" / "test_data" #"" errors_analysis
 FULLSTACK_SCRIPT = BASE_DIR / "fullstack_prototype.py"
 
 R = 15  # Range modifier (only for naming convenience)
 
 def main() -> int:
-    config_path = TEST_DATA_DIR / f"config_{INDEX}_{R}.json"
-    data_path = TEST_DATA_DIR / f"data_{INDEX}_{R}.csv"
+    config_path = TEST_DATA_DIR / f"config_{INDEX}.json"
+    data_path = TEST_DATA_DIR / f"data_{INDEX}.csv"
 
     if not config_path.exists():
         raise SystemExit(f"Config not found: {config_path}")
