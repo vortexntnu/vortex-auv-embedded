@@ -170,9 +170,9 @@ void SYS_Initialize ( void* data )
 
     PAC_Initialize();
 
-    SERCOM4_USART_Initialize();
-
     CAN0_Initialize();
+
+    SERCOM4_USART_Initialize();
 
 
     /* MISRAC 2023 deviation block start */

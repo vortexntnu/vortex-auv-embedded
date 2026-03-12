@@ -112,32 +112,4 @@ data:
           type: Dynamic
         type: Values
       type: String
-    BTL_TRIGGER_ENABLE:
-      attributes:
-        id: BTL_TRIGGER_ENABLE
-      children:
-      - children:
-        - attributes:
-            value: 'true'
-          type: User
-        type: Values
-      type: Boolean
-    BTL_TRIGGER_LEN:
-      attributes:
-        id: BTL_TRIGGER_LEN
-      children:
-      - children:
-        - attributes:
-            id: visible
-          children:
-          - type: Value
-            value: 'true'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
-            value: '16'
-          type: User
-        type: Values
-      type: String
   userData: {}

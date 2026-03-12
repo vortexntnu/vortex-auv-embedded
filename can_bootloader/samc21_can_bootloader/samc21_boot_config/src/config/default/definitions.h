@@ -55,8 +55,8 @@
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
 #include "peripheral/pac/plib_pac.h"
-#include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "peripheral/can/plib_can0.h"
+#include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "bootloader/bootloader_can.h"
 #include "peripheral/dsu/plib_dsu.h"
 

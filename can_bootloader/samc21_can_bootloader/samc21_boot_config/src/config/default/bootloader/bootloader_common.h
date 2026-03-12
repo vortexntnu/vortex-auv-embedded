@@ -70,6 +70,9 @@
 #define APP_START_ADDRESS                       (0x1000U)
 
 
+#define BTL_TRIGGER_RAM_START                   0x20000000
+
+#define BTL_TRIGGER_LEN                         16
 
 // *****************************************************************************
 /* MISRA C-2023 Rule 5.8 deviated below. Deviation record ID -

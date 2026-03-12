@@ -2,5 +2,11 @@
     "mplab.clangd.arguments": [
         "--compile-commands-dir=${workspaceFolder}/_build/samc21_can_bootloader/default"
     ],
-    "mplab.clangd.path": "/opt/microchip/xc32/v4.60/bin/xc32-clangd"
+    "mplab.clangd.path": "/opt/microchip/xc32/v4.60/bin/xc32-clangd",
+    "memory-inspector.debugTypes": [
+        "arm-debugger",
+        "embedded-debug",
+        "gdb",
+        "mplab-core-da"
+    ]
 }

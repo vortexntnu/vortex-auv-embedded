@@ -40,12 +40,16 @@ int main ( void )
     /* Initialize all modules */
     SYS_Initialize ( NULL );
 
-    LED_Clear();
+    //LED_Clear();
+    LED_Set();
+    printf("bootloader mode\n");
+    SERCOM4_USART_Write("bootloader mode \n", 18);
 
     while ( true )
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
-        SYS_Tasks ( );
+        //SYS_Tasks ( );
+        bootloader_CAN_Tasks();
     }
 
     /* Execution should not come here during normal operation */

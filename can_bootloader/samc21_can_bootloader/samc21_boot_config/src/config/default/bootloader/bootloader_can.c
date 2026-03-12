@@ -313,6 +313,7 @@ static void CAN0_task(void)
 
     if (CAN0_InterruptGet(CAN_INTERRUPT_RF0N_MASK))
     {
+        SERCOM4_USART_Write("can0 interrupt recieved\n", 25);
         CAN0_InterruptClear(CAN_INTERRUPT_RF0N_MASK);
 
         /* Check CAN0 Status */
