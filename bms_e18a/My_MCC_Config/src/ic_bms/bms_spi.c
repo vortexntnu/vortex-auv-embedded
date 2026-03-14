@@ -316,7 +316,7 @@ void bms_set_protection_threshold(void)
     bq_command_only(ENTER_CONFIG_UPDATE);
 
 
-    uint8_t cov_val = (uint8_t)(COV_THRESHOLD_MV / 50.6f + 0.5f);
+    uint8_t cov_val = (uint8_t)(COV_THRESHOLD_MV / 50.6f + 0.5f); 
     if (cov_val < 20)  cov_val = 20;
     if (cov_val > 110) cov_val = 110;
     bq_write_subcommand(COV_THRESHOLD_ADDR, &cov_val, 1);
@@ -346,33 +346,64 @@ void bms_set_protection_threshold(void)
 }
 
 
-void bms_battery_status(void){
+bool bms_battery_status_get(uint8_t *fet_reg, bms_state_t *state)
+{
+    uint8_t fet = 0U;
+    bool chg_on;
+    bool pchg_on;
+    bool dsg_on;
 
-    uint8_t fetReg=0;
-
-    if(!bq_direct_read(FET_STATUS, &fetReg, 1)){
-        printf("Failed to read FET status\n");
-        return;
+    if (!bq_direct_read(FET_STATUS, &fet, 1))
+    {
+        if (state != NULL)
+        {
+            *state = BMS_STATE_READ_FAIL;
+        }
+        return false;
     }
 
-    bool chg_on  = (fetReg & (1 << 0));  // CHG_FET bit
-    bool pchg_on = (fetReg & (1 << 1));  // PCHG_FET bit
-    bool dsg_on  = (fetReg & (1 << 2));  // DSG_FET bit
+    if (fet_reg != NULL)
+    {
+        *fet_reg = fet;
+    }
 
+    chg_on = ((fet & (1U << 0)) != 0U);
+    pchg_on = ((fet & (1U << 1)) != 0U);
+    dsg_on = ((fet & (1U << 2)) != 0U);
 
-    if (pchg_on)
-        printf("Battery in precharge mode\n");  //maybe not printf
-    else if (chg_on && !dsg_on) 
-        printf("Battery is charging\n");
-    else if (dsg_on && !chg_on)
-        printf("Battery is discharging\n");
-    else if (!chg_on && !dsg_on)
-        printf("Battery is idle\n");
-    else
-        printf("Both CHG_FET and DSG_FET ACTIVE (transition)\n");
+    if (state != NULL)
+    {
+        if (pchg_on)
+        {
+            *state = BMS_STATE_PRECHARGE;
+        }
+        else if (chg_on && !dsg_on)
+        {
+            *state = BMS_STATE_CHARGING;
+        }
+        else if (dsg_on && !chg_on)
+        {
+            *state = BMS_STATE_DISCHARGING;
+        }
+        else if (!chg_on && !dsg_on)
+        {
+            *state = BMS_STATE_IDLE;
+        }
+        else
+        {
+            *state = BMS_STATE_TRANSITION;
+        }
+    }
 
+    return true;
+}
 
+void bms_battery_status(void)
+{
+    uint8_t fet = 0U;
+    bms_state_t state = BMS_STATE_READ_FAIL;
 
+    (void)bms_battery_status_get(&fet, &state);
 }
 
 

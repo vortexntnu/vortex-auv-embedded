@@ -176,7 +176,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            value: '100000'
+            value: '500000'
           type: User
         type: Values
       type: Integer
@@ -187,7 +187,7 @@ data:
       - children:
         - attributes:
             id: sercom0
-            value: '239'
+            value: '47'
           type: Dynamic
         type: Values
       type: Integer

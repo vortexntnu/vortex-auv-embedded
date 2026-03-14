@@ -26,16 +26,7 @@
 #include <stdbool.h>                    // Defines true
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
-#include "ic_bms/bms_spi.h"
 #include "ic_bms/spi_test.h"
-#include "app/can_facade.h"
-#include "app/can_telemetry.h"
-#include "app/pwr_mode.h"
-#include "app/state_machine.h"
-#include "peripheral/port/plib_port.h"
-#include <stdio.h>
-#include <sys/types.h>
-
 
 // *****************************************************************************
 // *****************************************************************************
@@ -64,31 +55,15 @@ int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
-    //pwr_mode_init();
-    //CAN_Init();
-    //CAN_telemetry_init();
-    //RTC_Timer32CallbackRegister(TelemetryRtcCb, 0);
-    //RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
-    //RTC_Timer32Start();
-    //EIC_CallbackRegister(EIC_PIN_14, CAN_Wake_EIC_Callback, 0); 
-    //EIC_InterruptEnable(EIC_PIN_14); 
-    
-    spi_driver_self_test_run(); 
-    LED_R_Set();
-    LED_Y_Set();
-    //bq76942_init();
-    //bothoff_init();
-    //sm_init();
-    //bms_battery_status();
+    voltage_test_init();
 
-  while ( true )
+    while ( true )
     {
-        /* Maintain state machines of all polled MPLAB Harmony modules. */
-        SYS_Tasks ( );
-        //state_machine();
+        SYS_Tasks();
+        spi_write_probe_step();
     }
-    
-    
+
+
     /* Execution should not come here during normal operation */
 
     return ( EXIT_FAILURE );

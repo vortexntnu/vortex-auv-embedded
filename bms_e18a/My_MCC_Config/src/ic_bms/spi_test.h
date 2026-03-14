@@ -1,6 +1,8 @@
 #ifndef SPI_TEST_H
 #define SPI_TEST_H
 
-void spi_driver_self_test_run(void);
+void voltage_test_init(void);
+void spi_write_probe_step(void);
+void voltage_test_step(void);
 
 #endif /* SPI_TEST_H */

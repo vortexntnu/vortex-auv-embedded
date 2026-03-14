@@ -34,8 +34,8 @@
 
 */ // 16 cell voltage readings avaliable 
 
-#define R 0 // Read; Used in directcommands and Subcommands functions
-#define W 1 // Write; Used in directcommands and Subcommands functions
+#define R 'R' // Read; Used with bq_direct_command
+#define W 'W' // Write; Used with bq_direct_command
 #define BQ_SUBCMD_MAX_POLLS 2000u
 
 
@@ -56,10 +56,10 @@
 
 // Thresholds and Delays values (TBC)
 
-#define COV_THRESHOLD_MV   4250
-#define COV_DELAY_MS       200
-#define CUV_THRESHOLD_MV   3000
-#define CUV_DELAY_MS       300
+#define COV_THRESHOLD_MV   4400
+#define COV_DELAY_MS       500
+#define CUV_THRESHOLD_MV   2500
+#define CUV_DELAY_MS       500
 
 // Threshold Addresses
 #define COV_THRESHOLD_ADDR 0x9278
@@ -79,6 +79,16 @@
 #define PIN_BOTHOFF 6u
 #define BOTHOFF_PIN_MASK (1u << PIN_BOTHOFF)
 
+typedef enum
+{
+    BMS_STATE_READ_FAIL = 0,
+    BMS_STATE_PRECHARGE,
+    BMS_STATE_CHARGING,
+    BMS_STATE_DISCHARGING,
+    BMS_STATE_IDLE,
+    BMS_STATE_TRANSITION
+} bms_state_t;
+
 /* Minimal driver: only SPI+CS bring-up */
 
 void bq76942_init(void);
@@ -92,6 +102,7 @@ bool bq_read_subcommand(uint16_t subcmd, uint8_t *data, uint8_t length);
 bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length);
 void bms_set_protection_threshold(void);
 void bms_battery_status(void);
+bool bms_battery_status_get(uint8_t *fet_reg, bms_state_t *state);
 bool read_cells_1to6(uint16_t cell_mV[6]);
 void bms_sample_temps(void);
 bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC);

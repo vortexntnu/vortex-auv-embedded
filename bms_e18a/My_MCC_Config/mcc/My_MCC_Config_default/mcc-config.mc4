@@ -64,9 +64,9 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/nvmctrl/plib_nvmctrl.h
   hash: a2f572d8ba174971959f4a9319fc61b460c00432512d38e19e28e2dfddf6cde5
 - file: ../src/config/default/peripheral/port/plib_port.c
-  hash: 8c663faf2f79ad1cf8e99a1ff3d00987855d80b5abfa5e3fb05a234fde66325d
+  hash: 1617075e5fed2ff1a38a244d6c68e1cd019f0a12f3cc6eb95139dfb61ccc6854
 - file: ../src/config/default/peripheral/port/plib_port.h
-  hash: 295427a3e7fc668b9d3909dc2aebce8aa6ea8b5d6acdb85b95a48e912132ba39
+  hash: 33960c5a16538fe64bbc8d949837e05cbc2e275f936e3190e752fe627c67b1c2
 - file: ../src/config/default/peripheral/rtc/plib_rtc.h
   hash: 92e9a13ceda691e011ad7efff84d616e8466f744723f8135850fc171fd53ac3b
 - file: ../src/config/default/peripheral/rtc/plib_rtc_timer.c
@@ -78,7 +78,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/sercom/i2c_master/plib_sercom_i2c_master_common.h
   hash: f167b04b3c6a0f83fe41b7b6f810cbf0a48b8ca7d5a747b76463dd53d3c1a2a2
 - file: ../src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.c
-  hash: 877bfc1e40b416aef194b823530a0901f4252f8dd03a8beb3e2ed4685d6c493d
+  hash: 4a1178791b797b23895e5c775ffdbdfa8f431c5f49a6dbb7db611491ccf27978
 - file: ../src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.h
   hash: 8e1550559a741d9ace2e6fb145ac015c8457aa417c877996855b73238051babb
 - file: ../src/config/default/peripheral/sercom/spi_master/plib_sercom_spi_master_common.h
@@ -90,7 +90,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h
   hash: 3653b66472c558c50f7037a1dd25d2678e9a13aa718f3c53a2195e6f3919ea48
 - file: ../src/config/default/pin_configurations.csv
-  hash: a16fc00b5b473cae7d7dabee078252efcc33841f94266cabb09f346e9cd358da
+  hash: 70b93201a8ee4894a57e647e2c53d7d5f9bcd20b9bcead52b2f5e3bf02d110a8
 - file: ../src/config/default/startup_xc32.c
   hash: e6227d89e36b74af1bc21e00e80b390502c97aaaa65796291f63b2d96cf0678e
 - file: ../src/config/default/stdio/xc32_monitor.c
