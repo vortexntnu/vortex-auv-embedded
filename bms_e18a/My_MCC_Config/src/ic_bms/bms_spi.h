@@ -111,7 +111,7 @@ void bothoff_init(void);
 void bothoff_high(void);
 void bothoff_low(void);
 
-
+void bms_init_comm_voltage(void);
 
 
 

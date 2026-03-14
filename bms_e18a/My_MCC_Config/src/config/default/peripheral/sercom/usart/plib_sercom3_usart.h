@@ -84,11 +84,9 @@ bool SERCOM3_USART_Write( void *buffer, const size_t size );
 bool SERCOM3_USART_TransmitComplete( void );
 
 
-bool SERCOM3_USART_WriteIsBusy( void );
+bool SERCOM3_USART_TransmitterIsReady( void );
 
-size_t SERCOM3_USART_WriteCountGet( void );
-
-void SERCOM3_USART_WriteCallbackRegister( SERCOM_USART_CALLBACK callback, uintptr_t context );
+void SERCOM3_USART_WriteByte( int data );
 
 
 void SERCOM3_USART_ReceiverEnable( void );
@@ -97,13 +95,9 @@ void SERCOM3_USART_ReceiverDisable( void );
 
 bool SERCOM3_USART_Read( void *buffer, const size_t size );
 
-bool SERCOM3_USART_ReadIsBusy( void );
+bool SERCOM3_USART_ReceiverIsReady( void );
 
-size_t SERCOM3_USART_ReadCountGet( void );
-
-bool SERCOM3_USART_ReadAbort(void);
-
-void SERCOM3_USART_ReadCallbackRegister( SERCOM_USART_CALLBACK callback, uintptr_t context );
+int SERCOM3_USART_ReadByte( void );
 
 USART_ERROR SERCOM3_USART_ErrorGet( void );
 

@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch bms_e18a: default",
+            "type": "mplab-core-da",
+            "request": "launch",
+            "project": "bms_e18a",
+            "configuration": "default",
+            "stopOnEntry": true,
+            "program": "/home/nathaniel/vortex/vortex-auv-embedded/bms_e18a/out/bms_e18a/default.elf"
+        }
+    ]
+}

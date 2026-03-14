@@ -24,6 +24,7 @@
 
 #include <stddef.h>                     // Defines NULL
 #include <stdbool.h>                    // Defines true
+#include <stdio.h>
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 #include "ic_bms/spi_test.h"
@@ -55,12 +56,13 @@ int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
+    bms_init_comm_voltage();
     voltage_test_init();
 
     while ( true )
     {
         SYS_Tasks();
-        spi_write_probe_step();
+        voltage_test_step();
     }
 
 

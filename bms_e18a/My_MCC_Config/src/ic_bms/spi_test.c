@@ -34,14 +34,14 @@ static bool uart_write_blocking(const uint8_t *data, size_t len)
         return false;
     }
 
-    while (SERCOM3_USART_WriteIsBusy())
-    {
-        if (timeout-- == 0U)
-        {
-            return false;
-        }
-    }
-
+    // while (SERCOM3_USART_WriteIsBusy())
+    // {
+    //     if (timeout-- == 0U)
+    //     {
+    //         return false;
+    //     }
+    // }
+    //
     timeout = UART_TIMEOUT_LOOPS;
     while (!SERCOM3_USART_TransmitComplete())
     {
