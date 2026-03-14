@@ -22,6 +22,7 @@
 #include "stm32h7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ad7606_driver.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,12 +56,14 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_adc3;
 extern MDMA_HandleTypeDef hmdma_mdma_channel0_sw_0;
 extern DMA_HandleTypeDef hdma_spi1_rx;
 extern DMA_HandleTypeDef hdma_spi2_rx;
 extern DMA_HandleTypeDef hdma_spi3_rx;
 extern DMA_HandleTypeDef hdma_spi4_rx;
 extern DMA_HandleTypeDef hdma_spi5_rx;
+extern DMA_HandleTypeDef hdma_spi6_rx;
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi3;
@@ -97,23 +100,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-    // Read the fault status registers
-    volatile uint32_t* sp = (uint32_t*)__get_MSP();
-    volatile uint32_t r0  = sp[0];
-    volatile uint32_t r1  = sp[1];
-    volatile uint32_t r2  = sp[2];
-    volatile uint32_t r3  = sp[3];
-    volatile uint32_t r12 = sp[4];
-    volatile uint32_t lr  = sp[5];
-    volatile uint32_t pc  = sp[6];  // <-- instruction that faulted
-    volatile uint32_t psr = sp[7];
-    volatile uint32_t CFSR = SCB->CFSR;   // Combined fault status
-    volatile uint32_t HFSR = SCB->HFSR;   // Hard fault status
-    volatile uint32_t MMFAR = SCB->MMFAR; // Mem manage fault address
-    volatile uint32_t BFAR = SCB->BFAR;   // Bus fault address
-    (void)CFSR; (void)HFSR; (void)MMFAR; (void)BFAR;
-    __BKPT(0); // Break here in debugger and inspect these variables
-    Error_Handler();
+
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -415,7 +402,7 @@ void SPI5_IRQHandler(void)
 void SPI6_IRQHandler(void)
 {
   /* USER CODE BEGIN SPI6_IRQn 0 */
-	ad7606_fast_spi_callback();
+	ad7606_eot_callback(&hspi6,0);
   /* USER CODE END SPI6_IRQn 0 */
   HAL_SPI_IRQHandler(&hspi6);
   /* USER CODE BEGIN SPI6_IRQn 1 */
@@ -444,12 +431,40 @@ void DMAMUX1_OVR_IRQHandler(void)
 void MDMA_IRQHandler(void)
 {
   /* USER CODE BEGIN MDMA_IRQn 0 */
-    //MyMDMA_TransferCompleteCallback(&hmdma_mdma_channel0_sw_0);
+
   /* USER CODE END MDMA_IRQn 0 */
   HAL_MDMA_IRQHandler(&hmdma_mdma_channel0_sw_0);
   /* USER CODE BEGIN MDMA_IRQn 1 */
 
   /* USER CODE END MDMA_IRQn 1 */
+}
+
+/**
+  * @brief This function handles BDMA channel0 global interrupt.
+  */
+void BDMA_Channel0_IRQHandler(void)
+{
+  /* USER CODE BEGIN BDMA_Channel0_IRQn 0 */
+
+  /* USER CODE END BDMA_Channel0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_spi6_rx);
+  /* USER CODE BEGIN BDMA_Channel0_IRQn 1 */
+
+  /* USER CODE END BDMA_Channel0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles BDMA channel1 global interrupt.
+  */
+void BDMA_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN BDMA_Channel1_IRQn 0 */
+
+  /* USER CODE END BDMA_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc3);
+  /* USER CODE BEGIN BDMA_Channel1_IRQn 1 */
+
+  /* USER CODE END BDMA_Channel1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

@@ -27,11 +27,11 @@
 #define PLACE_IN_D3_SRAM   __attribute__((section(".d3_sram")))
 
 /** DTCM — 128K Data Tightly Coupled Memory (0x20000000)
- *  Accessible by: CPU only (zero-wait-state reads/writes) */
+ *  * Accessible by: CPU, MDMA */
 #define PLACE_IN_DTCM      __attribute__((section(".dtcm")))
 
 /** ITCM — 64K Instruction Tightly Coupled Memory (0x00000000)
- *  Accessible by: CPU only (zero-wait-state instruction fetch) */
+ * Accessible by: CPU, MDMA */
 #define PLACE_IN_ITCM      __attribute__((section(".itcm")))
 
 /* ---- Alignment constants ---- */

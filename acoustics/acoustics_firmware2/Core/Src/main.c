@@ -25,6 +25,7 @@
 #include "acoustics.h"
 #include "utils.h"
 #include "memory_placement.h"
+#include "find_peaks.h"
 
 #include "stm32h753xx.h"
 #include "stm32h7xx_hal.h"
@@ -36,6 +37,7 @@
 
 #include "arm_math_types.h"
 #include "arm_math.h"
+#include "arm_const_structs.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -59,6 +61,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc3;
+DMA_HandleTypeDef hdma_adc3;
 
 CRC_HandleTypeDef hcrc;
 
@@ -77,8 +81,10 @@ DMA_HandleTypeDef hdma_spi2_rx;
 DMA_HandleTypeDef hdma_spi3_rx;
 DMA_HandleTypeDef hdma_spi4_rx;
 DMA_HandleTypeDef hdma_spi5_rx;
+DMA_HandleTypeDef hdma_spi6_rx;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim6;
 DMA_HandleTypeDef hdma_tim1_ch4;
 
 UART_HandleTypeDef huart1;
@@ -94,7 +100,10 @@ SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES] = {DOUTA, DOUTB, DO
 volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
 
 PLACE_IN_D2_SRAM q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
+PLACE_IN_D3_SRAM q15_t diagnostics_buffer[BLOCK_LEN];
 volatile uint16_t diagnostics_sample;
+float32_t diagnostics_temp;
+PLACE_IN_D3_SRAM float32_t stm32_temp;
 
 PLACE_IN_DTCM arm_rfft_instance_q15 detection_fft_instance;
 MDMA_BUF_DTCM(ALIGN_DMA_BURST_8_WORD) q15_t detection_buffer[2][BLOCK_LEN];
@@ -106,15 +115,23 @@ PLACE_IN_DTCM volatile bool mdma_done_flag = false;
 
 PLACE_IN_DTCM arm_rfft_instance_q15 processing_fft_instance;
 PLACE_IN_DTCM arm_rfft_instance_q15 processing_ifft_instance;
-static PLACE_IN_AXI_SRAM q15_t processing_fft_input[PROCESSING_FFT_SIZE];
-static PLACE_IN_AXI_SRAM q15_t processing_fft_output[PROCESSING_FFT_SIZE * 2];
+
 static PLACE_IN_AXI_SRAM q15_t processing_workspace[N_HYDROPHONES][PROCESSING_FFT_SIZE];
+static PLACE_IN_AXI_SRAM q15_t processing_fft_input[PROCESSING_FFT_SIZE];
+static PLACE_IN_AXI_SRAM q15_t processing_fft_output[PROCESSING_FFT_SIZE*2];
 
 // CWT-specific buffers
 static PLACE_IN_AXI_SRAM q15_t cwt_kernel[PROCESSING_FFT_SIZE * 2];     // complex Morlet kernel (freq domain)
+static PLACE_IN_AXI_SRAM q15_t cwt_working_buffer[PROCESSING_FFT_SIZE];
 static PLACE_IN_AXI_SRAM q15_t cwt_product[PROCESSING_FFT_SIZE * 2];    // complex product buffer
 static PLACE_IN_AXI_SRAM q15_t cwt_result[PROCESSING_FFT_SIZE * 2];     // IFFT output (complex)
 static PLACE_IN_AXI_SRAM q15_t cwt_out[PROCESSING_FFT_SIZE];
+
+// Hilbert specific
+static PLACE_IN_DTCM q15_t hilbert_working_buffer[PROCESSING_FFT_SIZE*2];
+static PLACE_IN_DTCM q15_t hilbert_analytic_signal[PROCESSING_FFT_SIZE*2];
+static PLACE_IN_DTCM q15_t envelope[PROCESSING_FFT_SIZE];
+static PLACE_IN_DTCM q15_t envelope_edge[PROCESSING_FFT_SIZE];
 
 #define PRINT_BUF_SIZE (N_HYDROPHONES * N_BLOCKS * BLOCK_LEN * 8 + 1024)
 static char print_buf[PRINT_BUF_SIZE];
@@ -128,6 +145,7 @@ static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_MDMA_Init(void);
+static void MX_BDMA_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
@@ -136,43 +154,194 @@ static void MX_SPI4_Init(void);
 static void MX_SPI5_Init(void);
 static void MX_SPI6_Init(void);
 static void MX_USART1_UART_Init(void);
-static void MX_RTC_Init(void);
 static void MX_CRC_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_RTC_Init(void);
+static void MX_ADC3_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-void my_MPU_Config(void);
+static void init_adc_and_buffers(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+q15_t q15_from_float(float f) {
+    return (q15_t)(f * 32767.0f);
+}
+
+#define MAX_PEAKS 4
+
+uint32_t find_da_edge(const q15_t *signal, uint32_t signal_len)
+{
+	q15_t buf_min;
+	uint32_t min_idx;
+	arm_min_q15(signal, signal_len, &buf_min, &min_idx);
+	q15_t min_height = (q15_t)(((int32_t)(-buf_min) * 22938) >> 15);
+
+    uint32_t           peak_idx[MAX_PEAKS];
+    find_peaks_props_t props[MAX_PEAKS];
+    uint32_t           n_peaks;
+
+    find_peaks_config_t cfg = FIND_PEAKS_CONFIG_DEFAULT;
+    cfg.height     = min_height;
+    cfg.prominence = 328;          // 0.01 * 32767
+    cfg.distance   = 5;
+
+    find_peaks(signal, signal_len, &cfg, peak_idx, props, MAX_PEAKS, &n_peaks);
+
+
+    // 4. first_peak = np.min(find_peakss_data) → lowest index found
+    //    peak_idx is already in ascending index order, so index 0 is the first
+    uint32_t first_peak;
+    if (n_peaks > 0) {
+        first_peak = peak_idx[0];          // leftmost peak (min index)
+    } else {
+        arm_min_q15(signal, signal_len, &buf_min, &first_peak);  // fallback: argmin
+    }
+    return first_peak;
+}
+
+
+// claude generated
+//#define ARM_CFFT_INSTANCE_Q15(len) (          \
+//    (len) == 16   ? &arm_cfft_sR_q15_len16  : \
+//    (len) == 32   ? &arm_cfft_sR_q15_len32  : \
+//    (len) == 64   ? &arm_cfft_sR_q15_len64  : \
+//    (len) == 128  ? &arm_cfft_sR_q15_len128 : \
+//    (len) == 256  ? &arm_cfft_sR_q15_len256 : \
+//    (len) == 512  ? &arm_cfft_sR_q15_len512 : \
+//    (len) == 1024 ? &arm_cfft_sR_q15_len1024: \
+//    (len) == 2048 ? &arm_cfft_sR_q15_len2048: \
+//    (len) == 4096 ? &arm_cfft_sR_q15_len4096: \
+//    NULL)
+
+
+
+// claude generated
+/**
+ * @brief  Hilbert Transform using Q15 fixed-point CMSIS-DSP.
+ *         Input:  real Q15 samples  (range -1.0 to ~1.0 mapped to -32768..32767)
+ *         Output: imaginary (quadrature) Q15 samples — the analytic signal's imag part.
+ *
+ * @param  pSrc     Input real Q15 samples
+ * @param  pDst     Output quadrature Q15 samples (length fftSize)
+ * @param  fftSize  Must be a power of 2: 256, 512, 1024, 2048, ...
+ * @param  pScratch Scratch buffer of (fftSize * 2) q15_t elements (interleaved Re/Im)
+ */
+void hilbert_transform_q15(const q15_t *pSrc,
+                           q15_t       *pDst)  // length PROCESSING_FFT_SIZE*2, interleaved Re/Im
+{
+    arm_rfft_instance_q15 rfft;
+
+    arm_rfft_init_q15(&rfft, PROCESSING_FFT_SIZE, 0, 1);
+
+    arm_copy_q15((q15_t *)pSrc, processing_fft_input, PROCESSING_FFT_SIZE);
+
+    arm_rfft_q15(&rfft, processing_fft_input, hilbert_working_buffer);
+
+    /* Zero DC bin */
+    hilbert_working_buffer[0] = 0;
+    hilbert_working_buffer[1] = 0;
+
+    /* Positive frequency bins: apply -j rotation */
+    for (uint32_t k = 1; k < PROCESSING_FFT_SIZE / 2; k++)
+    {
+        q15_t re = hilbert_working_buffer[2 * k];
+        q15_t im = hilbert_working_buffer[2 * k + 1];
+
+        hilbert_working_buffer[2 * k]     =  im;
+        hilbert_working_buffer[2 * k + 1] = -re;
+    }
+
+    /* Zero Nyquist bin */
+    hilbert_working_buffer[PROCESSING_FFT_SIZE]     = 0;
+    hilbert_working_buffer[PROCESSING_FFT_SIZE + 1] = 0;
+
+    /* Zero all negative frequency bins */
+    for (uint32_t k = PROCESSING_FFT_SIZE / 2 + 1; k < PROCESSING_FFT_SIZE; k++)
+    {
+        hilbert_working_buffer[2 * k]     = 0;
+        hilbert_working_buffer[2 * k + 1] = 0;
+    }
+    arm_cfft_instance_q15 cfft;
+    arm_cfft_init_q15(&cfft,PROCESSING_FFT_SIZE);
+    arm_cfft_q15(&cfft, hilbert_working_buffer, 1, 1);
+
+    /* Copy interleaved Re/Im directly to pDst for arm_cmplx_mag_q15 */
+    for (uint32_t i = 0; i < PROCESSING_FFT_SIZE; i++)
+    {
+        pDst[2 * i]     = hilbert_working_buffer[2 * i];      // Re
+        pDst[2 * i + 1] = hilbert_working_buffer[2 * i + 1];  // Im
+    }
+}
+
+void hilbert_imag_q15(const q15_t *pSrc, q15_t *pDst)
+{
+    arm_rfft_instance_q15 rfft;
+    arm_rfft_init_q15(&rfft, PROCESSING_FFT_SIZE, 0, 1);
+
+    arm_copy_q15((q15_t *)pSrc, processing_fft_input, PROCESSING_FFT_SIZE);
+
+    arm_rfft_q15(&rfft, processing_fft_input, hilbert_working_buffer);
+
+    hilbert_working_buffer[0] = 0;
+    hilbert_working_buffer[1] = 0;
+
+    for (uint32_t k = 1; k < PROCESSING_FFT_SIZE / 2; k++)
+    {
+        q15_t re = hilbert_working_buffer[2 * k];
+        q15_t im = hilbert_working_buffer[2 * k + 1];
+        hilbert_working_buffer[2 * k]     =  im;
+        hilbert_working_buffer[2 * k + 1] = -re;
+    }
+
+    hilbert_working_buffer[PROCESSING_FFT_SIZE]     = 0;
+    hilbert_working_buffer[PROCESSING_FFT_SIZE + 1] = 0;
+
+    for (uint32_t k = PROCESSING_FFT_SIZE / 2 + 1; k < PROCESSING_FFT_SIZE; k++)
+    {
+        hilbert_working_buffer[2 * k]     = 0;
+        hilbert_working_buffer[2 * k + 1] = 0;
+    }
+
+    arm_cfft_instance_q15 cfft;
+    arm_cfft_init_q15(&cfft,PROCESSING_FFT_SIZE);
+    arm_cfft_q15(&cfft, hilbert_working_buffer, 1, 1);
+
+    /* Imaginary part only */
+    for (uint32_t i = 0; i < PROCESSING_FFT_SIZE; i++)
+        pDst[i] = hilbert_working_buffer[2 * i + 1];
+}
+
+
+// claude generated
 // -----------------------------------------------------------
 // Build Morlet kernel at startup (float -> q15 conversion)
 // target_freq: the frequency you want to focus on (e.g. 30000.0f)
 // fs:          your ADC sample rate (e.g. 200000.0f for AD7606)
 // -----------------------------------------------------------
-void cwt_build_morlet_kernel_q15(float32_t target_freq, float32_t fs)
+void cwt_build_morlet_kernel_q15(float32_t target_freq, float32_t fs, float32_t f0)
 {
-    float32_t f0 = 5.0f;  // Morlet center frequency (cycles, typical: 5-6)
-    // scale = f0 / target_freq (in normalized units)
+    // f0: center frequency parameter (cycles) — controls bandwidth.
+    // Higher f0 = narrower bandwidth, better freq resolution, worse time resolution.
+    // Typical range: 5.0 to 8.0. Default 5.0 is standard.
+
     float32_t omega0 = 2.0f * PI * f0;
-    float32_t scale = f0 / target_freq;  // time-domain scale
+    float32_t scale  = f0 / target_freq;
 
     for (uint32_t k = 0; k < PROCESSING_FFT_SIZE / 2; k++)
     {
-        float32_t omega = 2.0f * PI * (float32_t)k * fs / PROCESSING_FFT_SIZE;
-        float32_t arg = (scale * omega - omega0);
-        float32_t val = expf(-0.5f * arg * arg);
+        // Normalized angular frequency — no fs multiplier
+        float32_t omega = 2.0f * PI * (float32_t)k / PROCESSING_FFT_SIZE;
+        float32_t arg   = (scale * omega - omega0);
+        float32_t val   = expf(-0.5f * arg * arg);
 
-        // val is real-only kernel; clamp to q15 range [-1, 1)
-        // Pack as interleaved [real, imag] — imaginary = 0
-        val = fmaxf(-1.0f, fminf(0.99997f, val));
-
-        cwt_kernel[2 * k]     = (q15_t)(val * 32767.0f);  // real
-        cwt_kernel[2 * k + 1] = 0;                         // imaginary
+        cwt_kernel[2 * k]     = (q15_t)(val * 32767.0f);
+        cwt_kernel[2 * k + 1] = 0;
     }
 
-    // Zero negative frequencies (one-sided Morlet)
+    // Zero negative frequencies — analytic (one-sided) Morlet
     for (uint32_t k = PROCESSING_FFT_SIZE / 2; k < PROCESSING_FFT_SIZE; k++)
     {
         cwt_kernel[2 * k]     = 0;
@@ -180,6 +349,8 @@ void cwt_build_morlet_kernel_q15(float32_t target_freq, float32_t fs)
     }
 }
 
+
+// claude generated
 // input:    your raw q15_t ADC buffer [PROCESSING_FFT_SIZE]
 // out_mag:  output magnitude buffer [PROCESSING_FFT_SIZE] — time-domain envelope
 void cwt_morlet_q15(const q15_t *input, q15_t *out_mag)
@@ -205,21 +376,25 @@ void cwt_morlet_q15(const q15_t *input, q15_t *out_mag)
     //    out_mag[n] = sqrt(re^2 + im^2) — this is your time-domain energy envelope
 }
 
+
+// claude generated
 void cwt_init(void)
 {
 	arm_rfft_init_q15(&processing_fft_instance,  PROCESSING_FFT_SIZE, 0, 1); // forward
 	arm_rfft_init_q15(&processing_ifft_instance, PROCESSING_FFT_SIZE, 1, 1); // inverse
-    cwt_build_morlet_kernel_q15((float32_t)TARGET_FREQUENCY_HZ, (float32_t)SAMPLING_FREQUENCY); // 30kHz target, 125kHz fs
+    cwt_build_morlet_kernel_q15((float32_t)TARGET_FREQUENCY_HZ, (float32_t)SAMPLING_FREQUENCY,5); // 30kHz target, 125kHz fs
+    q15_t cwt_kernel_ifft[PROCESSING_FFT_SIZE];
+    arm_rfft_q15(&processing_ifft_instance, cwt_kernel, cwt_kernel_ifft);
     // adjust fs ^ to match your AD7606 config
 }
 
-// In your 125kHz timer/BUSY interrupt:
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == BUSY_INT)
     {
         // Kick next transfer — non-blocking, returns in ~5 cycles
-    	ad7606_fast_spi_run(MASTER_SPI);
+    	ad7606_trigger_burst(MASTER_SPI);
+    	//ad7606_fast_spi_run(MASTER_SPI);
     }
 }
 
@@ -393,7 +568,7 @@ bool signal_present(uint8_t half_idx) {
     uint32_t our_value = (uint32_t)(magnitude_output[16] >> 3) * (magnitude_output[16] >> 3)
                        + (uint32_t)(magnitude_output[15] >> 3) * (magnitude_output[15] >> 3);
 
-    return (our_value * LINEAR_THRESHOLD * 15) > sum;
+    return (our_value * 15) > (sum * LINEAR_THRESHOLD);
     //                              ×15 accounts for averaging over 30 bins vs 2 bins
 }
 
@@ -493,6 +668,56 @@ void Benchmark(void) {
 
 }
 
+
+// claude generated
+void dump_python_array(q15_t* arr, int len) {
+    if (arr == NULL || len <= 0) return;
+
+    fflush(stdout);
+    char print_buf[PRINT_BUF_SIZE];
+    int pos = 0;
+    int written = 0;
+
+    written = snprintf(print_buf + pos, sizeof(print_buf) - pos, "[");
+    if (written < 0 || pos + written >= (int)sizeof(print_buf)) goto overflow;
+    pos += written;
+
+    for (int i = 0; i < len - 1; i++) {
+        written = snprintf(print_buf + pos, sizeof(print_buf) - pos, "%d,", arr[i]);
+        if (written < 0 || pos + written >= (int)sizeof(print_buf)) goto overflow;
+        pos += written;
+    }
+
+    written = snprintf(print_buf + pos, sizeof(print_buf) - pos, "%d]", arr[len - 1]);
+    if (written < 0 || pos + written >= (int)sizeof(print_buf)) goto overflow;
+    pos += written;
+
+    _write(0, print_buf, pos);
+    fflush(stdout);
+    return;
+
+	overflow:
+		__asm("BKPT #0");
+}
+
+#define DUMP_ARRAY_NAMED_DICT(name, arr, len) do { \
+    printf("\t\"" name "\" : "); \
+    dump_python_array((q15_t*)(arr), (len)); \
+    printf("\r\n"); \
+} while(0)
+
+#define DUMP_ARRAY_NAMED(name, arr, len) do { \
+    printf(name " = "); \
+    dump_python_array((q15_t*)(arr), (len)); \
+    printf("\r\n"); \
+} while(0)
+
+#define DUMP_ARRAY(arr, len) do { \
+    printf(#arr " = "); \
+    dump_python_array((q15_t*)(arr), (len)); \
+    printf(",\r\n"); \
+} while(0)
+
 void dump_hydrophone_buffers(void){
     pos = 0;
 
@@ -523,6 +748,88 @@ void dump_hydrophone_buffers(void){
     // Single ITM write instead of thousands of printf calls
     _write(0, print_buf, pos);
 }
+
+void clear_buffer(q15_t* arr, int len){
+	for(int i = 0; i < len; i++) arr[i] = 0;
+}
+
+//#define TEMPSENSOR_CAL1_ADDR  ((uint16_t*) 0x1FF1E820)
+//#define TEMPSENSOR_CAL2_ADDR  ((uint16_t*) 0x1FF1E840)
+//#define TEMPSENSOR_CAL1_TEMP  30.0f
+//#define TEMPSENSOR_CAL2_TEMP  110.0f
+
+PLACE_IN_D3_SRAM volatile uint16_t g_adc3_dma_buf;
+
+volatile float g_die_temp = 0.0f;
+
+float Temp_BDMA_GetLatest(void);
+
+// Just start everything once at init
+void TempSensor_Init(void)
+{
+    HAL_ADC_Start_DMA(&hadc3, (uint32_t*)&g_adc3_dma_buf, 1);
+    HAL_TIM_Base_Start(&htim6);
+}
+
+// Read whenever you want - buffer updates at timer rate
+float TempSensor_GetLatest(void)
+{
+    return Temp_BDMA_GetLatest();
+}
+
+// Optional - fires at 1Hz now instead of constantly
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC3)
+    {
+        g_die_temp = Temp_BDMA_GetLatest();
+    }
+}
+
+// Call this whenever you want a fresh conversion of the buffer value
+float Temp_BDMA_GetLatest(void)
+{
+	float32_t cal1 = (float32_t)(12490);
+	float32_t cal2 = (float32_t)(16465);
+
+	float32_t temp = (130.0 - 30.0) / (cal2 - cal1)
+                 * ((float32_t)g_adc3_dma_buf - cal1)
+                 + 30.0;
+
+    return temp;
+}
+
+
+float stm_temp_sensor_convert(uint16_t raw_adc)
+{
+	float32_t cal1 = (float32_t)(12490);
+	float32_t cal2 = (float32_t)(16465);
+
+    float temperature = (130.0 - 30.0) /
+                        (cal2 - cal1) *
+                        (raw_adc - cal1) +
+						30.0;
+    return temperature;
+}
+
+uint16_t stm_Temp_ToRaw(float32_t target_temp)
+{
+	float32_t cal1 = (float32_t)(12490);
+	float32_t cal2 = (float32_t)(16465);
+
+    return (uint16_t)((target_temp - 30.0)
+           * (cal2 - cal1) / (130.0f - 30.0)
+           + cal1);
+}
+
+void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC3)
+    {
+        // Temperature out of range — take action
+        // e.g. reduce clock, shut down peripherals, set a flag
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -545,7 +852,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  //my_MPU_Config();
   SWO_Init();
   /* USER CODE END Init */
 
@@ -565,6 +871,7 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_MDMA_Init();
+  MX_BDMA_Init();
   MX_FDCAN1_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
@@ -573,159 +880,36 @@ int main(void)
   MX_SPI5_Init();
   MX_SPI6_Init();
   MX_USART1_UART_Init();
-  MX_RTC_Init();
   MX_CRC_Init();
   MX_TIM1_Init();
+  MX_RTC_Init();
+  MX_ADC3_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   //MDMA_UserInit();
 	uint8_t msg[] = "USART1 OK\r\n";
 	HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
 	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
 
-	{
-		struct ad7606_pins pins = {
-				.cs = {CS},
-				.busy = {BUSY},
-				.frstdata = {FRSTDATA},
-				.convst = {CONVST},
-		};
+	HAL_ADC_Start(&hadc3);
+	HAL_ADC_PollForConversion(&hadc3, 10);
+	uint16_t raw = HAL_ADC_GetValue(&hadc3);
+	utils_delay(10000);
+	HAL_ADC_Stop(&hadc3);
 
-		union ad7606_spi spi = {
-			.by_name = {
-				.douta = DOUTA,
-				.doutb = DOUTB,
-				.doutc = DOUTC,
-				.doutd = DOUTD,
-				.doute = DOUTE,
-				.doutf = NULL,
-				.doutg = NULL,
-				.douth = DOUTH,
-				.sdi   = MASTER_SPI,
-			}
-		};
+	TempSensor_Init();
 
-		struct ad7606_config config = {
-			.status_header = false,
-			.external_oversampling_clock = false,
-			.dout_format = AD7606_DOUT_8,
-			.operation_mode = AD7606_OPERATION_NORMAL,
-		};
-
-		struct ad7606_channel channels[8];
-		for(int i = 0; i < 8; i++){
-//			AD7606_MUX_CTRL_TEMP,
-//			AD7606_MUX_CTRL_2V5_REF,
-//			AD7606_MUX_CTRL_1V8_ALDO,
-//			AD7606_MUX_CTRL_1V8_DLDO,
-//			AD7606_MUX_CTRL_V_DRIVE,
-//			AD7606_MUX_CTRL_A_GND,
-//			AD7606_MUX_CTRL_AV_CC;
-			AD7606_CHANNEL_MUX_CTRL mux_ctrl = AD7606_MUX_CTRL_A_IN; // = (i != 8) ? (AD7606_MUX_CTRL_A_IN) : (AD7606_MUX_CTRL_TEMP);
-			if(i == 7){
-				mux_ctrl = AD7606_MUX_CTRL_TEMP;
-			}
-		    struct ad7606_channel ch = {
-		        .open_detect    = false,
-		        .high_bandwidth = true,
-		        .range          = AD7606_RANGE_SE_PM_10V,
-				.gain 			= 0,
-				.phase 			= 0,
-				.offset 		= 0x80,
-				.mux_ctrl 		= mux_ctrl,
-		    };
-		    channels[i] = ch;
-		}
-
-		struct ad7606_oversampling oversampling = {
-				.oversampling_ratio = 3,
-				.oversampling_padding = 0,
-		};
-
-		struct ad7606_digital_diagnostics digital_diagnostics = {
-				.rom_CRC_err_en = true,
-				.mm_CRC_err_en = false,
-				.int_CRC_err_en = false,
-				.spi_write_err_en = false,
-				.spi_read_err_en = false,
-				.busy_stuck_high_err_en = true,
-				.clk_fs_os_en = false,
-				.interface_check_en = false,
-		};
-
-		ADC_settings.config = config;
-		ADC_settings.digital_diagnostics = digital_diagnostics;
-		ADC_settings.oversampling = oversampling;
-
-		for(int i = 0; i < 8; i++){
-			ADC_settings.channels[i] = channels[i];
-		}
-
-		my_ADC.cooked = true;
-		ad7606_init(&my_ADC, &ADC_regs, pins, spi, &ADC_settings, &diagnostics_sample);
-
-		printf("ADC initialized. Status register:\t");
-		print_binary(ad7606_check_status(&my_ADC),8);
-		printf("\r\n");
-
-		printf("Digital diagnostics error register:\t");
-		print_binary(ad7606_check_digital_error(&my_ADC),8);
-		printf("\r\n");
-
-		uint8_t interface_check_result[8];
-		ad7606_check_interface(&my_ADC, interface_check_result);
-		printf("Interface check result:\r\n");
-		for(int i = 0; i < 8; i++){
-			printf("Channel V%d: ",i+1);
-		  switch(interface_check_result[i]){
-		  case 0xFF:
-			  printf("Not configured");
-			  break;
-		  case 0:
-			  printf("Fail");
-			  break;
-		  case 1:
-			  printf("Pass");
-			break;
-		  default:
-			printf("Unknown result");
-			break;
-		  }
-		  printf("\t\t\t");
-		  if(i%4 == 3) printf("\r\n");
-		}
-		printf("\r\n");
-
-		int lengths[8] = {
-				BUFFER_LEN,
-				BUFFER_LEN,
-				BUFFER_LEN,
-				BUFFER_LEN,
-				BUFFER_LEN,
-				0,
-				0,
-				0,
-		};
-		int16_t* buffers[8] = {NULL};
-		for(int i = 0; i < 5; i++) buffers[i] = (int16_t*)&hydrophone_buffers[i][0][0];
-
-		ad7606_enter_adc_mode(&my_ADC);
-
-		ad7606_init_output_buffers_DMA(&my_ADC, buffers, lengths);
-		//hmdma_mdma_channel0_sw_0.XferCpltCallback = MyMDMA_TransferCompleteCallback;
-		HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_CPLT_CB_ID,  MyMDMA_TransferCompleteCallback);
-		HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_ERROR_CB_ID, MyMDMA_ErrorCallback);
-		ad7606_fast_spi_init(&my_ADC);
-	}
+	init_adc_and_buffers();
 	arm_rfft_init_q15(&detection_fft_instance, DETECTION_FFT_SIZE, 0, 1);
 	cwt_init();
 
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
-	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
-	utils_delay(1000000);
-	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
-	Benchmark();
-	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
+//	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
+//	utils_delay(1000000);
+//	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
+//	Benchmark();
+//	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 
@@ -740,6 +924,11 @@ int main(void)
       uint8_t processing_half = !mdma_half;
       MDMA_CopyBlock(hydrophone_buffers[0][target_block], detection_buffer[mdma_half]);
       //process data ...
+      //printf("%d\r\n",target_block);
+
+      diagnostics_temp = (float32_t)ad7606_voltage_to_temp(ad7606_reading_to_voltage(&my_ADC,7,diagnostics_sample));
+      stm32_temp = Temp_BDMA_GetLatest();
+
 //      if(signal_present(processing_half)){
 //    	  if(!((count++)%SAMPLING_FREQUENCY)){
 //    		  printf("Signal detected\r\n");
@@ -753,22 +942,70 @@ int main(void)
 			for (int i = 0; i < 5; i++) {
 				HAL_SPI_DMAStop(my_ADC.spi_handles[i]);
 			}
+
 			printf("Processed half: %d\r\n",processing_half);
 			if(!((count++)%SAMPLING_FREQUENCY)){
 			  printf("Signal detected\r\n");
 			}
 
-			dump_hydrophone_buffers();
+			//dump_hydrophone_buffers();
 
+			printf("dump = {\r\n");
+
+			DUMP_ARRAY_NAMED_DICT("cwt kernel",cwt_kernel,DETECTION_FFT_SIZE);
+			printf(",");
+
+			DUMP_ARRAY_NAMED_DICT("detection",detection_buffer[0],BLOCK_LEN*2);
+			printf(",");
 
 			uint16_t workspace_idx = (target_block*BLOCK_LEN+BUFFER_LEN-WORKSPACE_LEN/2)%BUFFER_LEN;
 
+			printf("\"raw\" : [\r\n\t");
 			for(int i = 0; i < N_HYDROPHONES; i++){
 				q15_t* buffer_flat = (q15_t*)hydrophone_buffers[i];
 	    	    memcpy(processing_workspace[i], &buffer_flat[workspace_idx], WORKSPACE_LEN*sizeof(q15_t));
-	    	    cwt_morlet_q15(processing_workspace[i], processing_workspace[i]);
+	    	    dump_python_array(processing_workspace[i], WORKSPACE_LEN);
+	    	    if(i == N_HYDROPHONES - 1){
+	    	    	printf("\r\n],\r\n");
+	    	    }else{
+	    	    	printf(",\r\n\t");
+	    	    }
 			}
 
+			cwt_morlet_q15(processing_workspace[0], cwt_out);
+			DUMP_ARRAY_NAMED_DICT("cwt",cwt_out,WORKSPACE_LEN);
+			printf(",");
+
+			// Find max absolute value in input
+			q15_t max_val;
+			uint32_t max_idx;
+			arm_absmax_q15(processing_workspace[0], PROCESSING_FFT_SIZE, &max_val, &max_idx);
+
+			// Left-shift input to fill Q15 headroom
+			uint32_t headroom = __CLZ((uint32_t)max_val) - 17; // -17 because q15 is 16-bit, leave 1 bit for sign safety
+			arm_shift_q15(processing_workspace[0], (int8_t)headroom, hilbert_working_buffer, PROCESSING_FFT_SIZE);
+
+			hilbert_transform_q15(hilbert_working_buffer, hilbert_analytic_signal);
+			arm_cmplx_mag_q15(hilbert_analytic_signal, envelope, PROCESSING_FFT_SIZE); // envelope = |analytic|
+			DUMP_ARRAY_NAMED_DICT("envelope",envelope,PROCESSING_FFT_SIZE);
+			printf(",");
+
+			// Left-shift input to fill Q15 headroom
+			uint32_t headroom = __CLZ((uint32_t)max_val) - 17; // -17 because q15 is 16-bit, leave 1 bit for sign safety
+			arm_shift_q15(processing_workspace[0], (int8_t)headroom, hilbert_working_buffer, PROCESSING_FFT_SIZE);
+
+			hilbert_imag_q15(envelope, envelope_edge);
+			DUMP_ARRAY_NAMED_DICT("envelope_edge",envelope_edge,PROCESSING_FFT_SIZE);
+
+			printf("}\r\n");
+
+			uint32_t edge_idx;
+			edge_idx = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+
+
+			printf("edge_idx = %d\r\n",(int)edge_idx);
+
+			__asm("BKPT #0");
     	    break;
     	}
 		  while(mdma_done_flag == false) {
@@ -859,10 +1096,10 @@ void PeriphCommonClock_Config(void)
 
   /** Initializes the peripherals clock
   */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI6|RCC_PERIPHCLK_SPI3
-                              |RCC_PERIPHCLK_SPI2|RCC_PERIPHCLK_SPI1
-                              |RCC_PERIPHCLK_SPI4|RCC_PERIPHCLK_SPI5
-                              |RCC_PERIPHCLK_FDCAN;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI6|RCC_PERIPHCLK_ADC
+                              |RCC_PERIPHCLK_SPI3|RCC_PERIPHCLK_SPI2
+                              |RCC_PERIPHCLK_SPI1|RCC_PERIPHCLK_SPI4
+                              |RCC_PERIPHCLK_SPI5|RCC_PERIPHCLK_FDCAN;
   PeriphClkInitStruct.PLL2.PLL2M = 16;
   PeriphClkInitStruct.PLL2.PLL2N = 128;
   PeriphClkInitStruct.PLL2.PLL2P = 4;
@@ -874,11 +1111,86 @@ void PeriphCommonClock_Config(void)
   PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL2;
   PeriphClkInitStruct.Spi45ClockSelection = RCC_SPI45CLKSOURCE_PLL2;
   PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
+  PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
   PeriphClkInitStruct.Spi6ClockSelection = RCC_SPI6CLKSOURCE_PLL2;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC3_Init(void)
+{
+
+  /* USER CODE BEGIN ADC3_Init 0 */
+
+  /* USER CODE END ADC3_Init 0 */
+
+  ADC_AnalogWDGConfTypeDef AnalogWDGConfig = {0};
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC3_Init 1 */
+
+  /* USER CODE END ADC3_Init 1 */
+
+  /** Common config
+  */
+  hadc3.Instance = ADC3;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV8;
+  hadc3.Init.Resolution = ADC_RESOLUTION_16B;
+  hadc3.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc3.Init.LowPowerAutoWait = DISABLE;
+  hadc3.Init.ContinuousConvMode = DISABLE;
+  hadc3.Init.NbrOfConversion = 1;
+  hadc3.Init.DiscontinuousConvMode = DISABLE;
+  hadc3.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T6_TRGO;
+  hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc3.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
+  hadc3.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc3.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+  hadc3.Init.OversamplingMode = DISABLE;
+  hadc3.Init.Oversampling.Ratio = 1;
+  if (HAL_ADC_Init(&hadc3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analog WatchDog 1
+  */
+  AnalogWDGConfig.WatchdogNumber = ADC_ANALOGWATCHDOG_1;
+  AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
+  AnalogWDGConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  AnalogWDGConfig.ITMode = ENABLE;
+  AnalogWDGConfig.HighThreshold = 14477;
+  AnalogWDGConfig.LowThreshold = 10900;
+  if (HAL_ADC_AnalogWDGConfig(&hadc3, &AnalogWDGConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  sConfig.OffsetSignedSaturation = DISABLE;
+  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC3_Init 2 */
+
+  /* USER CODE END ADC3_Init 2 */
+
 }
 
 /**
@@ -1365,6 +1677,44 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 3999;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 59999;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -1380,7 +1730,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 921600;
+  huart1.Init.BaudRate = 900000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -1409,6 +1759,25 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_BDMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_BDMA_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* BDMA_Channel0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(BDMA_Channel0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(BDMA_Channel0_IRQn);
+  /* BDMA_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(BDMA_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(BDMA_Channel1_IRQn);
 
 }
 
@@ -1555,41 +1924,157 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void my_MPU_Config(void)
-{
-    MPU_Region_InitTypeDef MPU_InitStruct = {0};
+static void init_adc_and_buffers(void)	{
+	struct ad7606_pins pins = {
+			.cs = {CS},
+			.busy = {BUSY},
+			.frstdata = {FRSTDATA},
+			.convst = {CONVST},
+	};
 
-    HAL_MPU_Disable();
+	union ad7606_spi spi = {
+		.by_name = {
+			.douta = DOUTA,
+			.doutb = DOUTB,
+			.doutc = DOUTC,
+			.doutd = DOUTD,
+			.doute = DOUTE,
+			.doutf = NULL,
+			.doutg = NULL,
+			.douth = DOUTH,
+			.sdi   = MASTER_SPI,
+		}
+	};
 
-    // Region 1: RAM_D1 cacheable
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER1;
-    MPU_InitStruct.BaseAddress = 0x24000000;
-    MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
-    MPU_InitStruct.SubRegionDisable = 0x00;
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
+	struct ad7606_config config = {
+		.status_header = false,
+		.external_oversampling_clock = false,
+		.dout_format = AD7606_DOUT_8,
+		.operation_mode = AD7606_OPERATION_NORMAL,
+	};
 
-    // Region 2: RAM_D2 non-cacheable (DMA buffers live here via .DMA_BUFFERS section)
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-    MPU_InitStruct.BaseAddress = 0x30000000;
-    MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
-    MPU_InitStruct.SubRegionDisable = 0x00;
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
+	struct ad7606_channel channels[8];
+	for(int i = 0; i < 8; i++){
+//			AD7606_MUX_CTRL_TEMP,
+//			AD7606_MUX_CTRL_2V5_REF,
+//			AD7606_MUX_CTRL_1V8_ALDO,
+//			AD7606_MUX_CTRL_1V8_DLDO,
+//			AD7606_MUX_CTRL_V_DRIVE,
+//			AD7606_MUX_CTRL_A_GND,
+//			AD7606_MUX_CTRL_AV_CC;
+		AD7606_CHANNEL_MUX_CTRL mux_ctrl = AD7606_MUX_CTRL_A_IN; // = (i != 8) ? (AD7606_MUX_CTRL_A_IN) : (AD7606_MUX_CTRL_TEMP);
+		AD7606_CHANNEL_RANGE range = AD7606_RANGE_SE_PM_12_5V;
+		switch(i){
+			case(5):
+				mux_ctrl = AD7606_MUX_CTRL_A_GND;
+				range = AD7606_RANGE_SE_PM_2_5V;
+			break;
+			case(6):
+				mux_ctrl = AD7606_MUX_CTRL_AV_CC;
+				range = AD7606_RANGE_SE_0_TO_5V;
+			break;
+			case(7):
+				mux_ctrl = AD7606_MUX_CTRL_TEMP;
+				range = AD7606_RANGE_SE_PM_2_5V;
+			break;
+		}
+	    struct ad7606_channel ch = {
+	        .open_detect    = false,
+	        .high_bandwidth = true,
+	        .range          = range,
+			.gain 			= 0,
+			.phase 			= 0,
+			.offset 		= 0x80,
+			.mux_ctrl 		= mux_ctrl,
+	    };
+	    channels[i] = ch;
+	}
 
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+	struct ad7606_oversampling oversampling = {
+			.oversampling_ratio = 3, // 2^N oversampling
+			.oversampling_padding = 0,
+	};
+
+	struct ad7606_digital_diagnostics digital_diagnostics = {
+			.rom_CRC_err_en = true,
+			.mm_CRC_err_en = false,
+			.int_CRC_err_en = false,
+			.spi_write_err_en = false,
+			.spi_read_err_en = false,
+			.busy_stuck_high_err_en = true,
+			.clk_fs_os_en = false,
+			.interface_check_en = false,
+	};
+
+	ADC_settings.config = config;
+	ADC_settings.digital_diagnostics = digital_diagnostics;
+	ADC_settings.oversampling = oversampling;
+
+	for(int i = 0; i < 8; i++){
+		ADC_settings.channels[i] = channels[i];
+	}
+
+	my_ADC.cooked = true;
+	ad7606_init(&my_ADC, &ADC_regs, pins, spi, &ADC_settings, &diagnostics_sample);
+
+	printf("ADC initialized. Status register:\t");
+	print_binary(ad7606_check_status(&my_ADC),8);
+	printf("\r\n");
+
+	printf("Digital diagnostics error register:\t");
+	print_binary(ad7606_check_digital_error(&my_ADC),8);
+	printf("\r\n");
+
+	uint8_t interface_check_result[8];
+	ad7606_check_interface(&my_ADC, interface_check_result);
+	printf("Interface check result:\r\n");
+	for(int i = 0; i < 8; i++){
+		printf("Channel V%d: ",i+1);
+	  switch(interface_check_result[i]){
+	  case 0xFF:
+		  printf("Not configured");
+		  break;
+	  case 0:
+		  printf("Fail");
+		  break;
+	  case 1:
+		  printf("Pass");
+		break;
+	  default:
+		printf("Unknown result");
+		break;
+	  }
+	  printf("\t\t\t");
+	  if(i%4 == 3) printf("\r\n");
+	}
+	printf("\r\n");
+
+	int lengths[8] = {
+			BUFFER_LEN,
+			BUFFER_LEN,
+			BUFFER_LEN,
+			BUFFER_LEN,
+			BUFFER_LEN,
+			0,
+			0,
+			0,
+	};
+	int16_t* buffers[8] = {NULL};
+	for(int i = 0; i < 5; i++) buffers[i] = (int16_t*)&hydrophone_buffers[i][0][0];
+
+	ad7606_enter_adc_mode(&my_ADC);
+
+	for(int i = 0; i < 5; i++){
+		clear_buffer(hydrophone_buffers[i][0], BUFFER_LEN);
+	}
+	clear_buffer(detection_buffer[0], BLOCK_LEN*2);
+
+
+	ad7606_init_output_buffers_DMA(&my_ADC, buffers, lengths);
+	HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_CPLT_CB_ID,  MyMDMA_TransferCompleteCallback);
+	HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_ERROR_CB_ID, MyMDMA_ErrorCallback);
+	//ad7606_fast_spi_init(&my_ADC);
+	ad7606_dma_spi_init(&my_ADC, &hdma_spi6_rx, diagnostics_buffer, BLOCK_LEN);
 }
 /* USER CODE END 4 */
 

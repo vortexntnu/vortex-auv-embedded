@@ -47,14 +47,17 @@
 									<listOptionValue builtIn="false" value="../Core/Inc"/>
 									<listOptionValue builtIn="false" value="../Core/Inc/Drivers"/>
 									<listOptionValue builtIn="false" value="../Core/Inc/Utils"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS_DSP/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS_DSP/PrivateInclude"/>
+									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
+									<listOptionValue builtIn="false" value="../Drivers/CMSIS/DSP/Include"/>
+									<listOptionValue builtIn="false" value="../Drivers/CMSIS/DSP/PrivateInclude"/>
+									<listOptionValue builtIn="false" value="../Drivers/CMSIS/DSP/Include/dsp"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32H7xx/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 								</option>
-								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity.998455534" name="Cyclomatic Complexity (-fcyclomatic-complexity)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity" useByScannerDiscovery="false" value="false" valueType="boolean"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity.998455534" name="Cyclomatic Complexity (-fcyclomatic-complexity)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.otherflags.1464560682" name="Other flags" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.otherflags" useByScannerDiscovery="true" valueType="stringList"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.verbose.36102527" name="Verbose (-v)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.verbose" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.2099187525" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.1721109516" name="MCU/MPU G++ Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler">
@@ -81,7 +84,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry excluding="Src/Utils/cwt.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+						<entry excluding="CMSIS/DSP/Source/FastMathFunctions/FastMathFunctionsF16.c|CMSIS/DSP/Source/FastMathFunctions/FastMathFunctions.c|CMSIS/DSP/Source/DistanceFunctions/DistanceFunctionsF16.c|CMSIS/DSP/Source/DistanceFunctions/DistanceFunctions.c|CMSIS/DSP/Source/ControllerFunctions/ControllerFunctions.c|CMSIS/DSP/Source/ComplexMathFunctions/ComplexMathFunctionsF16.c|CMSIS/DSP/Source/ComplexMathFunctions/ComplexMathFunctions.c|CMSIS/DSP/Source/CommonTables/CommonTablesF16.c|CMSIS/DSP/Source/CommonTables/CommonTables.c|CMSIS/DSP/Source/BayesFunctions/BayesFunctionsF16.c|CMSIS/DSP/Source/BayesFunctions/BayesFunctions.c|CMSIS/DSP/Source/BasicMathFunctions/BasicMathFunctionsF16.c|CMSIS/DSP/Source/BasicMathFunctions/BasicMathFunctions.c|CMSIS/DSP/Source/FilteringFunctions/FilteringFunctionsF16.c|CMSIS/DSP/Source/FilteringFunctions/FilteringFunctions.c|CMSIS/DSP/Source/InterpolationFunctions/InterpolationFunctionsF16.c|CMSIS/DSP/Source/InterpolationFunctions/InterpolationFunctions.c|CMSIS/DSP/Source/WindowFunctions/WindowFunctions.c|CMSIS/DSP/Source/TransformFunctions/TransformFunctionsF16.c|CMSIS/DSP/Source/TransformFunctions/TransformFunctions.c|CMSIS/DSP/Source/SVMFunctions/SVMFunctionsF16.c|CMSIS/DSP/Source/SVMFunctions/SVMFunctions.c|CMSIS/DSP/Source/SupportFunctions/SupportFunctionsF16.c|CMSIS/DSP/Source/SupportFunctions/SupportFunctions.c|CMSIS/DSP/Source/StatisticsFunctions/StatisticsFunctionsF16.c|CMSIS/DSP/Source/StatisticsFunctions/StatisticsFunctions.c|CMSIS/DSP/Source/QuaternionMathFunctions/QuaternionMathFunctions.c|CMSIS/DSP/Source/MatrixFunctions/MatrixFunctionsF16.c|CMSIS/DSP/Source/MatrixFunctions/MatrixFunctions.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_vec_mult_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_trans_undef_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_trans_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_mult_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_mult_neon_buffers.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -157,8 +160,8 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry excluding="CMSIS/DSP/Source/FastMathFunctions/FastMathFunctionsF16.c|CMSIS/DSP/Source/FastMathFunctions/FastMathFunctions.c|CMSIS/DSP/Source/DistanceFunctions/DistanceFunctionsF16.c|CMSIS/DSP/Source/DistanceFunctions/DistanceFunctions.c|CMSIS/DSP/Source/ControllerFunctions/ControllerFunctions.c|CMSIS/DSP/Source/ComplexMathFunctions/ComplexMathFunctionsF16.c|CMSIS/DSP/Source/ComplexMathFunctions/ComplexMathFunctions.c|CMSIS/DSP/Source/CommonTables/CommonTablesF16.c|CMSIS/DSP/Source/CommonTables/CommonTables.c|CMSIS/DSP/Source/BayesFunctions/BayesFunctionsF16.c|CMSIS/DSP/Source/BayesFunctions/BayesFunctions.c|CMSIS/DSP/Source/BasicMathFunctions/BasicMathFunctionsF16.c|CMSIS/DSP/Source/BasicMathFunctions/BasicMathFunctions.c|CMSIS/DSP/Source/FilteringFunctions/FilteringFunctionsF16.c|CMSIS/DSP/Source/FilteringFunctions/FilteringFunctions.c|CMSIS/DSP/Source/InterpolationFunctions/InterpolationFunctionsF16.c|CMSIS/DSP/Source/InterpolationFunctions/InterpolationFunctions.c|CMSIS/DSP/Source/WindowFunctions/WindowFunctions.c|CMSIS/DSP/Source/TransformFunctions/TransformFunctionsF16.c|CMSIS/DSP/Source/TransformFunctions/TransformFunctions.c|CMSIS/DSP/Source/SVMFunctions/SVMFunctionsF16.c|CMSIS/DSP/Source/SVMFunctions/SVMFunctions.c|CMSIS/DSP/Source/SupportFunctions/SupportFunctionsF16.c|CMSIS/DSP/Source/SupportFunctions/SupportFunctions.c|CMSIS/DSP/Source/StatisticsFunctions/StatisticsFunctionsF16.c|CMSIS/DSP/Source/StatisticsFunctions/StatisticsFunctions.c|CMSIS/DSP/Source/QuaternionMathFunctions/QuaternionMathFunctions.c|CMSIS/DSP/Source/MatrixFunctions/MatrixFunctionsF16.c|CMSIS/DSP/Source/MatrixFunctions/MatrixFunctions.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_vec_mult_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_trans_undef_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_trans_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_mult_neon.c|CMSIS/DSP/Source/MatrixFunctions/_arm_mat_mult_neon_buffers.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

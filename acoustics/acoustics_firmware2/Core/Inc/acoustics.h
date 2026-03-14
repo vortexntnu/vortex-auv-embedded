@@ -12,9 +12,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
+
 #include <stm32h7xx_hal.h>
 #include <stm32h7xx_hal_spi.h>
 #include <stm32h7xx.h>
+
 #include <main.h>
 
 // Exported Variables

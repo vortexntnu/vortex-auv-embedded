@@ -130,11 +130,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-void SPI6_RxCallback(void);
 void MyMDMA_TransferCompleteCallback(MDMA_HandleTypeDef *hmdma);
-int _write(int file, char *ptr, int len);
-void my_MPU_Config(void);
 HAL_StatusTypeDef MDMA_CopyBlock(q15_t *src, q15_t *dst);
+void dump_python_array(q15_t* arr, int len);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

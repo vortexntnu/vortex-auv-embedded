@@ -170,10 +170,11 @@ struct ad7606_settings {
 };
 
 struct ad7606_device {
+	struct ad7606_pins pins;
     union ad7606_registers* registers;
     SPI_HandleTypeDef* spi_handles[AD7606_SPI_COUNT];
-    struct ad7606_pins pins;
     struct ad7606_settings* settings;
+    uint8_t device_id;
     volatile uint16_t* diagnostic_sample;
     bool cooked;
 };
@@ -215,7 +216,13 @@ void ad7606_start_conversion_and_wait(struct ad7606_device* device);
 // NOTE: ad7606_fast_spi_callback() must be called from your SPI EOT ISR or timer tick
 void ad7606_fast_spi_init(struct ad7606_device* device);
 void ad7606_fast_spi_run(SPI_HandleTypeDef* hspi);
-void ad7606_fast_spi_callback(void);
+void ad7606_fast_spi_callback(int device_id);
+void ad7606_dma_spi_init(struct ad7606_device* device,
+						 DMA_HandleTypeDef* hdma_rx,
+						 int16_t* receive_buffer,
+						 uint32_t buff_size);
+void ad7606_eot_callback(SPI_HandleTypeDef *hspi, int device_id);
+void ad7606_trigger_burst(SPI_HandleTypeDef *hspi);
 
 // Conversion utilities
 double ad7606_reading_to_voltage(struct ad7606_device* device, uint8_t channel_id, int16_t reading);

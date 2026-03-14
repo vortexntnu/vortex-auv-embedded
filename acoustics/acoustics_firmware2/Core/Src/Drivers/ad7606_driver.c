@@ -385,16 +385,103 @@ void ad7606_fast_spi_run(SPI_HandleTypeDef *hspi)
     hspi->Instance->CR1 |= SPI_CR1_CSTART;
 }
 
-void ad7606_fast_spi_callback(void){
-    for(int i = 0; i < AD7606_MAX_DEVICES; i++){
-        struct ad7606_device* device = _ad7606_devices[i];
-        if (device == NULL) continue;
-        if (SDI->Instance->SR & SPI_SR_EOT){
-            if (device->diagnostic_sample != NULL) {
-                *device->diagnostic_sample = *(volatile uint16_t*)&SDI->Instance->RXDR;
-            }
-            SDI->Instance->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
+void ad7606_fast_spi_callback(int device_id){
+    struct ad7606_device* device = _ad7606_devices[device_id];
+    if (device == NULL) return;
+    if (SDI->Instance->SR & SPI_SR_EOT){
+        if (device->diagnostic_sample != NULL) {
+            *device->diagnostic_sample = *(volatile uint16_t*)&SDI->Instance->RXDR;
         }
+        SDI->Instance->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
+    }
+}
+
+static uint32_t buffer_size = 1;
+static volatile uint32_t rx_head = 0; /* incremented in EOT ISR    */
+static int16_t* rx_buf;
+
+void ad7606_dma_spi_init(struct ad7606_device* device,
+						 DMA_HandleTypeDef* hdma_rx,
+						 int16_t* __rx_buf,
+						 uint32_t buff_size)
+{
+	SPI_HandleTypeDef* hspi = SDI;
+    HAL_SPI_Abort(hspi);
+
+    buffer_size = buff_size;
+    rx_buf = __rx_buf;
+
+    /* --- configure SPI peripheral directly --- */
+    hspi->Instance->CR1 &= ~SPI_CR1_SPE;          // disable while configuring
+
+    hspi->Instance->CFG2 &= ~SPI_CFG2_COMM_Msk;  // 0b00 = full duplex
+    hspi->Instance->CFG1 &= ~SPI_CFG1_DSIZE_Msk;
+    hspi->Instance->CFG1 |=  (15U << SPI_CFG1_DSIZE_Pos); // 16-bit frames
+
+    /* Enable RX DMA request */
+    hspi->Instance->CFG1 |= SPI_CFG1_RXDMAEN;
+
+    /* TSIZE = 1: one 16-bit frame per CSTART burst */
+    hspi->Instance->CR2 = 1U;
+
+    /* Enable EOT interrupt */
+    hspi->Instance->IER |= SPI_IER_EOTIE;
+
+    /* --- configure DMA stream for circular RX --- */
+    /* Assumes hdma_rx is already linked to SPI6_RX request in CubeMX  *
+     * with: Memory increment ON, Peripheral increment OFF,            *
+     *       data width 16-bit both sides, Circular mode               */\
+
+    /* Manually start DMA in circular mode pointing at rx_buf */
+    /* HAL_DMA_Start is fine here — we're NOT using HAL_SPI_Receive_DMA
+     * because that would also arm CSTART via the HAL state machine     */
+    HAL_DMA_Start(hdma_rx,
+                  (uint32_t)&hspi->Instance->RXDR, // source: SPI RX FIFO
+                  (uint32_t)__rx_buf,                 // dest:   your buffer
+				  buffer_size);                // circular length
+
+    /* CS low — AD7606 ready */
+    HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+
+    /* Arm SPI — does NOT start clocking, just enables the peripheral */
+    hspi->Instance->CR1 |= SPI_CR1_SPE;
+}
+
+/* ---------------------------------------------------------------
+ * Call this whenever you want one 16-bit burst
+ * Safe to call from ISR or main loop
+ * --------------------------------------------------------------- */
+__attribute__((always_inline))
+inline void ad7606_trigger_burst(SPI_HandleTypeDef *hspi)
+{
+    /* Reload TSIZE for next transaction (cleared after each EOT) */
+    hspi->Instance->CR2 = 1U;
+
+    /* On master TX-only or half-duplex you'd push a dummy word;
+     * on full-duplex the TX FIFO needs something to clock out.  *
+     * Writing TXDR is sufficient — no need to clear SPE first.  */
+    *(volatile uint16_t*)&hspi->Instance->TXDR = 0xFFFF;
+
+    /* Fire */
+    hspi->Instance->CR1 |= SPI_CR1_CSTART;
+}
+
+/* ---------------------------------------------------------------
+ * EOT ISR — called from SPI6_IRQHandler
+ * --------------------------------------------------------------- */
+void ad7606_eot_callback(SPI_HandleTypeDef *hspi, int device_id)
+{
+    if (hspi->Instance->SR & SPI_SR_EOT)
+    {
+        /* DMA has already written the word into rx_buf[rx_head % BUF_DEPTH]
+         * because the DMA transfer completed before EOT fires.            *
+         * Just track position and clear flags.                            */
+         *(_ad7606_devices[device_id]->diagnostic_sample) = rx_buf[rx_head % buffer_size];
+
+        rx_head++;
+
+        hspi->Instance->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
+        /* CR2 is auto-cleared after EOT on H7 — reload happens in trigger */
     }
 }
 
@@ -449,7 +536,8 @@ void ad7606_fast_spi_callback(void)
 
 double ad7606_reading_to_voltage(struct ad7606_device* device, uint8_t channel_id, int16_t reading){
     AD7606_CHANNEL_RANGE range = device->settings->channels[channel_id].range;
-    return reading * ad7606_conversion_table[range];
+    if((AD7606_RANGE_SE_0_TO_5V <= range) && (range <= AD7606_RANGE_SE_0_TO_12_5V)) reading = (uint16_t)reading;
+    return (double)reading * ad7606_conversion_table[range];
 }
 
 double ad7606_voltage_to_temp(double voltage){
@@ -462,6 +550,7 @@ double ad7606_voltage_to_temp(double voltage){
 
 static void ad7606_register_device(struct ad7606_device *device) {
     if (_ad7606_device_count < AD7606_MAX_DEVICES) {
+    	device->device_id = _ad7606_device_count;
         _ad7606_devices[_ad7606_device_count++] = device;
     }
 }
