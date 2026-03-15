@@ -198,7 +198,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '75000'
+            value: '59500'
           type: User
         type: Values
       type: Integer
@@ -231,7 +231,7 @@ data:
       - children:
         - attributes:
             id: tcc0
-            value: '75000'
+            value: '59500'
           type: Dynamic
         type: Values
       type: Integer
@@ -266,6 +266,36 @@ data:
       - children:
         - attributes:
             value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_CTRLBSET_DIR:
+      attributes:
+        id: TCC_CTRLBSET_DIR
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN1:
+      attributes:
+        id: TCC_DRVCTRL_INVEN1
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN5:
+      attributes:
+        id: TCC_DRVCTRL_INVEN5
+      children:
+      - children:
+        - attributes:
+            value: 'true'
           type: User
         type: Values
       type: Boolean

@@ -10,7 +10,7 @@
 #define TRANSFER_SIZE 16
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD               = 75000U;
+static const uint32_t TCC0_PERIOD               = 59500;
 static const uint32_t TCC1_PERIOD               = 75000U;
 static const uint32_t TCC2_PERIOD               = 18500U;
 static const uint32_t TC3_PERIOD                = 65535; 
@@ -205,7 +205,7 @@ void app_init(void) {
     TC3_CompareStart();
     
     // Enable watchdog
-    WDT_Enable();
+    //WDT_Enable();
 }
 
 void app_task(void) {
@@ -344,23 +344,23 @@ void generate_pwm_signals() {
     // PWM 8 | TCC0_WO2 | Not checked
     // PWM 7 | TCC0_WO3 | Not checked
     // PWM 6 | TCC0_WO4 | Not checked
-    // PWM 5 | TCC0_WO5 | Not checked
+    // PWM 5 | TCC0_WO5 | Correctly configured
     // PWM 1 | TCC2_WO0 | Pin not on devboard
     // PWM 2 | TCC2_WO1 | Pin not on devboard
     // PWM 9 | TC3_ WO1 | PB01 | Working
     
-    uint8_t instance = 3;
-    uint8_t channel = 0;
+    uint8_t instance = 0;
+    uint8_t channel = 1;
     
-    uint16_t pulse_us = 1500;
+    uint16_t pulse_us = 1000;
     
-    pulse_us = clamp(pulse_us, 1100, 1900);
+    pulse_us = clamp(pulse_us, 1000, 2000);
     
     //uint32_t ticks = us_to_ticks(TC3_PERIOD, pulse_us, LIGHT_PWM_PERIOD_US);
      
-    uint32_t ticks = us_to_ticks(TC3_PERIOD, pulse_us, LIGHT_PWM_PERIOD_US);
-    bool ok = TC3_Compare16bitMatch1Set((uint16_t)ticks);
-    //tcc_write(instance, channel, ticks);
+    uint32_t ticks = us_to_ticks(TCC0_PERIOD, pulse_us, THRUSTER_PWM_PERIOD_US);
+    //bool ok = TC3_Compare16bitMatch1Set((uint16_t)ticks);
+    tcc_write(instance, channel, ticks);
     
     //TC3_Compare16bitMatch1Set(ticks);
     
