@@ -177,7 +177,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '5'
+            value: '4'
           type: User
         type: Values
       type: KeyValueSet
@@ -188,7 +188,7 @@ data:
       - children:
         - attributes:
             id: tcc2
-            value: '750000'
+            value: '3000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -198,7 +198,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '50000'
+            value: '59550'
           type: User
         type: Values
       type: Integer
@@ -231,7 +231,7 @@ data:
       - children:
         - attributes:
             id: tcc2
-            value: '50000'
+            value: '59550'
           type: Dynamic
         type: Values
       type: Integer
@@ -242,7 +242,7 @@ data:
       - children:
         - attributes:
             id: tcc2
-            value: '749'
+            value: '2999'
           type: Dynamic
         type: Values
       type: Long
@@ -255,7 +255,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '87.38267'
+            value: '21.845667'
           type: Float
         type: Attributes
       type: Float

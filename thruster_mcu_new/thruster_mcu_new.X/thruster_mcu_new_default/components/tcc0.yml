@@ -265,7 +265,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'false'
+            value: 'true'
           type: User
         type: Values
       type: Boolean
@@ -292,6 +292,56 @@ data:
     TCC_DRVCTRL_INVEN5:
       attributes:
         id: TCC_DRVCTRL_INVEN5
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN0:
+      attributes:
+        id: TCC_DRVCTRL_INVEN0
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN3:
+      attributes:
+        id: TCC_DRVCTRL_INVEN3
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN4:
+      attributes:
+        id: TCC_DRVCTRL_INVEN4
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN6:
+      attributes:
+        id: TCC_DRVCTRL_INVEN6
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN7:
+      attributes:
+        id: TCC_DRVCTRL_INVEN7
       children:
       - children:
         - attributes:

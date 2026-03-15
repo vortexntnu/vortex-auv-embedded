@@ -198,7 +198,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '75000'
+            value: '59500'
           type: User
         type: Values
       type: Integer
@@ -231,7 +231,7 @@ data:
       - children:
         - attributes:
             id: tcc1
-            value: '75000'
+            value: '59500'
           type: Dynamic
         type: Values
       type: Integer
@@ -259,4 +259,44 @@ data:
           type: Float
         type: Attributes
       type: Float
+    TCC_DRVCTRL_INVEN0:
+      attributes:
+        id: TCC_DRVCTRL_INVEN0
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN1:
+      attributes:
+        id: TCC_DRVCTRL_INVEN1
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN2:
+      attributes:
+        id: TCC_DRVCTRL_INVEN2
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_DRVCTRL_INVEN3:
+      attributes:
+        id: TCC_DRVCTRL_INVEN3
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}
