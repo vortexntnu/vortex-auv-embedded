@@ -73,6 +73,8 @@ static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 11
 
 // FOR TESTING
 void generate_pwm_signals();
+void test_can_rx();
+void test_can_tx();
 
 /* --- Private function prototypes --- */
 
@@ -209,14 +211,15 @@ void app_init(void) {
 }
 
 void app_task(void) {
-    if (adc_dma_done) {
-        adc_dma_done = false;
-        log_current();
-    }
+    //if (adc_dma_done) {
+    //    adc_dma_done = false;
+    //    log_current();
+    //}
     
     if (can_message_received) {
         can_message_received = false;
-        message_handler();
+        //message_handler();
+        test_can_rx();
     }
 }
 
@@ -335,6 +338,46 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
     } else {
         return value;
     }
+    
+}
+
+void test_can_rx() {
+    CAN_RX_BUFFER *rxBuf = (CAN_RX_BUFFER *)rxFiFo0;
+    
+    uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
+    const uint8_t *pData = rxBuf->data;
+    
+    printf("CAN RX | ID: 0x%08lX (%s) | DLC: %u | Data:",
+       (unsigned long)id,
+       rxBuf->xtd ? "EXT" : "STD",
+       (unsigned int)rxBuf->dlc);
+
+    for (uint8_t i = 0; i < rxBuf->dlc; i++) {
+        printf(" %02X", pData[i]);
+    }
+    printf("\n");
+    
+}
+
+void test_can_tx() {
+    CAN_TX_BUFFER *txBuffer = NULL;
+    
+    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    txBuffer = (CAN_TX_BUFFER*)txFiFo;
+    
+    txBuffer->id = WRITE_ID(0x45A);
+    txBuffer->dlc = 1;
+    txBuffer->fdf = 1;
+    txBuffer->brs = 1;
+    
+    txBuffer->data[0] = 0x43;
+    
+    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+
+    if (!result) {
+        printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
+    }
+    
     
 }
 

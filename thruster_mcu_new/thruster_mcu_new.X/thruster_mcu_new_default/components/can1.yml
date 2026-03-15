@@ -209,6 +209,9 @@ data:
             id: can1
             value: '1'
           type: Dynamic
+        - attributes:
+            value: '5'
+          type: User
         type: Values
       type: Integer
     DBTP_DTSEG1:
@@ -302,6 +305,9 @@ data:
             id: can1
             value: '1'
           type: Dynamic
+        - attributes:
+            value: '5'
+          type: User
         type: Values
       type: Integer
     NBTP_NTSEG1:
@@ -457,4 +463,67 @@ data:
           type: String
         type: Attributes
       type: File
+    RXF0_WATERMARK:
+      attributes:
+        id: RXF0_WATERMARK
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    RXF0_ELEMENTS:
+      attributes:
+        id: RXF0_ELEMENTS
+      children:
+      - children:
+        - attributes:
+            value: '8'
+          type: User
+        type: Values
+      type: Integer
+    RXF1_WATERMARK:
+      attributes:
+        id: RXF1_WATERMARK
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    RXF1_ELEMENTS:
+      attributes:
+        id: RXF1_ELEMENTS
+      children:
+      - children:
+        - attributes:
+            value: '8'
+          type: User
+        type: Values
+      type: Integer
+    TX_FIFO_WATERMARK:
+      attributes:
+        id: TX_FIFO_WATERMARK
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TX_FIFO_ELEMENTS:
+      attributes:
+        id: TX_FIFO_ELEMENTS
+      children:
+      - children:
+        - attributes:
+            value: '8'
+          type: User
+        type: Values
+      type: Integer
   userData: {}

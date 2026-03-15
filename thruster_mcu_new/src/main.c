@@ -12,16 +12,22 @@ int main ( void ) {
     app_init();
     
     //generate_pwm_signals();
+    printf("--- Testing CAN ---");
+    
+    test_can_tx();
     
     while ( true )
     {
+       
         /* Sleep until an interrupt occurs*/
         //PM_IdleModeEnter();
                 
-        generate_pwm_signals();
+        //generate_pwm_signals();
         
         /* Run application logic */
         //app_task();
+        
+        
     }
 
     /* Execution should not come here during normal operation */
