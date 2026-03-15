@@ -145,6 +145,14 @@
 #define FLT_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 13U)) & 0x01U)
 #define FLT_TH7_PIN                  PORT_PIN_PB13
 
+/*** Macros for USART_TX pin ***/
+#define USART_TX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 12U)) & 0x01U)
+#define USART_TX_PIN                  PORT_PIN_PA12
+
+/*** Macros for USART_RX pin ***/
+#define USART_RX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 13U)) & 0x01U)
+#define USART_RX_PIN                  PORT_PIN_PA13
+
 /*** Macros for PG_TH5 pin ***/
 #define PG_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
 #define PG_TH5_PIN                  PORT_PIN_PA16
@@ -169,9 +177,22 @@
 #define PWM_5_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 17U)) & 0x01U)
 #define PWM_5_PIN                  PORT_PIN_PB17
 
-/*** Macros for PMW_4 pin ***/
-#define PMW_4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 24U)) & 0x01U)
-#define PMW_4_PIN                  PORT_PIN_PA24
+/*** Macros for RESET_TH pin ***/
+#define RESET_TH_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 23U))
+#define RESET_TH_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 23U))
+#define RESET_TH_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 23U))
+#define RESET_TH_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 23U))
+#define RESET_TH_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 23U))
+#define RESET_TH_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 23U)) & 0x01U)
+#define RESET_TH_PIN                  PORT_PIN_PA23
+
+/*** Macros for PWM_4 pin ***/
+#define PWM_4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 24U)) & 0x01U)
+#define PWM_4_PIN                  PORT_PIN_PA24
+
+/*** Macros for PWM_3 pin ***/
+#define PWM_3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 25U)) & 0x01U)
+#define PWM_3_PIN                  PORT_PIN_PA25
 
 /*** Macros for PG_TH3 pin ***/
 #define PG_TH3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 22U)) & 0x01U)

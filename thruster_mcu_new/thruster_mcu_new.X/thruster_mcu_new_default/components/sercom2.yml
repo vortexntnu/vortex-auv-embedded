@@ -272,4 +272,14 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    USART_RXPO:
+      attributes:
+        id: USART_RXPO
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData: {}
