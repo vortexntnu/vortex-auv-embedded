@@ -217,7 +217,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: '255'
+            value: '65535'
           type: Dynamic
         type: Values
       type: Hex
@@ -311,4 +311,244 @@ data:
           type: User
         type: Values
       type: Boolean
+    EIC_CHAN_8:
+      attributes:
+        id: EIC_CHAN_8
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_9:
+      attributes:
+        id: EIC_CHAN_9
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_10:
+      attributes:
+        id: EIC_CHAN_10
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_11:
+      attributes:
+        id: EIC_CHAN_11
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_12:
+      attributes:
+        id: EIC_CHAN_12
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_13:
+      attributes:
+        id: EIC_CHAN_13
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_14:
+      attributes:
+        id: EIC_CHAN_14
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_15:
+      attributes:
+        id: EIC_CHAN_15
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_8:
+      attributes:
+        id: EIC_INT_8
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_9:
+      attributes:
+        id: EIC_INT_9
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_10:
+      attributes:
+        id: EIC_INT_10
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CONFIG_SENSE_8:
+      attributes:
+        id: EIC_CONFIG_SENSE_8
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_CONFIG_SENSE_9:
+      attributes:
+        id: EIC_CONFIG_SENSE_9
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_CONFIG_SENSE_10:
+      attributes:
+        id: EIC_CONFIG_SENSE_10
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_INT_11:
+      attributes:
+        id: EIC_INT_11
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_12:
+      attributes:
+        id: EIC_INT_12
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_13:
+      attributes:
+        id: EIC_INT_13
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CONFIG_SENSE_13:
+      attributes:
+        id: EIC_CONFIG_SENSE_13
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_CONFIG_SENSE_12:
+      attributes:
+        id: EIC_CONFIG_SENSE_12
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_CONFIG_SENSE_11:
+      attributes:
+        id: EIC_CONFIG_SENSE_11
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_INT_14:
+      attributes:
+        id: EIC_INT_14
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CONFIG_SENSE_14:
+      attributes:
+        id: EIC_CONFIG_SENSE_14
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_INT_15:
+      attributes:
+        id: EIC_INT_15
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CONFIG_SENSE_15:
+      attributes:
+        id: EIC_CONFIG_SENSE_15
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData: {}

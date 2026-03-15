@@ -121,6 +121,30 @@
     /* External Interrupt Controller Pin 7 */
 #define    EIC_PIN_7   (7U)
 
+    /* External Interrupt Controller Pin 8 */
+#define    EIC_PIN_8   (8U)
+
+    /* External Interrupt Controller Pin 9 */
+#define    EIC_PIN_9   (9U)
+
+    /* External Interrupt Controller Pin 10 */
+#define    EIC_PIN_10   (10U)
+
+    /* External Interrupt Controller Pin 11 */
+#define    EIC_PIN_11   (11U)
+
+    /* External Interrupt Controller Pin 12 */
+#define    EIC_PIN_12   (12U)
+
+    /* External Interrupt Controller Pin 13 */
+#define    EIC_PIN_13   (13U)
+
+    /* External Interrupt Controller Pin 14 */
+#define    EIC_PIN_14   (14U)
+
+    /* External Interrupt Controller Pin 15 */
+#define    EIC_PIN_15   (15U)
+
 #define    EIC_PIN_MAX  (16U)
 
 typedef uint16_t EIC_PIN;

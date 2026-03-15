@@ -162,6 +162,7 @@ static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
 static void can_transmit_callback(uintptr_t context);
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext);
 static void eic_pin_flt_thruster(uintptr_t context);
+static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
 
 /* --- Public functions --- */
@@ -176,14 +177,29 @@ void app_init(void) {
     EIC_NMICallbackRegister(eic_pin_killswitch, 0);
     
     // Configure callbacks for FLT pins
-    EIC_CallbackRegister(EIC_PIN_0, eic_pin_flt_thruster, 0);
-    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 1);
-    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 2);
-    EIC_CallbackRegister(EIC_PIN_3, eic_pin_flt_thruster, 3);
-    EIC_CallbackRegister(EIC_PIN_4, eic_pin_flt_thruster, 4);
-    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 5);
-    EIC_CallbackRegister(EIC_PIN_6, eic_pin_flt_thruster, 6);
-    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 7); 
+    EIC_CallbackRegister(EIC_PIN_0, eic_pin_pg_thruster, 5);
+    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 5);
+    
+    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 6);
+    EIC_CallbackRegister(EIC_PIN_3, eic_pin_pg_thruster, 6);
+    
+    EIC_CallbackRegister(EIC_PIN_4, eic_pin_pg_thruster, 4);
+    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 4);
+    
+    EIC_CallbackRegister(EIC_PIN_6, eic_pin_pg_thruster, 3);
+    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 3); 
+    
+    EIC_CallbackRegister(EIC_PIN_8, eic_pin_pg_thruster, 2);
+    EIC_CallbackRegister(EIC_PIN_9, eic_pin_flt_thruster, 2);
+    
+    EIC_CallbackRegister(EIC_PIN_10, eic_pin_pg_thruster, 8);
+    EIC_CallbackRegister(EIC_PIN_11, eic_pin_flt_thruster, 8);
+    
+    EIC_CallbackRegister(EIC_PIN_12, eic_pin_pg_thruster, 7);
+    EIC_CallbackRegister(EIC_PIN_13, eic_pin_flt_thruster, 7);
+    
+    EIC_CallbackRegister(EIC_PIN_14, eic_pin_flt_thruster, 1);
+    EIC_CallbackRegister(EIC_PIN_15, eic_pin_pg_thruster, 1);
     
     
     // Enable ADC
@@ -204,6 +220,10 @@ void app_init(void) {
     // Set all thrusters and lights to neutral on startup
     set_pwm_neutral(thrusters, 8);
     //set_pwm_neutral(lights, 1);
+    
+    for (int i = 0; i < 100000000; i++) {
+        __NOP();
+    }
 
     
     // Enable TC
@@ -276,6 +296,7 @@ static void log_current(void) {
     const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
     const float R_IMON     = 4020.0f;    // 4.02 kOhm sense resistor for thrusters
     
+    printf("\n");
     for (size_t i = 0; i < 8; i++) {
         float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
@@ -403,17 +424,29 @@ void generate_pwm_signals() {
     // PWM 2 | TCC2_WO1 | Correctly configured
     // PWM 9 | TC3_ WO1 | PB01 | Working
     
-    uint8_t instance = 2;
-    uint8_t channel = 1;
+    uint8_t instance = 1;
+    uint8_t channel = 0;
+    uint32_t period = TCC1_PERIOD;
+    uint32_t frame_period = THRUSTER_PWM_PERIOD_US;
     
-    uint16_t pulse_us = 2000;
+    static int increment = 1;
+    static uint16_t pulse_us = 1000;
     
     pulse_us = clamp(pulse_us, 1000, 2000);
     
+    if (pulse_us >= 2000 || pulse_us <=1000) {
+        increment *= -1;
+    } 
+    
+    pulse_us += increment;
+    
+    
     //uint32_t ticks = us_to_ticks(TC3_PERIOD, pulse_us, LIGHT_PWM_PERIOD_US);
      
-    uint32_t ticks = us_to_ticks(TCC2_PERIOD, pulse_us, THRUSTER_PWM_PERIOD_US);
+    uint32_t ticks = us_to_ticks(period, pulse_us, frame_period);
     //bool ok = TC3_Compare16bitMatch1Set((uint16_t)ticks);
+    
+    
     tcc_write(instance, channel, ticks);
     
     //TC3_Compare16bitMatch1Set(ticks);
@@ -474,7 +507,6 @@ static void can_transmit_callback(uintptr_t context) {
 }
 
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext) {
-    printf("ADC Interrupts occurred\n");
     if (returned_event == DMAC_TRANSFER_EVENT_COMPLETE) {
         adc_dma_done = true;
         // Re-arm DMA for next conversion
@@ -493,6 +525,12 @@ static void eic_pin_flt_thruster(uintptr_t context) {
     set_pwm_neutral(thrusters, 8);
     
     // TODO: Send CAN fault message (I don't have the current available so send_thruster_fault() can't be used)
+}
+
+static void eic_pin_pg_thruster(uintptr_t context) {
+    uint8_t thruster_id = (uint8_t)context;
+    
+    printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)thruster_id);
 }
 
 static void eic_pin_killswitch(uintptr_t context) {

@@ -12,7 +12,7 @@ int main ( void ) {
     app_init();
     
     //generate_pwm_signals();
-    printf("--- Testing IMON ---\n");
+    //printf("--- Testing Thrusters ---\n");
     
     
     //test_can_tx();
@@ -26,7 +26,7 @@ int main ( void ) {
         //generate_pwm_signals();
         
         /* Run application logic */
-        app_task();
+        //app_task();
         
         
     }
