@@ -1,28 +1,24 @@
 /*******************************************************************************
-  Analog-to-Digital Converter(ADC0) PLIB
+  Real Time Counter (RTC) PLIB
 
-  Company
+  Company:
     Microchip Technology Inc.
 
-  File Name
-    plib_adc0.h
+  File Name:
+    plib_rtc.h
 
-  Summary
-    ADC0 PLIB Header File.
+  Summary:
+    RTC PLIB Header file
 
-  Description
-    This file defines the interface to the ADC peripheral library. This
+  Description:
+    This file defines the interface to the RTC peripheral library. This
     library provides access to and control of the associated peripheral
     instance.
 
-  Remarks:
-    None.
-
 *******************************************************************************/
-
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -45,83 +41,76 @@
 *******************************************************************************/
 // DOM-IGNORE-END
 
-#ifndef PLIB_ADC0_H      // Guards against multiple inclusion
-#define PLIB_ADC0_H
-
-// *****************************************************************************
-// *****************************************************************************
-// Section: Included Files
-// *****************************************************************************
-// *****************************************************************************
-/* This section lists the other files that are included in this file.
-*/
+#ifndef PLIB_RTC_H
+#define PLIB_RTC_H
 
 #include "device.h"
-#include "plib_adc_common.h"
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 // DOM-IGNORE-BEGIN
-#ifdef __cplusplus // Provide C Compatibility
-
-    extern "C" {
-
+#ifdef __cplusplus // Provide C++ Compatibility
+extern "C" {
 #endif
 // DOM-IGNORE-END
+// *****************************************************************************
+// *****************************************************************************
+// Section:Preprocessor macros
+// *****************************************************************************
+// *****************************************************************************
+// *****************************************************************************
 
+/* Frequency of Counter Clock for RTC */
+#define RTC_COUNTER_CLOCK_FREQUENCY        (1024U / (1UL << (0x1U - 1U)))
+
+#define RTC_TIMER32_INT_MASK_PER0  RTC_MODE0_INTENSET_PER0_Msk
+#define RTC_TIMER32_INT_MASK_PER1  RTC_MODE0_INTENSET_PER1_Msk
+#define RTC_TIMER32_INT_MASK_PER2  RTC_MODE0_INTENSET_PER2_Msk
+#define RTC_TIMER32_INT_MASK_PER3  RTC_MODE0_INTENSET_PER3_Msk
+#define RTC_TIMER32_INT_MASK_PER4  RTC_MODE0_INTENSET_PER4_Msk
+#define RTC_TIMER32_INT_MASK_PER5  RTC_MODE0_INTENSET_PER5_Msk
+#define RTC_TIMER32_INT_MASK_PER6  RTC_MODE0_INTENSET_PER6_Msk
+#define RTC_TIMER32_INT_MASK_PER7  RTC_MODE0_INTENSET_PER7_Msk
+#define RTC_TIMER32_INT_MASK_CMP0  RTC_MODE0_INTENSET_CMP0_Msk
+#define RTC_TIMER32_INT_MASK_OVF  RTC_MODE0_INTENSET_OVF_Msk
+#define RTC_TIMER32_INT_MASK_INVALID 0xFFFFFFFFU
 // *****************************************************************************
 // *****************************************************************************
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-/* The following data type definitions are used by the functions in this
-    interface and should be considered part it.
-*/
-
 // *****************************************************************************
 
+typedef uint32_t RTC_TIMER32_INT_MASK;
+typedef void (*RTC_TIMER32_CALLBACK)( RTC_TIMER32_INT_MASK intCause, uintptr_t context );
 
-// *****************************************************************************
-// *****************************************************************************
-// Section: Interface Routines
-// *****************************************************************************
-// *****************************************************************************
-/* The following functions make up the methods (set of possible operations) of
-    this interface.
-*/
+typedef struct
+{
+    /* Timer 32Bit */
+    RTC_TIMER32_CALLBACK timer32BitCallback;
+    RTC_TIMER32_INT_MASK timer32intCause;
+    uintptr_t context;
+} RTC_OBJECT;
 
-void ADC0_Initialize( void );
-
-void ADC0_Enable( void );
-
-void ADC0_Disable( void );
-
-void ADC0_ChannelSelect( ADC_POSINPUT positiveInput, ADC_NEGINPUT negativeInput );
-
-void ADC0_ConversionStart( void );
-
-uint16_t ADC0_ConversionResultGet( void );
-
-void ADC0_ComparisonWindowSet(uint16_t low_threshold, uint16_t high_threshold);
-
-void ADC0_WindowModeSet(ADC_WINMODE mode);
-
-bool ADC0_ConversionSequenceIsFinished(void);
-
-void ADC0_InterruptsClear(ADC_STATUS interruptMask);
-
-void ADC0_InterruptsEnable(ADC_STATUS interruptMask);
-
-void ADC0_InterruptsDisable(ADC_STATUS interruptMask);
-
-
-bool ADC0_ConversionStatusGet( void );
-
+void RTC_Initialize(void);
+void RTC_Timer32CountSyncEnable ( void );
+void RTC_Timer32CountSyncDisable ( void );
+void RTC_Timer32Start ( void );
+void RTC_Timer32Stop ( void );
+void RTC_Timer32CounterSet ( uint32_t count );
+uint32_t RTC_Timer32CounterGet ( void );
+uint32_t RTC_Timer32FrequencyGet ( void );
+void RTC_Timer32CompareSet ( uint32_t compareValue );
+uint32_t RTC_Timer32PeriodGet ( void );
+void RTC_Timer32InterruptEnable( RTC_TIMER32_INT_MASK interruptMask );
+void RTC_Timer32InterruptDisable( RTC_TIMER32_INT_MASK interruptMask );
+void RTC_Timer32CallbackRegister ( RTC_TIMER32_CALLBACK callback, uintptr_t context );
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
-
-    }
-
+}
 #endif
 // DOM-IGNORE-END
 
-#endif /* PLIB_ADC0_H */
+#endif /* PLIB_RTC_H */

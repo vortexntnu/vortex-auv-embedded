@@ -12,20 +12,26 @@ int main ( void ) {
     app_init();
     
     //generate_pwm_signals();
-    printf("--- Testing CAN ---");
+    printf("--- Testing IMON ---\n");
     
-    test_can_tx();
+    
+    //test_can_tx();
+    
+    ADC0_ConversionStart();
     
     while ( true )
     {
-       
+        if (ADC0_ConversionSequenceIsFinished()) {
+            ADC0_ConversionStart();
+        }
+        
         /* Sleep until an interrupt occurs*/
         //PM_IdleModeEnter();
                 
         //generate_pwm_signals();
         
         /* Run application logic */
-        //app_task();
+        app_task();
         
         
     }

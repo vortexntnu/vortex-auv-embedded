@@ -280,7 +280,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -330,7 +330,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -381,6 +381,44 @@ data:
       - children:
         - attributes:
             value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_EVCTRL_RESRDYEO:
+      attributes:
+        id: ADC_EVCTRL_RESRDYEO
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_EVCTRL_START:
+      attributes:
+        id: ADC_EVCTRL_START
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    ADC_SEQCTRL_SEQ9:
+      attributes:
+        id: ADC_SEQCTRL_SEQ9
+      children:
+      - children:
+        - attributes:
+            value: 'true'
           type: User
         type: Values
       type: Boolean

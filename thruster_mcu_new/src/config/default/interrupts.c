@@ -82,7 +82,6 @@ extern void PendSV_Handler             ( void ) __attribute__((weak, alias("Dumm
 extern void SysTick_Handler            ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void SYSTEM_Handler             ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void WDT_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
-extern void RTC_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void FREQM_Handler              ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TSENS_Handler              ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void NVMCTRL_Handler            ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -99,6 +98,7 @@ extern void TC1_Handler                ( void ) __attribute__((weak, alias("Dumm
 extern void TC2_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TC3_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void TC4_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
+extern void ADC0_Handler               ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void ADC1_Handler               ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void AC_Handler                 ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
 extern void DAC_Handler                ( void ) __attribute__((weak, alias("Dummy_Handler"),noreturn));
@@ -126,7 +126,7 @@ const H3DeviceVectors exception_table=
     .pfnSysTick_Handler            = SysTick_Handler,
     .pfnSYSTEM_Handler             = SYSTEM_Handler,
     .pfnWDT_Handler                = WDT_Handler,
-    .pfnRTC_Handler                = RTC_Handler,
+    .pfnRTC_Handler                = RTC_InterruptHandler,
     .pfnEIC_Handler                = EIC_InterruptHandler,
     .pfnFREQM_Handler              = FREQM_Handler,
     .pfnTSENS_Handler              = TSENS_Handler,
@@ -149,7 +149,7 @@ const H3DeviceVectors exception_table=
     .pfnTC2_Handler                = TC2_Handler,
     .pfnTC3_Handler                = TC3_Handler,
     .pfnTC4_Handler                = TC4_Handler,
-    .pfnADC0_Handler               = ADC0_InterruptHandler,
+    .pfnADC0_Handler               = ADC0_Handler,
     .pfnADC1_Handler               = ADC1_Handler,
     .pfnAC_Handler                 = AC_Handler,
     .pfnDAC_Handler                = DAC_Handler,

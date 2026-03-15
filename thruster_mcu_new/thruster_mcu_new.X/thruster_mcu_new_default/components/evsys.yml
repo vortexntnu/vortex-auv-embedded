@@ -24,7 +24,7 @@ data:
       - children:
         - attributes:
             id: evsys
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -35,7 +35,7 @@ data:
       - children:
         - attributes:
             id: evsys
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -409,7 +409,7 @@ data:
       - children:
         - attributes:
             id: adc0
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -435,4 +435,66 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    GENERATOR_ADC0_RESRDY_ACTIVE:
+      attributes:
+        id: GENERATOR_ADC0_RESRDY_ACTIVE
+      children:
+      - children:
+        - attributes:
+            id: adc0
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    GENERATOR_RTC_CMP_0_ACTIVE:
+      attributes:
+        id: GENERATOR_RTC_CMP_0_ACTIVE
+      children:
+      - children:
+        - attributes:
+            id: rtc
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    EVSYS_CHANNEL_0:
+      attributes:
+        id: EVSYS_CHANNEL_0
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EVSYS_CHANNEL_0_GENERATOR:
+      attributes:
+        id: EVSYS_CHANNEL_0_GENERATOR
+      children:
+      - children:
+        - attributes:
+            value: '40'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EVSYS_CHANNEL_0_RUNSTANDBY:
+      attributes:
+        id: EVSYS_CHANNEL_0_RUNSTANDBY
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EVSYS_USER_28:
+      attributes:
+        id: EVSYS_USER_28
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData: {}

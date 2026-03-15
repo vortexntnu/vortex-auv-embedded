@@ -61,7 +61,6 @@
 // Section: Global Data
 // *****************************************************************************
 // *****************************************************************************
-static volatile ADC_CALLBACK_OBJ ADC0_CallbackObject;
 
 #define ADC0_LINEARITY_POS  (0U)
 #define ADC0_LINEARITY_Msk   (0x7UL << ADC0_LINEARITY_POS)
@@ -104,11 +103,11 @@ void ADC0_Initialize( void )
     ADC0_REGS->ADC_SEQCTRL = ADC_SEQCTRL_SEQEN(1U << 0U)
 		 | ADC_SEQCTRL_SEQEN(1U << 1U)
 		 | ADC_SEQCTRL_SEQEN(1U << 2U)
-		 | ADC_SEQCTRL_SEQEN(1U << 3U)
 		 | ADC_SEQCTRL_SEQEN(1U << 4U)
 		 | ADC_SEQCTRL_SEQEN(1U << 5U)
 		 | ADC_SEQCTRL_SEQEN(1U << 6U)
-		 | ADC_SEQCTRL_SEQEN(1U << 7U);
+		 | ADC_SEQCTRL_SEQEN(1U << 7U)
+		 | ADC_SEQCTRL_SEQEN(1U << 9U);
 
     /* Resolution & Operation Mode */
     ADC0_REGS->ADC_CTRLC = (uint16_t)(ADC_CTRLC_RESSEL_16BIT | ADC_CTRLC_WINMODE(0UL) );
@@ -118,8 +117,8 @@ void ADC0_Initialize( void )
 
     /* Clear all interrupt flags */
     ADC0_REGS->ADC_INTFLAG = (uint8_t)ADC_INTFLAG_Msk;
-    /* Enable interrupts */
-    ADC0_REGS->ADC_INTENSET = (uint8_t)(ADC_INTENSET_RESRDY_Msk);
+    /* Events configuration  */
+    ADC0_REGS->ADC_EVCTRL = (uint8_t)(ADC_EVCTRL_STARTEI_Msk);
 
     ADC0_REGS->ADC_CTRLA |= (uint8_t)(ADC_CTRLA_RUNSTDBY_Msk);
     while(0U != ADC0_REGS->ADC_SYNCBUSY)
@@ -228,24 +227,14 @@ void ADC0_InterruptsDisable(ADC_STATUS interruptMask)
     ADC0_REGS->ADC_INTENCLR = (uint8_t)interruptMask;
 }
 
-/* Register callback function */
-void ADC0_CallbackRegister( ADC_CALLBACK callback, uintptr_t context )
+/* Check whether result is ready */
+bool ADC0_ConversionStatusGet( void )
 {
-    ADC0_CallbackObject.callback = callback;
-
-    ADC0_CallbackObject.context = context;
-}
-
-
-void __attribute__((used)) ADC0_InterruptHandler( void )
-{
-    ADC_STATUS status;
-    status = ADC0_REGS->ADC_INTFLAG;
-    /* Clear interrupt flag */
-    ADC0_REGS->ADC_INTFLAG = (uint8_t)(ADC_INTENSET_RESRDY_Msk);
-    if (ADC0_CallbackObject.callback != NULL)
+    bool status;
+    status =  (((ADC0_REGS->ADC_INTFLAG & ADC_INTFLAG_RESRDY_Msk) >> ADC_INTFLAG_RESRDY_Pos) != 0U);
+    if (status == true)
     {
-        uintptr_t context = ADC0_CallbackObject.context;
-        ADC0_CallbackObject.callback(status, context);
+        ADC0_REGS->ADC_INTFLAG = (uint8_t)ADC_INTFLAG_RESRDY_Msk;
     }
+    return status;
 }

@@ -185,9 +185,13 @@ void app_init(void) {
     EIC_CallbackRegister(EIC_PIN_6, eic_pin_flt_thruster, 6);
     EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 7); 
     
+    
     // Enable ADC
     ADC0_Enable();
     
+    // Configure RTC
+    RTC_Timer32Start();
+    RTC_Timer32CompareSet(50);
     // Configure DMA
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, adc_dma_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
@@ -211,16 +215,16 @@ void app_init(void) {
 }
 
 void app_task(void) {
-    //if (adc_dma_done) {
-    //    adc_dma_done = false;
-    //    log_current();
-    //}
-    
-    if (can_message_received) {
-        can_message_received = false;
-        //message_handler();
-        test_can_rx();
+    if (adc_dma_done) {
+        adc_dma_done = false;
+        log_current();
     }
+    
+    //if (can_message_received) {
+    //    can_message_received = false;
+        //message_handler();
+    //    test_can_rx();
+    //}
 }
 
 /* --- Private helpers --- */
@@ -261,9 +265,9 @@ static void message_handler(void) {
 }
 
 static void log_current(void) {
-    const float ADC_VREF   = 3.3f;
+    const float ADC_VREF   = 5.0f;
     const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
-    const float R_IMON     = 4020.0f;    // 4.6 kOhm sense resistor for thrusters
+    const float R_IMON     = 4020.0f;    // 4.02 kOhm sense resistor for thrusters
     
     for (size_t i = 0; i < 8; i++) {
         float V_Imon = (float)adc_result_array[i] * ADC_VREF / 65535.0f;
@@ -463,6 +467,7 @@ static void can_transmit_callback(uintptr_t context) {
 }
 
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext) {
+    printf("ADC Interrupts occurred\n");
     if (returned_event == DMAC_TRANSFER_EVENT_COMPLETE) {
         adc_dma_done = true;
         // Re-arm DMA for next conversion
@@ -475,6 +480,8 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
 
 static void eic_pin_flt_thruster(uintptr_t context) {
     uint8_t thruster_id = (uint8_t)context;
+    
+    printf("Fault pin triggered for thruster %u\n", (unsigned int)thruster_id);
     
     set_pwm_neutral(thrusters, 8);
     

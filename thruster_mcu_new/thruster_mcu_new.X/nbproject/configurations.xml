@@ -40,6 +40,9 @@
             <logicalFolder name="port" displayName="port" projectFiles="true">
               <itemPath>../src/config/default/peripheral/port/plib_port.h</itemPath>
             </logicalFolder>
+            <logicalFolder name="rtc" displayName="rtc" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/rtc/plib_rtc.h</itemPath>
+            </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.h</itemPath>
@@ -199,6 +202,7 @@
           <itemPath>thruster_mcu_new_default/components/pm.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/sercom0.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/tcc1.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/rtc.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/evsys.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/sercom2.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/can1.yml</itemPath>
@@ -263,6 +267,9 @@
             </logicalFolder>
             <logicalFolder name="port" displayName="port" projectFiles="true">
               <itemPath>../src/config/default/peripheral/port/plib_port.c</itemPath>
+            </logicalFolder>
+            <logicalFolder name="rtc" displayName="rtc" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/rtc/plib_rtc_timer.c</itemPath>
             </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
