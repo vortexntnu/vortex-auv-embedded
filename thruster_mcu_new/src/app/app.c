@@ -202,7 +202,7 @@ void app_init(void) {
     TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
-    //set_pwm_neutral(thrusters, 8);
+    set_pwm_neutral(thrusters, 8);
     //set_pwm_neutral(lights, 1);
 
     
@@ -277,7 +277,7 @@ static void log_current(void) {
     const float R_IMON     = 4020.0f;    // 4.02 kOhm sense resistor for thrusters
     
     for (size_t i = 0; i < 8; i++) {
-        float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 65535.0f;
+        float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
         
         printf("IMON[%u] raw=%u  V=%.4f  I=%.3f A\r\n",

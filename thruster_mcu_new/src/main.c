@@ -16,9 +16,7 @@ int main ( void ) {
     
     
     //test_can_tx();
-    
-    ADC0_ConversionStart();
-    
+        
     while ( true )
     {
         

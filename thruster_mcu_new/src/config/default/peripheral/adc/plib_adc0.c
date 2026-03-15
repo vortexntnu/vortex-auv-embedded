@@ -110,10 +110,8 @@ void ADC0_Initialize( void )
 		 | ADC_SEQCTRL_SEQEN(1U << 9U);
 
     /* Resolution & Operation Mode */
-    ADC0_REGS->ADC_CTRLC = (uint16_t)(ADC_CTRLC_RESSEL_16BIT | ADC_CTRLC_WINMODE(0UL) );
+    ADC0_REGS->ADC_CTRLC = (uint16_t)(ADC_CTRLC_RESSEL_12BIT | ADC_CTRLC_WINMODE(0UL) );
 
-    /* Result averaging */
-    ADC0_REGS->ADC_AVGCTRL = (uint8_t)(ADC_AVGCTRL_SAMPLENUM(0UL) | ADC_AVGCTRL_ADJRES(0UL));
 
     /* Clear all interrupt flags */
     ADC0_REGS->ADC_INTFLAG = (uint8_t)ADC_INTFLAG_Msk;

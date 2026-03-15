@@ -242,7 +242,7 @@ data:
       - children:
         - attributes:
             id: adc0
-            value: '0'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -252,7 +252,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '1'
+            value: '0'
           type: User
         type: Values
       type: KeyValueSet
@@ -270,7 +270,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            value: Accumulation/Averaging
+            value: 16 Bit
           type: User
         type: Values
       type: Combo
@@ -419,6 +419,34 @@ data:
       - children:
         - attributes:
             value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    ADC_AVGCTRL_SAMPLENUM:
+      attributes:
+        id: ADC_AVGCTRL_SAMPLENUM
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '6'
+          type: User
+        type: Values
+      type: KeyValueSet
+    ADC_CTRLC_LEFTADJ:
+      attributes:
+        id: ADC_CTRLC_LEFTADJ
+      children:
+      - children:
+        - attributes:
+            value: 'false'
           type: User
         type: Values
       type: Boolean
