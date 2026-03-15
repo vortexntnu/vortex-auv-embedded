@@ -215,6 +215,10 @@ void app_init(void) {
 }
 
 void app_task(void) {
+    if (ADC0_ConversionSequenceIsFinished()) {
+            ADC0_ConversionStart();
+        }
+    
     if (adc_dma_done) {
         adc_dma_done = false;
         log_current();
@@ -270,11 +274,11 @@ static void log_current(void) {
     const float R_IMON     = 4020.0f;    // 4.02 kOhm sense resistor for thrusters
     
     for (size_t i = 0; i < 8; i++) {
-        float V_Imon = (float)adc_result_array[i] * ADC_VREF / 65535.0f;
+        float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 65535.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
         
         printf("IMON[%u] raw=%u  V=%.4f  I=%.3f A\r\n",
-               (unsigned)i, (unsigned)adc_result_array[i], (double)V_Imon, (double)I_out);
+               (unsigned)i, (unsigned)adc_result_array[i], (float)V_Imon, (float)I_out);
     }
 }
 

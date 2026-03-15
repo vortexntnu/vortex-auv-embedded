@@ -21,9 +21,6 @@ int main ( void ) {
     
     while ( true )
     {
-        if (ADC0_ConversionSequenceIsFinished()) {
-            ADC0_ConversionStart();
-        }
         
         /* Sleep until an interrupt occurs*/
         //PM_IdleModeEnter();
