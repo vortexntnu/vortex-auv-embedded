@@ -210,6 +210,9 @@ void app_init(void) {
     TC0_TimerStart();
     TC3_CompareStart();
     
+    ADC0_ConversionStart();
+
+    
     // Enable watchdog
     //WDT_Enable();
 }
