@@ -19,20 +19,20 @@ static inline void _delay(uint32_t cycles){
 
 #define BQ_SPI_WAIT_MAX_LOOPS  (2000000UL)
 
-static bool bq_spi_wait_idle(void)
-{
-    uint32_t timeout = BQ_SPI_WAIT_MAX_LOOPS;
-
-    while (SERCOM0_SPI_IsBusy())
-    {
-        if (timeout-- == 0U)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
+// static bool bq_spi_wait_idle(void)
+// {
+//     uint32_t timeout = BQ_SPI_WAIT_MAX_LOOPS;
+//
+//     while (SERCOM0_SPI_IsBusy())
+//     {
+//         if (timeout-- == 0U)
+//         {
+//             return false;
+//         }
+//     }
+//
+//     return true;
+// }
     
 
 void bq76942_init(void)
@@ -53,23 +53,23 @@ void bq76942_init(void)
     else
         printf("BQ76942 communication failed\n");
 }
-
-
-bool Spi_TransferBytes(uint8_t *tx, uint8_t *rx, uint8_t length)
-{
-    if (SERCOM0_SPI_IsBusy())
-        return false;
-
-    bq_cs_low();
-    bool ok = SERCOM0_SPI_WriteRead(tx, length, rx, length);
-    if (ok)
-    {
-        ok = bq_spi_wait_idle();
-    }
-    bq_cs_high();
-    
-    return ok;
-}
+//
+//
+// bool Spi_TransferBytes(uint8_t *tx, uint8_t *rx, uint8_t length)
+// {
+//     if (SERCOM0_SPI_IsBusy())
+//         return false;
+//
+//     bq_cs_low();
+//     bool ok = SERCOM0_SPI_WriteRead(tx, length, rx, length);
+//     if (ok)
+//     {
+//         ok = bq_spi_wait_idle();
+//     }
+//     bq_cs_high();
+//
+//     return ok;
+// }
 
 static uint8_t bq_crc8_calc(const uint8_t *data, uint8_t len)
 {
@@ -129,37 +129,99 @@ static uint8_t bq_crc8_calc(const uint8_t *data, uint8_t len)
 //
 //     return ok;
 // }
+// //
+// bool write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
+// {
+//     if (SERCOM0_SPI_IsBusy())
+//         return false;
 //
-bool write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
-{
-    if (SERCOM0_SPI_IsBusy())
-        return false;
+//     if (length == 0)
+//         return true;
+//
+//     if (data == NULL)
+//         return false;
+//
+//     for (uint8_t i = 0; i < length; i++) {
+//         uint8_t tx[3];
+//         uint8_t cmd = (uint8_t)(0x80u | ((regAddr + i) & 0x7Fu));  // write bit set
+//         tx[0] = cmd;
+//         tx[1] = data[i];
+//         tx[2] = bq_crc8_calc(tx, 2);   // CRC over first 2 bytes only
+//
+//         bq_cs_low();
+//         bool ok = SERCOM0_SPI_Write(tx, 3);
+//         if (ok) {
+//             ok = bq_spi_wait_idle();
+//         }
+//         bq_cs_high();
+//
+//         if (!ok)
+//             return false;
+//     }
+//
+//     return true;
+// }
 
-    if (length == 0)
-        return true;
+
+static bool bq_spi_transfer3(const uint8_t tx[3], uint8_t rx[3])
+{
+    // Replace with your SERCOM full-duplex API.
+    // The important point is: transmit 3 bytes and capture 3 bytes.
+    return SERCOM0_SPI_WriteRead(tx, 3, rx, 3);
+}
+
+bq_status_t write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
+{
+    if (length == 0U)
+        return BQ_OK;
 
     if (data == NULL)
-        return false;
+        return BQ_ERR_PARAM;
 
-    for (uint8_t i = 0; i < length; i++) {
+
+    for (uint8_t i = 0; i < length; i++)
+    {
         uint8_t tx[3];
-        uint8_t cmd = (uint8_t)(0x80u | ((regAddr + i) & 0x7Fu));  // write bit set
+        uint8_t rx[3];
+        uint8_t cmd = (uint8_t)(0x80U | ((regAddr + i) & 0x7FU));
+        uint8_t retries = 10U;
+        bool matched = false;
+
         tx[0] = cmd;
         tx[1] = data[i];
-        tx[2] = bq_crc8_calc(tx, 2);   // CRC over first 2 bytes only
+        tx[2] = bq_crc8_calc(tx, 2);
 
-        bq_cs_low();
-        bool ok = SERCOM0_SPI_Write(tx, 3);
-        if (ok) {
-            ok = bq_spi_wait_idle();
+        while (retries-- > 0U)
+        {
+            bq_cs_low();
+
+            if (!bq_spi_transfer3(tx, rx))
+            {
+                bq_cs_high();
+                return BQ_ERR_SPI;
+            }
+
+            bq_cs_high();
+
+            // Verify echo from device
+            if ((rx[0] == tx[0]) &&
+                (rx[1] == tx[1]) &&
+                (rx[2] == bq_crc8_calc(rx, 2)))
+            {
+                matched = true;
+                break;
+            }
+
+            SYSTICK_DelayUs(500);   // tune per your system
         }
-        bq_cs_high();
 
-        if (!ok)
-            return false;
+        if (!matched)
+            return BQ_ERR_VERIFY;
+
+        SYSTICK_DelayUs(50);   // TI recommends ~50 us minimum between transactions
     }
 
-    return true;
+    return BQ_OK;
 }
 
 //
@@ -208,38 +270,97 @@ bool write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
 //     return true;
 // }
 //
+// bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length)
+// {
+//     if (length == 0) return true;
+//
+//     uint8_t tx[3], rx[3];
+//
+//     for (uint8_t i = 0; i < length + 1; i++) {
+//         uint8_t cmd = (i < length) ? ((regAddr + i) & 0x7F) : 0x00;  // flush
+//         tx[0] = cmd;      // read = R/W bit 0, so just 7-bit addr
+//         tx[1] = 0x00;
+//         tx[2] = bq_crc8_calc(tx, 2);
+//
+//         bq_cs_low();
+//         bool ok = SERCOM0_SPI_WriteRead(tx, 3, rx, 3);
+//         if (ok) ok = bq_spi_wait_idle();
+//         bq_cs_high();
+//         if (!ok){
+//             return false;
+//         } 
+//
+//         for (int i = 0; i < 3; i++){
+//             printf("%d : %x\r\n", i,rx[i]);
+//         }
+//         if (i > 0) {
+//             if (bq_crc8_calc(rx, 2) != rx[2]){
+//                 return false;
+//             } 
+//             if (rx[0] != ((regAddr + (i - 1)) & 0x7F)){
+//                 return false;
+//             } 
+//             data[i - 1] = rx[1];
+//         }
+//     }
+//
+//     return true;
+// }
 bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length)
 {
-    if (length == 0) return true;
+    if (length == 0U)
+        return true;
 
-    uint8_t tx[3], rx[3];
+    if (data == NULL)
+        return false;
 
-    for (uint8_t i = 0; i < length + 1; i++) {
-        uint8_t cmd = (i < length) ? ((regAddr + i) & 0x7F) : 0x00;  // flush
-        tx[0] = cmd;      // read = R/W bit 0, so just 7-bit addr
-        tx[1] = 0x00;
-        tx[2] = bq_crc8_calc(tx, 2);
 
-        bq_cs_low();
-        bool ok = SERCOM0_SPI_WriteRead(tx, 3, rx, 3);
-        if (ok) ok = bq_spi_wait_idle();
-        bq_cs_high();
-        if (!ok){
+    for (uint8_t i = 0; i < length; i++)
+    {
+        uint8_t tx[3];
+        uint8_t rx[3];
+        uint8_t addr = (uint8_t)((regAddr + i) & 0x7FU);
+        uint8_t retries = 10U;
+        bool matched = false;
+
+        tx[0] = addr;                  // read command
+        tx[1] = 0xFFU;                // dummy byte, matches TI example
+        tx[2] = bq_crc8_calc(tx, 2);  // CRC over cmd + dummy
+
+        while (retries-- > 0U)
+        {
+            bq_cs_low();
+
+            bool ok = SERCOM0_SPI_WriteRead(tx, 3, rx, 3);
+            
+
+            bq_cs_high();
+
+            if (!ok)
+            {
+                return false;
+            }
+
+            // Check returned frame
+            if ((rx[0] == addr) &&
+                (rx[2] == bq_crc8_calc(rx, 2)))
+            {
+                data[i] = rx[1];
+                matched = true;
+                break;
+            }
+
+            // Device may not be ready yet
+            SYSTICK_DelayUs(500);
+        }
+
+        if (!matched)
+        {
             return false;
-        } 
+        }
 
-        for (int i = 0; i < 3; i++){
-            printf("%d : %x\r\n", i,rx[i]);
-        }
-        if (i > 0) {
-            if (bq_crc8_calc(rx, 2) != rx[2]){
-                return false;
-            } 
-            if (rx[0] != ((regAddr + (i - 1)) & 0x7F)){
-                return false;
-            } 
-            data[i - 1] = rx[1];
-        }
+        // TI recommends spacing between transactions
+        SYSTICK_DelayUs(50);
     }
 
     return true;

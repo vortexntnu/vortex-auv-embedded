@@ -195,7 +195,9 @@
                 "My_MCC_Config/src/config/default/peripheral/rtc/plib_rtc_timer.c",
                 "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom_i2c_master_common.h",
                 "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.h",
-                "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c"
+                "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c",
+                "My_MCC_Config/src/config/default/peripheral/systick/plib_systick.h",
+                "My_MCC_Config/src/config/default/peripheral/systick/plib_systick.c"
             ]
         }
     ]

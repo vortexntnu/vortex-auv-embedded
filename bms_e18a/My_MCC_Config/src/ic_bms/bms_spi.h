@@ -89,10 +89,22 @@ typedef enum
     BMS_STATE_TRANSITION
 } bms_state_t;
 
+
+typedef enum
+{
+    BQ_OK = 0,
+    BQ_ERR_BUSY,
+    BQ_ERR_PARAM,
+    BQ_ERR_SPI,
+    BQ_ERR_VERIFY,
+    BQ_ERR_TIMEOUT
+} bq_status_t;
+
+
 /* Minimal driver: only SPI+CS bring-up */
 
 void bq76942_init(void);
-bool write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length);
+bq_status_t write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length);
 bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length);
 bool bq_direct_command(uint8_t command, uint16_t *data, char type);
 bool bq_command_only(uint16_t subcmd);
