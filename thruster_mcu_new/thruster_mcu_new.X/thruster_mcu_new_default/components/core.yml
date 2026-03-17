@@ -362,7 +362,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x29e0f'
+            value: '0x29e2f'
           type: Dynamic
         type: Values
       type: String
@@ -1623,7 +1623,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x0'
+            value: '0x33'
           type: Dynamic
         type: Values
       type: String
@@ -1666,7 +1666,7 @@ data:
       children:
       - children:
         - attributes:
-            value: A
+            value: D
           type: User
         type: Values
       type: String
@@ -1709,7 +1709,7 @@ data:
       children:
       - children:
         - attributes:
-            value: A
+            value: D
           type: User
         type: Values
       type: String
@@ -2205,7 +2205,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x55'
+            value: '0x66'
           type: Dynamic
         type: Values
       type: String
@@ -2226,7 +2226,7 @@ data:
       children:
       - children:
         - attributes:
-            value: F
+            value: G
           type: User
         type: Values
       type: String
@@ -2784,7 +2784,7 @@ data:
       children:
       - children:
         - attributes:
-            value: F
+            value: G
           type: User
         type: Values
       type: String
@@ -3932,7 +3932,7 @@ data:
       children:
       - children:
         - attributes:
-            value: TCC1_WO2
+            value: CAN0_TX
           type: User
         type: Values
       type: String
@@ -3942,7 +3942,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_4
+            value: ''
           type: User
         type: Values
       type: String
@@ -4242,7 +4242,7 @@ data:
       children:
       - children:
         - attributes:
-            value: EIC_EXTINT10
+            value: SERCOM4_PAD2
           type: User
         type: Values
       type: String
@@ -4252,7 +4252,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PG_TH8
+            value: ''
           type: User
         type: Values
       type: String
@@ -4272,7 +4272,7 @@ data:
       children:
       - children:
         - attributes:
-            value: EIC_EXTINT11
+            value: SERCOM4_PAD3
           type: User
         type: Values
       type: String
@@ -4282,7 +4282,7 @@ data:
       children:
       - children:
         - attributes:
-            value: FLT_TH8
+            value: ''
           type: User
         type: Values
       type: String
@@ -5061,7 +5061,7 @@ data:
       children:
       - children:
         - attributes:
-            value: TCC1_WO3
+            value: CAN0_RX
           type: User
         type: Values
       type: String
@@ -5071,7 +5071,7 @@ data:
       children:
       - children:
         - attributes:
-            value: PWM_3
+            value: ''
           type: User
         type: Values
       type: String
@@ -5349,6 +5349,127 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    SERCOM4_CORE_CLOCK_FREQUENCY:
+      attributes:
+        id: SERCOM4_CORE_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_23_FREQ:
+      attributes:
+        id: GCLK_ID_23_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_23_CHEN:
+      attributes:
+        id: GCLK_ID_23_CHEN
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    SERCOM4_CORE_CLOCK_ENABLE:
+      attributes:
+        id: SERCOM4_CORE_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: sercom4
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    SERCOM4_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: SERCOM4_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_13_0_ENABLE:
+      attributes:
+        id: NVIC_13_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    SERCOM4_INTERRUPT_ENABLE:
+      attributes:
+        id: SERCOM4_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: sercom4
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_13_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_13_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    SERCOM4_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: SERCOM4_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: sercom4
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_13_0_HANDLER:
+      attributes:
+        id: NVIC_13_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: SERCOM4_Handler
+          type: Dynamic
+        type: Values
+      type: String
+    SERCOM4_INTERRUPT_HANDLER:
+      attributes:
+        id: SERCOM4_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: sercom4
+            value: SERCOM4_Handler
+          type: Dynamic
+        type: Values
+      type: String
   userData:
     children:
     - attributes:

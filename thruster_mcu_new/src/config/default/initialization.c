@@ -184,11 +184,13 @@ void SYS_Initialize ( void* data )
 
     CAN0_Initialize();
 
+    SERCOM4_USART_Initialize();
+
     EIC_Initialize();
 
-    TC0_TimerInitialize();
-
     RTC_Initialize();
+
+    TC0_TimerInitialize();
 
     TC3_CompareInitialize();
 

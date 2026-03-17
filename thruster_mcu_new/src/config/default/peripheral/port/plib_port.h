@@ -129,14 +129,6 @@
 #define PWM_7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 11U)) & 0x01U)
 #define PWM_7_PIN                  PORT_PIN_PA11
 
-/*** Macros for PG_TH8 pin ***/
-#define PG_TH8_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 10U)) & 0x01U)
-#define PG_TH8_PIN                  PORT_PIN_PB10
-
-/*** Macros for FLT_TH8 pin ***/
-#define FLT_TH8_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
-#define FLT_TH8_PIN                  PORT_PIN_PB11
-
 /*** Macros for PG_TH7 pin ***/
 #define PG_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 12U)) & 0x01U)
 #define PG_TH7_PIN                  PORT_PIN_PB12
@@ -185,14 +177,6 @@
 #define RESET_TH_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 23U))
 #define RESET_TH_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 23U)) & 0x01U)
 #define RESET_TH_PIN                  PORT_PIN_PA23
-
-/*** Macros for PWM_4 pin ***/
-#define PWM_4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 24U)) & 0x01U)
-#define PWM_4_PIN                  PORT_PIN_PA24
-
-/*** Macros for PWM_3 pin ***/
-#define PWM_3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 25U)) & 0x01U)
-#define PWM_3_PIN                  PORT_PIN_PA25
 
 /*** Macros for PG_TH3 pin ***/
 #define PG_TH3_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 22U)) & 0x01U)

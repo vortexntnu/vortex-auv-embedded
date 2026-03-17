@@ -44,13 +44,13 @@ enum can_events {
 
 /* --- Private states --- */
 /* CAN */
-static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
+static uint8_t Can1MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
 
 static volatile uint32_t can_status = 0;
 static volatile bool can_message_received = false;
 
-static uint8_t txFiFo[CAN1_TX_FIFO_BUFFER_SIZE];
-static uint8_t rxFiFo0[CAN1_RX_FIFO0_SIZE];
+static uint8_t txFiFo[CAN0_TX_FIFO_BUFFER_SIZE];
+static uint8_t rxFiFo0[CAN0_RX_FIFO0_SIZE];
 
 /* ADC */
 static volatile bool adc_dma_done = false;
@@ -169,38 +169,38 @@ static void eic_pin_killswitch(uintptr_t context);
 
 void app_init(void) {
     // Configure CAN RAM & callbacks 
-    CAN1_MessageRAMConfigSet(Can1MessageRAM);
-    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
-    CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
+    CAN0_MessageRAMConfigSet(Can1MessageRAM);
+    CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
+    CAN0_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
     // Configure callback for killswitch
-    EIC_NMICallbackRegister(eic_pin_killswitch, 0);
+    // EIC_NMICallbackRegister(eic_pin_killswitch, 0);
     
-    // Configure callbacks for FLT pins
-    EIC_CallbackRegister(EIC_PIN_0, eic_pin_pg_thruster, 5);
-    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 5);
-    
-    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 6);
-    EIC_CallbackRegister(EIC_PIN_3, eic_pin_pg_thruster, 6);
-    
-    EIC_CallbackRegister(EIC_PIN_4, eic_pin_pg_thruster, 4);
-    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 4);
-    
-    EIC_CallbackRegister(EIC_PIN_6, eic_pin_pg_thruster, 3);
-    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 3); 
-    
-    EIC_CallbackRegister(EIC_PIN_8, eic_pin_pg_thruster, 2);
-    EIC_CallbackRegister(EIC_PIN_9, eic_pin_flt_thruster, 2);
-    
-    EIC_CallbackRegister(EIC_PIN_10, eic_pin_pg_thruster, 8);
-    EIC_CallbackRegister(EIC_PIN_11, eic_pin_flt_thruster, 8);
-    
-    EIC_CallbackRegister(EIC_PIN_12, eic_pin_pg_thruster, 7);
-    EIC_CallbackRegister(EIC_PIN_13, eic_pin_flt_thruster, 7);
-    
-    EIC_CallbackRegister(EIC_PIN_14, eic_pin_flt_thruster, 1);
-    EIC_CallbackRegister(EIC_PIN_15, eic_pin_pg_thruster, 1);
-    
+    // // Configure callbacks for FLT pins
+    // EIC_CallbackRegister(EIC_PIN_0, eic_pin_pg_thruster, 5);
+    // EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 5);
+    //
+    // EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 6);
+    // EIC_CallbackRegister(EIC_PIN_3, eic_pin_pg_thruster, 6);
+    //
+    // EIC_CallbackRegister(EIC_PIN_4, eic_pin_pg_thruster, 4);
+    // EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 4);
+    //
+    // EIC_CallbackRegister(EIC_PIN_6, eic_pin_pg_thruster, 3);
+    // EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 3); 
+    //
+    // EIC_CallbackRegister(EIC_PIN_8, eic_pin_pg_thruster, 2);
+    // EIC_CallbackRegister(EIC_PIN_9, eic_pin_flt_thruster, 2);
+    //
+    // EIC_CallbackRegister(EIC_PIN_10, eic_pin_pg_thruster, 8);
+    // EIC_CallbackRegister(EIC_PIN_11, eic_pin_flt_thruster, 8);
+    //
+    // EIC_CallbackRegister(EIC_PIN_12, eic_pin_pg_thruster, 7);
+    // EIC_CallbackRegister(EIC_PIN_13, eic_pin_flt_thruster, 7);
+    //
+    // EIC_CallbackRegister(EIC_PIN_14, eic_pin_flt_thruster, 1);
+    // EIC_CallbackRegister(EIC_PIN_15, eic_pin_pg_thruster, 1);
+    //
     
     // Enable ADC
     ADC0_Enable();
@@ -221,9 +221,9 @@ void app_init(void) {
     set_pwm_neutral(thrusters, 8);
     //set_pwm_neutral(lights, 1);
     
-    for (int i = 0; i < 100000000; i++) {
-        __NOP();
-    }
+    // for (int i = 0; i < 100000000; i++) {
+    //     __NOP();
+    // }
 
     
     // Enable TC
@@ -238,20 +238,20 @@ void app_init(void) {
 }
 
 void app_task(void) {
-    if (ADC0_ConversionSequenceIsFinished()) {
-            ADC0_ConversionStart();
-        }
+    // if (ADC0_ConversionSequenceIsFinished()) {
+    //         ADC0_ConversionStart();
+    //     }
+    //
+    // if (adc_dma_done) {
+    //     adc_dma_done = false;
+    //     log_current();
+    // }
     
-    if (adc_dma_done) {
-        adc_dma_done = false;
-        log_current();
+    if (can_message_received) {
+       can_message_received = false;
+        message_handler();
+       test_can_rx();
     }
-    
-    //if (can_message_received) {
-    //    can_message_received = false;
-        //message_handler();
-    //    test_can_rx();
-    //}
 }
 
 /* --- Private helpers --- */
@@ -310,7 +310,7 @@ static void log_current(void) {
 static bool send_thruster_fault(uint8_t thruster_id) {
     CAN_TX_BUFFER *txBuffer = NULL;
     
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    memset(txFiFo, 0x00, CAN0_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
     txBuffer->id = WRITE_ID(0x45A);
@@ -322,9 +322,9 @@ static bool send_thruster_fault(uint8_t thruster_id) {
     txBuffer->data[1] = 0x01; // Fault source: FLT pin (hardware fault)
     // Bytes 2-7 reserved for future use (e.g. IMON reading once conversion is known)
     
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    bool result = CAN0_MessageTransmitFifo(1, txBuffer);
     if (!result) {
-        printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
+        printf("ERROR: CAN0_MessageTransmitFifo failed!\r\n");
     }
     
     return result;
@@ -394,20 +394,21 @@ void test_can_rx() {
 void test_can_tx() {
     CAN_TX_BUFFER *txBuffer = NULL;
     
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    memset(txFiFo, 0x00, CAN0_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
-    txBuffer->id = WRITE_ID(0x45A);
-    txBuffer->dlc = 1;
+    txBuffer->id = WRITE_ID(0x45B);
+    txBuffer->dlc = 8;
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
     
     txBuffer->data[0] = 0x43;
+    txBuffer->data[1] = 0x69;
     
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    bool result = CAN0_MessageTransmitFifo(1, txBuffer);
 
     if (!result) {
-        printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
+        printf("ERROR: CAN0_MessageTransmitFifo failed!\r\n");
     }
     
     
@@ -482,14 +483,14 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 
 static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context) {
     // Check CAN Status
-    can_status = CAN1_ErrorGet();
+    can_status = CAN0_ErrorGet();
 
     // If no new error, handle CAN frame
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         
-        memset(rxFiFo0, 0x00, (numberOfMessage * CAN1_RX_FIFO0_ELEMENT_SIZE));
-        if (CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, numberOfMessage, (CAN_RX_BUFFER *)rxFiFo0) == true) {
+        memset(rxFiFo0, 0x00, (numberOfMessage * CAN0_RX_FIFO0_ELEMENT_SIZE));
+        if (CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, numberOfMessage, (CAN_RX_BUFFER *)rxFiFo0) == true) {
             can_message_received = true;
             // Optionally print can frame
         } 
@@ -498,7 +499,7 @@ static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context) {
 
 static void can_transmit_callback(uintptr_t context) {
     // Check CAN Status
-    can_status = CAN1_ErrorGet();
+    can_status = CAN0_ErrorGet();
 
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {

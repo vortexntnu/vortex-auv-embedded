@@ -25,13 +25,13 @@ data:
               id: targetComponentID
             children:
             - type: Value
-              value: sercom2
+              value: sercom4
             type: String
           - attributes:
               id: targetAttachmentID
             children:
             - type: Value
-              value: SERCOM2_UART
+              value: SERCOM4_UART
             type: String
           type: Attributes
         type: DirectDependency
@@ -44,8 +44,8 @@ data:
     - children:
       - attributes:
           id: stdio
-          x: '184'
-          y: '502'
+          x: '545'
+          y: '419'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
@@ -57,7 +57,7 @@ data:
       - children:
         - attributes:
             id: stdio
-            value: sercom2
+            value: sercom4
           type: Dynamic
         type: Values
       type: String

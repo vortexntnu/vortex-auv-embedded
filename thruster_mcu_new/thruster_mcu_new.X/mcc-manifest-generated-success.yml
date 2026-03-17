@@ -2,15 +2,15 @@
 
 manifest_file_version: 1.0.0
 project: thruster_mcu_new
-creation_date: 2026-03-15T17:22:31.164+01:00[Europe/Oslo]
-operating_system: Mac OS X
+creation_date: 2026-03-17T14:30:03.027+01:00[Europe/Oslo]
+operating_system: Linux
 mcc_mode: IDE
 mcc_mode_version: v6.25
 device_name: ATSAMC21J18A
 compiler: XC32 4.60
-mcc_version: 5.6.3
+mcc_version: 5.6.4
 mcc_core_version: 5.8.3
-content_manager_version: 6.0.3
+content_manager_version: 6.0.4
 is_mcc_offline: false
 is_using_prerelease_versions: false
 mcc_content_registries: https://registry.npmjs.org/

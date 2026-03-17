@@ -19,6 +19,7 @@ modules:
 - sercom0
 - sercom1
 - sercom2
+- sercom4
 - stdio
 - tc0
 - tc3
@@ -29,7 +30,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAMC21J18A.ld
   hash: 3fc7dbb63ae72ecd9b52572e4dd84ed79cbd37feb6064cb6d4df6fca301d09af
 - file: ../src/config/default/definitions.h
-  hash: 81e25ab2ffbbf37d627f2be7171c4378689812107fbd9ce874aa35d1cd4d9344
+  hash: 751f9692738c8a252f960032c87abbcaf616b1ba379256413e43302fb791a634
 - file: ../src/config/default/device.h
   hash: e539bb402fa4783d95ccf06235458b2e1fe01207c83c0e046a853e0385d0b6f4
 - file: ../src/config/default/device_cache.h
@@ -39,7 +40,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: cb43fa61f2dd0433249ce1aa079d3911ceef2297f17ad29b6cf79dd70d6540d2
 - file: ../src/config/default/initialization.c
-  hash: 869fabf1a51d7d4c6dd8fc9f64f05358a3bf3719c94157c2d5d48820800026f3
+  hash: d2323f9c360c2b453947079600b4a8d5d6854e5ee4edf085645088bdc5a75e34
 - file: ../src/config/default/interrupts.c
   hash: 861c03c0f7eb0c4faa12d85e4948d82df1a9f12f9680911a18a58b8aaf2b15cc
 - file: ../src/config/default/interrupts.h
@@ -63,7 +64,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/can/plib_can_common.h
   hash: e0e3b54f69be9d8811bbe507f91daa443ae7bff5dc724ac51baebc160097b2d6
 - file: ../src/config/default/peripheral/clock/plib_clock.c
-  hash: a0b29067e0b0eb05d90b7d1afe86fce8958ba00b921ea7b7ead28fa3f84c8bc3
+  hash: 370376da8f3a444fd1f245d24a8b96b35f1b51588df4d40d50b2e8026b7f8620
 - file: ../src/config/default/peripheral/clock/plib_clock.h
   hash: 01c269741541514e997ef61546f4dbb0e23f66e27c6a957162557f13b4638baf
 - file: ../src/config/default/peripheral/dmac/plib_dmac.c
@@ -91,9 +92,9 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/pm/plib_pm.h
   hash: b327e56856e773605cb0ba5abe0374485defeeb4b148520a145defebee77158b
 - file: ../src/config/default/peripheral/port/plib_port.c
-  hash: 462d15dead08aac5b214feb63b2411a31b591f066e41161a584c4e4044fb0fe9
+  hash: 9a9c2d283057aa3bc82b5ff8a064fef491ad5d283ff3d8acd631ac2e8620e660
 - file: ../src/config/default/peripheral/port/plib_port.h
-  hash: 5e0d744190586b2ead629ecbf96227b1a84304e92139996b7cab685cfd1d0996
+  hash: bd8f7fa87d9a6f8fb3bec3da8f6f685dbe17eefeafe9e7d3c3d3c317d96432c7
 - file: ../src/config/default/peripheral/rtc/plib_rtc.h
   hash: 92e9a13ceda691e011ad7efff84d616e8466f744723f8135850fc171fd53ac3b
 - file: ../src/config/default/peripheral/rtc/plib_rtc_timer.c
@@ -110,6 +111,10 @@ generatedFileHashHistoryMap:
   hash: 3735cac21a1b0ebd824ea4138fc47608edbd726b5f54405c1e24d41e6eb157e0
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.h
   hash: a0d35d03c527d1fb9c99d575f99b91a9d1d49d345b20cacee95c2aec45c0d7cb
+- file: ../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c
+  hash: 1cfea5cbca2bbdd402ce0a7d52407d0827b7f770bce8ca20d3d9b22ffb5495b2
+- file: ../src/config/default/peripheral/sercom/usart/plib_sercom4_usart.h
+  hash: 535ef288711860aebfe81da1cf22d8f977f3637fd77c260d588b7302251453f8
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h
   hash: 3653b66472c558c50f7037a1dd25d2678e9a13aa718f3c53a2195e6f3919ea48
 - file: ../src/config/default/peripheral/tc/plib_tc0.c
@@ -141,11 +146,11 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/wdt/plib_wdt.h
   hash: d4bb429b750e4e2970fe12d9c4eea02d2e0b1f1d30279577033555379f94e1a0
 - file: ../src/config/default/pin_configurations.csv
-  hash: 69e97f192177656ac0255223acea992e08a99b8d12545c054fea9ec819692079
+  hash: 45f57ba9b67175c01878620dfba7a587c05acddbf3529b11eee0d0aacf46319f
 - file: ../src/config/default/startup_xc32.c
   hash: e6227d89e36b74af1bc21e00e80b390502c97aaaa65796291f63b2d96cf0678e
 - file: ../src/config/default/stdio/xc32_monitor.c
-  hash: 1395dbc052b1c3c61d798c93f81efa8bc498027c4f6de749df5e4c06dbee4d31
+  hash: 815a3f1ed82abd0dd0e87e0dcb305eeb2438bf735e545f364e4bba95fa0c008b
 - file: ../src/config/default/toolchain_specifics.h
   hash: a4f1774c6f1f8c6cd522567536c9e9d75ca63259b868015ac9b0fb0aeeffe1f4
 - file: ../src/main.c

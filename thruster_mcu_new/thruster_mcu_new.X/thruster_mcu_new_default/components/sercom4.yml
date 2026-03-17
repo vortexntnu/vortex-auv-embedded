@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: sercom2
+componentName: sercom4
 coreVersion: 5.8.3
 device: ATSAMC21J18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: sercom2
+  name: sercom4
   type: module
   version: ''
 - dependencyPackage: ''
@@ -18,40 +18,58 @@ data:
     children:
     - children:
       - attributes:
-          id: SERCOM2_I2C
+          id: SERCOM4_I2C
         children:
         - children:
           - attributes:
               id: enabled
             children:
             - type: Value
-              value: 'true'
+              value: 'false'
             type: Boolean
           type: Attributes
         type: DirectCapability
       - attributes:
-          id: SERCOM2_SPI
+          id: SERCOM4_SPI
         children:
         - children:
           - attributes:
               id: enabled
             children:
             - type: Value
-              value: 'true'
+              value: 'false'
             type: Boolean
           type: Attributes
         type: DirectCapability
+      - attributes:
+          id: SERCOM4_UART
+        children:
+        - children:
+          - attributes:
+              id: targetComponentID
+            children:
+            - type: Value
+              value: stdio
+            type: String
+          - attributes:
+              id: targetAttachmentID
+            children:
+            - type: Value
+              value: UART
+            type: String
+          type: Attributes
+        type: DirectCapability
       type: Attachments
-    type: sercom2
+    type: sercom4
   elementPosition:
     attributes:
       id: __ROOTVIEW
     children:
     - children:
       - attributes:
-          id: sercom2
-          x: '25'
-          y: '503'
+          id: sercom4
+          x: '379'
+          y: '449'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
@@ -62,7 +80,7 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
+            id: sercom4
             value: '232'
           type: Dynamic
         type: Values
@@ -73,8 +91,8 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
-            value: '&(SERCOM2_REGS->USART_INT.SERCOM_DATA)'
+            id: sercom4
+            value: '&(SERCOM4_REGS->USART_INT.SERCOM_DATA)'
           type: Dynamic
         type: Values
       type: String
@@ -87,12 +105,12 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'false'
+            value: 'true'
           type: Boolean
         type: Attributes
       - children:
         - attributes:
-            id: sercom2
+            id: sercom4
             value: '0'
           type: Dynamic
         type: Values
@@ -142,7 +160,7 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
+            id: sercom4
             value: '23'
           type: Dynamic
         type: Values
@@ -153,8 +171,8 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
-            value: '&(SERCOM2_REGS->USART_INT.SERCOM_DATA)'
+            id: sercom4
+            value: '&(SERCOM4_REGS->USART_INT.SERCOM_DATA)'
           type: Dynamic
         type: Values
       type: String
@@ -164,7 +182,7 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
+            id: sercom4
             value: '63019'
           type: Dynamic
         type: Values
@@ -175,7 +193,7 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
+            id: sercom4
             value: 'false'
           type: Dynamic
         type: Values
@@ -186,7 +204,7 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
+            id: sercom4
             value: 'true'
           type: Dynamic
         type: Values
@@ -200,12 +218,12 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'false'
+            value: 'true'
           type: Boolean
         type: Attributes
       - children:
         - attributes:
-            id: sercom2
+            id: sercom4
             value: '0'
           type: Dynamic
         type: Values
@@ -216,40 +234,7 @@ data:
       children:
       - children:
         - attributes:
-            id: sercom2
-            value: 'false'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    USART_SAMPLE_COUNT:
-      attributes:
-        id: USART_SAMPLE_COUNT
-      children:
-      - children:
-        - attributes:
-            id: sercom2
-            value: '16'
-          type: Dynamic
-        type: Values
-      type: Integer
-    USART_SAMPLE_RATE:
-      attributes:
-        id: USART_SAMPLE_RATE
-      children:
-      - children:
-        - attributes:
-            id: sercom2
-            value: '0'
-          type: Dynamic
-        type: Values
-      type: Integer
-    USART_USE_FRACTIONAL_BAUD:
-      attributes:
-        id: USART_USE_FRACTIONAL_BAUD
-      children:
-      - children:
-        - attributes:
-            id: sercom2
+            id: sercom4
             value: 'false'
           type: Dynamic
         type: Values
@@ -260,8 +245,51 @@ data:
       children:
       - children:
         - attributes:
+            value: '3'
+          type: User
+        type: Values
+      type: KeyValueSet
+    USART_SAMPLE_COUNT:
+      attributes:
+        id: USART_SAMPLE_COUNT
+      children:
+      - children:
+        - attributes:
+            id: sercom4
+            value: '16'
+          type: Dynamic
+        type: Values
+      type: Integer
+    USART_SAMPLE_RATE:
+      attributes:
+        id: USART_SAMPLE_RATE
+      children:
+      - children:
+        - attributes:
+            id: sercom4
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    USART_TXPO:
+      attributes:
+        id: USART_TXPO
+      children:
+      - children:
+        - attributes:
             value: '1'
           type: User
         type: Values
       type: KeyValueSet
+    USART_USE_FRACTIONAL_BAUD:
+      attributes:
+        id: USART_USE_FRACTIONAL_BAUD
+      children:
+      - children:
+        - attributes:
+            id: sercom4
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData: {}
