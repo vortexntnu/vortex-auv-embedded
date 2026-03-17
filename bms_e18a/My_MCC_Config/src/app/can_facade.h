@@ -24,9 +24,10 @@
  extern "C" {
  #endif
  
- void CAN_Init(void);
- bool CAN_Send(uint32_t id, uint8_t *data, uint8_t len);
- void APP_CAN_Callback(uintptr_t context);
+void CAN_Init(void);
+bool CAN_Send(uint32_t id, uint8_t *data, uint8_t len);
+bool CAN_TryRead(uint32_t *id, uint8_t *len, uint8_t *data);
+void APP_CAN_Callback(uintptr_t context);
  
  
  #ifdef __cplusplus

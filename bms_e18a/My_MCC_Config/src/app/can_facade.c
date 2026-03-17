@@ -80,3 +80,33 @@
   
       return CAN0_MessageTransmit(id, len, data, mode, attr);
   }
+
+  bool CAN_TryRead(uint32_t *id, uint8_t *len, uint8_t *data)
+  {
+      uint8_t local_len;
+
+      if (!rxReady)
+      {
+          return false;
+      }
+
+      rxReady = false;
+      local_len = rx_messageLength;
+
+      if (id != NULL)
+      {
+          *id = rx_messageID;
+      }
+
+      if (len != NULL)
+      {
+          *len = local_len;
+      }
+
+      if ((data != NULL) && (local_len > 0U))
+      {
+          (void) memcpy(data, rx_message, local_len);
+      }
+
+      return true;
+  }

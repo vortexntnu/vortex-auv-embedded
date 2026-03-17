@@ -11,7 +11,7 @@
             "project": "bms_e18a",
             "configuration": "default",
             "stopOnEntry": true,
-            "program": "/home/nathaniel/vortex/vortex-auv-embedded/bms_e18a/out/bms_e18a/default.elf"
+            "program": "/Desktop/embedded_auv/vortex-auv-embedded/bms_e18a/out/bms_e18a/default.elf"
         }
     ]
 }

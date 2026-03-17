@@ -58,16 +58,25 @@ int main ( void )
     /* Initialize all modules */
     SYS_Initialize ( NULL );
     SYSTICK_TimerStart();
-    BQ769x2_Init();
-    // bms_init_comm_voltage();
-    // voltage_test_init();
 
-    printf("BMS starting\r\n");
+    
+    // BQ769x2_Init(); 
+    // bms_init_comm_voltage(); 
+    // voltage_test_init(); 
+
+    can_scope_test_init();
+
+    printf("CAN scope test running\r\n");
 
     while ( true )
     {
         SYS_Tasks();
-        voltage_test_step();
+
+        
+        // voltage_test_step(); 
+        // spi_write_probe_step(); 
+
+        can_scope_test_step();
     }
 
 

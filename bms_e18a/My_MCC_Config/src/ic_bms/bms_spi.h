@@ -527,6 +527,7 @@ bool bms_battery_status_get(uint8_t *fet_reg, bms_state_t *state);
 bool read_cells_1to6(uint16_t cell_mV[6]);
 void bms_sample_temps(void);
 bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC);
+bool bms_read_current(int16_t *current_mA);
 bool bms_current_read(int16_t *current_userA);
 void bothoff_init(void);
 void bothoff_high(void);

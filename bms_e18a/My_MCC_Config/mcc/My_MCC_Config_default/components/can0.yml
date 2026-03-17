@@ -109,7 +109,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '20.833'
+            value: '62.500'
           type: Dynamic
         type: Values
       type: String
@@ -120,7 +120,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '6'
+            value: '1'
           type: Dynamic
         - attributes:
             value: '5'
@@ -134,7 +134,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '17'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -145,7 +145,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '6'
+            value: '1'
           type: Dynamic
         type: Values
       type: Integer
@@ -156,7 +156,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '24'
+            value: '8'
           type: Dynamic
         type: Values
       type: Integer
@@ -196,8 +196,17 @@ data:
       children:
       - children:
         - attributes:
-            value: '3'
-          type: User
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '2'
+          type: Dynamic
         type: Values
       type: Integer
     NBTP_NSJW:
@@ -207,7 +216,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '6'
+            value: '1'
           type: Dynamic
         - attributes:
             value: '5'
@@ -221,7 +230,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '17'
+            value: '30'
           type: Dynamic
         type: Values
       type: Integer
@@ -232,7 +241,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '6'
+            value: '1'
           type: Dynamic
         type: Values
       type: Integer
@@ -243,7 +252,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '24'
+            value: '32'
           type: Dynamic
         type: Values
       type: Integer
@@ -254,7 +263,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '83.333'
+            value: '62.500'
           type: Dynamic
         type: Values
       type: String
@@ -415,4 +424,81 @@ data:
           type: String
         type: Attributes
       type: File
+    NOMINAL_SAMPLE_POINT:
+      attributes:
+        id: NOMINAL_SAMPLE_POINT
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '96.875'
+          type: Dynamic
+        type: Values
+      type: Float
+    AUTO_NOMINAL_BIT_TIMING_CALCULATION:
+      attributes:
+        id: AUTO_NOMINAL_BIT_TIMING_CALCULATION
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    DBTP_DBRP:
+      attributes:
+        id: DBTP_DBRP
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '2'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DATA_SAMPLE_POINT:
+      attributes:
+        id: DATA_SAMPLE_POINT
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: can0
+            value: '87.5'
+          type: Dynamic
+        type: Values
+      type: Float
+    AUTO_DATA_BIT_TIMING_CALCULATION:
+      attributes:
+        id: AUTO_DATA_BIT_TIMING_CALCULATION
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}
