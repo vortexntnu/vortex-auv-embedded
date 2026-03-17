@@ -58,7 +58,7 @@ static uint16_t adc_result_array[TRANSFER_SIZE];
 
 
 /* Application */
-static struct pwm_output thrusters[8] = {
+static const struct pwm_output thrusters[8] = {
     {PWM_TCC, 1, 0, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC0
     {PWM_TCC, 1, 1, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC1
     {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC2
@@ -83,7 +83,7 @@ static const struct {
     { 9, 8 },   /* slot 7: AIN9  ? Thruster 8 */
 };
 
-static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TC3_CC1. For MPWM TOP = CC0 and duty cycle is determined by CC1
+static const struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TC3_CC1. For MPWM TOP = CC0 and duty cycle is determined by CC1
 
 // FOR TESTING
 void generate_pwm_signals();
@@ -102,7 +102,7 @@ void test_can_tx();
  * @param outputs Pointer to array of pwm_output structs
  * @param count Number of outputs to set
  */
-static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count);
+static void set_pwm_outputs(const uint8_t *data, const struct pwm_output *outputs, size_t count);
 
 /**
  * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
@@ -135,7 +135,7 @@ static bool send_thruster_fault(uint8_t thruster_id);
  * @param outputs Pointer to array of pwm_output structs
  * @param count Number of outputs to set
  */
-static void set_pwm_neutral(struct pwm_output *outputs, size_t count);
+static void set_pwm_neutral(const struct pwm_output *outputs, size_t count);
 
 /**
  * @brief Clamps a value between a minimum and maximum bound.
@@ -349,7 +349,7 @@ static bool send_thruster_fault(uint8_t thruster_id) {
 }
 
 
-static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
+static void set_pwm_outputs(const uint8_t *data, const struct pwm_output *outputs, size_t count) {
     const uint16_t *pulse_data = (const uint16_t *)data;
     for (size_t i = 0; i < count; i++) {
         
@@ -371,7 +371,7 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
     WDT_Clear();
 }
 
-static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
+static void set_pwm_neutral(const struct pwm_output *outputs, size_t count) {
     for (size_t i = 0; i < count; i++) {
         uint32_t ticks = us_to_ticks(outputs[i].period_ticks, outputs[i].neutral_us, outputs[i].frame_us);
         tcc_write(outputs[i].instance, outputs[i].channel, ticks);
