@@ -69,6 +69,20 @@ static struct pwm_output thrusters[8] = {
     {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}  // TCC2_CC1
 };
 
+static const struct {
+    uint8_t ain;
+    uint8_t thruster;
+} imon_map[8] = {
+    { 0, 3 },   /* slot 0: AIN0  ? Thruster 3 */  
+    { 1, 4 },   /* slot 1: AIN1  ? Thruster 4 */
+    { 2, 1 },   /* slot 2: AIN2  ? Thruster 1 */
+    { 4, 2 },   /* slot 3: AIN4  ? Thruster 2 */
+    { 5, 5 },   /* slot 4: AIN5  ? Thruster 5 */
+    { 6, 6 },   /* slot 5: AIN6  ? Thruster 6 */
+    { 7, 7 },   /* slot 6: AIN7  ? Thruster 7 */
+    { 9, 8 },   /* slot 7: AIN9  ? Thruster 8 */
+};
+
 static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TC3_CC1. For MPWM TOP = CC0 and duty cycle is determined by CC1
 
 // FOR TESTING
@@ -301,8 +315,12 @@ static void log_current(void) {
         float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
         
-        printf("IMON[%u] raw=%u  V=%.4f  I=%.3f A\r\n",
-               (unsigned)i, (unsigned)adc_result_array[i], (float)V_Imon, (float)I_out);
+        printf("TH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A\r\n",
+               imon_map[i].thruster,
+               imon_map[i].ain,
+               (unsigned)adc_result_array[i],
+               V_Imon,
+               I_out);
     }
 }
 
