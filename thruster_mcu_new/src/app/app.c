@@ -32,6 +32,7 @@ struct pwm_output {
     uint16_t max_us;
     uint16_t neutral_us;
     uint32_t frame_us;
+    uint16_t current_pulse_us;
 };
 
 enum can_events {
@@ -58,15 +59,15 @@ static uint16_t adc_result_array[TRANSFER_SIZE];
 
 
 /* Application */
-static const struct pwm_output thrusters[8] = {
-    {PWM_TCC, 1, 0, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC0
-    {PWM_TCC, 1, 1, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC1_CC1
-    {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC2
-    {PWM_TCC, 0, 3, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC3
-    {PWM_TCC, 0, 0, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC0
-    {PWM_TCC, 0, 1, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC0_CC1
-    {PWM_TCC, 2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}, // TCC2_CC0
-    {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US}  // TCC2_CC1
+static struct pwm_output thrusters[8] = {
+    {PWM_TCC, 1, 0, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TCC1_CC0
+    {PWM_TCC, 1, 1, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TCC1_CC1
+    {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TCC0_CC2
+    {PWM_TCC, 0, 3, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TCC0_CC3
+    {PWM_TCC, 0, 0, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TCC0_CC0
+    {PWM_TCC, 0, 1, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TCC0_CC1
+    {PWM_TCC, 2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TCC2_CC0
+    {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}  // TCC2_CC1
 };
 
 static const struct {
@@ -83,7 +84,7 @@ static const struct {
     { 9, 8 },   /* slot 7: AIN9  ? Thruster 8 */
 };
 
-static const struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US}}; // TC3_CC1. For MPWM TOP = CC0 and duty cycle is determined by CC1
+static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US, 1100}}; // TC3_CC1. For MPWM TOP = CC0 and duty cycle is determined by CC1
 
 // FOR TESTING
 void generate_pwm_signals();
@@ -102,7 +103,7 @@ void test_can_tx();
  * @param outputs Pointer to array of pwm_output structs
  * @param count Number of outputs to set
  */
-static void set_pwm_outputs(const uint8_t *data, const struct pwm_output *outputs, size_t count);
+static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count);
 
 /**
  * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
@@ -135,7 +136,7 @@ static bool send_thruster_fault(uint8_t thruster_id);
  * @param outputs Pointer to array of pwm_output structs
  * @param count Number of outputs to set
  */
-static void set_pwm_neutral(const struct pwm_output *outputs, size_t count);
+static void set_pwm_neutral(struct pwm_output *outputs, size_t count);
 
 /**
  * @brief Clamps a value between a minimum and maximum bound.
@@ -315,12 +316,13 @@ static void log_current(void) {
         float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
         
-        printf("TH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A\r\n",
+        printf("TH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
                imon_map[i].thruster,
                imon_map[i].ain,
                (unsigned)adc_result_array[i],
                V_Imon,
-               I_out);
+               I_out,
+               (unsigned)thrusters[i].current_pulse_us);
     }
 }
 
@@ -349,7 +351,7 @@ static bool send_thruster_fault(uint8_t thruster_id) {
 }
 
 
-static void set_pwm_outputs(const uint8_t *data, const struct pwm_output *outputs, size_t count) {
+static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
     const uint16_t *pulse_data = (const uint16_t *)data;
     for (size_t i = 0; i < count; i++) {
         
@@ -365,16 +367,20 @@ static void set_pwm_outputs(const uint8_t *data, const struct pwm_output *output
         } else if (outputs[i].mode == MPWM_TC) {
             TC3_Compare16bitPeriodSet(ticks);
         } 
+        
+        outputs[i].current_pulse_us = pulse_us; // Update struct
     }
     
     // Pet the watchdog after applying updates 
     WDT_Clear();
 }
 
-static void set_pwm_neutral(const struct pwm_output *outputs, size_t count) {
+static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
     for (size_t i = 0; i < count; i++) {
         uint32_t ticks = us_to_ticks(outputs[i].period_ticks, outputs[i].neutral_us, outputs[i].frame_us);
         tcc_write(outputs[i].instance, outputs[i].channel, ticks);
+        
+        outputs[i].current_pulse_us = outputs[i].neutral_us; // Update struct
         
     }
     WDT_Clear();
