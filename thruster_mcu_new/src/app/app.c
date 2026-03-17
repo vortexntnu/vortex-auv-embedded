@@ -70,6 +70,8 @@ static struct pwm_output thrusters[8] = {
     {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}  // TH8 -> TCC0_CC2
 };
 
+static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US, 1100}}; // TC3_CC1
+
 static const struct {
     uint8_t ain;
     uint8_t thruster;
@@ -84,7 +86,13 @@ static const struct {
     { 9, 8 },   /* slot 7: AIN9  ? Thruster 8 */
 };
 
-static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US, 1100}}; // TC3_CC1
+typedef struct {
+    volatile uint8_t flt_pending_mask;   // bit 0-7 = FLT channels 0-7
+    volatile uint8_t pgood_pending_mask; // bit 0-7 = PGOOD channels 0-7
+    volatile uint8_t killswitch_pending_mask;
+} hw_event_flags_t;
+
+static hw_event_flags_t hw_events = {0};
 
 // FOR TESTING
 void generate_pwm_signals();
@@ -110,6 +118,14 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
  */
 static void message_handler(void);
 
+static bool send_flt_event(uint8_t context);
+
+static bool send_pgood_event(uint8_t context);
+
+static bool send_killswitch_event(uint8_t context);
+
+static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel));
+
 /**
  * @brief Logs thruster current readings from the IMON pins for all 8 channels.
  * 
@@ -118,17 +134,6 @@ static void message_handler(void);
  * where G_Imon = 18.31 uA/A and R_Imon = 4.6 kOhm for thrusters.
  */
 static void log_current(void);
-
-/**
- * @brief Sends a fault message over CAN when an EIC FLT interrupt fires.
- * 
- * Constructs and transmits a CAN FD fault message identifying which thruster
- * triggered a hardware fault via the FLT pin.
- * 
- * @param thruster_id Thruster identifier (0-7)
- * @return true if message was transmitted successfully, false if not
- */
-static bool send_thruster_fault(uint8_t thruster_id);
 
 /**
  * @brief Sets PWM outputs to their neutral/off position
@@ -262,6 +267,18 @@ void app_task(void) {
         log_current();
     }
     
+    if (hw_events.flt_pending_mask) {
+        dispatch_hw_event(&hw_events.flt_pending_mask, send_flt_event);
+    }
+    
+    if (hw_events.pgood_pending_mask) {
+        dispatch_hw_event(&hw_events.pgood_pending_mask, send_pgood_event);
+    }
+    
+    if (hw_events.killswitch_pending_mask) {
+        dispatch_hw_event(&hw_events.killswitch_pending_mask, send_killswitch_event);
+    }
+        
     //if (can_message_received) {
     //    can_message_received = false;
         //message_handler();
@@ -304,6 +321,75 @@ static void message_handler(void) {
             /* Unknown event: ignore */
             break;
     }
+}
+
+static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel)) {
+    uint8_t snapshot = *mask;
+    *mask = 0;
+    for (uint8_t i = 0; i < 8; i++) {
+        if (snapshot & (1U << i)) {
+            if (!send(i)) {
+                printf("ERROR: CAN Transmission failed\r\n");
+            }
+        }
+    }
+}
+
+
+static bool send_flt_event(uint8_t context) {
+    CAN_TX_BUFFER *txBuffer = NULL;
+    
+    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    txBuffer = (CAN_TX_BUFFER*)txFiFo;
+    
+    txBuffer->id = WRITE_ID(0x45A);
+    txBuffer->dlc = 15;
+    txBuffer->fdf = 1;
+    txBuffer->brs = 1;
+    
+    txBuffer->data[0] = context;
+    txBuffer->data[1] = 0x01;   // 0x01 = FLT event
+            
+    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    
+    return result;
+}
+
+static bool send_pgood_event(uint8_t context) {
+    CAN_TX_BUFFER *txBuffer = NULL;
+    
+    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    txBuffer = (CAN_TX_BUFFER*)txFiFo;
+    
+    txBuffer->id = WRITE_ID(0x45A);
+    txBuffer->dlc = 15;
+    txBuffer->fdf = 1;
+    txBuffer->brs = 1;
+    
+    txBuffer->data[0] = context;
+    txBuffer->data[1] = 0x02;   // 0x02 = PGOOD event
+    
+    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    
+    return result;
+}
+
+static bool send_killswitch_event(uint8_t context) {
+    CAN_TX_BUFFER *txBuffer = NULL;
+    
+    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
+    txBuffer = (CAN_TX_BUFFER*)txFiFo;
+    
+    txBuffer->id = WRITE_ID(0x45A);
+    txBuffer->dlc = 15;
+    txBuffer->fdf = 1;
+    txBuffer->brs = 1;
+    
+    txBuffer->data[0] = 0x03;   // 0x03 = Killswitch event
+    
+    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    
+    return result;
 }
 
 static void log_current(void) {
@@ -542,21 +628,20 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
 }
 
 static void eic_pin_flt_thruster(uintptr_t context) {
-    uint8_t thruster_id = (uint8_t)context;
+    uint8_t channel = (uint8_t)context;
+    hw_events.flt_pending_mask |= (1U << channel);
     
-    printf("Fault pin triggered for thruster %u\n", (unsigned int)thruster_id);
-    
-    set_pwm_neutral(thrusters, 8);
-    
-    // TODO: Send CAN fault message (I don't have the current available so send_thruster_fault() can't be used)
+    printf("Fault pin triggered for thruster %u\n", (unsigned int)channel);    
 }
 
 static void eic_pin_pg_thruster(uintptr_t context) {
-    uint8_t thruster_id = (uint8_t)context;
+    uint8_t channel = (uint8_t)context;
+    hw_events.pgood_pending_mask |= (1U << channel);
     
-    printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)thruster_id);
+    printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)channel);
 }
 
 static void eic_pin_killswitch(uintptr_t context) {
+    hw_events.killswitch_pending_mask |= 1U;
     printf("LOG: KILLSWITCH TRIGGERED");
 }
