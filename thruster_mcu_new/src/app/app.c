@@ -76,14 +76,14 @@ static const struct {
     uint8_t ain;
     uint8_t thruster;
 } imon_map[8] = {
-    { 0, 3 },   /* slot 0: AIN0  ? Thruster 3 */  
-    { 1, 4 },   /* slot 1: AIN1  ? Thruster 4 */
-    { 2, 1 },   /* slot 2: AIN2  ? Thruster 1 */
-    { 4, 2 },   /* slot 3: AIN4  ? Thruster 2 */
-    { 5, 5 },   /* slot 4: AIN5  ? Thruster 5 */
-    { 6, 6 },   /* slot 5: AIN6  ? Thruster 6 */
-    { 7, 7 },   /* slot 6: AIN7  ? Thruster 7 */
-    { 9, 8 },   /* slot 7: AIN9  ? Thruster 8 */
+    { 0, 3 },   /* AIN0 -> Thruster 3 */  
+    { 1, 4 },   /* AIN1 -> Thruster 4 */
+    { 2, 1 },   /* AIN2 -> Thruster 1 */
+    { 4, 2 },   /* AIN4 -> Thruster 2 */
+    { 5, 5 },   /* AIN5 -> Thruster 5 */
+    { 6, 6 },   /* AIN6 -> Thruster 6 */
+    { 7, 7 },   /* AIN7 -> Thruster 7 */
+    { 9, 8 },   /* AIN9 -> Thruster 8 */
 };
 
 typedef struct {
@@ -124,6 +124,8 @@ static bool send_pgood_event(uint8_t context);
 
 static bool send_killswitch_event(uint8_t context);
 
+static bool send_current_measurements(float I_arr[8]);
+
 static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel));
 
 /**
@@ -133,7 +135,7 @@ static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t chann
  * the efuse IMON transfer function: I_out = V_Imon / (G_Imon * R_Imon)
  * where G_Imon = 18.31 uA/A and R_Imon = 4.6 kOhm for thrusters.
  */
-static bool log_current(void);
+static void log_current(void);
 
 /**
  * @brief Sets PWM outputs to their neutral/off position
@@ -392,11 +394,7 @@ static bool send_killswitch_event(uint8_t context) {
     return result;
 }
 
-static bool log_current(void) {
-    const float ADC_VREF   = 5.0f;
-    const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
-    const float R_IMON     = 2697.0f;    // 2.697 kOhm sense resistor for thrusters
-    
+static bool send_current_measurements(float I_arr[8]) {
     CAN_TX_BUFFER *txBuffer = NULL;
     
     memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
@@ -408,10 +406,30 @@ static bool log_current(void) {
     txBuffer->brs = 1;
     
     txBuffer->data[0] = 0x00; // 0x00 = current logs
+    
+    for (size_t i = 0; i < 8; i++) {
+        memcpy(&txBuffer->data[1 + i * sizeof(float)], &I_arr[i], sizeof(float)); // Encode in single-precision floating-point format. Assumes little-endian decoding.
+    }
+    
+    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    
+    return result;
+    
+}
+
+static void log_current(void) {
+    const float ADC_VREF   = 5.0f;
+    const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
+    const float R_IMON     = 2697.0f;    // 2.697 kOhm sense resistor for thrusters
+    
+    float I_array[8] = {0};
+    
     printf("\n");
     for (size_t i = 0; i < 8; i++) {
         float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
+        
+        I_array[i] = I_out;
         
         printf("TH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
                imon_map[i].thruster,
@@ -420,12 +438,13 @@ static bool log_current(void) {
                V_Imon,
                I_out,
                (unsigned)thrusters[i].current_pulse_us);
-        memcpy(&txBuffer->data[1 + i * sizeof(float)], &I_out, sizeof(float)); // Encode in single-precision floating-point format. Assumes little-endian decoding.
     }
     
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    bool result = send_current_measurements(I_array);
     
-    return result;
+    if (!result) {
+        printf("CAN Transmission of current measurements failed!\r\n");
+    }
 }
 
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
