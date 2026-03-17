@@ -26,6 +26,7 @@
 #include <stdbool.h>                    // Defines true
 #include <stdio.h>
 #include <stdlib.h>                     // Defines EXIT_FAILURE
+#include "config/default/peripheral/systick/plib_systick.h"
 #include "definitions.h"                // SYS function prototypes
 #include "ic_bms/spi_test.h"
 
@@ -56,8 +57,12 @@ int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
-    bms_init_comm_voltage();
-    voltage_test_init();
+    SYSTICK_TimerStart();
+    BQ769x2_Init();
+    // bms_init_comm_voltage();
+    // voltage_test_init();
+
+    printf("BMS starting\r\n");
 
     while ( true )
     {

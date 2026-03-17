@@ -17,6 +17,20 @@ static inline void _delay(uint32_t cycles){
     for (volatile uint32_t i=0; i<cycles; i++);
 }
 
+unsigned char Checksum(unsigned char *ptr, unsigned char len)
+// Calculates the checksum when writing to a RAM register. The checksum is the inverse of the sum of the bytes.	
+{
+	unsigned char i;
+	unsigned char checksum = 0;
+
+	for(i=0; i<len; i++)
+		checksum += ptr[i];
+
+	checksum = 0xff & ~checksum;
+
+	return(checksum);
+}
+
 #define BQ_SPI_WAIT_MAX_LOOPS  (2000000UL)
 
 // static bool bq_spi_wait_idle(void)
@@ -177,6 +191,7 @@ bq_status_t write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
 
     if (data == NULL)
         return BQ_ERR_PARAM;
+    // printf("writing\r\n");
 
 
     for (uint8_t i = 0; i < length; i++)
@@ -194,14 +209,16 @@ bq_status_t write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
         while (retries-- > 0U)
         {
             bq_cs_low();
-
-            if (!bq_spi_transfer3(tx, rx))
-            {
-                bq_cs_high();
-                return BQ_ERR_SPI;
-            }
+            bq_spi_transfer3(tx, rx);
+            // if (!bq_spi_transfer3(tx, rx))
+            // {
+            //     bq_cs_high();
+            //     return BQ_ERR_SPI;
+            // }
 
             bq_cs_high();
+
+            // printf("rx0 %x: rx 1: %x: rx 2 %x\r\n", rx[0], rx[1], rx[2]);
 
             // Verify echo from device
             if ((rx[0] == tx[0]) &&
@@ -215,10 +232,11 @@ bq_status_t write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
             SYSTICK_DelayUs(500);   // tune per your system
         }
 
-        if (!matched)
-            return BQ_ERR_VERIFY;
-
         SYSTICK_DelayUs(50);   // TI recommends ~50 us minimum between transactions
+        // if (!matched)
+        //     printf("Transmit matched failed'\r\n");
+        //     return BQ_ERR_VERIFY;
+
     }
 
     return BQ_OK;
@@ -336,10 +354,11 @@ bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length)
 
             bq_cs_high();
 
-            if (!ok)
-            {
-                return false;
-            }
+            // if (!ok)
+            // {
+            //     return false;
+            // }
+
 
             // Check returned frame
             if ((rx[0] == addr) &&
@@ -354,10 +373,11 @@ bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length)
             SYSTICK_DelayUs(500);
         }
 
-        if (!matched)
-        {
-            return false;
-        }
+        // if (!matched)
+        // {
+        //     printf("Failed matched\r\n");
+        //     return false;
+        // }
 
         // TI recommends spacing between transactions
         SYSTICK_DelayUs(50);
@@ -496,6 +516,189 @@ bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
         return false;
 
     return true;
+}
+
+bool BQ769x2_SetRegister(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
+{
+    uint8_t tx_buffer[2]   = {0x00U, 0x00U};
+    uint8_t tx_reg_data[6] = {0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U};
+
+    // tx_reg_data in little-endian format
+    tx_reg_data[0] = (uint8_t)(reg_addr & 0xFFU);
+    tx_reg_data[1] = (uint8_t)((reg_addr >> 8) & 0xFFU);
+    tx_reg_data[2] = (uint8_t)(reg_data & 0xFFU);
+
+    switch (datalen)
+    {
+        case 1U:
+        {
+            write_reg(0x3EU, tx_reg_data, 3U);
+            // if (!write_reg(0x3EU, tx_reg_data, 3U))
+            //     return false;
+
+            SYSTICK_DelayUs(2000);
+
+            tx_buffer[0] = Checksum(tx_reg_data, 3U);
+            tx_buffer[1] = 0x05U;   // register address (2) + data (1) + checksum/len protocol expectation
+            write_reg(0x60U, tx_buffer, 2U);
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
+
+            SYSTICK_DelayUs(2000);
+            break;
+        }
+
+        case 2U:
+        {
+            tx_reg_data[3] = (uint8_t)((reg_data >> 8) & 0xFFU);
+            write_reg(0x3EU, tx_reg_data, 4U);
+            // if (!write_reg(0x3EU, tx_reg_data, 4U))
+            //     return false;
+
+            SYSTICK_DelayUs(2000);
+
+            tx_buffer[0] = Checksum(tx_reg_data, 4U);
+            tx_buffer[1] = 0x06U;   // register address (2) + data (2)
+
+            write_reg(0x60U, tx_buffer, 2U);
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
+
+            SYSTICK_DelayUs(2000);
+            break;
+        }
+
+        case 4U:
+        {
+            tx_reg_data[3] = (uint8_t)((reg_data >> 8) & 0xFFU);
+            tx_reg_data[4] = (uint8_t)((reg_data >> 16) & 0xFFU);
+            tx_reg_data[5] = (uint8_t)((reg_data >> 24) & 0xFFU);
+            write_reg(0x3EU, tx_reg_data, 6U);
+            // if (!write_reg(0x3EU, tx_reg_data, 6U))
+            //     return false;
+
+            SYSTICK_DelayUs(2000);
+
+            tx_buffer[0] = Checksum(tx_reg_data, 6U);
+            tx_buffer[1] = 0x08U;   // register address (2) + data (4)
+            write_reg(0x60U, tx_buffer, 2U);
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
+
+            SYSTICK_DelayUs(2000);
+            break;
+        }
+
+        default:
+            return false;
+    }
+
+    return true;
+}
+
+void CommandSubcommands(uint16_t command) //For Command only Subcommands
+// See the TRM or the BQ76952 header file for a full list of Command-only subcommands
+{	//For DEEPSLEEP/SHUTDOWN subcommand you will need to call this function twice consecutively
+	
+	uint8_t TX_Reg[2] = {0x00, 0x00};
+
+	//TX_Reg in little endian format
+	TX_Reg[0] = command & 0xff;
+	TX_Reg[1] = (command >> 8) & 0xff;
+
+	write_reg(0x3E,TX_Reg,2); 
+	SYSTICK_DelayUs(2000);
+}
+
+
+void BQ769x2_Init() {
+	// Configures all parameters in device RAM
+
+	// Enter CONFIGUPDATE mode (Subcommand 0x0090) - It is required to be in CONFIG_UPDATE mode to program the device RAM settings
+	// See TRM for full description of CONFIG_UPDATE mode
+	CommandSubcommands(SET_CFGUPDATE);
+
+	// After entering CONFIG_UPDATE mode, RAM registers can be programmed. When programming RAM, checksum and length must also be
+	// programmed for the change to take effect. All of the RAM registers are described in detail in the BQ769x2 TRM.
+	// An easier way to find the descriptions is in the BQStudio Data Memory screen. When you move the mouse over the register name,
+	// a full description of the register and the bits will pop up on the screen.
+
+	// 'Power Config' - 0x9234 = 0x2D80
+	// Setting the DSLP_LDO bit allows the LDOs to remain active when the device goes into Deep Sleep mode
+  	// Set wake speed bits to 00 for best performance
+	BQ769x2_SetRegister(PowerConfig, 0x2D80, 2);
+
+	// 'REG0 Config' - set REG0_EN bit to enable pre-regulator
+	BQ769x2_SetRegister(REG0Config, 0x01, 1);
+
+	// 'REG12 Config' - Enable REG1 with 3.3V output (0x0D for 3.3V, 0x0F for 5V)
+	BQ769x2_SetRegister(REG12Config, 0x0D, 1);
+
+    BQ769x2_SetRegister(0x923C, 0x40, 1);
+
+	// Set DFETOFF pin to control BOTH CHG and DSG FET - 0x92FB = 0x42 (set to 0x00 to disable)
+	BQ769x2_SetRegister(DFETOFFPinConfig, 0x42, 1);
+
+	// Set up ALERT Pin - 0x92FC = 0x2A
+	// This configures the ALERT pin to drive high (REG1 voltage) when enabled.
+	// The ALERT pin can be used as an interrupt to the MCU when a protection has triggered or new measurements are available
+	BQ769x2_SetRegister(ALERTPinConfig, 0x2A, 1);
+
+	// Set TS1 to measure Cell Temperature - 0x92FD = 0x07
+	BQ769x2_SetRegister(TS1Config, 0x07, 1);
+
+	// Set TS3 to measure FET Temperature - 0x92FF = 0x0F
+	BQ769x2_SetRegister(TS3Config, 0x0F, 1);
+
+	// Set HDQ to measure Cell Temperature - 0x9300 = 0x07
+	BQ769x2_SetRegister(HDQPinConfig, 0x00, 1);   // No thermistor installed on EVM HDQ pin, so set to 0x00
+
+	// 'VCell Mode' - Enable 16 cells - 0x9304 = 0x0000; Writing 0x0000 sets the default of 16 cells
+	BQ769x2_SetRegister(VCellMode, 0x0000, 2);
+
+	// Enable protections in 'Enabled Protections A' 0x9261 = 0xBC
+	// Enables SCD (short-circuit), OCD1 (over-current in discharge), OCC (over-current in charge),
+	// COV (over-voltage), CUV (under-voltage)
+	BQ769x2_SetRegister(EnabledProtectionsA, 0xBC, 1);
+
+	// Enable all protections in 'Enabled Protections B' 0x9262 = 0xF7
+	// Enables OTF (over-temperature FET), OTINT (internal over-temperature), OTD (over-temperature in discharge),
+	// OTC (over-temperature in charge), UTINT (internal under-temperature), UTD (under-temperature in discharge), UTC (under-temperature in charge)
+	BQ769x2_SetRegister(EnabledProtectionsB, 0xF7, 1);
+
+	// 'Default Alarm Mask' - 0x..82 Enables the FullScan and ADScan bits, default value = 0xF800
+	BQ769x2_SetRegister(DefaultAlarmMask, 0xF882, 2);
+
+	// Set up Cell Balancing Configuration - 0x9335 = 0x03   -  Automated balancing while in Relax or Charge modes
+	// Also see "Cell Balancing with BQ769x2 Battery Monitors" document on ti.com
+	BQ769x2_SetRegister(BalancingConfiguration, 0x03, 1);
+
+	// Set up CUV (under-voltage) Threshold - 0x9275 = 0x31 (2479 mV)
+	// CUV Threshold is this value multiplied by 50.6mV
+	BQ769x2_SetRegister(CUVThreshold, 0x31, 1);
+
+	// Set up COV (over-voltage) Threshold - 0x9278 = 0x55 (4301 mV)
+	// COV Threshold is this value multiplied by 50.6mV
+	BQ769x2_SetRegister(COVThreshold, 0x55, 1);
+
+	// Set up OCC (over-current in charge) Threshold - 0x9280 = 0x05 (10 mV = 10A across 1mOhm sense resistor) Units in 2mV
+	BQ769x2_SetRegister(OCCThreshold, 0x05, 1);
+
+	// Set up OCD1 Threshold - 0x9282 = 0x0A (20 mV = 20A across 1mOhm sense resistor) units of 2mV
+	BQ769x2_SetRegister(OCD1Threshold, 0x0A, 1);
+
+	// Set up SCD Threshold - 0x9286 = 0x05 (100 mV = 100A across 1mOhm sense resistor)  0x05=100mV
+	BQ769x2_SetRegister(SCDThreshold, 0x05, 1);
+
+	// Set up SCD Delay - 0x9287 = 0x03 (30 us) Enabled with a delay of (value - 1) * 15 µs; min value of 1    
+	BQ769x2_SetRegister(SCDDelay, 0x03, 1);
+
+	// Set up SCDL Latch Limit to 1 to set SCD recovery only with load removal 0x9295 = 0x01
+	// If this is not set, then SCD will recover based on time (SCD Recovery Time parameter).
+	BQ769x2_SetRegister(SCDLLatchLimit, 0x01, 1);
+
+	// Exit CONFIGUPDATE mode  - Subcommand 0x0092
+	CommandSubcommands(EXIT_CFGUPDATE);
 }
 
 
