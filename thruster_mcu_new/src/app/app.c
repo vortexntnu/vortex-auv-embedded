@@ -199,29 +199,29 @@ void app_init(void) {
     EIC_NMICallbackRegister(eic_pin_killswitch, 0);
     
     // Configure callbacks for FLT pins
-    EIC_CallbackRegister(EIC_PIN_0, eic_pin_pg_thruster, 5);
-    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 5);
+    EIC_CallbackRegister(EIC_PIN_0, eic_pin_pg_thruster, 4);
+    EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 4);
     
-    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 6);
-    EIC_CallbackRegister(EIC_PIN_3, eic_pin_pg_thruster, 6);
+    EIC_CallbackRegister(EIC_PIN_2, eic_pin_flt_thruster, 5);
+    EIC_CallbackRegister(EIC_PIN_3, eic_pin_pg_thruster, 5);
     
-    EIC_CallbackRegister(EIC_PIN_4, eic_pin_pg_thruster, 4);
-    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 4);
+    EIC_CallbackRegister(EIC_PIN_4, eic_pin_pg_thruster, 3);
+    EIC_CallbackRegister(EIC_PIN_5, eic_pin_flt_thruster, 3);
     
-    EIC_CallbackRegister(EIC_PIN_6, eic_pin_pg_thruster, 3);
-    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 3); 
+    EIC_CallbackRegister(EIC_PIN_6, eic_pin_pg_thruster, 2);
+    EIC_CallbackRegister(EIC_PIN_7, eic_pin_flt_thruster, 2); 
     
-    EIC_CallbackRegister(EIC_PIN_8, eic_pin_pg_thruster, 2);
-    EIC_CallbackRegister(EIC_PIN_9, eic_pin_flt_thruster, 2);
+    EIC_CallbackRegister(EIC_PIN_8, eic_pin_pg_thruster, 1);
+    EIC_CallbackRegister(EIC_PIN_9, eic_pin_flt_thruster, 1);
     
-    EIC_CallbackRegister(EIC_PIN_10, eic_pin_pg_thruster, 8);
-    EIC_CallbackRegister(EIC_PIN_11, eic_pin_flt_thruster, 8);
+    EIC_CallbackRegister(EIC_PIN_10, eic_pin_pg_thruster, 7);
+    EIC_CallbackRegister(EIC_PIN_11, eic_pin_flt_thruster, 7);
     
-    EIC_CallbackRegister(EIC_PIN_12, eic_pin_pg_thruster, 7);
-    EIC_CallbackRegister(EIC_PIN_13, eic_pin_flt_thruster, 7);
+    EIC_CallbackRegister(EIC_PIN_12, eic_pin_pg_thruster, 6);
+    EIC_CallbackRegister(EIC_PIN_13, eic_pin_flt_thruster, 6);
     
-    EIC_CallbackRegister(EIC_PIN_14, eic_pin_flt_thruster, 1);
-    EIC_CallbackRegister(EIC_PIN_15, eic_pin_pg_thruster, 1);
+    EIC_CallbackRegister(EIC_PIN_14, eic_pin_flt_thruster, 0);
+    EIC_CallbackRegister(EIC_PIN_15, eic_pin_pg_thruster, 0);
     
     
     // Enable ADC
