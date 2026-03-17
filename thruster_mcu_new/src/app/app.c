@@ -308,7 +308,7 @@ static void message_handler(void) {
 static void log_current(void) {
     const float ADC_VREF   = 5.0f;
     const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
-    const float R_IMON     = 4020.0f;    // 4.02 kOhm sense resistor for thrusters
+    const float R_IMON     = 2697.0f;    // 2.697 kOhm sense resistor for thrusters
     
     printf("\n");
     for (size_t i = 0; i < 8; i++) {
