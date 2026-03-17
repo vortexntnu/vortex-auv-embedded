@@ -133,7 +133,7 @@ static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t chann
  * 
  * Reads ADC samples collected via DMA sleepwalking, converts to current using
  * the efuse IMON transfer function: I_out = V_Imon / (G_Imon * R_Imon)
- * where G_Imon = 18.31 uA/A and R_Imon = 4.6 kOhm for thrusters.
+ * where G_Imon = 18.31 uA/A and R_Imon = 2.697 kOhm for thrusters.
  */
 static void log_current(void);
 
@@ -457,7 +457,6 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
         
         uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, outputs[i].frame_us);
         
-        // TODO: Fix this shitty code
         if (outputs[i].mode == PWM_TCC) {
             tcc_write(outputs[i].instance, outputs[i].channel, ticks);
         } else if (outputs[i].mode == MPWM_TC) {
@@ -474,7 +473,12 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
 static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
     for (size_t i = 0; i < count; i++) {
         uint32_t ticks = us_to_ticks(outputs[i].period_ticks, outputs[i].neutral_us, outputs[i].frame_us);
-        tcc_write(outputs[i].instance, outputs[i].channel, ticks);
+        
+        if (outputs[i].mode == PWM_TCC) {
+            tcc_write(outputs[i].instance, outputs[i].channel, ticks);
+        } else if (outputs[i].mode == MPWM_TC) {
+            TC3_Compare16bitPeriodSet(ticks);
+        } 
         
         outputs[i].current_pulse_us = outputs[i].neutral_us; // Update struct
         
@@ -653,5 +657,5 @@ static void eic_pin_pg_thruster(uintptr_t context) {
 
 static void eic_pin_killswitch(uintptr_t context) {
     hw_events.killswitch_pending_mask |= 1U;
-    printf("LOG: KILLSWITCH TRIGGERED");
+    printf("KILLSWITCH triggered \n");
 }
