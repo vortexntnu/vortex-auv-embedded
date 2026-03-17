@@ -412,31 +412,6 @@ static void log_current(void) {
     }
 }
 
-
-static bool send_thruster_fault(uint8_t thruster_id) {
-    CAN_TX_BUFFER *txBuffer = NULL;
-    
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
-    txBuffer = (CAN_TX_BUFFER*)txFiFo;
-    
-    txBuffer->id = WRITE_ID(0x45A);
-    txBuffer->dlc = 8;
-    txBuffer->fdf = 1;
-    txBuffer->brs = 1;
-    
-    txBuffer->data[0] = thruster_id;
-    txBuffer->data[1] = 0x01; // Fault source: FLT pin (hardware fault)
-    // Bytes 2-7 reserved for future use (e.g. IMON reading once conversion is known)
-    
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
-    if (!result) {
-        printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
-    }
-    
-    return result;
-}
-
-
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
     const uint16_t *pulse_data = (const uint16_t *)data;
     for (size_t i = 0; i < count; i++) {
