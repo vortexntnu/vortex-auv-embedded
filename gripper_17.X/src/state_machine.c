@@ -51,7 +51,7 @@ void state_machine(struct state_context* ctx) {
 void can_rx_callback(uintptr_t context) {
     struct state_context* ctx = (struct state_context*)context;
 
-    // print_can_frame(ctx->rx_frame.id, ctx->rx_frame.len, ctx->rx_frame.timestamp, ctx->rx_frame.buf);
+    print_can_frame(ctx->rx_frame.id, ctx->rx_frame.len, ctx->rx_frame.timestamp, ctx->rx_frame.buf);
     // CAN_ERROR err = CAN0_ErrorGet();
     // if (err) {
     //     return;
