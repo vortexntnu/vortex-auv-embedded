@@ -77,8 +77,22 @@ int main(void) {
     printf("Start Gripper\r\n");
     start_gripper();
 
+      struct can_tx_frame tx;
+      tx.id = 0x369;
+      tx.len = 8; 
+      tx.buf[0] = 1;
+      tx.buf[1] = 2;
+      tx.buf[2] = 3;
+      tx.buf[3] = 4;
+      tx.buf[4] = 5;
+      tx.buf[5] = 6;
+      tx.buf[6] = 7;
+      tx.buf[7] = 8;
+    printf("sending can frame\r\n");
+      can_transmit(&tx);
+
     while (true) {
-        // PM_IdleModeEnter();
+        PM_IdleModeEnter();
         state_machine(&state_context);
     }
 
