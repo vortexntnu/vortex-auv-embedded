@@ -45,7 +45,6 @@ void state_machine(struct state_context* ctx) {
         encoder_num = 0;
     }
 
-    can_recieve(&ctx->rx_frame);
 }
 
 void can_rx_callback(uintptr_t context) {
@@ -73,6 +72,7 @@ void can_rx_callback(uintptr_t context) {
         default:
             break;
     }
+    can_recieve(&ctx->rx_frame);
 }
 
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
