@@ -117,12 +117,20 @@ void CAN1_Initialize(void)
 
     /* Set CCE to unlock the configuration registers */
     CAN1_REGS->CAN_CCCR |= CAN_CCCR_CCE_Msk;
+    //
+    // /* Set Data Bit Timing and Prescaler Register */
+    // CAN1_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(0UL) | CAN_DBTP_DTSEG1(5UL) | CAN_DBTP_DBRP(2UL) | CAN_DBTP_DSJW(4UL);
+    //
+    // /* Set Nominal Bit timing and Prescaler Register */
+    // CAN1_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(29UL) | CAN_NBTP_NBRP(2UL) | CAN_NBTP_NSJW(4UL);
 
-    /* Set Data Bit Timing and Prescaler Register */
-    CAN1_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(0UL) | CAN_DBTP_DTSEG1(5UL) | CAN_DBTP_DBRP(2UL) | CAN_DBTP_DSJW(4UL);
+/* Set Data Bit Timing and Prescaler Register */ CAN1_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(5) | CAN_DBTP_DTSEG1(16) |  CAN_DBTP_DBRP(0) | CAN_DBTP_DSJW(4);
+    // /* Set Nominal Bit timing and Prescaler Register */
+    CAN1_REGS->CAN_NBTP = CAN_NBTP_NTSEG2(5) | CAN_NBTP_NTSEG1(16) |  CAN_NBTP_NBRP(3) | CAN_NBTP_NSJW(4);
+    // /* Set Data Bit Timing and Prescaler Register */ CAN1_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(0UL) | CAN_DBTP_DTSEG1(5UL) | CAN_DBTP_DBRP(2UL) | CAN_DBTP_DSJW(4UL);
+    // /* Set Nominal Bit timing and Prescaler Register */ CAN1_REGS->CAN_NBTP = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(29UL) | CAN_NBTP_NBRP(2UL) | CAN_NBTP_NSJW(4UL);
+    //
 
-    /* Set Nominal Bit timing and Prescaler Register */
-    CAN1_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(29UL) | CAN_NBTP_NBRP(2UL) | CAN_NBTP_NSJW(4UL);
 
     /* Receive Buffer / FIFO Element Size Configuration Register */
     CAN1_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(7UL) | CAN_RXESC_F1DS(7UL);

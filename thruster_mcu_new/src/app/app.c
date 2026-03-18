@@ -397,7 +397,7 @@ void test_can_tx() {
     memset(txFiFo, 0x00, CAN0_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
-    txBuffer->id = WRITE_ID(0x45B);
+    txBuffer->id = WRITE_ID(0x46B);
     txBuffer->dlc = 8;
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
