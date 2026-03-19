@@ -315,6 +315,9 @@ data:
             id: can_bootloader
             value: '7'
           type: Dynamic
+        - attributes:
+            value: '7'
+          type: User
         type: Values
       type: KeyValueSet
     RXF0_ELEMENTS:
