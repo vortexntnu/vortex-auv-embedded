@@ -81,7 +81,7 @@ int wsen_init(void) {
 
 /**
  * @brief Can be used to check successful connection with wsen-pads.
- * @return -1 on failure, 0 otherwise.
+ * @return -1 on SPI failure, -2 on unexpected device id, and 0 on success.
  */
 int wsen_check_device_id(void) {
     uint8_t reg = REG_DEVICE_ID | 0x80; // MSB 1 for read
@@ -93,7 +93,7 @@ int wsen_check_device_id(void) {
     if (device_id == EXPECTED_DEVICE_ID) {
         return 0;
     } else {
-        return -1;
+        return -2;
     }
 }
 
@@ -231,7 +231,7 @@ void drdy_init(void) {
 // This function uses polling to check if the pressure data is ready before
 // reading. It is currently not used in the code as we use the interrupt pin
 // instead.
-int read_pressure(float* pressure) {
+int polling_read_pressure(float* pressure) {
     uint8_t status = 0;
     uint8_t rawData[3];
     int32_t rawPressure;

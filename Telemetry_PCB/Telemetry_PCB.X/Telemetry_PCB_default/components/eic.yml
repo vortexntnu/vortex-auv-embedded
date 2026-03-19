@@ -67,7 +67,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: '0'
+            value: '260'
           type: Dynamic
         type: Values
       type: Hex
@@ -77,7 +77,27 @@ data:
       children:
       - children:
         - attributes:
-            value: 'false'
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CHAN_8:
+      attributes:
+        id: EIC_CHAN_8
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_8:
+      attributes:
+        id: EIC_INT_8
+      children:
+      - children:
+        - attributes:
+            value: 'true'
           type: User
         type: Values
       type: Boolean

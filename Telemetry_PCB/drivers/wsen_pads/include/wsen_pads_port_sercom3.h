@@ -18,6 +18,7 @@ void wsen_cycle_tick(void);
 bool wsen_cycle_done_ok(float* kPa, float* degC);
 bool wsen_cycle_failed(void);
 void wsen_reset(void);
+int polling_read_pressure(float* pressure);
 
 #ifdef __cplusplus
 }

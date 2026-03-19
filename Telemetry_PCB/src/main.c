@@ -39,6 +39,7 @@
 #include "node_watchdog.h"
 #include "interrupts.h"
 #include "ws2812_port_sercom0_harmony.h"
+#include "wsen_pads_port_sercom3.h"
 
 #define LED_CMD_STDID  (0x469u)
 
@@ -105,7 +106,22 @@ int main(void)
     led_can_watchdog_set_send_cb(watchdog_can_send);
     led_can_watchdog_init(millis());
     
-    
+    switch (wsen_check_device_id())
+    {
+    case 0:
+        printf("Successful connection\n");
+        break;
+    case -1:
+        printf("SPI connection failure\n");
+        break;
+    case -2:
+        printf("Unexpected device ID\n");
+        break;
+    default:
+        printf("Something went wrong:(\n");
+        break;
+    }
+
     
     while (true)
     {

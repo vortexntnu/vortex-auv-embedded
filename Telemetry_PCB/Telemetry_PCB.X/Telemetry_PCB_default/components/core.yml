@@ -264,7 +264,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -275,7 +275,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -286,7 +286,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: EIC_Handler
+            value: EIC_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -297,7 +297,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -506,7 +506,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1801e'
+            value: '0x1c01e'
           type: Dynamic
         type: Values
       type: String
@@ -715,7 +715,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -726,7 +726,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: EIC_Handler
+            value: EIC_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -737,7 +737,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -893,7 +893,7 @@ data:
       children:
       - children:
         - attributes:
-            value: SERCOM1_PAD0
+            value: SERCOM3_PAD0
           type: User
         type: Values
       type: String
@@ -913,7 +913,7 @@ data:
       children:
       - children:
         - attributes:
-            value: C
+            value: D
           type: User
         type: Values
       type: String
@@ -923,7 +923,7 @@ data:
       children:
       - children:
         - attributes:
-            value: SERCOM1_PAD1
+            value: SERCOM3_PAD1
           type: User
         type: Values
       type: String
@@ -943,7 +943,7 @@ data:
       children:
       - children:
         - attributes:
-            value: C
+            value: D
           type: User
         type: Values
       type: String
@@ -953,7 +953,7 @@ data:
       children:
       - children:
         - attributes:
-            value: SERCOM1_PAD2
+            value: EIC_EXTINT2
           type: User
         type: Values
       type: String
@@ -973,7 +973,7 @@ data:
       children:
       - children:
         - attributes:
-            value: C
+            value: A
           type: User
         type: Values
       type: String
@@ -983,7 +983,7 @@ data:
       children:
       - children:
         - attributes:
-            value: SERCOM1_PAD3
+            value: SERCOM3_PAD3
           type: User
         type: Values
       type: String
@@ -1003,53 +1003,13 @@ data:
       children:
       - children:
         - attributes:
-            value: C
-          type: User
-        type: Values
-      type: String
-    PIN_21_FUNCTION_TYPE:
-      attributes:
-        id: PIN_21_FUNCTION_TYPE
-      children:
-      - children:
-        - attributes:
-            value: SERCOM3_PAD0
-          type: User
-        type: Values
-      type: String
-    PIN_21_MODE:
-      attributes:
-        id: PIN_21_MODE
-      children:
-      - children:
-        - attributes:
-            value: ''
+            value: D
           type: User
         type: Values
       type: String
     PIN_21_PERIPHERAL_FUNCTION:
       attributes:
         id: PIN_21_PERIPHERAL_FUNCTION
-      children:
-      - children:
-        - attributes:
-            value: C
-          type: User
-        type: Values
-      type: String
-    PIN_22_FUNCTION_TYPE:
-      attributes:
-        id: PIN_22_FUNCTION_TYPE
-      children:
-      - children:
-        - attributes:
-            value: SERCOM3_PAD1
-          type: User
-        type: Values
-      type: String
-    PIN_22_MODE:
-      attributes:
-        id: PIN_22_MODE
       children:
       - children:
         - attributes:
@@ -1063,7 +1023,7 @@ data:
       children:
       - children:
         - attributes:
-            value: C
+            value: ''
           type: User
         type: Values
       type: String
@@ -1533,7 +1493,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1'
+            value: '0x0'
           type: Dynamic
         type: Values
       type: String
@@ -1544,7 +1504,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1'
+            value: '0x0'
           type: Dynamic
         type: Values
       type: String
@@ -1720,7 +1680,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1731,7 +1691,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1841,7 +1801,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x22'
+            value: '0x0'
           type: Dynamic
         type: Values
       type: String
@@ -1918,7 +1878,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x22'
+            value: '0x33'
           type: Dynamic
         type: Values
       type: String
@@ -1929,7 +1889,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x22'
+            value: '0x30'
           type: Dynamic
         type: Values
       type: String
@@ -2325,6 +2285,179 @@ data:
       - children:
         - attributes:
             id: tc4
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_27_MODE:
+      attributes:
+        id: PIN_27_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_27_FUNCTION_TYPE:
+      attributes:
+        id: PIN_27_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: EIC_EXTINT8
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_0_PMUX14:
+      attributes:
+        id: PORT_GROUP_0_PMUX14
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x0'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PAD_28:
+      attributes:
+        id: PORT_GROUP_0_PAD_28
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PA28
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PINCFG28:
+      attributes:
+        id: PORT_GROUP_0_PINCFG28
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PIN_28_USED:
+      attributes:
+        id: PORT_GROUP_0_PIN_28_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_27_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_27_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: A
+          type: User
+        type: Values
+      type: String
+    TC2_CLOCK_FREQUENCY:
+      attributes:
+        id: TC2_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TC2_CLOCK_ENABLE:
+      attributes:
+        id: TC2_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC2_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: TC2_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_22_0_ENABLE:
+      attributes:
+        id: NVIC_22_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC2_INTERRUPT_ENABLE:
+      attributes:
+        id: TC2_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: tc2
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_22_0_HANDLER:
+      attributes:
+        id: NVIC_22_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: TC2_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    TC2_INTERRUPT_HANDLER:
+      attributes:
+        id: TC2_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: tc2
+            value: TC2_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    NVIC_22_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_22_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC2_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: TC2_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: tc2
             value: 'true'
           type: Dynamic
         type: Values

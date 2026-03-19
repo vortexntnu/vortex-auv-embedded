@@ -59,11 +59,13 @@
 void Reset_Handler (void);
 void NonMaskableInt_Handler (void);
 void HardFault_Handler (void);
+void EIC_InterruptHandler (void);
 void DMAC_InterruptHandler (void);
 void SERCOM0_SPI_InterruptHandler (void);
 void SERCOM1_USART_InterruptHandler (void);
-void SERCOM3_USART_InterruptHandler (void);
+void SERCOM3_SPI_InterruptHandler (void);
 void CAN0_InterruptHandler (void);
+void TC2_TimerInterruptHandler (void);
 void TC3_TimerInterruptHandler (void);
 void TC4_TimerInterruptHandler (void);
 
