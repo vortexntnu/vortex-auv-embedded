@@ -1,11 +1,29 @@
 {
-    "version": "1.9",
-    "propertyGroups": [
+    "version": "1.8",
+    "configurations": [
         {
-            "name": "default-uservariables",
-            "type": "uservariables",
-            "properties": {}
-        },
+            "name": "default",
+            "id": "conf1",
+            "device": "ATSAMC21E18A",
+            "imagePath": "./out/bms_e18a/default.elf",
+            "tool": "Atmel-ICE",
+            "packs": [
+                {
+                    "name": "SAMC21_DFP",
+                    "vendor": "Microchip",
+                    "version": "3.9.248"
+                },
+                {
+                    "name": "CMSIS",
+                    "vendor": "ARM",
+                    "version": "6.3.0"
+                }
+            ],
+            "fileSet": "default",
+            "toolchain": "default-XC32"
+        }
+    ],
+    "propertyGroups": [
         {
             "name": "default-XC32",
             "type": "toolchain",
@@ -33,13 +51,6 @@
                     "My_MCC_Config/src/packs/CMSIS",
                     "My_MCC_Config/src/packs/CMSIS/CMSIS/Core/Include"
                 ]
-            }
-        },
-        {
-            "name": "default-tool",
-            "type": "tool",
-            "properties": {
-                "programoptions.smart.program": "Never"
             }
         }
     ],
@@ -186,32 +197,6 @@
                 "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.h",
                 "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c"
             ]
-        }
-    ],
-    "configurations": [
-        {
-            "name": "default",
-            "id": "",
-            "device": "ATSAMC21E18A",
-            "imagePath": "./out/bms_e18a/default.elf",
-            "toolProperties": "default-tool",
-            "tool": "Atmel-ICE",
-            "packs": [
-                {
-                    "name": "SAMC21_DFP",
-                    "vendor": "Microchip",
-                    "version": "3.8.119"
-                },
-                {
-                    "name": "CMSIS",
-                    "vendor": "ARM",
-                    "version": "6.3.0"
-                }
-            ],
-            "fileSet": "default",
-            "toolchain": "default-XC32",
-            "userVariables": "default-uservariables",
-            "includeLegacyMacros": true
         }
     ]
 }

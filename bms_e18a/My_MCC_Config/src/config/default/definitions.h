@@ -60,7 +60,9 @@
 #include "peripheral/systick/plib_systick.h"
 #include "peripheral/can/plib_can0.h"
 #include "peripheral/eic/plib_eic.h"
+#include "peripheral/tc/plib_tc1.h"
 #include "peripheral/rtc/plib_rtc.h"
+#include "peripheral/tc/plib_tc0.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility

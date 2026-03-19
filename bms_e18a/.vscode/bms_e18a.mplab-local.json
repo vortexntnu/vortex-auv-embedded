@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "reference": "@conf1",
+            "reference": "default",
             "toolSerial": "J42700072145"
         }
     ]

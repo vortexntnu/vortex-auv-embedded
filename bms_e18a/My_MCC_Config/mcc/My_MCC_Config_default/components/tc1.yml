@@ -1,11 +1,11 @@
 configVersion: 1.0.0
-componentName: rtc
+componentName: tc1
 coreVersion: 5.8.4
 device: ATSAMC21E18A
 library: []
 dependency:
 - dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
-  name: rtc
+  name: tc1
   type: module
   version: ''
 - dependencyPackage: ''
@@ -21,9 +21,9 @@ data:
     children:
     - children:
       - attributes:
-          id: rtc
-          x: '109'
-          y: '148'
+          id: tc1
+          x: '452'
+          y: '37'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph

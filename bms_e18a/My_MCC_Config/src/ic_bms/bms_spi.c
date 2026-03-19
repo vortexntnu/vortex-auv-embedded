@@ -651,7 +651,7 @@ void BQ769x2_Init() {
 	// 'REG12 Config' - Enable REG1 with 3.3V output (0x0D for 3.3V, 0x0F for 5V)
 	bq_set_reg(REG12Config, 0x0D, 1);
 
-    bq_set_reg(0x923C, 0x40, 1);
+    bq_set_reg(SPIConfiguration, 0x40, 1); //SPI MODE
 
 	// Set DFETOFF pin to control BOTH CHG and DSG FET - 0x92FB = 0x42 (set to 0x00 to disable)
 	bq_set_reg(DFETOFFPinConfig, 0x42, 1);
@@ -671,7 +671,7 @@ void BQ769x2_Init() {
 	bq_set_reg(HDQPinConfig, 0x00, 1);   // No thermistor installed on EVM HDQ pin, so set to 0x00
 
 	// 'VCell Mode' - Enable 16 cells - 0x9304 = 0x0000; Writing 0x0000 sets the default of 16 cells
-	bq_set_reg(VCellMode, 0x0000, 2);
+	bq_set_reg(VCellMode, 1<<5, 2);
 
 	// Enable protections in 'Enabled Protections A' 0x9261 = 0xBC
 	// Enables SCD (short-circuit), OCD1 (over-current in discharge), OCC (over-current in charge),

@@ -7,12 +7,18 @@
 #include "app/can_facade.h"
 #include "spi_test.h"
 #include "bms_spi.h"
+#include "ms5837.h"
 #include "peripheral/port/plib_port.h"
 
 #define UART_TIMEOUT_LOOPS        (3000000UL)
 #define VOLTAGE_TEST_DELAY_CYCLES (24000000UL)
 #define CAN_SCOPE_TEST_ID         (0x123U)
 #define CAN_SCOPE_TEST_PERIOD_MS  (100U)
+#define MS5837_PRINT_DIVIDER      (50U)
+
+static struct ms5837_t ms5837_sensor;
+static bool ms5837_test_running = false;
+static uint16_t ms5837_sample_divider = 0U;
 
 static void delay_cycles(uint32_t cycles)
 {
@@ -72,6 +78,48 @@ static void uart_write_text(const char *text)
     {
         (void)uart_write_blocking((const uint8_t *)text, len);
     }
+}
+
+static void uart_write_ms5837_sample(const struct ms5837_t *sensor)
+{
+    char line[128];
+    int32_t pressure_mPa;
+    int32_t temp_centi_c;
+    int32_t temp_abs_centi_c;
+    int len;
+
+    if (sensor == NULL)
+    {
+        return;
+    }
+
+    pressure_mPa = (int32_t)(sensor->press_kPa * 1000.0f);
+    temp_centi_c = (int32_t)(sensor->temp_C * 100.0f);
+    temp_abs_centi_c = (temp_centi_c < 0) ? -temp_centi_c : temp_centi_c;
+
+    len = snprintf(
+        line,
+        sizeof(line),
+        "ms5837,p=%ld.%03ldkPa,t=%s%ld.%02ldC,d1=%lu,d2=%lu\r\n",
+        (long)(pressure_mPa / 1000),
+        (long)(pressure_mPa >= 0 ? (pressure_mPa % 1000) : ((-pressure_mPa) % 1000)),
+        (temp_centi_c < 0) ? "-" : "",
+        (long)(temp_abs_centi_c / 100),
+        (long)(temp_abs_centi_c % 100),
+        (unsigned long)sensor->D1,
+        (unsigned long)sensor->D2);
+
+    if (len <= 0)
+    {
+        return;
+    }
+
+    if ((size_t)len >= sizeof(line))
+    {
+        len = (int)(sizeof(line) - 1U);
+    }
+
+    (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
 }
 
 static const char *status_to_text(bms_state_t state)
@@ -208,6 +256,71 @@ void voltage_test_step(void)
 
     LED_Y_Toggle();
     delay_cycles(VOLTAGE_TEST_DELAY_CYCLES);
+}
+
+void ms5837_test_init(void)
+{
+    int8_t init_status;
+
+    LED_R_Clear();
+    LED_Y_Clear();
+    LED_G_Clear();
+
+    memset(&ms5837_sensor, 0, sizeof(ms5837_sensor));
+    /* TC0 is currently a 1 ms conversion timer, so keep the sensor at OSR 256 for this smoke test. */
+    ms5837_sensor.osr_code = MS5837_OSR_256;
+
+    init_status = ms5837_init(&ms5837_sensor);
+    if (init_status == 0)
+    {
+        ms5837_test_running = true;
+        ms5837_sample_divider = 0U;
+        uart_write_text("MS5837 test started\r\n");
+        uart_write_text("Expect UART lines: ms5837,p=...,t=...\r\n");
+    }
+    else
+    {
+        char line[48];
+        int len = snprintf(line, sizeof(line), "MS5837 init failed,%d\r\n", (int)init_status);
+
+        ms5837_test_running = false;
+        LED_R_Set();
+
+        if (len > 0)
+        {
+            if ((size_t)len >= sizeof(line))
+            {
+                len = (int)(sizeof(line) - 1U);
+            }
+            (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
+        }
+    }
+}
+
+void ms5837_test_step(void)
+{
+    if (!ms5837_test_running)
+    {
+        return;
+    }
+
+    ms5837_task(&ms5837_sensor);
+    if (!ms5837_sensor.has_fresh_sample)
+    {
+        return;
+    }
+
+    ms5837_sensor.has_fresh_sample = false;
+    ms5837_sample_divider++;
+    if (ms5837_sample_divider < MS5837_PRINT_DIVIDER)
+    {
+        return;
+    }
+
+    ms5837_sample_divider = 0U;
+    uart_write_ms5837_sample(&ms5837_sensor);
+    LED_G_Toggle();
+    LED_Y_Toggle();
 }
 
 void can_scope_test_init(void)

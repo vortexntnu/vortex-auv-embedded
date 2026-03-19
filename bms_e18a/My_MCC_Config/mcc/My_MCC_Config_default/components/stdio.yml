@@ -44,8 +44,8 @@ data:
     - children:
       - attributes:
           id: stdio
-          x: '305'
-          y: '276'
+          x: '265'
+          y: '224'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
