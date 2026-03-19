@@ -13,6 +13,12 @@
                 <sourceRootElem>../drivers/ws2812/src</sourceRootElem>
                 <sourceRootElem>../app/include</sourceRootElem>
                 <sourceRootElem>../app/src</sourceRootElem>
+                <sourceRootElem>../drivers/wsen-pads/include</sourceRootElem>
+                <sourceRootElem>../drivers/wsen-pads/src</sourceRootElem>
+                <sourceRootElem>../drivers/timers/src</sourceRootElem>
+                <sourceRootElem>../drivers/timers/include</sourceRootElem>
+                <sourceRootElem>../drivers/leakage-sensor/src</sourceRootElem>
+                <sourceRootElem>../drivers/leakage-sensor/include</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

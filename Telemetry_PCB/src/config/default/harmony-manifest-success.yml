@@ -4,13 +4,13 @@
 
 
 project: Telemetry_PCB
-creation_date: 2026-03-17T13:24:20.175+01:00[Europe/Berlin]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+creation_date: 2026-03-19T10:24:22.380+01:00[Europe/Berlin]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
 operating_system: Windows 11
 mcc_mode: IDE            # [IDE|Standalone|Headless]
-mcc_version: v5.5.2
-mcc_core_version: v5.7.1
+mcc_version: v5.6.3
+mcc_core_version: v5.8.3
 mplabx_version: v6.25        # if MPLAB X plugin only
-harmony_version: v1.5.5
+harmony_version: v5.6.3
 compiler: XC32 4.45
 
 modules:
