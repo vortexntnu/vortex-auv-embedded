@@ -12,14 +12,6 @@
 #define VOLTAGE_TEST_DELAY_CYCLES (24000000UL)
 #define CAN_SCOPE_TEST_PERIOD_MS  (100U)
 
-static bool s_cb_baseline_valid = false;
-static uint32_t s_cb_cell3_baseline_s = 0U;
-static uint16_t s_cb_last_active = 0xFFFFU;
-static uint16_t s_cb_last_present = 0xFFFFU;
-static uint32_t s_cb_last_cell3 = 0xFFFFFFFFUL;
-static bool s_cb_last_ok = false;
-static bool s_cb_occurred_reported = false;
-
 static void delay_cycles(uint32_t cycles)
 {
     volatile uint32_t i;
@@ -72,7 +64,7 @@ static void uart_write_text(const char *text)
     }
 }
 
-static void uart_write_voltages(const uint16_t cell_mV[10])
+static void uart_write_voltages(const uint16_t cell_mV[6])
 {
     char line[96];
     int len = snprintf(
@@ -84,7 +76,7 @@ static void uart_write_voltages(const uint16_t cell_mV[10])
         (unsigned int)cell_mV[2],
         (unsigned int)cell_mV[3],
         (unsigned int)cell_mV[4],
-        (unsigned int)cell_mV[9]
+        (unsigned int)cell_mV[5]
     );
 
     if (len <= 0)
@@ -100,32 +92,29 @@ static void uart_write_voltages(const uint16_t cell_mV[10])
     (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
 }
 
-static void uart_write_balance_status(
-    bool ok,
-    uint16_t active_mask,
-    uint16_t present_s,
-    uint32_t cell3_total_s,
-    bool occurred,
-    uint32_t delta_s)
+static void uart_write_alert_ssa(void)
 {
-    char line[128];
+    uint16_t alarm = 0U;
+    uint16_t ssa = 0U;
+    char line[48];
     int len;
 
-    if (!ok)
+    if (!bq_direct_command(AlarmStatus, &alarm, R))
     {
-        uart_write_text("cb,read_fail\r\n");
+        return;
+    }
+
+    if (!bq_direct_command(SafetyStatusA, &ssa, R))
+    {
         return;
     }
 
     len = snprintf(
         line,
         sizeof(line),
-        "cb,active=0x%04X,present_s=%u,cell3_total_s=%lu,delta_s=%lu,occurred=%u\r\n",
-        (unsigned int)active_mask,
-        (unsigned int)present_s,
-        (unsigned long)cell3_total_s,
-        (unsigned long)delta_s,
-        (unsigned int)(occurred ? 1U : 0U));
+        "alert=0x%04X,ssa=0x%04X\r\n",
+        (unsigned int)alarm,
+        (unsigned int)ssa);
 
     if (len <= 0)
     {
@@ -182,93 +171,28 @@ void spi_write_probe_step(void)
 
 void voltage_test_init(void)
 {
-    char line[64];
-    int len;
-
     LED_R_Clear();
     LED_Y_Clear();
 
-    s_cb_baseline_valid = bms_read_cb_cell3_total_time(&s_cb_cell3_baseline_s);
-    s_cb_last_active = 0xFFFFU;
-    s_cb_last_present = 0xFFFFU;
-    s_cb_last_cell3 = 0xFFFFFFFFUL;
-    s_cb_last_ok = false;
-    s_cb_occurred_reported = false;
-
     uart_write_text("BMS voltage test started\r\n");
     uart_write_text("voltage_order,c1,c2,c3,c4,c5,c10\r\n");
-
-    len = snprintf(
-        line,
-        sizeof(line),
-        "cb_baseline_cell3_s=%lu,%s\r\n",
-        (unsigned long)s_cb_cell3_baseline_s,
-        s_cb_baseline_valid ? "ok" : "fail");
-
-    if (len > 0)
-    {
-        if ((size_t)len >= sizeof(line))
-        {
-            len = (int)(sizeof(line) - 1U);
-        }
-        (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
-    }
 }
 
 void voltage_test_step(void)
 {
-    uint16_t cell_mV[10] = {0U};
-    uint16_t cb_active_mask = 0U;
-    uint16_t cb_present_s = 0U;
-    uint32_t cb_cell3_total_s = 0U;
-    bool cb_active_ok;
-    bool cb_present_ok;
-    bool cb_cell3_ok;
-    bool cb_ok;
-    bool occurred;
-    uint32_t delta_s = 0U;
-    bool ok = read_cells_1to10(cell_mV);
+    uint16_t cell_mV[6] = {0U};
+    bool ok = read_cells_1to6(cell_mV);
 
     if (ok)
     {
         uart_write_voltages(cell_mV);
+        uart_write_alert_ssa();
         LED_R_Clear();
     }
     else
     {
         uart_write_text("read fail\r\n");
         LED_R_Set();
-    }
-
-    cb_active_ok = bms_read_cb_active_cells(&cb_active_mask);
-    cb_present_ok = bms_read_cb_present_time(&cb_present_s);
-    cb_cell3_ok = bms_read_cb_cell3_total_time(&cb_cell3_total_s);
-    cb_ok = (cb_active_ok && cb_present_ok && cb_cell3_ok);
-
-    if (cb_ok && s_cb_baseline_valid && (cb_cell3_total_s >= s_cb_cell3_baseline_s))
-    {
-        delta_s = cb_cell3_total_s - s_cb_cell3_baseline_s;
-    }
-
-    occurred = (cb_ok && s_cb_baseline_valid && (delta_s > 0U));
-
-    if ((cb_ok != s_cb_last_ok) ||
-        (cb_active_mask != s_cb_last_active) ||
-        (cb_present_s != s_cb_last_present) ||
-        (cb_cell3_total_s != s_cb_last_cell3))
-    {
-        uart_write_balance_status(cb_ok, cb_active_mask, cb_present_s, cb_cell3_total_s, occurred, delta_s);
-
-        s_cb_last_ok = cb_ok;
-        s_cb_last_active = cb_active_mask;
-        s_cb_last_present = cb_present_s;
-        s_cb_last_cell3 = cb_cell3_total_s;
-    }
-
-    if (occurred && !s_cb_occurred_reported)
-    {
-        uart_write_text("cb_event,cell3_balancing_observed\r\n");
-        s_cb_occurred_reported = true;
     }
 
     LED_Y_Toggle();

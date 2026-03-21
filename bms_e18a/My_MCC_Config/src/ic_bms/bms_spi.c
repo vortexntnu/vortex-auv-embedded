@@ -12,14 +12,6 @@
 static inline void bq_cs_low(void)  { CS_Clear(); }
 static inline void bq_cs_high(void) { CS_Set(); }
 
-static volatile bool s_bms_alert_pending = false;
-
-static void bms_alert_eic_callback(uintptr_t context)
-{
-    (void)context;
-    s_bms_alert_pending = true;
-}
-
 static inline void _delay(uint32_t cycles){
 
     for (volatile uint32_t i=0; i<cycles; i++);
@@ -56,7 +48,7 @@ unsigned char Checksum(unsigned char *ptr, unsigned char len)
 //     return true;
 // }
     
-/*
+
 void bq76942_init(void)
 {
     // --- Chip select pin setup ---
@@ -75,8 +67,6 @@ void bq76942_init(void)
     else
         printf("BQ76942 communication failed\n");
 }
-*/
-
 //
 //
 // bool Spi_TransferBytes(uint8_t *tx, uint8_t *rx, uint8_t length)
@@ -243,11 +233,9 @@ bq_status_t write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
         }
 
         SYSTICK_DelayUs(50);   // TI recommends ~50 us minimum between transactions
-       /* if (!matched)
-            printf("Transmit matched failed'\r\n");
-            return BQ_ERR_VERIFY;
-
-            */
+        // if (!matched)
+        //     printf("Transmit matched failed'\r\n");
+        //     return BQ_ERR_VERIFY;
 
     }
 
@@ -362,12 +350,15 @@ bool read_reg(uint8_t regAddr, uint8_t *data, uint8_t length)
             bq_cs_low();
 
             bool ok = SERCOM0_SPI_WriteRead(tx, 3, rx, 3);
+            
+
             bq_cs_high();
 
             // if (!ok)
             // {
             //     return false;
             // }
+
 
             // Check returned frame
             if ((rx[0] == addr) &&
@@ -402,12 +393,12 @@ bool bq_direct_read(uint8_t command, uint8_t *data, uint8_t count)
 
 bool bq_direct_write(uint8_t command, const uint8_t *data, uint8_t count)
 {
-    return (write_reg(command, data, count) == BQ_OK);
+    return write_reg(command, data, count);
 }
 
 bool bq_direct_command(uint8_t command, uint16_t *data, char type)
 {
-    uint8_t buf[2];
+    uint8_t buf[2] = {0U, 0U};
     bool ok = true;
 
     if (type == 'W') // Write
@@ -429,21 +420,18 @@ bool bq_direct_command(uint8_t command, uint16_t *data, char type)
 
 
 bool bq_command_only(uint16_t subcmd){
-    // Send 0x3E/0x3F in one SPI frame
-    uint8_t two[2] = {
-        (uint8_t)(subcmd & 0xFF),
+
+
+     // Send 0x3E/0x3F in one SPI frame
+     uint8_t two[2] = {
+        (uint8_t)(subcmd & 0xFF), 
         (uint8_t)((subcmd >> 8) & 0xFF)
     };
-
-    if (write_reg(0x3E, two, 2) != BQ_OK)
+    if (!write_reg(0x3E, two, 2))
         return false;
-
-    SYSTICK_DelayUs(2000);
+    
     return true;
 }
-
-    
-
 
 /*
     example of BQ_commandOnly usage:
@@ -460,7 +448,7 @@ bool bq_read_sub_command(uint16_t subcmd, uint8_t *data, uint8_t length)
 
     // Write subcommand (0x3E LSB, 0x3F MSB) in one frame
     uint8_t sub[2] = { (uint8_t)(subcmd & 0xFF), (uint8_t)((subcmd >> 8) & 0xFF) };
-    if (write_reg(0x3E, sub, 2) != BQ_OK)
+    if (!write_reg(0x3E, sub, 2))
         return false;
 
     // Poll for echo of 0x3E/0x3F (in as few frames as possible)
@@ -508,11 +496,11 @@ bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
 
     // Subcommand in one frame
     uint8_t sub[2] = { (uint8_t)(subcmd & 0xFF), (uint8_t)((subcmd >> 8) & 0xFF) };
-    if (write_reg(0x3E, sub, 2) != BQ_OK)
+    if (!write_reg(0x3E, sub, 2))
         return false;
 
     // Write payload 0x40.. in one frame
-    if ((length > 0U) && (write_reg(0x40, data, length) != BQ_OK))
+    if (length > 0 && !write_reg(0x40, data, length))
         return false;
 
     // Write checksum+length (0x60, 0x61) in one frame
@@ -524,13 +512,13 @@ bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length)
     uint8_t tail[2];
     tail[0] = (uint8_t)(0xFF - (sum & 0xFF));   
     tail[1] = (uint8_t)(4 + length);            
-    if (write_reg(0x60, tail, 2) != BQ_OK)
+    if (!write_reg(0x60, tail, 2))
         return false;
 
     return true;
 }
 
-bool bq_set_reg(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
+bool BQ769x2_SetRegister(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
 {
     uint8_t tx_buffer[2]   = {0x00U, 0x00U};
     uint8_t tx_reg_data[6] = {0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U};
@@ -545,16 +533,16 @@ bool bq_set_reg(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
         case 1U:
         {
             write_reg(0x3EU, tx_reg_data, 3U);
-            //if (!write_reg(0x3EU, tx_reg_data, 3U))
-              //  return false;
+            // if (!write_reg(0x3EU, tx_reg_data, 3U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
 
             tx_buffer[0] = Checksum(tx_reg_data, 3U);
             tx_buffer[1] = 0x05U;   // register address (2) + data (1) + checksum/len protocol expectation
             write_reg(0x60U, tx_buffer, 2U);
-            //if (!write_reg(0x60U, tx_buffer, 2U))
-              //  return false;
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
             break;
@@ -564,8 +552,8 @@ bool bq_set_reg(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
         {
             tx_reg_data[3] = (uint8_t)((reg_data >> 8) & 0xFFU);
             write_reg(0x3EU, tx_reg_data, 4U);
-            //if (!write_reg(0x3EU, tx_reg_data, 4U))
-              //  return false;
+            // if (!write_reg(0x3EU, tx_reg_data, 4U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
 
@@ -573,8 +561,8 @@ bool bq_set_reg(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
             tx_buffer[1] = 0x06U;   // register address (2) + data (2)
 
             write_reg(0x60U, tx_buffer, 2U);
-            //if (!write_reg(0x60U, tx_buffer, 2U))
-              //  return false;
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
             break;
@@ -594,8 +582,8 @@ bool bq_set_reg(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
             tx_buffer[0] = Checksum(tx_reg_data, 6U);
             tx_buffer[1] = 0x08U;   // register address (2) + data (4)
             write_reg(0x60U, tx_buffer, 2U);
-            //if (!write_reg(0x60U, tx_buffer, 2U))
-              //  return false;
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
             break;
@@ -612,15 +600,16 @@ void CommandSubcommands(uint16_t command) //For Command only Subcommands
 // See the TRM or the BQ76952 header file for a full list of Command-only subcommands
 {	//For DEEPSLEEP/SHUTDOWN subcommand you will need to call this function twice consecutively
 	
-	uint8_t tx_reg[2] = {0x00, 0x00};
+	uint8_t TX_Reg[2] = {0x00, 0x00};
 
-	//tx_reg in little endian format
-	tx_reg[0] = command & 0xff;
-	tx_reg[1] = (command >> 8) & 0xff;
+	//TX_Reg in little endian format
+	TX_Reg[0] = command & 0xff;
+	TX_Reg[1] = (command >> 8) & 0xff;
 
-	write_reg(0x3E,tx_reg,2); 
+	write_reg(0x3E,TX_Reg,2); 
 	SYSTICK_DelayUs(2000);
 }
+
 
 void BQ769x2_Init() {
 	// Configures all parameters in device RAM
@@ -628,7 +617,6 @@ void BQ769x2_Init() {
 	// Enter CONFIGUPDATE mode (Subcommand 0x0090) - It is required to be in CONFIG_UPDATE mode to program the device RAM settings
 	// See TRM for full description of CONFIG_UPDATE mode
 	CommandSubcommands(SET_CFGUPDATE);
-    //bq_command_only(ENTER_CONFIG_UPDATE);
 
 	// After entering CONFIG_UPDATE mode, RAM registers can be programmed. When programming RAM, checksum and length must also be
 	// programmed for the change to take effect. All of the RAM registers are described in detail in the BQ769x2 TRM.
@@ -638,87 +626,93 @@ void BQ769x2_Init() {
 	// 'Power Config' - 0x9234 = 0x2D80
 	// Setting the DSLP_LDO bit allows the LDOs to remain active when the device goes into Deep Sleep mode
   	// Set wake speed bits to 00 for best performance
-	bq_set_reg(PowerConfig, 0x2D80, 2); 
+	BQ769x2_SetRegister(PowerConfig, 0x2D80, 2);
 
 	// 'REG0 Config' - set REG0_EN bit to enable pre-regulator
-	bq_set_reg(REG0Config, 0x01, 1);
+	BQ769x2_SetRegister(REG0Config, 0x01, 1);
 
 	// 'REG12 Config' - Enable REG1 with 3.3V output (0x0D for 3.3V, 0x0F for 5V)
-	bq_set_reg(REG12Config, 0x0D, 1);
+	BQ769x2_SetRegister(REG12Config, 0x0D, 1);
 
-    bq_set_reg(SPIConfiguration, 0x40, 1); //SPI MODE
+    BQ769x2_SetRegister(0x923C, 0x40, 1);
 
 	// Set DFETOFF pin to control BOTH CHG and DSG FET - 0x92FB = 0x42 (set to 0x00 to disable)
-	bq_set_reg(DFETOFFPinConfig, 0x42, 1);
+	BQ769x2_SetRegister(DFETOFFPinConfig, 0x42, 1);
 
-	// Set up ALERT Pin - 0x92FC = 0x82
-	// ALERT function, active-low polarity (paired with falling-edge EIC trigger on PA11).
+	// Set up ALERT Pin - 0x92FC = 0x2A
+	// This configures the ALERT pin to drive high (REG1 voltage) when enabled.
 	// The ALERT pin can be used as an interrupt to the MCU when a protection has triggered or new measurements are available
-	bq_set_reg(ALERTPinConfig, 0x82, 1);
+	BQ769x2_SetRegister(ALERTPinConfig, 0x2A, 1);
 
 	// Set TS1 to measure Cell Temperature - 0x92FD = 0x07
-	bq_set_reg(TS1Config, 0x07, 1);
+	BQ769x2_SetRegister(TS1Config, 0x07, 1);
 
 	// Set TS3 to measure FET Temperature - 0x92FF = 0x0F
-	bq_set_reg(TS3Config, 0x0F, 1);
+	BQ769x2_SetRegister(TS3Config, 0x0F, 1);
 
 	// Set HDQ to measure Cell Temperature - 0x9300 = 0x07
-	bq_set_reg(HDQPinConfig, 0x00, 1);   // No thermistor installed on EVM HDQ pin, so set to 0x00
+	BQ769x2_SetRegister(HDQPinConfig, 0x00, 1);   // No thermistor installed on EVM HDQ pin, so set to 0x00
 
-	// 'VCell Mode' - Enable cell1-cell5 and cell10 for bench debug
-	bq_set_reg(VCellMode, 0x021F, 2);
-   
+	// 'VCell Mode' - Enable 16 cells - 0x9304 = 0x0000; Writing 0x0000 sets the default of 16 cells
+	BQ769x2_SetRegister(VCellMode, 0x021F, 2);
+
 	// Enable protections in 'Enabled Protections A' 0x9261 = 0xBC
 	// Enables SCD (short-circuit), OCD1 (over-current in discharge), OCC (over-current in charge),
 	// COV (over-voltage), CUV (under-voltage)
-	bq_set_reg(EnabledProtectionsA, 0xBC, 1);
+	BQ769x2_SetRegister(EnabledProtectionsA, 0xBC, 1);
 
 	// Enable all protections in 'Enabled Protections B' 0x9262 = 0xF7
 	// Enables OTF (over-temperature FET), OTINT (internal over-temperature), OTD (over-temperature in discharge),
 	// OTC (over-temperature in charge), UTINT (internal under-temperature), UTD (under-temperature in discharge), UTC (under-temperature in charge)
-	bq_set_reg(EnabledProtectionsB, 0xF7, 1);
+	BQ769x2_SetRegister(EnabledProtectionsB, 0xF7, 1);
 
 	// 'Default Alarm Mask' - 0x..82 Enables the FullScan and ADScan bits, default value = 0xF800
-	bq_set_reg(DefaultAlarmMask, 0xF882, 2);
+	BQ769x2_SetRegister(DefaultAlarmMask, 0xF882, 2);
 
 	// Set up Cell Balancing Configuration - 0x9335 = 0x03   -  Automated balancing while in Relax or Charge modes
 	// Also see "Cell Balancing with BQ769x2 Battery Monitors" document on ti.com
-	bq_set_reg(BalancingConfiguration, 0x03, 1);
+	BQ769x2_SetRegister(BalancingConfiguration, 0x02, 1);   // CB_RLX only for test
+    BQ769x2_SetRegister(CellBalanceMaxCells, 1, 1);
+    BQ769x2_SetRegister(CellBalanceInterval, 10, 1);
 
+    BQ769x2_SetRegister(MinCellTemp, 0, 1);
+    BQ769x2_SetRegister(MaxCellTemp, 60, 1);
+    BQ769x2_SetRegister(MaxInternalTemp, 70, 1);
 
+    BQ769x2_SetRegister(CellBalanceMinCellVRelax, 3000, 2);
+    BQ769x2_SetRegister(CellBalanceMinDeltaRelax, 20, 1);
+    BQ769x2_SetRegister(CellBalanceStopDeltaRelax, 10, 1);
 
 	// Set up CUV (under-voltage) Threshold - 0x9275 = 0x31 (2479 mV)
 	// CUV Threshold is this value multiplied by 50.6mV
-	bq_set_reg(CUVThreshold, 0x31, 1);
+	BQ769x2_SetRegister(CUVThreshold, 0x31, 1);
 
 	// Set up COV (over-voltage) Threshold - 0x9278 = 0x55 (4301 mV)
 	// COV Threshold is this value multiplied by 50.6mV
-	bq_set_reg(COVThreshold, 0x55, 1);
+	BQ769x2_SetRegister(COVThreshold, 0x55, 1);
 
 	// Set up OCC (over-current in charge) Threshold - 0x9280 = 0x05 (10 mV = 10A across 1mOhm sense resistor) Units in 2mV
-	bq_set_reg(OCCThreshold, 0x05, 1);
+	BQ769x2_SetRegister(OCCThreshold, 0x05, 1);
 
 	// Set up OCD1 Threshold - 0x9282 = 0x0A (20 mV = 20A across 1mOhm sense resistor) units of 2mV
-	bq_set_reg(OCD1Threshold, 0x0A, 1);
+	BQ769x2_SetRegister(OCD1Threshold, 0x0A, 1);
 
 	// Set up SCD Threshold - 0x9286 = 0x05 (100 mV = 100A across 1mOhm sense resistor)  0x05=100mV
-	bq_set_reg(SCDThreshold, 0x05, 1);
+	BQ769x2_SetRegister(SCDThreshold, 0x05, 1);
 
 	// Set up SCD Delay - 0x9287 = 0x03 (30 us) Enabled with a delay of (value - 1) * 15 µs; min value of 1    
-	bq_set_reg(SCDDelay, 0x03, 1);
+	BQ769x2_SetRegister(SCDDelay, 0x03, 1);
 
 	// Set up SCDL Latch Limit to 1 to set SCD recovery only with load removal 0x9295 = 0x01
 	// If this is not set, then SCD will recover based on time (SCD Recovery Time parameter).
-	bq_set_reg(SCDLLatchLimit, 0x01, 1);
-
-    //bq_command_only(EXIT_CONFIG_UPDATE);
+	BQ769x2_SetRegister(SCDLLatchLimit, 0x01, 1);
 
 	// Exit CONFIGUPDATE mode  - Subcommand 0x0092
 	CommandSubcommands(EXIT_CFGUPDATE);
 }
 
 
-/*
+
 void bms_set_protection_threshold(void)
 {
     
@@ -753,7 +747,6 @@ void bms_set_protection_threshold(void)
 
     bq_command_only(EXIT_CONFIG_UPDATE);
 }
-*/
 
 #define REG12_CONFIG_ADDR        0x9236u
 #define REG0_CONFIG_ADDR         0x9237u
@@ -845,12 +838,11 @@ void bms_battery_status(void)
 }
 
 
-
 bool read_cells_1to6(uint16_t cell_mV[6])
 {
     const uint8_t addr[6] = {
         CELL_1_VOLTAGE, CELL_2_VOLTAGE, CELL_3_VOLTAGE,
-        CELL_4_VOLTAGE, CELL_5_VOLTAGE, CELL_6_VOLTAGE
+        CELL_4_VOLTAGE, CELL_5_VOLTAGE, CELL_10_VOLTAGE
     };
     uint16_t raw = 0;
     uint8_t i;
@@ -863,52 +855,22 @@ bool read_cells_1to6(uint16_t cell_mV[6])
     {
         if (bq_direct_command(addr[i], &raw, R))
         {
-            cell_mV[i] = raw; // mV
+            if (raw == 0xFFFFU)
+            {
+                cell_mV[i] = 0U;
+                ok = false;
+            }
+            else
+            {
+                cell_mV[i] = raw; // mV
+            }
         }
         else
         {
-            cell_mV[i] = 0;
+            cell_mV[i] = 0U;
             ok = false;
         }
     }
-    return ok;
-}
-
-bool read_cells_1to10(uint16_t cell_mV[10])
-{
-    const uint8_t addr[6] = {
-        CELL_1_VOLTAGE, CELL_2_VOLTAGE, CELL_3_VOLTAGE, CELL_4_VOLTAGE, CELL_5_VOLTAGE, CELL_10_VOLTAGE
-    };
-    const uint8_t dst_idx[6] = {
-        0U, 1U, 2U, 3U, 4U, 9U
-    };
-    uint16_t raw = 0U;
-    uint8_t i;
-    bool ok = true;
-
-    if (cell_mV == NULL)
-    {
-        return false;
-    }
-
-    for (i = 0U; i < 10U; i++)
-    {
-        cell_mV[i] = 0U;
-    }
-
-    for (i = 0U; i < 6U; i++)
-    {
-        if (bq_direct_command(addr[i], &raw, R))
-        {
-            cell_mV[dst_idx[i]] = raw;
-        }
-        else
-        {
-            cell_mV[dst_idx[i]] = 0U;
-            ok = false;
-        }
-    }
-
     return ok;
 }
 
@@ -928,7 +890,7 @@ bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC)
   
       return true;
   }
-/*
+
 bool bms_read_current(int16_t *current_mA) 
 {
     uint16_t raw;
@@ -942,210 +904,6 @@ bool bms_read_current(int16_t *current_mA)
     return true;
 
 
-}*/
-
-uint16_t bq_read_current()
-// Reads PACK current 
-{
-        uint8_t RX_data[2] = {0x00,0x00};
-        bq_direct_command(CC2Current, 0x00, R);
-        return (RX_data[1]*256 + RX_data[0]);  // current is reported in mA
-}
-
-
-
-bool bms_current_read(int16_t *current_userA)
-{
-    return bms_read_current(current_userA);
-}
-
-bool bms_read_cb_active_cells(uint16_t *active_cells_mask)
-{
-    uint8_t data[2] = {0U, 0U};
-
-    if (active_cells_mask == NULL)
-    {
-        return false;
-    }
-
-    if (!bq_read_sub_command(CB_ACTIVE_CELLS, data, 2U))
-    {
-        return false;
-    }
-
-    *active_cells_mask = (uint16_t)(data[0] | ((uint16_t)data[1] << 8));
-    return true;
-}
-
-bool bms_set_cb_active_cells(uint16_t active_cells_mask)
-{
-    uint8_t data[2];
-
-    data[0] = (uint8_t)(active_cells_mask & 0xFFU);
-    data[1] = (uint8_t)((active_cells_mask >> 8) & 0xFFU);
-
-    return bq_write_subcommand(CB_ACTIVE_CELLS, data, 2U);
-}
-
-bool bms_read_cb_present_time(uint16_t *present_time_s)
-{
-    uint8_t data[2] = {0U, 0U};
-
-    if (present_time_s == NULL)
-    {
-        return false;
-    }
-
-    if (!bq_read_sub_command(CBSTATUS1, data, 2U))
-    {
-        return false;
-    }
-
-    *present_time_s = (uint16_t)(data[0] | ((uint16_t)data[1] << 8));
-    return true;
-}
-
-bool bms_read_cb_cell3_total_time(uint32_t *cell3_total_time_s)
-{
-    uint8_t data[32] = {0U};
-
-    if (cell3_total_time_s == NULL)
-    {
-        return false;
-    }
-
-    if (!bq_read_sub_command(CBSTATUS2, data, sizeof(data)))
-    {
-        return false;
-    }
-
-    /* CBSTATUS2 layout per TRM: cell N total time is U4 at offset (N-1)*4 for cells 1-8 */
-    *cell3_total_time_s =
-        ((uint32_t)data[8]) |
-        ((uint32_t)data[9] << 8) |
-        ((uint32_t)data[10] << 16) |
-        ((uint32_t)data[11] << 24);
-
-    return true;
-}
-
-bool bms_read_alert_status(uint16_t *alert_status)
-{
-    uint16_t raw = 0U;
-
-    if (alert_status == NULL)
-    {
-        return false;
-    }
-
-    if (!bq_direct_command(AlarmStatus, &raw, R))
-    {
-        return false;
-    }
-
-    *alert_status = raw;
-    return true;
-}
-
-bool bms_read_safety_status(uint16_t *safety_status_a, uint16_t *safety_status_b, uint16_t *safety_status_c)
-{
-    uint16_t a = 0U;
-    uint16_t b = 0U;
-    uint16_t c = 0U;
-
-    if ((safety_status_a == NULL) || (safety_status_b == NULL) || (safety_status_c == NULL))
-    {
-        return false;
-    }
-
-    if (!bq_direct_command(SafetyStatusA, &a, R))
-    {
-        return false;
-    }
-
-    if (!bq_direct_command(SafetyStatusB, &b, R))
-    {
-        return false;
-    }
-
-    if (!bq_direct_command(SafetyStatusC, &c, R))
-    {
-        return false;
-    }
-
-    *safety_status_a = a;
-    *safety_status_b = b;
-    *safety_status_c = c;
-    return true;
-}
-
-void bms_alert_irq_init(void)
-{
-    s_bms_alert_pending = false;
-    EIC_CallbackRegister(EIC_PIN_11, bms_alert_eic_callback, 0U);
-    EIC_InterruptEnable(EIC_PIN_11);
-}
-
-bool bms_alert_service(uint16_t *alarm_status, uint16_t *safety_status_a, uint16_t *safety_status_b, uint16_t *safety_status_c)
-{
-    uint16_t alarm = 0U;
-    uint16_t a = 0U;
-    uint16_t b = 0U;
-    uint16_t c = 0U;
-
-    if (!s_bms_alert_pending)
-    {
-        return false;
-    }
-
-    /* Consume this IRQ event once; keep all SPI accesses out of ISR. */
-    s_bms_alert_pending = false;
-
-    if (!bms_read_alert_status(&alarm))
-    {
-        return false;
-    }
-
-    if (alarm == 0U)
-    {
-        return false;
-    }
-
-    (void)bms_read_safety_status(&a, &b, &c);
-    (void)bq_direct_command(AlarmStatus, &alarm, W); /* write-1-to-clear */
-
-    if (alarm_status != NULL)
-    {
-        *alarm_status = alarm;
-    }
-    if (safety_status_a != NULL)
-    {
-        *safety_status_a = a;
-    }
-    if (safety_status_b != NULL)
-    {
-        *safety_status_b = b;
-    }
-    if (safety_status_c != NULL)
-    {
-        *safety_status_c = c;
-    }
-
-    return true;
-}
-
-void bms_alert_step(void)
-{
-    uint16_t alarm = 0U;
-    uint16_t safety_a = 0U;
-    uint16_t safety_b = 0U;
-    uint16_t safety_c = 0U;
-
-    if (bms_alert_service(&alarm, &safety_a, &safety_b, &safety_c))
-    {
-        printf("alert,0x%04X,ssa=0x%04X,ssb=0x%04X,ssc=0x%04X\r\n",
-               alarm, safety_a, safety_b, safety_c);
-    }
 }
 
 void bothoff_init(void)
