@@ -26,8 +26,10 @@
 #include <stdbool.h>                    // Defines true
 #include <stdio.h>
 #include <stdlib.h>                     // Defines EXIT_FAILURE
+#include "app/state_machine.h"
 #include "config/default/peripheral/systick/plib_systick.h"
 #include "definitions.h"                // SYS function prototypes
+#include "ic_bms/bms_spi.h"
 #include "ic_bms/spi_test.h"
 
 // *****************************************************************************
@@ -61,23 +63,24 @@ int main ( void )
 
     BQ769x2_Init(); 
     // bms_init_comm_voltage(); 
-    // voltage_test_init(); 
-     ms5837_test_init();
+    // SYSTICK_DelayMs(100U);
+    //bms_alert_irq_init();
+    voltage_test_init(); 
 
     //can_scope_test_init();
 
     //printf("CAN scope test running\r\n");
-    printf("MS5837 test running\r\n");
 
     while ( true )
     {
         SYS_Tasks();
 
-        // voltage_test_step(); 
-        // spi_write_probe_step(); 
-        ms5837_test_step();
+        voltage_test_step(); 
+        //bms_alert_step();
+        //spi_write_probe_step(); 
 
         //can_scope_test_step();
+        //state_machine();
     }
 
 

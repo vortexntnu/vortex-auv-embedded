@@ -426,6 +426,10 @@
 #define CELL_4_VOLTAGE 0x1A
 #define CELL_5_VOLTAGE 0x1C
 #define CELL_6_VOLTAGE 0x1E
+#define CELL_7_VOLTAGE 0x20
+#define CELL_8_VOLTAGE 0x22
+#define CELL_9_VOLTAGE 0x24
+#define CELL_10_VOLTAGE 0x26
 #define CC2_CURRENT 0x3A
 
 
@@ -525,16 +529,27 @@ void bms_set_protection_threshold(void);
 void bms_battery_status(void);
 bool bms_battery_status_get(uint8_t *fet_reg, bms_state_t *state);
 bool read_cells_1to6(uint16_t cell_mV[6]);
+bool read_cells_1to10(uint16_t cell_mV[10]);
 void bms_sample_temps(void);
 bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC);
 bool bms_read_current(int16_t *current_mA);
 bool bms_current_read(int16_t *current_userA);
+bool bms_read_cb_active_cells(uint16_t *active_cells_mask);
+bool bms_set_cb_active_cells(uint16_t active_cells_mask);
+bool bms_read_cb_present_time(uint16_t *present_time_s);
+bool bms_read_cb_cell3_total_time(uint32_t *cell3_total_time_s);
+bool bms_read_alert_status(uint16_t *alert_status);
+bool bms_read_safety_status(uint16_t *safety_status_a, uint16_t *safety_status_b, uint16_t *safety_status_c);
+void bms_alert_irq_init(void);
+bool bms_alert_service(uint16_t *alarm_status, uint16_t *safety_status_a, uint16_t *safety_status_b, uint16_t *safety_status_c);
+void bms_alert_step(void);
 void bothoff_init(void);
 void bothoff_high(void);
 void bothoff_low(void);
 
 void bms_init_comm_voltage(void);
 void BQ769x2_Init();
+uint16_t bq_read_current();
 
 
 

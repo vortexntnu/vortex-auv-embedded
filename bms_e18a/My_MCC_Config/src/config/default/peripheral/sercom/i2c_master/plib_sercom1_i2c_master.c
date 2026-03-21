@@ -59,10 +59,10 @@
 // *****************************************************************************
 
 
-#define SERCOM1_I2CM_SPEED_HZ           100000
+#define SERCOM1_I2CM_SPEED_HZ           400000
 
 /* SERCOM1 I2C baud value */
-#define SERCOM1_I2CM_BAUD_VALUE         (0xE8U)
+#define SERCOM1_I2CM_BAUD_VALUE         (0x34U)
 
 
 static volatile SERCOM_I2C_OBJ sercom1I2CObj;

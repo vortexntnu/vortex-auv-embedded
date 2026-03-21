@@ -77,7 +77,7 @@ data:
       - children:
         - attributes:
             id: eic
-            value: '0'
+            value: '18432'
           type: Dynamic
         type: Values
       type: Hex
@@ -88,6 +88,82 @@ data:
       - children:
         - attributes:
             value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CONFIG_SENSE_11:
+      attributes:
+        id: EIC_CONFIG_SENSE_11
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_CONFIG_FILTEN_11:
+      attributes:
+        id: EIC_CONFIG_FILTEN_11
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_11:
+      attributes:
+        id: EIC_INT_11
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_INT_14:
+      attributes:
+        id: EIC_INT_14
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    EIC_CONFIG_SENSE_14:
+      attributes:
+        id: EIC_CONFIG_SENSE_14
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    EIC_CONFIG_FILTEN_14:
+      attributes:
+        id: EIC_CONFIG_FILTEN_14
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: 'true'
           type: User
         type: Values
       type: Boolean

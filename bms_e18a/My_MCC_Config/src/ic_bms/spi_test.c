@@ -7,18 +7,18 @@
 #include "app/can_facade.h"
 #include "spi_test.h"
 #include "bms_spi.h"
-#include "ms5837.h"
-#include "peripheral/port/plib_port.h"
 
 #define UART_TIMEOUT_LOOPS        (3000000UL)
 #define VOLTAGE_TEST_DELAY_CYCLES (24000000UL)
-#define CAN_SCOPE_TEST_ID         (0x123U)
 #define CAN_SCOPE_TEST_PERIOD_MS  (100U)
-#define MS5837_PRINT_DIVIDER      (50U)
 
-static struct ms5837_t ms5837_sensor;
-static bool ms5837_test_running = false;
-static uint16_t ms5837_sample_divider = 0U;
+static bool s_cb_baseline_valid = false;
+static uint32_t s_cb_cell3_baseline_s = 0U;
+static uint16_t s_cb_last_active = 0xFFFFU;
+static uint16_t s_cb_last_present = 0xFFFFU;
+static uint32_t s_cb_last_cell3 = 0xFFFFFFFFUL;
+static bool s_cb_last_ok = false;
+static bool s_cb_occurred_reported = false;
 
 static void delay_cycles(uint32_t cycles)
 {
@@ -30,28 +30,20 @@ static void delay_cycles(uint32_t cycles)
     }
 }
 
-static bool uart_write_blocking(const uint8_t *data, size_t len) 
+static bool uart_write_blocking(const uint8_t *data, size_t len)
 {
-    uint32_t timeout = UART_TIMEOUT_LOOPS; 
+    uint32_t timeout = UART_TIMEOUT_LOOPS;
 
     if ((data == NULL) || (len == 0U))
     {
         return false;
     }
 
-    if (!SERCOM3_USART_Write((void *)data, len)) 
+    if (!SERCOM3_USART_Write((void *)data, len))
     {
         return false;
     }
 
-    // while (SERCOM3_USART_WriteIsBusy())
-    // {
-    //     if (timeout-- == 0U)
-    //     {
-    //         return false;
-    //     }
-    // }
-    //
     timeout = UART_TIMEOUT_LOOPS;
     while (!SERCOM3_USART_TransmitComplete())
     {
@@ -80,34 +72,20 @@ static void uart_write_text(const char *text)
     }
 }
 
-static void uart_write_ms5837_sample(const struct ms5837_t *sensor)
+static void uart_write_voltages(const uint16_t cell_mV[10])
 {
-    char line[128];
-    int32_t pressure_mPa;
-    int32_t temp_centi_c;
-    int32_t temp_abs_centi_c;
-    int len;
-
-    if (sensor == NULL)
-    {
-        return;
-    }
-
-    pressure_mPa = (int32_t)(sensor->press_kPa * 1000.0f);
-    temp_centi_c = (int32_t)(sensor->temp_C * 100.0f);
-    temp_abs_centi_c = (temp_centi_c < 0) ? -temp_centi_c : temp_centi_c;
-
-    len = snprintf(
+    char line[96];
+    int len = snprintf(
         line,
         sizeof(line),
-        "ms5837,p=%ld.%03ldkPa,t=%s%ld.%02ldC,d1=%lu,d2=%lu\r\n",
-        (long)(pressure_mPa / 1000),
-        (long)(pressure_mPa >= 0 ? (pressure_mPa % 1000) : ((-pressure_mPa) % 1000)),
-        (temp_centi_c < 0) ? "-" : "",
-        (long)(temp_abs_centi_c / 100),
-        (long)(temp_abs_centi_c % 100),
-        (unsigned long)sensor->D1,
-        (unsigned long)sensor->D2);
+        "%u,%u,%u,%u,%u,%u\r\n",
+        (unsigned int)cell_mV[0],
+        (unsigned int)cell_mV[1],
+        (unsigned int)cell_mV[2],
+        (unsigned int)cell_mV[3],
+        (unsigned int)cell_mV[4],
+        (unsigned int)cell_mV[9]
+    );
 
     if (len <= 0)
     {
@@ -122,44 +100,32 @@ static void uart_write_ms5837_sample(const struct ms5837_t *sensor)
     (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
 }
 
-static const char *status_to_text(bms_state_t state)
+static void uart_write_balance_status(
+    bool ok,
+    uint16_t active_mask,
+    uint16_t present_s,
+    uint32_t cell3_total_s,
+    bool occurred,
+    uint32_t delta_s)
 {
-    switch (state)
-    {
-        case BMS_STATE_PRECHARGE:
-            return "precharge";
-        case BMS_STATE_CHARGING:
-            return "charging";
-        case BMS_STATE_DISCHARGING:
-            return "discharging";
-        case BMS_STATE_IDLE:
-            return "idle";
-        case BMS_STATE_TRANSITION:
-            return "transition";
-        default:
-            return "status_fail";
-    }
-}
+    char line[128];
+    int len;
 
-static void uart_write_voltages(const uint16_t cell_mV[6], const char *status_text, uint8_t fet_reg, int16_t temp_dC, bool temp_ok, int16_t current_mA, bool current_ok)
-{
-    char line[160];
-    int len = snprintf( 
+    if (!ok)
+    {
+        uart_write_text("cb,read_fail\r\n");
+        return;
+    }
+
+    len = snprintf(
         line,
         sizeof(line),
-        "%u,%u,%u,%u,%u,%u,%s,0x%02X,%d,%s,%d,%s\r\n",
-        (unsigned int)cell_mV[0],
-        (unsigned int)cell_mV[1],
-        (unsigned int)cell_mV[2],
-        (unsigned int)cell_mV[3],
-        (unsigned int)cell_mV[4],
-        (unsigned int)cell_mV[5],
-        status_text,
-        (unsigned int)fet_reg,
-        (int)temp_dC,
-        temp_ok ? "ok" : "fail",
-        (int)current_mA,
-        current_ok ? "ok" : "fail");
+        "cb,active=0x%04X,present_s=%u,cell3_total_s=%lu,delta_s=%lu,occurred=%u\r\n",
+        (unsigned int)active_mask,
+        (unsigned int)present_s,
+        (unsigned long)cell3_total_s,
+        (unsigned long)delta_s,
+        (unsigned int)(occurred ? 1U : 0U));
 
     if (len <= 0)
     {
@@ -171,7 +137,7 @@ static void uart_write_voltages(const uint16_t cell_mV[6], const char *status_te
         len = (int)(sizeof(line) - 1U);
     }
 
-    (void)uart_write_blocking((const uint8_t *)line, (size_t)len); 
+    (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
 }
 
 void spi_write_probe_step(void)
@@ -181,7 +147,7 @@ void spi_write_probe_step(void)
     char line[32];
     int len;
 
-    ok = write_reg(BATTERY_STATUS, &tx, 1U);
+    ok = (write_reg(BATTERY_STATUS, &tx, 1U) == BQ_OK);
 
     len = snprintf(
         line,
@@ -201,168 +167,129 @@ void spi_write_probe_step(void)
 
     if (ok)
     {
-        LED_G_Set();
         LED_R_Clear();
     }
     else
     {
-        LED_G_Clear();
         LED_R_Set();
     }
 
     LED_Y_Toggle();
     delay_cycles(VOLTAGE_TEST_DELAY_CYCLES);
 
-    tx ^= 0xFFU; /* alternate 0x5A/0xA5 for easy scope verification */
+    tx ^= 0xFFU;
 }
 
 void voltage_test_init(void)
 {
+    char line[64];
+    int len;
+
     LED_R_Clear();
     LED_Y_Clear();
-    LED_G_Clear();
+
+    s_cb_baseline_valid = bms_read_cb_cell3_total_time(&s_cb_cell3_baseline_s);
+    s_cb_last_active = 0xFFFFU;
+    s_cb_last_present = 0xFFFFU;
+    s_cb_last_cell3 = 0xFFFFFFFFUL;
+    s_cb_last_ok = false;
+    s_cb_occurred_reported = false;
 
     uart_write_text("BMS voltage test started\r\n");
+    uart_write_text("voltage_order,c1,c2,c3,c4,c5,c10\r\n");
+
+    len = snprintf(
+        line,
+        sizeof(line),
+        "cb_baseline_cell3_s=%lu,%s\r\n",
+        (unsigned long)s_cb_cell3_baseline_s,
+        s_cb_baseline_valid ? "ok" : "fail");
+
+    if (len > 0)
+    {
+        if ((size_t)len >= sizeof(line))
+        {
+            len = (int)(sizeof(line) - 1U);
+        }
+        (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
+    }
 }
-
-
 
 void voltage_test_step(void)
 {
-    uint16_t cell_mV[6] = {0U};
-    uint8_t fet_reg = 0U;
-    bms_state_t state = BMS_STATE_READ_FAIL;
-    bool status_ok = bms_battery_status_get(&fet_reg, &state);
-    bool ok = read_cells_1to6(cell_mV);
-    int16_t temp_dC = 0;
-    int16_t current_mA = 0;
-    bool temp_ok = bms_read_ts_temp(TS2Temperature, &temp_dC);
-    bool current_ok = bms_read_current(&current_mA);
-    const char *status_text = status_ok ? status_to_text(state) : "status_fail";
+    uint16_t cell_mV[10] = {0U};
+    uint16_t cb_active_mask = 0U;
+    uint16_t cb_present_s = 0U;
+    uint32_t cb_cell3_total_s = 0U;
+    bool cb_active_ok;
+    bool cb_present_ok;
+    bool cb_cell3_ok;
+    bool cb_ok;
+    bool occurred;
+    uint32_t delta_s = 0U;
+    bool ok = read_cells_1to10(cell_mV);
 
     if (ok)
     {
-        uart_write_voltages(cell_mV, status_text, fet_reg, temp_dC, temp_ok, current_mA, current_ok);
-        LED_G_Set();
+        uart_write_voltages(cell_mV);
         LED_R_Clear();
     }
     else
     {
         uart_write_text("read fail\r\n");
-        LED_G_Clear();
         LED_R_Set();
-        
+    }
+
+    cb_active_ok = bms_read_cb_active_cells(&cb_active_mask);
+    cb_present_ok = bms_read_cb_present_time(&cb_present_s);
+    cb_cell3_ok = bms_read_cb_cell3_total_time(&cb_cell3_total_s);
+    cb_ok = (cb_active_ok && cb_present_ok && cb_cell3_ok);
+
+    if (cb_ok && s_cb_baseline_valid && (cb_cell3_total_s >= s_cb_cell3_baseline_s))
+    {
+        delta_s = cb_cell3_total_s - s_cb_cell3_baseline_s;
+    }
+
+    occurred = (cb_ok && s_cb_baseline_valid && (delta_s > 0U));
+
+    if ((cb_ok != s_cb_last_ok) ||
+        (cb_active_mask != s_cb_last_active) ||
+        (cb_present_s != s_cb_last_present) ||
+        (cb_cell3_total_s != s_cb_last_cell3))
+    {
+        uart_write_balance_status(cb_ok, cb_active_mask, cb_present_s, cb_cell3_total_s, occurred, delta_s);
+
+        s_cb_last_ok = cb_ok;
+        s_cb_last_active = cb_active_mask;
+        s_cb_last_present = cb_present_s;
+        s_cb_last_cell3 = cb_cell3_total_s;
+    }
+
+    if (occurred && !s_cb_occurred_reported)
+    {
+        uart_write_text("cb_event,cell3_balancing_observed\r\n");
+        s_cb_occurred_reported = true;
     }
 
     LED_Y_Toggle();
     delay_cycles(VOLTAGE_TEST_DELAY_CYCLES);
-}
-
-void ms5837_test_init(void)
-{
-    int8_t init_status;
-
-    LED_R_Clear();
-    LED_Y_Clear();
-    LED_G_Clear();
-
-    memset(&ms5837_sensor, 0, sizeof(ms5837_sensor));
-    /* TC0 is currently a 1 ms conversion timer, so keep the sensor at OSR 256 for this smoke test. */
-    ms5837_sensor.osr_code = MS5837_OSR_256;
-
-    init_status = ms5837_init(&ms5837_sensor);
-    if (init_status == 0)
-    {
-        ms5837_test_running = true;
-        ms5837_sample_divider = 0U;
-        uart_write_text("MS5837 test started\r\n");
-        uart_write_text("Expect UART lines: ms5837,p=...,t=...\r\n");
-    }
-    else
-    {
-        char line[48];
-        int len = snprintf(line, sizeof(line), "MS5837 init failed,%d\r\n", (int)init_status);
-
-        ms5837_test_running = false;
-        LED_R_Set();
-
-        if (len > 0)
-        {
-            if ((size_t)len >= sizeof(line))
-            {
-                len = (int)(sizeof(line) - 1U);
-            }
-            (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
-        }
-    }
-}
-
-void ms5837_test_step(void)
-{
-    if (!ms5837_test_running)
-    {
-        return;
-    }
-
-    ms5837_task(&ms5837_sensor);
-    if (!ms5837_sensor.has_fresh_sample)
-    {
-        return;
-    }
-
-    ms5837_sensor.has_fresh_sample = false;
-    ms5837_sample_divider++;
-    if (ms5837_sample_divider < MS5837_PRINT_DIVIDER)
-    {
-        return;
-    }
-
-    ms5837_sample_divider = 0U;
-    uart_write_ms5837_sample(&ms5837_sensor);
-    LED_G_Toggle();
-    LED_Y_Toggle();
 }
 
 void can_scope_test_init(void)
 {
     LED_R_Clear();
     LED_Y_Clear();
-    LED_G_Clear();
 
     CAN_Init();
 }
 
 void can_scope_test_step(void)
 {
-    uint8_t payload[2];
     uint8_t rx_data[8];
     uint32_t rx_id = 0U;
     uint8_t rx_len = 0U;
     char line[64];
     int len;
-    bool ok;
-
-    payload[0] = 0xAAU;
-    payload[1] = 0x55U;
-
-    /*ok = CAN0_MessageTransmit(
-        0x369U,
-        sizeof(payload),
-        payload,
-        CAN_MODE_NORMAL,
-        CAN_MSG_ATTR_TX_FIFO_DATA_FRAME);
-    
-
-    if (ok)
-    {
-        LED_Y_Toggle();
-       // LED_R_Clear();
-    }
-    else
-    {
-        LED_R_Toggle();
-    }
-     */   
 
     if (CAN_TryRead(&rx_id, &rx_len, rx_data))
     {
@@ -370,7 +297,7 @@ void can_scope_test_step(void)
             line,
             sizeof(line),
             "rx,0x%03X,%u,0x%02X,0x%02X\r\n",
-            (unsigned int) rx_id,
+            (unsigned int)rx_id,
             (unsigned int)rx_len,
             (unsigned int)((rx_len > 0U) ? rx_data[0] : 0U),
             (unsigned int)((rx_len > 1U) ? rx_data[1] : 0U));

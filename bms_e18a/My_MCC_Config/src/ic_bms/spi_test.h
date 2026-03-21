@@ -4,8 +4,6 @@
 void voltage_test_init(void);
 void spi_write_probe_step(void);
 void voltage_test_step(void);
-void ms5837_test_init(void);
-void ms5837_test_step(void);
 void can_scope_test_init(void);
 void can_scope_test_step(void);
 

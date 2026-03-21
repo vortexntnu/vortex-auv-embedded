@@ -35,7 +35,7 @@ data:
       - children:
         - attributes:
             id: sercom1
-            value: '232'
+            value: '52'
           type: Dynamic
         type: Values
       type: Hex
@@ -65,7 +65,7 @@ data:
       - children:
         - attributes:
             id: sercom1
-            value: '100000'
+            value: '400000'
           type: Dynamic
         type: Values
       type: Integer
@@ -363,4 +363,22 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    I2C_CLOCK_SPEED:
+      attributes:
+        id: I2C_CLOCK_SPEED
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '400'
+          type: User
+        type: Values
+      type: Integer
   userData: {}

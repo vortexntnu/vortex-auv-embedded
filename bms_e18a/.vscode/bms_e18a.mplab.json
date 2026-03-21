@@ -2,11 +2,6 @@
     "version": "1.9",
     "propertyGroups": [
         {
-            "name": "default-uservariables",
-            "type": "uservariables",
-            "properties": {}
-        },
-        {
             "name": "default-XC32",
             "type": "toolchain",
             "provider": "microchip.toolchains:xc32@4.60",
@@ -36,7 +31,7 @@
             }
         },
         {
-            "name": "default-tool",
+            "name": "default-tool-base",
             "type": "tool",
             "properties": {
                 "programoptions.smart.program": "Never"
@@ -184,7 +179,14 @@
                 "My_MCC_Config/src/config/default/peripheral/rtc/plib_rtc_timer.c",
                 "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom_i2c_master_common.h",
                 "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.h",
-                "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c"
+                "My_MCC_Config/src/config/default/peripheral/sercom/i2c_master/plib_sercom1_i2c_master.c",
+                "My_MCC_Config/src/config/default/peripheral/systick/plib_systick.h",
+                "My_MCC_Config/src/config/default/peripheral/systick/plib_systick.c",
+                "My_MCC_Config/src/config/default/peripheral/tc/plib_tc_common.h",
+                "My_MCC_Config/src/config/default/peripheral/tc/plib_tc1.h",
+                "My_MCC_Config/src/config/default/peripheral/tc/plib_tc1.c",
+                "My_MCC_Config/src/config/default/peripheral/tc/plib_tc0.h",
+                "My_MCC_Config/src/config/default/peripheral/tc/plib_tc0.c"
             ]
         }
     ],
@@ -194,13 +196,13 @@
             "id": "",
             "device": "ATSAMC21E18A",
             "imagePath": "./out/bms_e18a/default.elf",
-            "toolProperties": "default-tool",
-            "tool": "Atmel-ICE",
+            "toolProperties": "default-tool-base",
+            "tool": "Simulator",
             "packs": [
                 {
                     "name": "SAMC21_DFP",
                     "vendor": "Microchip",
-                    "version": "3.8.119"
+                    "version": "3.9.248"
                 },
                 {
                     "name": "CMSIS",
@@ -210,7 +212,6 @@
             ],
             "fileSet": "default",
             "toolchain": "default-XC32",
-            "userVariables": "default-uservariables",
             "includeLegacyMacros": true
         }
     ]
