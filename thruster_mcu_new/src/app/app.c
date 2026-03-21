@@ -240,12 +240,8 @@ void app_init(void) {
     TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
-    set_pwm_neutral(thrusters, 8);
+    //set_pwm_neutral(thrusters, 8);
     //set_pwm_neutral(lights, 1);
-    
-    for (int i = 0; i < 100000000; i++) {
-        __NOP();
-    }
 
     
     // Enable TC
@@ -256,7 +252,7 @@ void app_init(void) {
 
     
     // Enable watchdog
-    //WDT_Enable();
+    WDT_Enable();
 }
 
 void app_task(void) {
