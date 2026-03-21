@@ -21,12 +21,12 @@ int main ( void ) {
     {
         
         /* Sleep until an interrupt occurs*/
-        //PM_IdleModeEnter();
+        PM_IdleModeEnter();
                 
         //generate_pwm_signals();
         
         /* Run application logic */
-        //app_task();
+        app_task();
         
         
     }

@@ -281,11 +281,10 @@ void app_task(void) {
         dispatch_hw_event(&hw_events.killswitch_pending_mask, send_killswitch_event);
     }
         
-    //if (can_message_received) {
-    //    can_message_received = false;
-        //message_handler();
-    //    test_can_rx();
-    //}
+    if (can_message_received) {
+        can_message_received = false;
+        message_handler();
+    }
 }
 
 /* --- Private helpers --- */

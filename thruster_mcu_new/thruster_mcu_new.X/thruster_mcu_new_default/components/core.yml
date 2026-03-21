@@ -5349,6 +5349,16 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    DEVICE_WDT_PER:
+      attributes:
+        id: DEVICE_WDT_PER
+      children:
+      - children:
+        - attributes:
+            value: '8'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData:
     children:
     - attributes:
