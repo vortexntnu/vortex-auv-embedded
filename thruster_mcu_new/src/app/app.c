@@ -249,10 +249,9 @@ void app_init(void) {
     TC3_CompareStart();
     
     ADC0_ConversionStart();
-
     
     // Enable watchdog
-    WDT_Enable();
+    //WDT_Enable();
 }
 
 void app_task(void) {
@@ -419,14 +418,13 @@ static void log_current(void) {
     
     float I_array[8] = {0};
     
-    printf("\n");
     for (size_t i = 0; i < 8; i++) {
         float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
         
         I_array[i] = I_out;
         
-        printf("TH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
+        printf("\nTH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
                imon_map[i].thruster,
                imon_map[i].ain,
                (unsigned)adc_result_array[i],
@@ -462,7 +460,7 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
     }
     
     // Pet the watchdog after applying updates 
-    WDT_Clear();
+    //WDT_Clear();
 }
 
 static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
@@ -478,7 +476,7 @@ static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
         outputs[i].current_pulse_us = outputs[i].neutral_us; // Update struct
         
     }
-    WDT_Clear();
+    //WDT_Clear();
 }
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
@@ -602,6 +600,7 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context) {
     // Check CAN Status
     can_status = CAN1_ErrorGet();
+    printf("CAN interrupt occurred\r\n");
 
     // If no new error, handle CAN frame
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
