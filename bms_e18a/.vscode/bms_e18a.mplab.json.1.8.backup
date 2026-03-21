@@ -1,5 +1,28 @@
 {
-    "version": "1.9",
+    "version": "1.8",
+    "configurations": [
+        {
+            "name": "default",
+            "id": "conf1",
+            "device": "ATSAMC21E18A",
+            "imagePath": "./out/bms_e18a/default.elf",
+            "tool": "Atmel-ICE",
+            "packs": [
+                {
+                    "name": "SAMC21_DFP",
+                    "vendor": "Microchip",
+                    "version": "3.9.248"
+                },
+                {
+                    "name": "CMSIS",
+                    "vendor": "ARM",
+                    "version": "6.3.0"
+                }
+            ],
+            "fileSet": "default",
+            "toolchain": "default-XC32"
+        }
+    ],
     "propertyGroups": [
         {
             "name": "default-XC32",
@@ -176,30 +199,6 @@
                 "My_MCC_Config/src/config/default/peripheral/systick/plib_systick.h",
                 "My_MCC_Config/src/config/default/peripheral/systick/plib_systick.c"
             ]
-        }
-    ],
-    "configurations": [
-        {
-            "name": "default",
-            "id": "conf1",
-            "device": "ATSAMC21E18A",
-            "imagePath": "./out/bms_e18a/default.elf",
-            "tool": "Atmel-ICE",
-            "packs": [
-                {
-                    "name": "SAMC21_DFP",
-                    "vendor": "Microchip",
-                    "version": "3.9.248"
-                },
-                {
-                    "name": "CMSIS",
-                    "vendor": "ARM",
-                    "version": "6.3.0"
-                }
-            ],
-            "fileSet": "default",
-            "toolchain": "default-XC32",
-            "includeLegacyMacros": true
         }
     ]
 }

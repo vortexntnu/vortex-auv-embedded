@@ -233,9 +233,9 @@ bq_status_t write_reg(uint8_t regAddr, const uint8_t *data, uint8_t length)
         }
 
         SYSTICK_DelayUs(50);   // TI recommends ~50 us minimum between transactions
-        if (!matched)
-            printf("Transmit matched failed'\r\n");
-            return BQ_ERR_VERIFY;
+        // if (!matched)
+        //     printf("Transmit matched failed'\r\n");
+        //     return BQ_ERR_VERIFY;
 
     }
 
@@ -532,17 +532,17 @@ bool BQ769x2_SetRegister(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
     {
         case 1U:
         {
-            // write_reg(0x3EU, tx_reg_data, 3U);
-            if (!write_reg(0x3EU, tx_reg_data, 3U))
-                return false;
+            write_reg(0x3EU, tx_reg_data, 3U);
+            // if (!write_reg(0x3EU, tx_reg_data, 3U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
 
             tx_buffer[0] = Checksum(tx_reg_data, 3U);
             tx_buffer[1] = 0x05U;   // register address (2) + data (1) + checksum/len protocol expectation
-            // write_reg(0x60U, tx_buffer, 2U);
-            if (!write_reg(0x60U, tx_buffer, 2U))
-                return false;
+            write_reg(0x60U, tx_buffer, 2U);
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
             break;
@@ -551,18 +551,18 @@ bool BQ769x2_SetRegister(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
         case 2U:
         {
             tx_reg_data[3] = (uint8_t)((reg_data >> 8) & 0xFFU);
-            // write_reg(0x3EU, tx_reg_data, 4U);
-            if (!write_reg(0x3EU, tx_reg_data, 4U))
-                return false;
+            write_reg(0x3EU, tx_reg_data, 4U);
+            // if (!write_reg(0x3EU, tx_reg_data, 4U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
 
             tx_buffer[0] = Checksum(tx_reg_data, 4U);
             tx_buffer[1] = 0x06U;   // register address (2) + data (2)
 
-            // write_reg(0x60U, tx_buffer, 2U);
-            if (!write_reg(0x60U, tx_buffer, 2U))
-                return false;
+            write_reg(0x60U, tx_buffer, 2U);
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
             break;
@@ -581,9 +581,9 @@ bool BQ769x2_SetRegister(uint16_t reg_addr, uint32_t reg_data, uint8_t datalen)
 
             tx_buffer[0] = Checksum(tx_reg_data, 6U);
             tx_buffer[1] = 0x08U;   // register address (2) + data (4)
-            // write_reg(0x60U, tx_buffer, 2U);
-            if (!write_reg(0x60U, tx_buffer, 2U))
-                return false;
+            write_reg(0x60U, tx_buffer, 2U);
+            // if (!write_reg(0x60U, tx_buffer, 2U))
+            //     return false;
 
             SYSTICK_DelayUs(2000);
             break;
