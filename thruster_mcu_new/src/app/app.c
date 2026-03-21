@@ -409,7 +409,7 @@ static void log_current(void) {
     
     float I_array[8] = {0};
     
-    printf("\n");
+    //printf("\n");
     for (size_t i = 0; i < 8; i++) {
         float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
         float I_out  = V_Imon / (G_IMON * R_IMON);
