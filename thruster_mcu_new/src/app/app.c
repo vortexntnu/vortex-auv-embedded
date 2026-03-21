@@ -94,11 +94,6 @@ typedef struct {
 
 static hw_event_flags_t hw_events = {0};
 
-// FOR TESTING
-void generate_pwm_signals();
-void test_can_rx();
-void test_can_tx();
-
 /* --- Private function prototypes --- */
 
 /**
@@ -239,15 +234,6 @@ void app_init(void) {
     TCC1_PWMStart();
     TCC2_PWMStart();
     
-    // Set all thrusters and lights to neutral on startup
-    set_pwm_neutral(thrusters, 8);
-    //set_pwm_neutral(lights, 1);
-    
-    for (int i = 0; i < 100000000; i++) {
-        __NOP();
-    }
-
-    
     // Enable TC
     TC0_TimerStart();
     TC3_CompareStart();
@@ -256,7 +242,7 @@ void app_init(void) {
 
     
     // Enable watchdog
-    //WDT_Enable();
+    WDT_Enable();
 }
 
 void app_task(void) {
@@ -281,11 +267,10 @@ void app_task(void) {
         dispatch_hw_event(&hw_events.killswitch_pending_mask, send_killswitch_event);
     }
         
-    //if (can_message_received) {
-    //    can_message_received = false;
-        //message_handler();
-    //    test_can_rx();
-    //}
+    if (can_message_received) {
+        can_message_received = false;
+        message_handler();
+    }
 }
 
 /* --- Private helpers --- */
@@ -331,7 +316,7 @@ static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t chann
     for (uint8_t i = 0; i < 8; i++) {
         if (snapshot & (1U << i)) {
             if (!send(i)) {
-                printf("ERROR: CAN Transmission failed\r\n");
+                //printf("ERROR: CAN Transmission failed\r\n");
             }
         }
     }
@@ -431,6 +416,7 @@ static void log_current(void) {
         
         I_array[i] = I_out;
         
+        /*
         printf("TH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
                imon_map[i].thruster,
                imon_map[i].ain,
@@ -438,13 +424,16 @@ static void log_current(void) {
                V_Imon,
                I_out,
                (unsigned)thrusters[i].current_pulse_us);
+         */
     }
     
     bool result = send_current_measurements(I_array);
     
+    /*
     if (!result) {
         printf("CAN Transmission of current measurements failed!\r\n");
     }
+     */
 }
 
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
@@ -496,90 +485,6 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
     }
     
 }
-
-void test_can_rx() {
-    CAN_RX_BUFFER *rxBuf = (CAN_RX_BUFFER *)rxFiFo0;
-    
-    uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
-    const uint8_t *pData = rxBuf->data;
-    
-    printf("CAN RX | ID: 0x%08lX (%s) | DLC: %u | Data:",
-       (unsigned long)id,
-       rxBuf->xtd ? "EXT" : "STD",
-       (unsigned int)rxBuf->dlc);
-
-    for (uint8_t i = 0; i < rxBuf->dlc; i++) {
-        printf(" %02X", pData[i]);
-    }
-    printf("\n");
-    
-}
-
-void test_can_tx() {
-    CAN_TX_BUFFER *txBuffer = NULL;
-    
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
-    txBuffer = (CAN_TX_BUFFER*)txFiFo;
-    
-    txBuffer->id = WRITE_ID(0x45A);
-    txBuffer->dlc = 1;
-    txBuffer->fdf = 1;
-    txBuffer->brs = 1;
-    
-    txBuffer->data[0] = 0x43;
-    
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
-
-    if (!result) {
-        printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
-    }
-    
-    
-}
-
-void generate_pwm_signals() {
-    // PWM 4 | TCC1_WO2 | Correctly configured
-    // PWM 3 | TCC1_WO3 | Correctly configured
-    // PWM 8 | TCC0_WO2 | Correctly configured
-    // PWM 7 | TCC0_WO3 | Correctly configured
-    // PWM 6 | TCC0_WO4 | Correctly configured
-    // PWM 5 | TCC0_WO5 | Correctly configured
-    // PWM 1 | TCC2_WO0 | Correctly configured
-    // PWM 2 | TCC2_WO1 | Correctly configured
-    // PWM 9 | TC3_ WO1 | PB01 | Working
-    
-    uint8_t instance = 1;
-    uint8_t channel = 0;
-    uint32_t period = TCC1_PERIOD;
-    uint32_t frame_period = THRUSTER_PWM_PERIOD_US;
-    
-    static int increment = 1;
-    static uint16_t pulse_us = 1000;
-    
-    pulse_us = clamp(pulse_us, 1000, 2000);
-    
-    if (pulse_us >= 2000 || pulse_us <=1000) {
-        increment *= -1;
-    } 
-    
-    pulse_us += increment;
-    
-    
-    //uint32_t ticks = us_to_ticks(TC3_PERIOD, pulse_us, LIGHT_PWM_PERIOD_US);
-     
-    uint32_t ticks = us_to_ticks(period, pulse_us, frame_period);
-    //bool ok = TC3_Compare16bitMatch1Set((uint16_t)ticks);
-    
-    
-    tcc_write(instance, channel, ticks);
-    
-    //TC3_Compare16bitMatch1Set(ticks);
-    
-    //WDT_Clear();
-    
-    //TCC1_PWM24bitDutySet(1, 10000);
-}
-
 
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) {
     switch (instance) {
@@ -637,7 +542,7 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
         DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
     } 
     else if (returned_event == DMAC_TRANSFER_EVENT_ERROR) {
-        printf("ERROR: DMAC Transfer Failed!\r\n");
+        //printf("ERROR: DMAC Transfer Failed!\r\n");
     }
 }
 
@@ -645,17 +550,18 @@ static void eic_pin_flt_thruster(uintptr_t context) {
     uint8_t channel = (uint8_t)context;
     hw_events.flt_pending_mask |= (1U << channel);
     
-    printf("Fault pin triggered for thruster %u\n", (unsigned int)channel);    
+    //printf("Fault pin triggered for thruster %u\n", (unsigned int)channel);    
 }
 
 static void eic_pin_pg_thruster(uintptr_t context) {
     uint8_t channel = (uint8_t)context;
     hw_events.pgood_pending_mask |= (1U << channel);
     
-    printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)channel);
+    //printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)channel);
 }
 
 static void eic_pin_killswitch(uintptr_t context) {
     hw_events.killswitch_pending_mask |= 1U;
-    printf("KILLSWITCH triggered \n");
+    
+    //printf("KILLSWITCH triggered \n");
 }
