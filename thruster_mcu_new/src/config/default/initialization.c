@@ -63,7 +63,7 @@
 
 #pragma config WDT_ENABLE = DISABLED
 #pragma config WDT_ALWAYSON = DISABLED
-#pragma config WDT_PER = CYC8
+#pragma config WDT_PER = CYC2048
 
 #pragma config WDT_WINDOW = CYC8
 #pragma config WDT_EWOFFSET = CYC8
@@ -186,9 +186,9 @@ void SYS_Initialize ( void* data )
 
     EIC_Initialize();
 
-    TC0_TimerInitialize();
-
     RTC_Initialize();
+
+    TC0_TimerInitialize();
 
     TC3_CompareInitialize();
 
