@@ -9,7 +9,7 @@
 #include "tc1.h"
 
 
-#define CAN_SEND_ANGLES 0x469
+#define CAN_SEND_ANGLES 0x46D
 
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f
