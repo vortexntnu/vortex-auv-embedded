@@ -12,7 +12,7 @@ int main ( void ) {
     app_init();
     
     //generate_pwm_signals();
-    printf("--- Testing Thrusters ---\n");
+    printf("--- Testing can ---\r\n");
     
     
     test_can_tx();

@@ -249,7 +249,7 @@ void app_task(void) {
     
     if (can_message_received) {
        can_message_received = false;
-        message_handler();
+       message_handler();
        test_can_rx();
     }
 }
@@ -387,7 +387,7 @@ void test_can_rx() {
     for (uint8_t i = 0; i < rxBuf->dlc; i++) {
         printf(" %02X", pData[i]);
     }
-    printf("\n");
+    printf("\r\n");
     
 }
 
@@ -397,14 +397,23 @@ void test_can_tx() {
     memset(txFiFo, 0x00, CAN0_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
-    txBuffer->id = WRITE_ID(0x46B);
+    txBuffer->id  = WRITE_ID(0x46d);
     txBuffer->dlc = 8;
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
-    
+
     txBuffer->data[0] = 0x43;
     txBuffer->data[1] = 0x69;
-    
+
+    txBuffer->data[2] = 0x44;
+    txBuffer->data[3] = 0x6A;
+
+    txBuffer->data[4] = 0x45;
+    txBuffer->data[5] = 0x6B;
+
+    txBuffer->data[6] = 0x46;
+    txBuffer->data[7] = 0x6C;
+        
     bool result = CAN0_MessageTransmitFifo(1, txBuffer);
 
     if (!result) {
