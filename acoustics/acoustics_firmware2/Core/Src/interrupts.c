@@ -5,4 +5,51 @@
  *      Author: vikin
  */
 
+#include "main.h"
+#include "ad7606_driver.h"
+#include "stm_temp_driver.h"
 
+
+// SPI Interrupts start
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
+
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
+    for (int i = 0; i < N_HYDROPHONES; i++) {
+        if (hspi->Instance == dout_channel_handles[i]->Instance) {
+            dma_channel_state[i] = DMA_SPI_ERROR;
+            break;
+        }
+    }
+}
+// SPI Interrupts end
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == BUSY_INT)
+    {
+        // Kick next transfer — non-blocking, returns in ~5 cycles
+    	ad7606_trigger_burst(MASTER_SPI);
+    }
+}
+
+void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC3)
+    {
+        // Temperature out of range — take action
+        // e.g. reduce clock, shut down peripherals, set a flag
+    	Error_Handler();
+    }
+}
+
+// Optional - fires at 1Hz
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+	stm_temp_sensor_callback(hadc);
+}

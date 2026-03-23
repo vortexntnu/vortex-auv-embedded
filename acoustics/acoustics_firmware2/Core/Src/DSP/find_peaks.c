@@ -173,7 +173,7 @@ find_peaks_status_t find_peaks(
     if (__builtin_expect(!x || !peak_idx || !n_peaks, 0))
         return FIND_PEAKS_ERR_NULL;
     if (__builtin_expect(n < 3, 0))
-        return FIND_PEAKS_ERR_SHORT;
+        return FIND_PEAKS_ERR_INPUT;
 
     /* Use defaults if no config supplied */
     const find_peaks_config_t defaults = FIND_PEAKS_CONFIG_DEFAULT;
@@ -364,4 +364,109 @@ find_peaks_status_t find_peaks(
     }
 
     return FIND_PEAKS_OK;
+}
+
+/**
+ * @brief   Find troughs (local minima) in a q15_t signal.
+ *
+ * Implemented as the signal-negated inverse of find_peaks: negating x turns
+ * every trough into a peak, find_peaks runs unchanged, then prominence bases
+ * and heights are negated back into the original domain.
+ *
+ * arm_negate_q15() is used for the negate — single-cycle SIMD on Cortex-M7.
+ * The negated copy lives on the stack; size is bounded by n.
+ *
+ * All cfg fields have identical semantics to find_peaks_config_t EXCEPT:
+ *   - cfg->height:     interpreted as a depth ceiling — troughs with
+ *                      x[p] > -cfg->height are rejected. Pass the negated
+ *                      threshold, e.g. height = -2000 to accept only troughs
+ *                      at or below -2000 in the original signal.
+ *   - cfg->threshold:  minimum drop on each side — identical semantics,
+ *                      works correctly after negation.
+ *   - prominence/width: computed on the negated signal; values are identical
+ *                      in magnitude to what a native trough search would give.
+ *
+ * @param x             Input signal (read-only, original domain).
+ * @param n             Number of samples. Must be >= 3 and <= FIND_TROUGHS_MAX_N.
+ * @param cfg           Same config struct as find_peaks. NULL = defaults.
+ * @param trough_idx    Output array of trough indices. Caller-allocated.
+ * @param props         Output per-trough properties, or NULL if not needed.
+ *                      peak_height will be negative (original trough value).
+ *                      left_base/right_base will also be negated back.
+ * @param troughs_max   Capacity of trough_idx / props arrays.
+ * @param n_troughs     On return: number of troughs found.
+ * @return              Same status codes as find_peaks.
+ */
+
+/* Maximum signal length supported — sets the stack allocation for the
+ * negated copy. Tune to your largest expected input. 512 q15_t = 1 kB. */
+#define FIND_TROUGHS_MAX_N  512u
+
+find_peaks_status_t find_troughs(
+    const q15_t          * restrict x,
+    uint32_t               n,
+    const find_peaks_config_t *cfg,
+    uint32_t             * restrict trough_idx,
+    find_peaks_props_t   * restrict props,
+    uint32_t               troughs_max,
+    uint32_t              *n_troughs)
+{
+    if (__builtin_expect(n > FIND_TROUGHS_MAX_N, 0))
+        return FIND_PEAKS_ERR_INPUT;
+
+    /* Build a negated config so the caller can think in trough terms.
+     *
+     * height:    caller passes the minimum depth (e.g. 2000 means "only
+     *            troughs whose value is <= -2000 in the original signal").
+     *            Negating it gives find_peaks the correct minimum peak height
+     *            in the negated domain.
+     *
+     * threshold: caller passes the minimum drop on each side, which is a
+     *            positive quantity in both domains — negate it so it matches
+     *            the negated signal's rises. Actually symmetric so sign is
+     *            the same; kept as-is. No change needed.
+     *
+     * prominence, width, wlen, distance: purely magnitudes / sample counts,
+     *            identical in both domains. No change needed.
+     */
+    find_peaks_config_t neg_cfg;
+    if (cfg) {
+        neg_cfg = *cfg;   /* copy all fields */
+
+        /* height in trough-domain is a depth floor (most negative value
+         * accepted). Negate it to get the equivalent peak height floor
+         * in the negated signal. Guard against FIND_PEAKS_NONE sentinel. */
+        if (neg_cfg.height != FIND_PEAKS_NONE)
+            neg_cfg.height = -neg_cfg.height;
+
+        /* threshold: the caller supplies a positive "minimum drop" value.
+         * In the negated domain the same drop appears as a positive rise,
+         * so no change is needed. */
+
+    } else {
+        const find_peaks_config_t defaults = FIND_PEAKS_CONFIG_DEFAULT;
+        neg_cfg = defaults;
+    }
+
+    /* Negate the signal so troughs become peaks */
+    q15_t neg[FIND_TROUGHS_MAX_N];
+    arm_negate_q15(x, neg, n);
+
+    find_peaks_status_t status = find_peaks(neg, n, &neg_cfg,
+                                            trough_idx, props,
+                                            troughs_max, n_troughs);
+
+    /* Restore props into the original domain */
+    if (status == FIND_PEAKS_OK && props)
+    {
+        for (uint32_t i = 0; i < *n_troughs; ++i)
+        {
+            find_peaks_props_t *pr = &props[i];
+            pr->peak_height = x[trough_idx[i]];
+            pr->left_base   = -pr->left_base;
+            pr->right_base  = -pr->right_base;
+        }
+    }
+
+    return status;
 }

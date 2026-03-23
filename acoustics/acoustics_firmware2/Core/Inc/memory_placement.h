@@ -34,17 +34,54 @@
  * Accessible by: CPU, MDMA */
 #define PLACE_IN_ITCM      __attribute__((section(".itcm")))
 
-/* ---- Alignment constants ---- */
-#define ALIGN_DMA_BURST_8_WORD    32   /* 4 bytes × 8 beats — matches cache line */
-#define ALIGN_DMA_BURST_4_WORD    16   /* 4 bytes × 4 beats */
-#define ALIGN_DMA_BURST_8_HWORD   16   /* 2 bytes × 8 beats */
-#define ALIGN_DMA_BURST_4_HWORD    8   /* 2 bytes × 4 beats */
+/* ================================================================
+ * Alignment constants
+ * ================================================================ */
 
-/* ---- DMA buffer macros (placement + alignment combined) ---- */
-#define MDMA_BUF_DTCM(burst_align)  __attribute__((section(".dtcm"), aligned(burst_align)))
-#define DMA_BUF_D2(burst_align)  __attribute__((section(".d2_sram"), aligned(burst_align)))
-#define DMA_BUF_AXI(burst_align) __attribute__((section(".axi_sram"), aligned(burst_align)))
-#define DMA_BUF_D3(burst_align)  __attribute__((section(".d3_sram"), aligned(burst_align)))
+/* --- Byte width transfers --- */
+#define ALIGN_DMA_BYTE              1   /* Single byte, no burst     */
+#define ALIGN_DMA_BURST_4_BYTE      4   /* 1 byte  × 4 beats         */
+#define ALIGN_DMA_BURST_8_BYTE      8   /* 1 byte  × 8 beats         */
+#define ALIGN_DMA_BURST_16_BYTE    16   /* 1 byte  × 16 beats        */
+
+/* --- Half-word (16-bit) transfers --- */
+#define ALIGN_DMA_HWORD             2   /* Single half-word           */
+#define ALIGN_DMA_BURST_4_HWORD     8   /* 2 bytes × 4 beats         */
+#define ALIGN_DMA_BURST_8_HWORD    16   /* 2 bytes × 8 beats         */
+#define ALIGN_DMA_BURST_16_HWORD   32   /* 2 bytes × 16 beats        */
+
+/* --- Word (32-bit) transfers --- */
+#define ALIGN_DMA_WORD              4   /* Single word                */
+#define ALIGN_DMA_BURST_4_WORD     16   /* 4 bytes × 4 beats         */
+#define ALIGN_DMA_BURST_8_WORD     32   /* 4 bytes × 8 beats         */
+#define ALIGN_DMA_BURST_16_WORD    64   /* 4 bytes × 16 beats        */
+
+/* --- Double-word (64-bit) transfers (MDMA only) --- */
+#define ALIGN_DMA_DWORD             8   /* Single double-word         */
+#define ALIGN_DMA_BURST_4_DWORD    32   /* 8 bytes × 4 beats         */
+#define ALIGN_DMA_BURST_8_DWORD    64   /* 8 bytes × 8 beats         */
+#define ALIGN_DMA_BURST_16_DWORD  128   /* 8 bytes × 16 beats        */
+
+/* --- Cache line --- */
+#define ALIGN_CACHE_LINE           32   /* Cortex-M7 cache line size  */
+
+/* ================================================================
+ * DMA buffer placement + alignment macros
+ * format: <DMA_CONTROLLER>_BUF_<REGION>(alignment)
+ * ================================================================ */
+
+/* BDMA — only D3 SRAM accessible */
+#define BDMA_BUF_D3(burst_align)    __attribute__((section(".d3_sram"),  aligned(burst_align)))
+
+/* DMA1 / DMA2 — AXI SRAM or D2 SRAM */
+#define DMA_BUF_AXI(burst_align)    __attribute__((section(".axi_sram"),     aligned(burst_align)))
+#define DMA_BUF_D2(burst_align)     __attribute__((section(".d2_sram"),  aligned(burst_align)))
+
+/* MDMA — can reach DTCM, AXI, D2, D3 */
+#define MDMA_BUF_DTCM(burst_align)  __attribute__((section(".dtcm"),     aligned(burst_align)))
+#define MDMA_BUF_AXI(burst_align)   __attribute__((section(".axi_sram"),     aligned(burst_align)))
+#define MDMA_BUF_D2(burst_align)    __attribute__((section(".d2_sram"),  aligned(burst_align)))
+#define MDMA_BUF_D3(burst_align)    __attribute__((section(".d3_sram"),  aligned(burst_align)))
 #else
 #define PLACE_IN_AXI_SRAM
 #define PLACE_IN_D2_SRAM 

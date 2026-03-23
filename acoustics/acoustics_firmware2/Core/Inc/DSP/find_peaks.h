@@ -136,7 +136,7 @@ typedef struct {
 typedef enum {
     FIND_PEAKS_OK            = 0,
     FIND_PEAKS_ERR_NULL      = -1,  /**< null pointer argument              */
-    FIND_PEAKS_ERR_SHORT     = -2,  /**< signal length < 3                  */
+    FIND_PEAKS_ERR_INPUT     = -2,  /**< signal length < 3 or its too large */
     FIND_PEAKS_ERR_OVERFLOW  = -3,  /**< more peaks than peaks_max          */
 } find_peaks_status_t;
 
@@ -172,6 +172,16 @@ find_peaks_status_t find_peaks(
     find_peaks_props_t   *props,
     uint32_t              peaks_max,
     uint32_t             *n_peaks
+);
+
+find_peaks_status_t find_troughs(
+    const q15_t          * restrict x,
+    uint32_t               n,
+    const find_peaks_config_t *cfg,
+    uint32_t             * restrict trough_idx,
+    find_peaks_props_t   * restrict props,
+    uint32_t               troughs_max,
+    uint32_t              *n_troughs
 );
 
 #ifdef __cplusplus

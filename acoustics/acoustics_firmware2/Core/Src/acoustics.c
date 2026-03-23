@@ -145,6 +145,15 @@ bool dma_error(void){
 	return error;
 }
 
+void change_buffers_to_normal(void){
+    for(int i = 0; i < N_HYDROPHONES; i++){
+        HAL_SPI_DMAStop(dout_channel_handles[i]);
+        dout_channel_handles[i]->hdmarx->Init.Mode = DMA_NORMAL;
+        HAL_DMA_Init(dout_channel_handles[i]->hdmarx);
+        dma_channel_state[i] = DMA_SPI_IDLE;
+    }
+}
+
 // should really just be used for debugging and testing as it is not optimal
 void acoustics_init_from_arrays(SPI_HandleTypeDef* hspi_master) {
 
