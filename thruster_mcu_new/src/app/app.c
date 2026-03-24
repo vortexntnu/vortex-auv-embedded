@@ -350,8 +350,8 @@ static bool send_flt_event(uint8_t context) {
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
     
-    txBuffer->data[0] = context;
-    txBuffer->data[1] = 0x01;   // 0x01 = FLT event
+    txBuffer->data[0] = 0x01;
+    txBuffer->data[1] = context;   // 0x01 = FLT event
             
     //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     
@@ -370,8 +370,8 @@ static bool send_pgood_event(uint8_t context) {
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
     
-    txBuffer->data[0] = context;
-    txBuffer->data[1] = 0x02;   // 0x02 = PGOOD event
+    txBuffer->data[0] = 0x02;
+    txBuffer->data[1] = context;   // 0x02 = PGOOD event
     
     //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     
