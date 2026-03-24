@@ -95,7 +95,7 @@ typedef struct {
 static hw_event_flags_t hw_events = {0};
 
 // FOR TESTING
-void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms);
+void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms);
 void generate_pwm_signals();
 void test_can_rx();
 void test_can_tx();
