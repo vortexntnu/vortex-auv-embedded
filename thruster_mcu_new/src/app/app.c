@@ -537,78 +537,84 @@ void test_can_tx() {
     
 }
 
-void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms) {
+void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms) {
+    /* Beregn test_max og test_min per thruster */
+    uint16_t test_max[8];
+    uint16_t test_min[8];
     for (size_t i = 0; i < count; i++) {
-        uin8_t idx = thruster_indices[i];
-        if (idx >= 8) {
-            continue;
+        uint8_t idx = thruster_indices[i];
+        test_max[i] = clamp(max_us, thrusters[idx].neutral_us, thrusters[idx].max_us);
+        test_min[i] = clamp(min_us, thrusters[idx].min_us,     thrusters[idx].neutral_us);
+    }
+
+    /* --- Neutral -> Max --- */
+    for (uint16_t pw = 1500; pw <= max_us; pw += step_us) {
+        for (size_t i = 0; i < count; i++) {
+            uint8_t idx = thruster_indices[i];
+            struct pwm_output *th = &thrusters[idx];
+            uint16_t clamped = clamp(pw, th->neutral_us, test_max[i]);
+            uint32_t ticks = us_to_ticks(th->period_ticks, clamped, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = clamped;
         }
-        
+        SYSTICK_DelayMs(step_delay_ms);
+        if (adc_dma_done) { adc_dma_done = false; log_current(); }
+        //WDT_Clear();
+    }
+
+    /* --- Max -> Neutral --- */
+    for (uint16_t pw = max_us; pw >= 1500; pw -= step_us) {
+        for (size_t i = 0; i < count; i++) {
+            uint8_t idx = thruster_indices[i];
+            struct pwm_output *th = &thrusters[idx];
+            uint16_t clamped = clamp(pw, th->neutral_us, test_max[i]);
+            uint32_t ticks = us_to_ticks(th->period_ticks, clamped, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = clamped;
+        }
+        SYSTICK_DelayMs(step_delay_ms);
+        if (adc_dma_done) { adc_dma_done = false; log_current(); }
+        //WDT_Clear();
+        if (pw < step_us) break;
+    }
+
+    /* --- Neutral -> Min --- */
+    for (uint16_t pw = 1500; pw >= min_us; pw -= step_us) {
+        for (size_t i = 0; i < count; i++) {
+            uint8_t idx = thruster_indices[i];
+            struct pwm_output *th = &thrusters[idx];
+            uint16_t clamped = clamp(pw, test_min[i], th->neutral_us);
+            uint32_t ticks = us_to_ticks(th->period_ticks, clamped, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = clamped;
+        }
+        SYSTICK_DelayMs(step_delay_ms);
+        if (adc_dma_done) { adc_dma_done = false; log_current(); }
+        //WDT_Clear();
+        if (pw < step_us) break;
+    }
+
+    /* --- Min -> Neutral --- */
+    for (uint16_t pw = min_us; pw <= 1500; pw += step_us) {
+        for (size_t i = 0; i < count; i++) {
+            uint8_t idx = thruster_indices[i];
+            struct pwm_output *th = &thrusters[idx];
+            uint16_t clamped = clamp(pw, test_min[i], th->neutral_us);
+            uint32_t ticks = us_to_ticks(th->period_ticks, clamped, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = clamped;
+        }
+        SYSTICK_DelayMs(step_delay_ms);
+        if (adc_dma_done) { adc_dma_done = false; log_current(); }
+        //WDT_Clear();
+    }
+
+    /* Snap alle til nøytral */
+    for (size_t i = 0; i < count; i++) {
+        uint8_t idx = thruster_indices[i];
         struct pwm_output *th = &thrusters[idx];
-        
-        uint16_t test_max = clamp(max_us, th->neutral_us, th->max_us);
-        uint16_t test_min = clamp(min_us, th->min_us, th->neutral_us);
-        
-        /* Neutral -> Max */
-        for (uint16_t pw = th->neutral_us; pw <= max_us; pw += step_us) {
-            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
-            tcc_write(th->instance, th->channel, ticks);
-            th->current_pulse_us = pw;
-            SYSTICK_DelayMs(step_delay_ms);
-            if (adc_dma_done) {
-                adc_dma_done = false;
-                log_current();
-            }
-            // WDT_Clear();
-        }
-        
-        /* Max -> Neutral */
-        for (uint16_t pw = test_max; pw >= th->neutral_us; pw -= step_us) {
-            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
-            tcc_write(th->instance, th->channel, ticks);
-            th->current_pulse_us = pw;
-            SYSTICK_DelayMs(step_delay_ms);
-            if (adc_dma_done) {
-                adc_dma_done = false;
-                log_current();
-            }
-            //WDT_Clear();
-            if (pw < step_us) break; /* Underflow guard */
-        }
-        
-        /* Snap to neutral */
-        uint32_t neutral_ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
-        tcc_write(th->instance, th->channel, neutral_ticks);
-        th->current_pulse_us = th->neutral_us;
-        
-        /* --- Neutral -> Min --- */
-        for (uint16_t pw = th->neutral_us; pw >= test_min; pw -= step_us) {
-            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
-            tcc_write(th->instance, th->channel, ticks);
-            th->current_pulse_us = pw;
-            SYSTICK_DelayMs(step_delay_ms);
-            if (adc_dma_done) {
-                adc_dma_done = false;
-                log_current();
-            }
-            //WDT_Clear();
-            if (pw < step_us) break; /* Underflow guard */
-        }
-        
-        /* --- Min -> Neutral --- */
-        for (uint16_t pw = test_min; pw <= th->neutral_us; pw += step_us) {
-            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
-            tcc_write(th->instance, th->channel, ticks);
-            th->current_pulse_us = pw;
-            SYSTICK_DelayMs(step_delay_ms);
-            if (adc_dma_done) {
-                adc_dma_done = false;
-                log_current();
-            }
-            //WDT_Clear();
-        }
-        
-        tcc_write(th->instance, th->channel, neutral_ticks);
+        uint32_t ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
+        tcc_write(th->instance, th->channel, ticks);
         th->current_pulse_us = th->neutral_us;
     }
 }

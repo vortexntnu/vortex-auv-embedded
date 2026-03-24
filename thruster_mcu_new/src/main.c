@@ -21,7 +21,7 @@ int main ( void ) {
     uint8_t count = sizeof(to_test) / sizeof(to_test[0]);
     uint16_t max_us = 1800;
     uint16_t min_us = 1200;
-    uint16_t step_us = 10;
+    uint16_t step_us = 50;
     uint16_t step_delay_ms = 20;
     
     test_thrusters(to_test, count, max_us, min_us, step_us, step_delay_ms);
