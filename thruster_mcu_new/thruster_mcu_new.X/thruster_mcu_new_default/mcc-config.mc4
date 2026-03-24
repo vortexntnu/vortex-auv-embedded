@@ -29,7 +29,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAMC21J18A.ld
   hash: 3fc7dbb63ae72ecd9b52572e4dd84ed79cbd37feb6064cb6d4df6fca301d09af
 - file: ../src/config/default/definitions.h
-  hash: 46e2f149056b43fd0a73cfc64de8381f45c5f2b9add337660f68fb1720fa4b01
+  hash: d7a92db11ea004da47986ff9c86942f527ac87a22bec15918dfb6e01fdb0502b
 - file: ../src/config/default/device.h
   hash: e539bb402fa4783d95ccf06235458b2e1fe01207c83c0e046a853e0385d0b6f4
 - file: ../src/config/default/device_cache.h
@@ -39,7 +39,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: cb43fa61f2dd0433249ce1aa079d3911ceef2297f17ad29b6cf79dd70d6540d2
 - file: ../src/config/default/initialization.c
-  hash: 932d1ad41ebb85489a56ca571d163a9c0259f0fbc2ff27d49ba8665d1a6116aa
+  hash: 9c6dfcea0580ab76880926ea36131a8117885112580b291e2c5a2f7722af0289
 - file: ../src/config/default/interrupts.c
   hash: 861c03c0f7eb0c4faa12d85e4948d82df1a9f12f9680911a18a58b8aaf2b15cc
 - file: ../src/config/default/interrupts.h
@@ -112,6 +112,10 @@ generatedFileHashHistoryMap:
   hash: a0d35d03c527d1fb9c99d575f99b91a9d1d49d345b20cacee95c2aec45c0d7cb
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h
   hash: 3653b66472c558c50f7037a1dd25d2678e9a13aa718f3c53a2195e6f3919ea48
+- file: ../src/config/default/peripheral/systick/plib_systick.c
+  hash: f64a15f6e5d1d288debe9bfc0146a05a955925dc1f3160e3de6b8cee04eaeaec
+- file: ../src/config/default/peripheral/systick/plib_systick.h
+  hash: 43e550acb1089f7ee29aedf3097aa66ce3e5a25c03b9794c8f230fb1dbd516dd
 - file: ../src/config/default/peripheral/tc/plib_tc0.c
   hash: 0cd5960436cfe79c34295a4aa68097cdc695991c66030bee46fa5cf439c7b6c3
 - file: ../src/config/default/peripheral/tc/plib_tc0.h

@@ -95,6 +95,7 @@ typedef struct {
 static hw_event_flags_t hw_events = {0};
 
 // FOR TESTING
+void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms);
 void generate_pwm_signals();
 void test_can_rx();
 void test_can_tx();
@@ -276,10 +277,12 @@ void app_task(void) {
         dispatch_hw_event(&hw_events.killswitch_pending_mask, send_killswitch_event);
     }
         
+    /*
     if (can_message_received) {
         can_message_received = false;
         message_handler();
     }
+    */
 }
 
 /* --- Private helpers --- */
@@ -346,9 +349,10 @@ static bool send_flt_event(uint8_t context) {
     txBuffer->data[0] = context;
     txBuffer->data[1] = 0x01;   // 0x01 = FLT event
             
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     
-    return result;
+    //return result;
+    return true;
 }
 
 static bool send_pgood_event(uint8_t context) {
@@ -365,9 +369,10 @@ static bool send_pgood_event(uint8_t context) {
     txBuffer->data[0] = context;
     txBuffer->data[1] = 0x02;   // 0x02 = PGOOD event
     
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     
-    return result;
+    //return result;
+    return true;
 }
 
 static bool send_killswitch_event(uint8_t context) {
@@ -383,9 +388,10 @@ static bool send_killswitch_event(uint8_t context) {
     
     txBuffer->data[0] = 0x03;   // 0x03 = Killswitch event
     
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     
-    return result;
+    //return result;
+    return true;
 }
 
 static bool send_current_measurements(float I_arr[8]) {
@@ -405,9 +411,10 @@ static bool send_current_measurements(float I_arr[8]) {
         memcpy(&txBuffer->data[1 + i * sizeof(float)], &I_arr[i], sizeof(float)); // Encode in single-precision floating-point format. Assumes little-endian decoding.
     }
     
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
     
-    return result;
+    //return result;
+    return true;
     
 }
 
@@ -433,11 +440,11 @@ static void log_current(void) {
                (unsigned)thrusters[i].current_pulse_us);
     }
     
-    bool result = send_current_measurements(I_array);
+    //bool result = send_current_measurements(I_array);
     
-    if (!result) {
-        printf("CAN Transmission of current measurements failed!\r\n");
-    }
+    //if (!result) {
+      //  printf("CAN Transmission of current measurements failed!\r\n");
+    //}
 }
 
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
@@ -528,6 +535,82 @@ void test_can_tx() {
     }
     
     
+}
+
+void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms) {
+    for (size_t i = 0; i < count; i++) {
+        uin8_t idx = thruster_indices[i];
+        if (idx >= 8) {
+            continue;
+        }
+        
+        struct pwm_output *th = &thrusters[idx];
+        
+        uint16_t test_max = clamp(max_us, th->neutral_us, th->max_us);
+        uint16_t test_min = clamp(min_us, th->min_us, th->neutral_us);
+        
+        /* Neutral -> Max */
+        for (uint16_t pw = th->neutral_us; pw <= max_us; pw += step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            // WDT_Clear();
+        }
+        
+        /* Max -> Neutral */
+        for (uint16_t pw = test_max; pw >= th->neutral_us; pw -= step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            //WDT_Clear();
+            if (pw < step_us) break; /* Underflow guard */
+        }
+        
+        /* Snap to neutral */
+        uint32_t neutral_ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
+        tcc_write(th->instance, th->channel, neutral_ticks);
+        th->current_pulse_us = th->neutral_us;
+        
+        /* --- Neutral -> Min --- */
+        for (uint16_t pw = th->neutral_us; pw >= test_min; pw -= step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            //WDT_Clear();
+            if (pw < step_us) break; /* Underflow guard */
+        }
+        
+        /* --- Min -> Neutral --- */
+        for (uint16_t pw = test_min; pw <= th->neutral_us; pw += step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            //WDT_Clear();
+        }
+        
+        tcc_write(th->instance, th->channel, neutral_ticks);
+        th->current_pulse_us = th->neutral_us;
+    }
 }
 
 void generate_pwm_signals() {
