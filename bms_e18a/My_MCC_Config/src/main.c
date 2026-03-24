@@ -31,6 +31,7 @@
 #include "definitions.h"                // SYS function prototypes
 #include "ic_bms/bms_spi.h"
 #include "ic_bms/spi_test.h"
+#include "peripheral/port/plib_port.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -60,14 +61,18 @@ int main ( void )
     /* Initialize all modules */
     SYS_Initialize ( NULL );
     SYSTICK_TimerStart();
+    BOTHOFF_Clear();
 
     BQ769x2_Init(); 
+    //BOTHOFF_Clear();
     // bms_init_comm_voltage(); 
-    // SYSTICK_DelayMs(100U);
+    SYSTICK_DelayMs(100U);
     //bms_alert_irq_init();
-    voltage_test_init(); 
+    
 
-    CommandSubcommands(FET_ENABLE); // FET_ENABLE
+    //CommandSubcommands(FET_ENABLE); // FET_ENABLE
+    voltage_test_init(); 
+    
 
     //can_scope_test_init();
 

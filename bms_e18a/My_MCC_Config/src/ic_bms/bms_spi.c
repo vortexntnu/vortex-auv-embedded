@@ -603,8 +603,8 @@ void CommandSubcommands(uint16_t command) //For Command only Subcommands
 	uint8_t TX_Reg[2] = {0x00, 0x00};
 
 	//TX_Reg in little endian format
-	TX_Reg[0] = command & 0xff;
-	TX_Reg[1] = (command >> 8) & 0xff;
+	TX_Reg[0] = command & 0xff; 
+	TX_Reg[1] = (command >> 8) & 0xff; 
 
 	write_reg(0x3E,TX_Reg,2); 
 	SYSTICK_DelayUs(2000);
@@ -673,9 +673,28 @@ void BQ769x2_Init() {
 	// 'Default Alarm Mask' - 0x..82 Enables the FullScan and ADScan bits, default value = 0xF800
 	BQ769x2_SetRegister(DefaultAlarmMask, 0xF882, 2);
 
+    //TESTING INIT FUNCTIONS
+    BQ769x2_SetRegister(MfgStatusInit, 0x0050, 2);
+
+    BQ769x2_SetRegister(FETOptions, 0x0D, 1);
+    BQ769x2_SetRegister(ChgPumpControl,0x01,1); 
+    BQ769x2_SetRegister(CFETOFFPinConfig, 0x00, 1);
+    BQ769x2_SetRegister(DFETOFFPinConfig, 0x00, 1);
+    BQ769x2_SetRegister(CHGFETProtectionsA, 0x98, 1);
+    BQ769x2_SetRegister(CHGFETProtectionsB, 0xD5, 1);
+    //BQ769x2_SetRegister(CHGFETProtectionsC, 0x56, 1);
+    BQ769x2_SetRegister(DSGFETProtectionsA, 0xE4, 1);
+    BQ769x2_SetRegister(DSGFETProtectionsB, 0xE6, 1);
+    //BQ769x2_SetRegister(DSGFETProtectionsC, 0xE2, 1);
+    BQ769x2_SetRegister(PrechargeStartVoltage, 0, 2);
+    BQ769x2_SetRegister(PrechargeStopVoltage, 0, 2);
+
+
+
+
 	// Set up Cell Balancing Configuration - 0x9335 = 0x03   -  Automated balancing while in Relax or Charge modes
 	// Also see "Cell Balancing with BQ769x2 Battery Monitors" document on ti.com
-	BQ769x2_SetRegister(BalancingConfiguration, 0x02, 1);   // CB_RLX only for test
+	BQ769x2_SetRegister(BalancingConfiguration, 0x00, 1);   // CB_RLX only for test
     BQ769x2_SetRegister(CellBalanceMaxCells, 1, 1);
     BQ769x2_SetRegister(CellBalanceInterval, 10, 1);
 
@@ -686,22 +705,34 @@ void BQ769x2_Init() {
     BQ769x2_SetRegister(CellBalanceMinCellVRelax, 3000, 2);
     BQ769x2_SetRegister(CellBalanceMinDeltaRelax, 20, 1);
     BQ769x2_SetRegister(CellBalanceStopDeltaRelax, 10, 1);
-    BQ769x2_SetRegister(PrechargeStartVoltage, 0, 2);
-    BQ769x2_SetRegister(PrechargeStopVoltage, 0, 2);
+    //BQ769x2_SetRegister(PrechargeStartVoltage, 0, 2); //PRECHARGE SET 0 ZERO (DEFAULT ALSO 0)
+    //BQ769x2_SetRegister(PrechargeStopVoltage, 0, 2);  
+    union { float f; uint32_t u; } cc, cap;
+    cc.f  = 14.9536f;
+    cap.f = cc.f * 298261.6178f;
+    
+    
+    BQ769x2_SetRegister(CCGain, cc.u, 4);
+    BQ769x2_SetRegister(CapacityGain, cap.u, 4);
+    
+    
+    
+    
 
 	// Set up CUV (under-voltage) Threshold - 0x9275 = 0x31 (2479 mV)
 	// CUV Threshold is this value multiplied by 50.6mV
-	BQ769x2_SetRegister(CUVThreshold, 0x31, 1);
+	BQ769x2_SetRegister(CUVThreshold, 0x42, 1);
 
 	// Set up COV (over-voltage) Threshold - 0x9278 = 0x55 (4301 mV)
 	// COV Threshold is this value multiplied by 50.6mV
-	BQ769x2_SetRegister(COVThreshold, 0x55, 1);
+	BQ769x2_SetRegister(COVThreshold, 0x52, 1);
 
 	// Set up OCC (over-current in charge) Threshold - 0x9280 = 0x05 (10 mV = 10A across 1mOhm sense resistor) Units in 2mV
 	BQ769x2_SetRegister(OCCThreshold, 0x05, 1);
 
 	// Set up OCD1 Threshold - 0x9282 = 0x0A (20 mV = 20A across 1mOhm sense resistor) units of 2mV
-	BQ769x2_SetRegister(OCD1Threshold, 0x0A, 1);
+	BQ769x2_SetRegister(OCD1Threshold, 0x14, 1);
+    BQ769x2_SetRegister(OCD2Threshold,0x19 , 1);
 
 	// Set up SCD Threshold - 0x9286 = 0x05 (100 mV = 100A across 1mOhm sense resistor)  0x05=100mV
 	BQ769x2_SetRegister(SCDThreshold, 0x05, 1);
