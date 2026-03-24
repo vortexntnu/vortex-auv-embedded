@@ -98,6 +98,8 @@ static hw_event_flags_t hw_events = {0};
 void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms);
 void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms);
 void test_neutral_to_max(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint32_t hold_ms);
+void test_thrusters_split(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms);
+
 
 void generate_pwm_signals();
 void test_can_rx();
@@ -571,6 +573,9 @@ void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_
         SYSTICK_DelayMs(step_delay_ms);
         if (adc_dma_done) { adc_dma_done = false; log_current(); }
         //WDT_Clear();
+        
+        // Hold 3 seconds at max
+        SYSTICK_DelayMs(6000);
     }
 
     /* --- Max -> Neutral --- */
@@ -587,6 +592,9 @@ void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_
         if (adc_dma_done) { adc_dma_done = false; log_current(); }
         //WDT_Clear();
         if (pw < step_us) break;
+        
+        // Hold 3 seconds at n
+        SYSTICK_DelayMs(3000);
     }
 
     /* --- Neutral -> Min --- */
@@ -603,6 +611,9 @@ void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_
         if (adc_dma_done) { adc_dma_done = false; log_current(); }
         //WDT_Clear();
         if (pw < step_us) break;
+        
+        // Hold 6 seconds at min
+        SYSTICK_DelayMs(6000);
     }
 
     /* --- Min -> Neutral --- */
@@ -618,6 +629,8 @@ void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_
         SYSTICK_DelayMs(step_delay_ms);
         if (adc_dma_done) { adc_dma_done = false; log_current(); }
         //WDT_Clear();
+        // Hold 3 seconds at n
+        SYSTICK_DelayMs(3000);
     }
 
     /* Snap alle til nøytral */
@@ -673,9 +686,9 @@ void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t 
         }
         
         /* Snap to neutral */
-//        uint32_t neutral_ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
-//        tcc_write(th->instance, th->channel, neutral_ticks);
-//        th->current_pulse_us = th->neutral_us;
+        uint32_t neutral_ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
+        tcc_write(th->instance, th->channel, neutral_ticks);
+        th->current_pulse_us = th->neutral_us;
         
         /* --- Neutral -> Min --- */
         for (uint16_t pw = th->neutral_us; pw >= test_min; pw -= step_us) {
@@ -713,6 +726,17 @@ void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t 
         // Hold 3 seconds at neutral
         SYSTICK_DelayMs(3000);
     }
+}
+
+void test_thrusters_split(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms) {
+        size_t first_count = (count < 4) ? count : 4;
+        test_thrusters(thruster_indices, first_count, max_us, min_us, step_us, step_delay_ms);
+        
+        if (count > 4) {
+            test_thrusters(thruster_indices + 4, count - 4, max_us, min_us, step_us, step_delay_ms);
+        }
+
+        
 }
 
 void test_neutral_to_max(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint32_t hold_ms) {
