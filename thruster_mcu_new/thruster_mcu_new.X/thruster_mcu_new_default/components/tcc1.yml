@@ -198,7 +198,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '59500'
+            value: '57000'
           type: User
         type: Values
       type: Integer
@@ -231,7 +231,7 @@ data:
       - children:
         - attributes:
             id: tcc1
-            value: '59500'
+            value: '57000'
           type: Dynamic
         type: Values
       type: Integer

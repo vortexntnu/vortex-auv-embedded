@@ -198,7 +198,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '59500'
+            value: '57000'
           type: User
         type: Values
       type: Integer
@@ -231,7 +231,7 @@ data:
       - children:
         - attributes:
             id: tcc0
-            value: '59500'
+            value: '57000'
           type: Dynamic
         type: Values
       type: Integer
@@ -265,7 +265,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -315,7 +315,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean

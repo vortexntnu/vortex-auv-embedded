@@ -10,9 +10,9 @@
 #define TRANSFER_SIZE 16
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD               = 59500;
-static const uint32_t TCC1_PERIOD               = 59500;
-static const uint32_t TCC2_PERIOD               = 59550;
+static const uint32_t TCC0_PERIOD               = 57000;
+static const uint32_t TCC1_PERIOD               = 57000;
+static const uint32_t TCC2_PERIOD               = 57000;
 static const uint32_t TC3_PERIOD                = 65535; 
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
@@ -96,6 +96,9 @@ static hw_event_flags_t hw_events = {0};
 
 // FOR TESTING
 void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms);
+void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms);
+void test_neutral_to_max(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint32_t hold_ms);
+
 void generate_pwm_signals();
 void test_can_rx();
 void test_can_tx();
@@ -245,9 +248,12 @@ void app_init(void) {
     TCC2_PWMStart();
     
     // Set all thrusters and lights to neutral on startup
-    //set_pwm_neutral(thrusters, 8);
-    //set_pwm_neutral(lights, 1);
+    set_pwm_neutral(thrusters, 8);
+    set_pwm_neutral(lights, 1);
 
+    for (int i = 0; i < 1000000; i++) {
+        __NOP();
+    }
     
     // Enable TC
     TC0_TimerStart();
@@ -435,13 +441,14 @@ static void log_current(void) {
         
         I_array[i] = I_out;
         
-        printf("\nTH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
-               imon_map[i].thruster,
-               imon_map[i].ain,
-               (unsigned)adc_result_array[i],
-               V_Imon,
-               I_out,
-               (unsigned)thrusters[i].current_pulse_us);
+//        printf("\nTH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
+//               imon_map[i].thruster,
+//               imon_map[i].ain,
+//               (unsigned)adc_result_array[i],
+//               V_Imon,
+//               I_out, 
+//               (unsigned)thrusters[i].current_pulse_us);
+        printf("%u %.3f\n", (unsigned)thrusters[imon_map[i].thruster - 1].current_pulse_us, I_out);
     }
     
     //bool result = send_current_measurements(I_array);
@@ -621,6 +628,115 @@ void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_
         tcc_write(th->instance, th->channel, ticks);
         th->current_pulse_us = th->neutral_us;
     }
+}
+
+void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms) {
+    for (size_t i = 0; i < count; i++) {
+        uint8_t idx = thruster_indices[i];
+        if (idx >= 8) {
+            continue;
+        }
+        
+        struct pwm_output *th = &thrusters[idx];
+        
+        uint16_t test_max = clamp(max_us, th->neutral_us, th->max_us);
+        uint16_t test_min = clamp(min_us, th->min_us, th->neutral_us);
+        
+        /* Neutral -> Max */
+        for (uint16_t pw = th->neutral_us; pw <= max_us; pw += step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            // WDT_Clear();
+        }
+        
+        /* Max -> Neutral */
+        for (uint16_t pw = test_max; pw >= th->neutral_us; pw -= step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            //WDT_Clear();
+            if (pw < step_us) break; /* Underflow guard */
+        }
+        
+        /* Snap to neutral */
+        uint32_t neutral_ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
+        tcc_write(th->instance, th->channel, neutral_ticks);
+        th->current_pulse_us = th->neutral_us;
+        
+        /* --- Neutral -> Min --- */
+        for (uint16_t pw = th->neutral_us; pw >= test_min; pw -= step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            //WDT_Clear();
+            if (pw < step_us) break; /* Underflow guard */
+        }
+        
+        /* --- Min -> Neutral --- */
+        for (uint16_t pw = test_min; pw <= th->neutral_us; pw += step_us) {
+            uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
+            tcc_write(th->instance, th->channel, ticks);
+            th->current_pulse_us = pw;
+            SYSTICK_DelayMs(step_delay_ms);
+            if (adc_dma_done) {
+                adc_dma_done = false;
+                log_current();
+            }
+            //WDT_Clear();
+        }
+        
+        tcc_write(th->instance, th->channel, neutral_ticks);
+        th->current_pulse_us = th->neutral_us;
+        
+        SYSTICK_DelayMs(3000);
+    }
+}
+
+void test_neutral_to_max(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint32_t hold_ms) {
+    // Goes sequentially from neutral to max, holds at max for a bit and then goes back to neutral
+    for (size_t i = 0; i < count; i++) {
+        uint8_t idx = thruster_indices[i];
+        struct pwm_output *th = &thrusters[idx];
+        
+        uint16_t test_max = clamp(max_us, th->neutral_us, th->max_us);
+
+        /* Neutral -> Max */
+        uint32_t ticks = us_to_ticks(th->period_ticks, test_max, th->frame_us);
+        tcc_write(th->instance, th->channel, ticks);
+        th->current_pulse_us = test_max;
+        
+        /* Hold */
+        uint32_t elapsed = 0;
+        while (elapsed < hold_ms) {
+            SYSTICK_DelayMs(20);
+            elapsed += 20;
+            if (adc_dma_done) { adc_dma_done = false; log_current(); }
+            //WDT_Clear();
+        }
+        
+        /* Back to neutral */
+        ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
+        tcc_write(th->instance, th->channel, ticks);
+        th->current_pulse_us = th->neutral_us;
+        
+    }
+    
 }
 
 void generate_pwm_signals() {

@@ -75,7 +75,7 @@ void TCC2_PWMInitialize(void)
     /* Configure duty cycle values */
     TCC2_REGS->TCC_CC[0] = 0U;
     TCC2_REGS->TCC_CC[1] = 0U;
-    TCC2_REGS->TCC_PER = 59550U;
+    TCC2_REGS->TCC_PER = 57000U;
 
 
 
