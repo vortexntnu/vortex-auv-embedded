@@ -65,6 +65,42 @@
 // *****************************************************************************
 // *****************************************************************************
 
+/*** Macros for MPRLS_RESET pin ***/
+#define MPRLS_RESET_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 4U))
+#define MPRLS_RESET_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 4U))
+#define MPRLS_RESET_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 4U))
+#define MPRLS_RESET_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 4U))
+#define MPRLS_RESET_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 4U))
+#define MPRLS_RESET_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 4U)) & 0x01U)
+#define MPRLS_RESET_PIN                  PORT_PIN_PA04
+
+/*** Macros for WSEN_CS pin ***/
+#define WSEN_CS_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 7U))
+#define WSEN_CS_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 7U))
+#define WSEN_CS_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 7U))
+#define WSEN_CS_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 7U))
+#define WSEN_CS_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 7U))
+#define WSEN_CS_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 7U)) & 0x01U)
+#define WSEN_CS_PIN                  PORT_PIN_PA07
+
+/*** Macros for GPIO_PA08 pin ***/
+#define GPIO_PA08_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 8U))
+#define GPIO_PA08_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 8U))
+#define GPIO_PA08_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 8U))
+#define GPIO_PA08_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 8U))
+#define GPIO_PA08_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 8U))
+#define GPIO_PA08_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
+#define GPIO_PA08_PIN                  PORT_PIN_PA08
+
+/*** Macros for GPIO_PA09 pin ***/
+#define GPIO_PA09_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 9U))
+#define GPIO_PA09_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 9U))
+#define GPIO_PA09_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 9U))
+#define GPIO_PA09_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 9U))
+#define GPIO_PA09_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 9U))
+#define GPIO_PA09_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 9U)) & 0x01U)
+#define GPIO_PA09_PIN                  PORT_PIN_PA09
+
 // *****************************************************************************
 /* PORT Group
 

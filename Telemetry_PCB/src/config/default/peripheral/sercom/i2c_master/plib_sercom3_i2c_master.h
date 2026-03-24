@@ -1,22 +1,24 @@
 /*******************************************************************************
- System Interrupts File
+  Serial Communication Interface Inter-Integrated Circuit (SERCOM I2C) Library
+  Instance Header File
 
   Company:
     Microchip Technology Inc.
 
   File Name:
-    interrupt.h
+    plib_sercom3_i2c.h
 
   Summary:
-    Interrupt vectors mapping
+    SERCOM I2C PLIB Header file
 
   Description:
-    This file contains declarations of device vectors used by Harmony 3
- *******************************************************************************/
-
+    This file defines the interface to the SERCOM I2C peripheral library. This
+    library provides access to and control of the associated peripheral
+    instance.
+*******************************************************************************/
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -36,39 +38,67 @@
 * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
- *******************************************************************************/
+*******************************************************************************/
 // DOM-IGNORE-END
 
-#ifndef INTERRUPTS_H
-#define INTERRUPTS_H
+#ifndef PLIB_SERCOM3_I2C_H
+#define PLIB_SERCOM3_I2C_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-#include <stdint.h>
+/* This section lists the other files that are included in this file.
+*/
 
+#include "plib_sercom_i2c_master_common.h"
 
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus // Provide C++ Compatibility
+
+    extern "C" {
+
+#endif
+// DOM-IGNORE-END
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Handler Routines
+// Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-void Reset_Handler (void);
-void NonMaskableInt_Handler (void);
-void HardFault_Handler (void);
-void EIC_InterruptHandler (void);
-void DMAC_InterruptHandler (void);
-void SERCOM0_SPI_InterruptHandler (void);
-void SERCOM1_USART_InterruptHandler (void);
-void SERCOM3_I2C_InterruptHandler (void);
-void CAN0_InterruptHandler (void);
-void TC2_TimerInterruptHandler (void);
-void TC3_TimerInterruptHandler (void);
-void TC4_TimerInterruptHandler (void);
+
+/*
+ * The following functions make up the methods (set of possible operations) of
+ * this interface.
+ */
+
+void SERCOM3_I2C_Initialize(void);
+
+bool SERCOM3_I2C_Read(uint16_t address, uint8_t* rdData, uint32_t rdLength);
+
+bool SERCOM3_I2C_Write(uint16_t address, uint8_t* wrData, uint32_t wrLength);
+
+bool SERCOM3_I2C_WriteRead(uint16_t address, uint8_t* wrData, uint32_t wrLength, uint8_t* rdData, uint32_t rdLength);
+
+bool SERCOM3_I2C_IsBusy(void);
+
+SERCOM_I2C_ERROR SERCOM3_I2C_ErrorGet(void);
+
+void SERCOM3_I2C_CallbackRegister(SERCOM_I2C_CALLBACK callback, uintptr_t contextHandle);
+
+bool SERCOM3_I2C_TransferSetup(SERCOM_I2C_TRANSFER_SETUP* setup, uint32_t srcClkFreq );
 
 
+void SERCOM3_I2C_TransferAbort( void );
 
-#endif // INTERRUPTS_H
+bool SERCOM3_I2C_BusScan(uint16_t start_addr, uint16_t end_addr, void* pDevicesList, uint8_t* nDevicesFound);
+
+
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus  // Provide C++ Compatibility
+}
+#endif
+// DOM-IGNORE-END
+
+#endif /* PLIB_SERCOM3_I2C_H */

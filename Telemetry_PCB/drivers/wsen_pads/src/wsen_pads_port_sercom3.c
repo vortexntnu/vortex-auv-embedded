@@ -65,6 +65,7 @@ int wsen_init(void) {
 
     wsen_cs_set(true);
     if (!SERCOM3_SPI_Write(buf, 2)) {
+        wsen_cs_set(false);
         return -1;
     };
     // Enable data ready interrupts
@@ -74,8 +75,10 @@ int wsen_init(void) {
 
     wsen_cs_set(true);
     if (!SERCOM3_SPI_Write(buf, 2)) {
+        wsen_cs_set(false);
         return -1;
     };
+    wsen_cs_set(false);
     return 0;
 }
 
@@ -84,12 +87,15 @@ int wsen_init(void) {
  * @return -1 on SPI failure, -2 on unexpected device id, and 0 on success.
  */
 int wsen_check_device_id(void) {
+    wsen_cs_set(true);
     uint8_t reg = REG_DEVICE_ID | 0x80; // MSB 1 for read
     uint8_t device_id = 0;
     if (!SERCOM3_SPI_WriteRead(&reg, 1, &device_id, 1)) {
+        wsen_cs_set(false);
         return -1;
     };
 
+    wsen_cs_set(false);
     if (device_id == EXPECTED_DEVICE_ID) {
         return 0;
     } else {
@@ -137,7 +143,7 @@ static void sercom3_spi_cb(uintptr_t context) {
 }
 
 void spi_init(void) {
-    SERCOM3_SPI_CallbackRegister(sercom3_spi_cb, 0);
+    //SERCOM3_SPI_CallbackRegister(sercom3_spi_cb, 0);
     cycle.state = WSEN_IDLE;
     cycle.done = false;
 }
@@ -239,12 +245,16 @@ int polling_read_pressure(float* pressure) {
     uint8_t reg = REG_STATUS;
     // Wait until new pressure data available (P_DA bit = 1)
     do {
+        wsen_cs_set(true);
         SERCOM3_SPI_WriteRead(&reg, 1, &status, 1);
+        wsen_cs_set(false);
     } while (!(status & 0x01));
 
     // Read the 3 pressure registers (XL, L, H)
     reg = REG_DATA_P_XL;
+        wsen_cs_set(true);
     if (!SERCOM3_SPI_WriteRead(&reg, 1, rawData, 3)) {
+        wsen_cs_set(false);
         return -1;
     };
 

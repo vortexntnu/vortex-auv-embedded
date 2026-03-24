@@ -38,8 +38,9 @@
 #include "can_facade.h"
 #include "node_watchdog.h"
 #include "interrupts.h"
+#include "peripheral/sercom/i2c_master/plib_sercom3_i2c_master.h"
 #include "ws2812_port_sercom0_harmony.h"
-#include "wsen_pads_port_sercom3.h"
+#include "mprls_pressure.h"
 
 #define LED_CMD_STDID  (0x469u)
 
@@ -67,6 +68,13 @@ static inline uint32_t millis(void)
     return ms;
 }
 
+static inline void wait_ms(uint32_t delay_ms)
+{
+    const uint32_t start = millis();
+    while ((uint32_t)(millis() - start) < delay_ms) {
+    }
+}
+
 // Watchdog binding, just forward CAN_Send via callback.
 static void watchdog_can_send(uint32_t can_id, const uint8_t *data, uint8_t len)
 {
@@ -80,6 +88,7 @@ static void watchdog_can_send(uint32_t can_id, const uint8_t *data, uint8_t len)
 int main(void)
 {
     SYS_Initialize(NULL);
+
     CAN_Init();
     led_init();
     led_logic_init();
@@ -105,28 +114,30 @@ int main(void)
     // - You can override alive-req CAN ID / monitor IDs later via the led_can_watchdog_set_* API.
     led_can_watchdog_set_send_cb(watchdog_can_send);
     led_can_watchdog_init(millis());
-    
-    switch (wsen_check_device_id())
-    {
-    case 0:
-        printf("Successful connection\n");
-        break;
-    case -1:
-        printf("SPI connection failure\n");
-        break;
-    case -2:
-        printf("Unexpected device ID\n");
-        break;
-    default:
-        printf("Something went wrong:(\n");
-        break;
-    }
 
-    
+    double pressure;
+
+    wait_ms(5000u);
+    MPRLS_RESET_Clear();
+    wait_ms(10u);
+    MPRLS_RESET_Set();
+
     while (true)
     {
         SYS_Tasks();
-        
+
+        uint8_t pDevicesList[127];
+        uint8_t nDevicesFound;
+
+        wait_ms(5000u);
+        SERCOM3_I2C_BusScan(1, 127,pDevicesList, &nDevicesFound);
+
+        printf("Devices found: %d\n", nDevicesFound);
+        start_measurement();
+        wait_ms(20u);
+        read_pressure(&pressure);
+        printf("%f\n", pressure);
+
         const uint32_t ms = millis();
         led_logic_tick(ms);
         led_can_watchdog_tick(ms);

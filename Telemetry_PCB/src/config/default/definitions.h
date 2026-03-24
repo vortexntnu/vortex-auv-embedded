@@ -49,7 +49,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "peripheral/sercom/spi_master/plib_sercom3_spi_master.h"
+#include "peripheral/sercom/i2c_master/plib_sercom3_i2c_master.h"
 #include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/sercom/usart/plib_sercom2_usart.h"
 #include "peripheral/sercom/usart/plib_sercom1_usart.h"

@@ -40,10 +40,13 @@
               <itemPath>../src/config/default/peripheral/port/plib_port.h</itemPath>
             </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
+              <logicalFolder name="i2c_master" displayName="i2c_master" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom_i2c_master_common.h</itemPath>
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom3_i2c_master.h</itemPath>
+              </logicalFolder>
               <logicalFolder name="spi_master" displayName="spi_master" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom_spi_master_common.h</itemPath>
-                <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom3_spi_master.h</itemPath>
               </logicalFolder>
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.h</itemPath>
@@ -70,13 +73,12 @@
         <logicalFolder name="f2" displayName="leakage-sensor" projectFiles="true">
           <itemPath>../drivers/leakage-sensor/include/leak_sensor_eic.h</itemPath>
         </logicalFolder>
+        <logicalFolder name="f4" displayName="mprls" projectFiles="true">
+          <itemPath>../drivers/mprls/mprls_pressure.h</itemPath>
+        </logicalFolder>
         <logicalFolder name="f3" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/include/ws2812_spi_enc.h</itemPath>
           <itemPath>../drivers/ws2812/include/ws2812_port_sercom0_harmony.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="f1" displayName="wsen-pads" projectFiles="true">
-          <itemPath>../drivers/wsen_pads/include/wsen_pads.h</itemPath>
-          <itemPath>../drivers/wsen_pads/include/wsen_pads_port_sercom3.h</itemPath>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="packs" displayName="packs" projectFiles="true">
@@ -267,9 +269,11 @@
               <itemPath>../src/config/default/peripheral/port/plib_port.c</itemPath>
             </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
+              <logicalFolder name="i2c_master" displayName="i2c_master" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom3_i2c_master.c</itemPath>
+              </logicalFolder>
               <logicalFolder name="spi_master" displayName="spi_master" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.c</itemPath>
-                <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom3_spi_master.c</itemPath>
               </logicalFolder>
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.c</itemPath>
@@ -296,12 +300,12 @@
         <logicalFolder name="f2" displayName="leakage-sensor" projectFiles="true">
           <itemPath>../drivers/leakage-sensor/src/leak_sensor_eic.c</itemPath>
         </logicalFolder>
+        <logicalFolder name="f4" displayName="mprls" projectFiles="true">
+          <itemPath>../drivers/mprls/mprls_pressure.c</itemPath>
+        </logicalFolder>
         <logicalFolder name="f3" displayName="ws2812" projectFiles="true">
           <itemPath>../drivers/ws2812/src/ws2812_spi_enc.c</itemPath>
           <itemPath>../drivers/ws2812/src/ws2812_port_sercom0_harmony.c</itemPath>
-        </logicalFolder>
-        <logicalFolder name="f1" displayName="wsen-pads" projectFiles="true">
-          <itemPath>../drivers/wsen_pads/src/wsen_pads_port_sercom3.c</itemPath>
         </logicalFolder>
       </logicalFolder>
       <itemPath>../src/config/default/pin_configurations.csv</itemPath>
@@ -319,6 +323,7 @@
     <Elem>../drivers/leakage-sensor/include</Elem>
     <Elem>../drivers/wsen_pads/src</Elem>
     <Elem>../drivers/leakage-sensor/src</Elem>
+    <Elem>../drivers/mprls</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -423,6 +428,7 @@
       <C32>
         <property key="additional-warnings" value="true"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="cast-align" value="false"/>
         <property key="code-model" value="default"/>
         <property key="const-model" value="default"/>
@@ -437,7 +443,7 @@
         <property key="exclude-floating-point" value="false"/>
         <property key="expand-pragma-config" value="false"/>
         <property key="extra-include-directories"
-                  value="../app/include;../app/src;../drivers/ws2812/include ;../drivers/ws2812/src ;../src;../src/config/default;../src/packs/ATSAMC21E17A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../utils/include;..\drivers\wsen_pads;..\drivers\wsen_pads\include"/>
+                  value="../app/include;../app/src;../drivers/ws2812/include ;../drivers/ws2812/src ;../src;../src/config/default;../src/packs/ATSAMC21E17A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../utils/include;..\drivers\mprls;..\drivers\wsen_pads;..\drivers\wsen_pads\include"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>
@@ -501,6 +507,7 @@
         <property key="additional-options-use-response-files" value="false"/>
         <property key="additional-options-write-sla" value="false"/>
         <property key="allocate-dinit" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="code-dinit" value="false"/>
         <property key="ebase-addr" value=""/>
         <property key="enable-check-sections" value="false"/>
@@ -546,6 +553,7 @@
       <C32CPP>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="check-new" value="false"/>
         <property key="eh-specs" value="true"/>
         <property key="enable-app-io" value="false"/>
