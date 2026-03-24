@@ -231,6 +231,10 @@ void app_init(void) {
     // Configure RTC
     RTC_Timer32Start();
     RTC_Timer32CompareSet(50);
+    
+    // Configure SysTick Timer
+    SYSTICK_TimerStart();
+    
     // Configure DMA
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, adc_dma_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
