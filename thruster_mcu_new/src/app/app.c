@@ -655,6 +655,9 @@ void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t 
             // WDT_Clear();
         }
         
+        // Hold 3 seconds at max
+        SYSTICK_DelayMs(3000);
+        
         /* Max -> Neutral */
         for (uint16_t pw = test_max; pw >= th->neutral_us; pw -= step_us) {
             uint32_t ticks = us_to_ticks(th->period_ticks, pw, th->frame_us);
@@ -670,9 +673,9 @@ void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t 
         }
         
         /* Snap to neutral */
-        uint32_t neutral_ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
-        tcc_write(th->instance, th->channel, neutral_ticks);
-        th->current_pulse_us = th->neutral_us;
+//        uint32_t neutral_ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
+//        tcc_write(th->instance, th->channel, neutral_ticks);
+//        th->current_pulse_us = th->neutral_us;
         
         /* --- Neutral -> Min --- */
         for (uint16_t pw = th->neutral_us; pw >= test_min; pw -= step_us) {
@@ -687,6 +690,9 @@ void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t 
             //WDT_Clear();
             if (pw < step_us) break; /* Underflow guard */
         }
+        
+        // Hold 3 seconds at min
+        SYSTICK_DelayMs(3000);
         
         /* --- Min -> Neutral --- */
         for (uint16_t pw = test_min; pw <= th->neutral_us; pw += step_us) {
@@ -704,39 +710,42 @@ void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t 
         tcc_write(th->instance, th->channel, neutral_ticks);
         th->current_pulse_us = th->neutral_us;
         
+        // Hold 3 seconds at neutral
         SYSTICK_DelayMs(3000);
     }
 }
 
 void test_neutral_to_max(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint32_t hold_ms) {
-    // Goes sequentially from neutral to max, holds at max for a bit and then goes back to neutral
     for (size_t i = 0; i < count; i++) {
         uint8_t idx = thruster_indices[i];
         struct pwm_output *th = &thrusters[idx];
-        
-        uint16_t test_max = clamp(max_us, th->neutral_us, th->max_us);
 
-        /* Neutral -> Max */
-        uint32_t ticks = us_to_ticks(th->period_ticks, test_max, th->frame_us);
+        /* Neutral -> Spin-up (1750us for 1 second) */
+        uint32_t ticks = us_to_ticks(th->period_ticks, 1750, th->frame_us);
         tcc_write(th->instance, th->channel, ticks);
-        th->current_pulse_us = test_max;
-        
+        th->current_pulse_us = 1750;
+        SYSTICK_DelayMs(1000);
+
+        /* Spin-up -> Max */
+        ticks = us_to_ticks(th->period_ticks, max_us, th->frame_us);
+        tcc_write(th->instance, th->channel, ticks);
+        th->current_pulse_us = max_us;
+
         /* Hold */
         uint32_t elapsed = 0;
         while (elapsed < hold_ms) {
             SYSTICK_DelayMs(20);
             elapsed += 20;
             if (adc_dma_done) { adc_dma_done = false; log_current(); }
-            //WDT_Clear();
         }
-        
+
         /* Back to neutral */
         ticks = us_to_ticks(th->period_ticks, th->neutral_us, th->frame_us);
         tcc_write(th->instance, th->channel, ticks);
         th->current_pulse_us = th->neutral_us;
-        
+
+        SYSTICK_DelayMs(2000);
     }
-    
 }
 
 void generate_pwm_signals() {

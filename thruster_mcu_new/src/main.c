@@ -21,13 +21,13 @@ int main ( void ) {
     uint8_t count = sizeof(to_test) / sizeof(to_test[0]);
     uint16_t max_us = 2000;
     uint16_t min_us = 1000;
-    uint16_t step_us = 1;
+    uint16_t step_us = 25;
     uint32_t step_delay_ms = 25;
     
-    //test_thrusters_seq(to_test, count, max_us, min_us, step_us, step_delay_ms);
+    test_thrusters_seq(to_test, count, max_us, min_us, step_us, step_delay_ms);
     
-    uint32_t hold_ms = 3000;
-    test_neutral_to_max(to_test, count, max_us, hold_us);
+    uint32_t hold_ms = 5000;
+    //test_neutral_to_max(to_test, count, max_us, hold_ms);
         
     while ( true )
     {
