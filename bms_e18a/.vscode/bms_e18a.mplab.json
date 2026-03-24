@@ -4,7 +4,7 @@
         {
             "name": "default-XC32",
             "type": "toolchain",
-            "provider": "microchip.toolchains:xc32@4.60",
+            "provider": "microchip.toolchains:xc32@4.50",
             "properties": {
                 "compiler.isolate-each-function": true,
                 "compiler.optimization-level": "-O1",

@@ -92,42 +92,181 @@ static void uart_write_voltages(const uint16_t cell_mV[6])
     (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
 }
 
+// static void uart_write_alert_ssa(void)
+// {
+//     uint16_t alarm = 0U;
+//     uint16_t ssa = 0U;
+//     char line[48];
+//     int len;
+//
+//     if (!bq_direct_command(AlarmStatus, &alarm, R))
+//     {
+//         return;
+//     }
+//
+//     if (!bq_direct_command(SafetyStatusA, &ssa, R))
+//     {
+//         return;
+//     }
+//
+//     len = snprintf(
+//         line,
+//         sizeof(line),
+//         "alert=0x%04X,ssa=0x%04X\r\n",
+//         (unsigned int)alarm,
+//         (unsigned int)ssa);
+//
+//     if (len <= 0)
+//     {
+//         return;
+//     }
+//
+//     if ((size_t)len >= sizeof(line))
+//     {
+//         len = (int)(sizeof(line) - 1U);
+//     }
+//
+//     (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
+// }
+//
+// static void uart_write_alert_ssa(void)
+// {
+//     uint16_t alarm = 0U;
+//     uint16_t ssa = 0U;
+//     uint16_t ssb = 0U;
+//     uint16_t ssc = 0U;
+//     char line[80];
+//     int len;
+//
+//     if (!bq_direct_command(AlarmStatus, &alarm, R))
+//     {
+//         return;
+//     }
+//
+//     if (!bq_direct_command(SafetyStatusA, &ssa, R))
+//     {
+//         return;
+//     }
+//
+//     if (!bq_direct_command(SafetyStatusB, &ssb, R))
+//     {
+//         return;
+//     }
+//
+//     if (!bq_direct_command(SafetyStatusC, &ssc, R))
+//     {
+//         return;
+//     }
+//
+//     len = snprintf(
+//         line,
+//         sizeof(line),
+//         "alert=0x%04X,ssa=0x%04X,ssb=0x%04X,ssc=0x%04X\r\n",
+//         (unsigned int)alarm,
+//         (unsigned int)ssa,
+//         (unsigned int)ssb,
+//         (unsigned int)ssc);
+//
+//     if (len <= 0)
+//     {
+//         return;
+//     }
+//
+//     if ((size_t)len >= sizeof(line))
+//     {
+//         len = (int)(sizeof(line) - 1U);
+//     }
+//
+//     (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
+// }
 static void uart_write_alert_ssa(void)
 {
     uint16_t alarm = 0U;
     uint16_t ssa = 0U;
-    char line[48];
+    uint16_t ssb = 0U;
+    uint16_t ssc = 0U;
+    uint16_t fet = 0U;
+    char line[96];
     int len;
 
     if (!bq_direct_command(AlarmStatus, &alarm, R))
-    {
         return;
-    }
 
     if (!bq_direct_command(SafetyStatusA, &ssa, R))
-    {
         return;
-    }
+
+    if (!bq_direct_command(SafetyStatusB, &ssb, R))
+        return;
+
+    if (!bq_direct_command(SafetyStatusC, &ssc, R))
+        return;
+
+    if (!bq_direct_command(FETStatus, &fet, R))
+        return;
 
     len = snprintf(
         line,
         sizeof(line),
-        "alert=0x%04X,ssa=0x%04X\r\n",
+        "alert=0x%04X,ssa=0x%04X,ssb=0x%04X,ssc=0x%04X,fet=0x%04X\r\n",
         (unsigned int)alarm,
-        (unsigned int)ssa);
+        (unsigned int)ssa,
+        (unsigned int)ssb,
+        (unsigned int)ssc,
+        (unsigned int)fet);
 
     if (len <= 0)
-    {
         return;
-    }
 
     if ((size_t)len >= sizeof(line))
-    {
         len = (int)(sizeof(line) - 1U);
-    }
 
-    (void)uart_write_blocking((const uint8_t *)line, (size_t)len);
+    uart_write_blocking((const uint8_t *)line, (size_t)len);
 }
+
+static void uart_write_alert_pfa(void)
+{
+    uint16_t alarm = 0U;
+    uint16_t ssa = 0U;
+    uint16_t ssb = 0U;
+    uint16_t ssc = 0U;
+    uint16_t fet = 0U;
+    char line[96];
+    int len;
+
+    if (!bq_direct_command(PFStatusA, &alarm, R))
+        return;
+
+    if (!bq_direct_command(PFStatusB, &ssa, R))
+        return;
+
+    if (!bq_direct_command(PFStatusC, &ssb, R))
+        return;
+
+    if (!bq_direct_command(PFStatusD, &ssc, R))
+        return;
+
+    if (!bq_direct_command(FETStatus, &fet, R))
+        return;
+
+    len = snprintf(
+        line,
+        sizeof(line),
+        "pfa=0x%04X,pfb=0x%04X,pfc=0x%04X,pfd=0x%04X,fet=0x%04X\r\n",
+        (unsigned int)alarm,
+        (unsigned int)ssa,
+        (unsigned int)ssb,
+        (unsigned int)ssc,
+        (unsigned int)fet);
+
+    if (len <= 0)
+        return;
+
+    if ((size_t)len >= sizeof(line))
+        len = (int)(sizeof(line) - 1U);
+
+    uart_write_blocking((const uint8_t *)line, (size_t)len);
+}
+
 
 void spi_write_probe_step(void)
 {
@@ -178,6 +317,54 @@ void voltage_test_init(void)
     uart_write_text("voltage_order,c1,c2,c3,c4,c5,c10\r\n");
 }
 
+static void uart_write_current(void)
+{
+    int16_t current = 0;
+    char line[32];
+    int len;
+
+    if (!bq_direct_command(CC2Current, (uint16_t*)&current, R))
+    {
+        return;
+    }
+
+    len = snprintf(line, sizeof(line), "current=%d mA\r\n", current);
+
+    if (len > 0 && len < sizeof(line))
+    {
+        uart_write_blocking((uint8_t*)line, len);
+    }
+}
+static void uart_write_battery_status(void)
+{
+    uint16_t batt = 0U;
+    char line[48];
+    int len;
+
+    if (!bq_direct_command(BatteryStatus, &batt, R))
+    {
+        return;
+    }
+
+    len = snprintf(
+        line,
+        sizeof(line),
+        "batt=0x%04X\r\n",
+        (unsigned int)batt);
+
+    if (len <= 0)
+    {
+        return;
+    }
+
+    if ((size_t)len >= sizeof(line))
+    {
+        len = (int)(sizeof(line) - 1U);
+    }
+
+    uart_write_blocking((const uint8_t *)line, (size_t)len);
+}
+
 void voltage_test_step(void)
 {
     uint16_t cell_mV[6] = {0U};
@@ -187,6 +374,10 @@ void voltage_test_step(void)
     {
         uart_write_voltages(cell_mV);
         uart_write_alert_ssa();
+        uart_write_current();
+        uart_write_battery_status();
+
+        uart_write_alert_pfa();
         LED_R_Clear();
     }
     else

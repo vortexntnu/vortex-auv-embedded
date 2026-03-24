@@ -538,6 +538,8 @@ void bothoff_low(void);
 void bms_init_comm_voltage(void);
 void BQ769x2_Init();
 
+void CommandSubcommands(uint16_t command); //For Command only Subcommands
+
 
 
 

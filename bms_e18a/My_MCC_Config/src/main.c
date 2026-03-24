@@ -67,6 +67,8 @@ int main ( void )
     //bms_alert_irq_init();
     voltage_test_init(); 
 
+    CommandSubcommands(FET_ENABLE); // FET_ENABLE
+
     //can_scope_test_init();
 
     //printf("CAN scope test running\r\n");

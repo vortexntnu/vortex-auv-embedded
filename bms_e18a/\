@@ -637,7 +637,7 @@ void BQ769x2_Init() {
     BQ769x2_SetRegister(0x923C, 0x40, 1);
 
 	// Set DFETOFF pin to control BOTH CHG and DSG FET - 0x92FB = 0x42 (set to 0x00 to disable)
-	BQ769x2_SetRegister(DFETOFFPinConfig, 0x00, 1);
+	BQ769x2_SetRegister(DFETOFFPinConfig, 0x42, 1);
 
 	// Set up ALERT Pin - 0x92FC = 0x2A
 	// This configures the ALERT pin to drive high (REG1 voltage) when enabled.
