@@ -168,15 +168,15 @@ void SYS_Initialize ( void* data )
 
     SERCOM3_USART_Initialize();
 
-    NVMCTRL_Initialize( );
-
     SERCOM2_USART_Initialize();
+
+    NVMCTRL_Initialize( );
 
     SERCOM1_USART_Initialize();
 
-    EVSYS_Initialize();
-
     SERCOM0_SPI_Initialize();
+
+    EVSYS_Initialize();
 
     DMAC_Initialize();
 
@@ -185,6 +185,8 @@ void SYS_Initialize ( void* data )
     EIC_Initialize();
 
     TC3_TimerInitialize();
+
+    TC2_TimerInitialize();
 
     TC4_TimerInitialize();
 

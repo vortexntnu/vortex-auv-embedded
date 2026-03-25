@@ -72,6 +72,17 @@ static void watchdog_can_send(uint32_t can_id, const uint8_t *data, uint8_t len)
     CAN_Send(can_id, data, len);
 }
 
+static void print_alive_every_3s(uint32_t now_ms)
+{
+    static uint32_t last_alive_ms = 0;
+
+    if ((now_ms - last_alive_ms) >= 3000u)
+    {
+        last_alive_ms = now_ms;
+        printf("I'm alive\r\n");
+    }
+}
+
 int main(void)
 {
     SYS_Initialize(NULL);
@@ -109,7 +120,9 @@ int main(void)
         
         const uint32_t ms = millis();
         
-        CAN_RecoverIfNeeded();
+        //CAN_RecoverIfNeeded();
+        
+        print_alive_every_3s(ms);
         
         led_logic_tick(ms);
         led_can_watchdog_tick(ms);

@@ -50,11 +50,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "peripheral/sercom/usart/plib_sercom3_usart.h"
-#include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/sercom/usart/plib_sercom2_usart.h"
+#include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/sercom/usart/plib_sercom1_usart.h"
-#include "peripheral/evsys/plib_evsys.h"
 #include "peripheral/sercom/spi_master/plib_sercom0_spi_master.h"
+#include "peripheral/evsys/plib_evsys.h"
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
@@ -62,6 +62,7 @@
 #include "peripheral/can/plib_can0.h"
 #include "peripheral/eic/plib_eic.h"
 #include "peripheral/tc/plib_tc3.h"
+#include "peripheral/tc/plib_tc2.h"
 #include "peripheral/tc/plib_tc4.h"
 
 // DOM-IGNORE-BEGIN

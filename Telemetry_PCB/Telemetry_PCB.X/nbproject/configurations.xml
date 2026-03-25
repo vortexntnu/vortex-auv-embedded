@@ -54,6 +54,7 @@
               <itemPath>../src/config/default/peripheral/tc/plib_tc_common.h</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc3.h</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc4.h</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc2.h</itemPath>
             </logicalFolder>
           </logicalFolder>
           <itemPath>../src/config/default/toolchain_specifics.h</itemPath>
@@ -181,8 +182,33 @@
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="true">
+      <logicalFolder name="Telemetry_PCB_default"
+                     displayName="Telemetry_PCB_default"
+                     projectFiles="true">
+        <logicalFolder name="components" displayName="components" projectFiles="true">
+          <itemPath>Telemetry_PCB_default/components/cmsis.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/stdio.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/tc3.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/eic.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/dfp.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/sercom3.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/can0.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/sercom1.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/tc2.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/nvmctrl.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/evsys.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/sercom2.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/tc4.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/core.yml</itemPath>
+          <itemPath>Telemetry_PCB_default/components/sercom0.yml</itemPath>
+        </logicalFolder>
+        <itemPath>Telemetry_PCB_default/mcc-config.mc4</itemPath>
+      </logicalFolder>
       <itemPath>Makefile</itemPath>
-      <itemPath>Telemetry_PCB.mc3</itemPath>
+    </logicalFolder>
+    <logicalFolder name="LibraryFiles"
+                   displayName="LibraryFiles"
+                   projectFiles="true">
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -242,6 +268,7 @@
             <logicalFolder name="tc" displayName="tc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tc/plib_tc3.c</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc4.c</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc2.c</itemPath>
             </logicalFolder>
           </logicalFolder>
           <logicalFolder name="stdio" displayName="stdio" projectFiles="true">
@@ -269,6 +296,11 @@
     <Elem>../drivers/ws2812/src</Elem>
     <Elem>../utils/include</Elem>
     <Elem>../utils/src</Elem>
+    <Elem>../drivers/wsen_pads/include</Elem>
+    <Elem>../drivers/leakage-sensor/include</Elem>
+    <Elem>../drivers/wsen_pads/src</Elem>
+    <Elem>../drivers/leakage-sensor/src</Elem>
+    <Elem>../drivers/mprls</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
