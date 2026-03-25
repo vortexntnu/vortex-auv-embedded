@@ -212,7 +212,7 @@ void spi_write_probe_step(void)
     }
 
     LED_Y_Toggle();
-    delay_cycles(VOLTAGE_TEST_DELAY_CYCLES);
+    // delay_cycles(VOLTAGE_TEST_DELAY_CYCLES);
 
     tx ^= 0xFFU;
 }

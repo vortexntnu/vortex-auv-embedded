@@ -28,11 +28,13 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "app/can_telemetry.h"
 #include "app/state_machine.h"
+#include "config/default/peripheral/rtc/plib_rtc.h"
 #include "config/default/peripheral/systick/plib_systick.h"
 #include "definitions.h"                // SYS function prototypes
 #include "ic_bms/bms_spi.h"
 #include "ic_bms/spi_test.h"
 #include "peripheral/port/plib_port.h"
+#include "app/can_telemetry.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -47,15 +49,18 @@ static void CAN_Wake_EIC_Callback(uintptr_t context) // called when a CAN wake-u
 }
 
 
+*/
+volatile bool rtc_timer = false;
 static void TelemetryRtcCb(RTC_TIMER32_INT_MASK intCause, uintptr_t context) // called every 100ms by the RTC timer interrupt
 {
     (void)intCause;
     (void)context;
-    sm_on_rtc_tick();
-    CAN_telemetry_tickISR();
+    // sm_on_rtc_tick();
+    // CAN_telemetry_tickISR();
+    printf("RTC interrupt\r\n");
+    rtc_timer = true;
 }
 
-*/
 
 int main ( void )
 {
@@ -68,8 +73,12 @@ int main ( void )
     //BOTHOFF_Clear();
     // bms_init_comm_voltage(); 
     SYSTICK_DelayMs(100U);
+    RTC_Timer32CompareSet(1000);
+    RTC_Timer32CallbackRegister(TelemetryRtcCb, 0);
+    RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
+    RTC_Timer32Start();
     //bms_alert_irq_init();
-    CAN_Init();
+    // CAN_Init();
     
 
     //CommandSubcommands(FET_ENABLE); // FET_ENABLE
@@ -83,12 +92,15 @@ int main ( void )
     while ( true )
     {
         SYS_Tasks();
+        if (rtc_timer){
+            voltage_test_step(); 
+            rtc_timer = false;
+        }
 
-        voltage_test_step(); 
-        CAN_alert_pfa_send();
-        CAN_alert_ssa_send();
-        CAN_current_send();
-        CAN_voltage_send();
+        // CAN_alert_pfa_send();
+        // CAN_alert_ssa_send();
+        // CAN_current_send();
+        // CAN_voltage_send();
         //bms_alert_step();
         //spi_write_probe_step(); 
 
