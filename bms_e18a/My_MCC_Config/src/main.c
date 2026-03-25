@@ -78,7 +78,7 @@ int main ( void )
     RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
     RTC_Timer32Start();
     //bms_alert_irq_init();
-    // CAN_Init();
+    CAN_Init();
     
 
     //CommandSubcommands(FET_ENABLE); // FET_ENABLE
@@ -95,12 +95,12 @@ int main ( void )
         if (rtc_timer){
             voltage_test_step(); 
             rtc_timer = false;
+            CAN_alert_pfa_send();
+            CAN_alert_ssa_send();
+            CAN_current_send();
+            CAN_voltage_send();
         }
 
-        // CAN_alert_pfa_send();
-        // CAN_alert_ssa_send();
-        // CAN_current_send();
-        // CAN_voltage_send();
         //bms_alert_step();
         //spi_write_probe_step(); 
 

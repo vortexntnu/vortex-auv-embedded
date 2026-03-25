@@ -41,10 +41,10 @@ void CAN_voltage_send(void)
     uint8_t i;
     bool ok;
 
-    if (!flag_vol_tx)
-        return;
-
-    flag_vol_tx = false;
+    // if (!flag_vol_tx)
+    //     return;
+    //
+    // flag_vol_tx = false;
 
     ok = read_cells_1to6(cell_mV);
     if (!ok)
