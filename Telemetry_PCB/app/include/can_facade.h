@@ -25,8 +25,12 @@ extern "C" {
 #endif
 
 void CAN_Init(void);
-bool CAN_Send(uint32_t id, uint8_t *data, uint8_t len);
+bool CAN_Send(uint32_t id, const uint8_t *data, uint8_t len);
 void APP_CAN_Callback(uintptr_t context);
+
+bool CAN_IsBusOff(void);
+void CAN_RecoverIfNeeded(void);
+void CAN_ForceRecover(void);
 
 
 #ifdef __cplusplus

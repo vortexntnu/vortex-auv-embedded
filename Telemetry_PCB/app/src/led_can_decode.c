@@ -69,36 +69,36 @@ bool led_can_decode_and_update(uint32_t can_id, const uint8_t *data, uint8_t len
     const bool    has_detail   = (detail_mask4 != 0u);
 
     switch ((msg_type_t)type)
-{
-    case MSG_CLEAR:
-        if (parameter == 0x00u) {            // clear subsystem + detail
-            led_logic_clear_subsystem(subsystem_id);
-            if (can_id == CAN_ID_PRESSURE) led_logic_set_pressure_ok(true);
+    {
+        case MSG_CLEAR:
+            if (parameter == 0x00u) {            // clear subsystem + detail
+                led_logic_clear_subsystem(subsystem_id);
+                if (can_id == CAN_ID_PRESSURE) led_logic_set_pressure_ok(true);
+                return true;
+            }
+            if (parameter == 0x01u) {            // clear detail only
+                led_logic_clear_detail(subsystem_id);
+                return true;
+            }
+            return false;
+
+        case MSG_WARN:
+            led_logic_set_subsystem(LED_SEV_WARN, subsystem_id, has_detail, detail_mask4);
+            if (can_id == CAN_ID_PRESSURE) led_logic_set_pressure_ok(false);
             return true;
-        }
-        if (parameter == 0x01u) {            // clear detail only
-            led_logic_clear_detail(subsystem_id);
+
+        case MSG_FAULT:
+            led_logic_set_subsystem(LED_SEV_FAULT, subsystem_id, has_detail, detail_mask4);
+            if (can_id == CAN_ID_PRESSURE) led_logic_set_pressure_ok(false);
             return true;
-        }
-        return false;
 
-    case MSG_WARN:
-        led_logic_set_subsystem(LED_SEV_WARN, subsystem_id, has_detail, detail_mask4);
-        if (can_id == CAN_ID_PRESSURE) led_logic_set_pressure_ok(false);
-        return true;
-
-    case MSG_FAULT:
-        led_logic_set_subsystem(LED_SEV_FAULT, subsystem_id, has_detail, detail_mask4);
-        if (can_id == CAN_ID_PRESSURE) led_logic_set_pressure_ok(false);
-        return true;
-
-    default:
-        return false;
-}
+        default:
+            return false;
+    }
 }
 
 // ============================================================================
-// Integrated watchdog (added)
+// Integrated watchdog
 // MCU subsystem uses detail values 1,2,3,4 (one active detail shown at a time)
 // instead of bitmask 1,2,4,8.
 // ============================================================================
@@ -123,9 +123,11 @@ typedef struct {
     bool     probe_pending;
     uint32_t probe_deadline_ms;
 
-    bool     traffic_missing;      // latched "we were silent"
-    uint32_t last_probe_sent_ms;   // anti-spam
+    bool     traffic_missing;            // latched "we were silent / not yet validated"
+    uint32_t last_probe_sent_ms;         // anti-spam
     uint8_t  probe_seq;
+
+    uint32_t last_validation_probe_ms;   // periodic re-validation while ALARM
 } wd_node_t;
 
 static bool g_wd_enabled = false;
@@ -215,9 +217,7 @@ static void send_probe_if_allowed(led_node_id_t node, uint32_t now_ms)
     // Payload:
     //   data[0] = 0xA1 (ALIVE_REQ)
     //   data[1] = target node
-    // For the 4 MCUs, target values 1,2,3,4 are used directly,
-    // matching the LED detail representation.
-    // For PI/ORIN, target values 5 and 6 are used internally by watchdog.
+    //   data[2] = sequence
     uint8_t data[3];
     data[0] = 0xA1u;
     data[1] = (uint8_t)node;
@@ -252,9 +252,10 @@ void led_can_watchdog_init(uint32_t now_ms)
         g_nodes[i].last_traffic_ms = now_ms;
         g_nodes[i].probe_pending = false;
         g_nodes[i].probe_deadline_ms = 0u;
-        g_nodes[i].traffic_missing = true;
+        g_nodes[i].traffic_missing = true;      // not yet validated / missing
         g_nodes[i].last_probe_sent_ms = 0u;
         g_nodes[i].probe_seq = 0u;
+        g_nodes[i].last_validation_probe_ms = 0u;
 
         apply_alarm_to_led((led_node_id_t)i, true);
     }
@@ -265,7 +266,8 @@ static void on_traffic_seen(led_node_id_t node, uint32_t now_ms)
     wd_node_t *n = &g_nodes[(int)node];
     n->last_traffic_ms = now_ms;
 
-    // If traffic returns after silence, force re-validation probe (do not clear alarm).
+    // If traffic appears while node is marked missing/not validated,
+    // force a validation probe. This includes startup and traffic return.
     if (n->traffic_missing) {
         n->traffic_missing = false;
         send_probe_if_allowed(node, now_ms);
@@ -279,6 +281,7 @@ static void on_im_good(led_node_id_t node, uint32_t now_ms)
     n->probe_pending = false;
     n->traffic_missing = false;
     n->last_traffic_ms = now_ms;
+    n->last_validation_probe_ms = now_ms;
 
     n->state = WD_GOOD;
     apply_alarm_to_led(node, false);
@@ -336,14 +339,26 @@ void led_can_watchdog_tick(uint32_t now_ms)
         wd_node_t *n = &g_nodes[i];
 
         const bool silent = ((uint32_t)(now_ms - n->last_traffic_ms) > WATCHDOG_SILENCE_MS);
+
         if (silent) {
+            // No traffic seen recently -> mark missing and probe
             n->traffic_missing = true;
+
             if (!n->probe_pending) {
                 send_probe_if_allowed(node, now_ms);
             }
+        } else {
+            // Traffic exists. If node is still in ALARM, keep trying validation
+            // periodically until IM_GOOD is received.
+            if ((n->state == WD_ALARM) && !n->probe_pending) {
+                if ((uint32_t)(now_ms - n->last_validation_probe_ms) >= WATCHDOG_REVALIDATE_MS) {
+                    send_probe_if_allowed(node, now_ms);
+                    n->last_validation_probe_ms = now_ms;
+                }
+            }
         }
 
-        // probe timeout -> latch ALARM
+        // probe timeout -> latch / keep ALARM
         if (n->probe_pending && now_ms >= n->probe_deadline_ms) {
             n->probe_pending = false;
             n->state = WD_ALARM;

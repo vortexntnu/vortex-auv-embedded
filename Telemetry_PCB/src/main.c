@@ -72,10 +72,6 @@ static void watchdog_can_send(uint32_t can_id, const uint8_t *data, uint8_t len)
     CAN_Send(can_id, data, len);
 }
 
-// Test ID.
-//const uint32_t can_test_id = 0x469;
-
-
 int main(void)
 {
     SYS_Initialize(NULL);
@@ -84,6 +80,7 @@ int main(void)
     led_logic_init();
     
     SysTick_Config(CPU_CLOCK_FREQUENCY / 1000u);
+    
     
     /* Start with a known state */
     led_clear_all();
@@ -105,13 +102,15 @@ int main(void)
     led_can_watchdog_set_send_cb(watchdog_can_send);
     led_can_watchdog_init(millis());
     
-    
-    
+
     while (true)
     {
         SYS_Tasks();
         
         const uint32_t ms = millis();
+        
+        CAN_RecoverIfNeeded();
+        
         led_logic_tick(ms);
         led_can_watchdog_tick(ms);
         
@@ -129,7 +128,7 @@ int main(void)
                 led_logic_tick(millis());
             }
             
-            /*printf("New Message Received\r\n");
+            printf("New Message Received\r\n");
             printf("Timestamp: 0x%x ID: 0x%lx Length: 0x%x\r\n",
                    (unsigned)timestamp, (unsigned long)rx_messageID, (unsigned)rx_messageLength);
 
@@ -140,9 +139,9 @@ int main(void)
             
             uint8_t can_test_payload[8] = {
             tx_counter++, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77
-            };*/
+            };
             
-            //CAN_Send(LED_CMD_STDID, can_test_payload, sizeof(can_test_payload));
+            CAN_Send(LED_CMD_STDID, can_test_payload, sizeof(can_test_payload));
         }
         
         /*if (rxReady)

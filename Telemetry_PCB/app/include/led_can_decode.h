@@ -46,8 +46,6 @@ extern "C" {
 #endif
 
 // ---------------- Watchdog monitor CAN IDs (periodic traffic / heartbeat) ----------------
-// These must be sent REGULARLY by each node (one-directional traffic).
-// They should NOT be CAN_ID_PI/CAN_ID_ORIN if those are only sent on state changes.
 #ifndef CAN_ID_MON_GRIPPER
 #define CAN_ID_MON_GRIPPER         (0x300u)
 #endif
@@ -68,7 +66,6 @@ extern "C" {
 #endif
 
 // ---------------- Watchdog active probe CAN ID ----------------
-// The LED MCU sends a probe on this CAN ID if a node has been silent for too long.
 #ifndef CAN_ID_ALIVE_REQ
 #define CAN_ID_ALIVE_REQ           (0x120u)
 #endif
@@ -84,6 +81,13 @@ extern "C" {
 #define WATCHDOG_MIN_PROBE_INTERVAL_MS (500u)
 #endif
 
+// NEW:
+// If heartbeat traffic is present but node is still in ALARM,
+// keep sending validation probes with this interval until IM_GOOD arrives.
+#ifndef WATCHDOG_REVALIDATE_MS
+#define WATCHDOG_REVALIDATE_MS     (1500u)
+#endif
+
 // ============================================================================
 // Existing API (verified): decoder -> LED logic updates
 // ============================================================================
@@ -93,7 +97,7 @@ extern "C" {
 bool led_can_decode_and_update(uint32_t can_id, const uint8_t *data, uint8_t len);
 
 // ============================================================================
-// Added functionality (integrated watchdog) - no runtime configuration setters
+// Added functionality (integrated watchdog)
 // ============================================================================
 
 typedef void (*led_can_send_cb_t)(uint32_t can_id, const uint8_t *data, uint8_t len);
