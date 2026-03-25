@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: sercom2
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -81,7 +81,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: '232'
+            value: '15'
           type: Dynamic
         type: Values
       type: Hex
@@ -161,7 +161,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: '23'
+            value: '1'
           type: Dynamic
         type: Values
       type: Integer
@@ -183,7 +183,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: '63019'
+            value: '35337'
           type: Dynamic
         type: Values
       type: Integer

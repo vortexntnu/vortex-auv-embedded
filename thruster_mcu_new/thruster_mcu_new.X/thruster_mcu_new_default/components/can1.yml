@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: can1
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -55,7 +55,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '2000'
+            value: '1000'
           type: Dynamic
         type: Values
       type: Integer
@@ -147,7 +147,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '2000'
+            value: '1000'
           type: User
         type: Values
       type: Integer
@@ -166,7 +166,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '87.5'
+            value: '75.0'
           type: Dynamic
         type: Values
       type: Float
@@ -177,7 +177,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '62.500'
+            value: '250.000'
           type: Dynamic
         type: Values
       type: String
@@ -196,7 +196,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '2'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -210,7 +210,7 @@ data:
             value: '1'
           type: Dynamic
         - attributes:
-            value: '5'
+            value: '1'
           type: User
         type: Values
       type: Integer
@@ -221,7 +221,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '6'
+            value: '2'
           type: Dynamic
         type: Values
       type: Integer
@@ -243,7 +243,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '8'
+            value: '4'
           type: Dynamic
         type: Values
       type: Integer
@@ -292,7 +292,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '2'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -306,7 +306,7 @@ data:
             value: '1'
           type: Dynamic
         - attributes:
-            value: '5'
+            value: '2'
           type: User
         type: Values
       type: Integer
@@ -317,7 +317,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '30'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -339,7 +339,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '32'
+            value: '8'
           type: Dynamic
         type: Values
       type: Integer
@@ -358,7 +358,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '96.875'
+            value: '87.5'
           type: Dynamic
         type: Values
       type: Float
@@ -369,7 +369,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '62.500'
+            value: '250.000'
           type: Dynamic
         type: Values
       type: String
@@ -523,6 +523,27 @@ data:
       - children:
         - attributes:
             value: '8'
+          type: User
+        type: Values
+      type: Integer
+    CAN_CORE_CLOCK_FREQ:
+      attributes:
+        id: CAN_CORE_CLOCK_FREQ
+      children:
+      - children:
+        - attributes:
+            id: can1
+            value: '4000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    NOMINAL_BITRATE:
+      attributes:
+        id: NOMINAL_BITRATE
+      children:
+      - children:
+        - attributes:
+            value: '500'
           type: User
         type: Values
       type: Integer

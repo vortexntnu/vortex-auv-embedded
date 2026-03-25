@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: core
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -373,7 +373,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -384,7 +384,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -428,7 +428,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -439,7 +439,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -560,7 +560,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -571,7 +571,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -681,7 +681,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -692,7 +692,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -802,7 +802,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -813,7 +813,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -846,7 +846,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -868,7 +868,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -879,7 +879,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -989,7 +989,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1000,7 +1000,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1110,7 +1110,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1121,7 +1121,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1308,7 +1308,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1319,7 +1319,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1720,7 +1720,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1731,7 +1731,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -2051,7 +2051,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -2062,7 +2062,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5312,7 +5312,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5323,7 +5323,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '48000000'
+            value: '4000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5421,6 +5421,493 @@ data:
           type: User
         type: Values
       type: Boolean
+    GCLK_CYCLE_FORMED:
+      attributes:
+        id: GCLK_CYCLE_FORMED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    GCLK_IO_5_FREQ:
+      attributes:
+        id: GCLK_IO_5_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_5_FREQ:
+      attributes:
+        id: GCLK_5_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_IO_3_FREQ:
+      attributes:
+        id: GCLK_IO_3_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_3_FREQ:
+      attributes:
+        id: GCLK_3_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_IO_7_FREQ:
+      attributes:
+        id: GCLK_IO_7_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_7_FREQ:
+      attributes:
+        id: GCLK_7_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_IO_0_FREQ:
+      attributes:
+        id: GCLK_IO_0_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    SYSTICK_PERIOD:
+      attributes:
+        id: SYSTICK_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0xFA0'
+          type: Dynamic
+        type: Values
+      type: String
+    SYSTICK_PERIOD_US:
+      attributes:
+        id: SYSTICK_PERIOD_US
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    CPU_CLOCK_FREQUENCY:
+      attributes:
+        id: CPU_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '4000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_0_FREQ:
+      attributes:
+        id: GCLK_0_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '4000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_IO_4_FREQ:
+      attributes:
+        id: GCLK_IO_4_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_4_FREQ:
+      attributes:
+        id: GCLK_4_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_8_FREQ:
+      attributes:
+        id: GCLK_8_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_IO_6_FREQ:
+      attributes:
+        id: GCLK_IO_6_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_6_FREQ:
+      attributes:
+        id: GCLK_6_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_IO_1_FREQ:
+      attributes:
+        id: GCLK_IO_1_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_IO_2_FREQ:
+      attributes:
+        id: GCLK_IO_2_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_2_FREQ:
+      attributes:
+        id: GCLK_2_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_1_FREQ:
+      attributes:
+        id: GCLK_1_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    DPLL96M_CLOCK_FREQ:
+      attributes:
+        id: DPLL96M_CLOCK_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    CONFIG_CLOCK_DPLL_ENABLE:
+      attributes:
+        id: CONFIG_CLOCK_DPLL_ENABLE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    SYSTICK_PERIOD_MS:
+      attributes:
+        id: SYSTICK_PERIOD_MS
+      children:
+      - children:
+        - attributes:
+            id: max
+          children:
+          - type: Value
+            value: '4194.3037'
+          type: Float
+        type: Attributes
+      type: Float
+    OSC48M_CLOCK_FREQ:
+      attributes:
+        id: OSC48M_CLOCK_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '4000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    CONFIG_CLOCK_OSC48M_DIV:
+      attributes:
+        id: CONFIG_CLOCK_OSC48M_DIV
+      children:
+      - children:
+        - attributes:
+            value: '11'
+          type: User
+        type: Values
+      type: KeyValueSet
+    XOSC_FREQ:
+      attributes:
+        id: XOSC_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    CONFIG_CLOCK_XOSC_ENABLE:
+      attributes:
+        id: CONFIG_CLOCK_XOSC_ENABLE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    RTC_CLOCK_FREQUENCY:
+      attributes:
+        id: RTC_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1024'
+          type: Dynamic
+        type: Values
+      type: Integer
+    XOSC32K_FREQ:
+      attributes:
+        id: XOSC32K_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    XOSC1K_FREQ:
+      attributes:
+        id: XOSC1K_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    CONF_CLOCK_XOSC32K_ENABLE:
+      attributes:
+        id: CONF_CLOCK_XOSC32K_ENABLE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    PIN_31_MODE:
+      attributes:
+        id: PIN_31_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_31_FUNCTION_TYPE:
+      attributes:
+        id: PIN_31_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: OSCCTRL_XIN
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_0_PMUX7:
+      attributes:
+        id: PORT_GROUP_0_PMUX7
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x0'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PAD_14:
+      attributes:
+        id: PORT_GROUP_0_PAD_14
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PA14
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PINCFG14:
+      attributes:
+        id: PORT_GROUP_0_PINCFG14
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PIN_14_USED:
+      attributes:
+        id: PORT_GROUP_0_PIN_14_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_31_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_31_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: XIN
+          type: User
+        type: Values
+      type: String
+    PIN_32_MODE:
+      attributes:
+        id: PIN_32_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_32_FUNCTION_TYPE:
+      attributes:
+        id: PIN_32_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: OSCCTRL_XOUT
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_0_PAD_15:
+      attributes:
+        id: PORT_GROUP_0_PAD_15
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PA15
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PINCFG15:
+      attributes:
+        id: PORT_GROUP_0_PINCFG15
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PIN_15_USED:
+      attributes:
+        id: PORT_GROUP_0_PIN_15_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_32_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_32_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: XOUT
+          type: User
+        type: Values
+      type: String
   userData:
     children:
     - attributes:

@@ -253,9 +253,9 @@ void app_init(void) {
     set_pwm_neutral(thrusters, 8);
     set_pwm_neutral(lights, 1);
 
-    for (int i = 0; i < 1000000; i++) {
-        __NOP();
-    }
+//    for (int i = 0; i < 1000000; i++) {
+//        __NOP();
+//    }
     
     // Enable TC
     TC0_TimerStart();
@@ -268,33 +268,33 @@ void app_init(void) {
 }
 
 void app_task(void) {
-    if (ADC0_ConversionSequenceIsFinished()) {
-            ADC0_ConversionStart();
-        }
-    
-    if (adc_dma_done) {
-        adc_dma_done = false;
-        log_current();
-    }
-    
-    if (hw_events.flt_pending_mask) {
-        dispatch_hw_event(&hw_events.flt_pending_mask, send_flt_event);
-    }
-    
-    if (hw_events.pgood_pending_mask) {
-        dispatch_hw_event(&hw_events.pgood_pending_mask, send_pgood_event);
-    }
-    
-    if (hw_events.killswitch_pending_mask) {
-        dispatch_hw_event(&hw_events.killswitch_pending_mask, send_killswitch_event);
-    }
+//    if (ADC0_ConversionSequenceIsFinished()) {
+//            ADC0_ConversionStart();
+//        }
+//    
+//    if (adc_dma_done) {
+//        adc_dma_done = false;
+//        log_current();
+//    }
+//    
+//    if (hw_events.flt_pending_mask) {
+//        dispatch_hw_event(&hw_events.flt_pending_mask, send_flt_event);
+//    }
+//    
+//    if (hw_events.pgood_pending_mask) {
+//        dispatch_hw_event(&hw_events.pgood_pending_mask, send_pgood_event);
+//    }
+//    
+//    if (hw_events.killswitch_pending_mask) {
+//        dispatch_hw_event(&hw_events.killswitch_pending_mask, send_killswitch_event);
+//    }
         
-    /*
+    
     if (can_message_received) {
         can_message_received = false;
-        message_handler();
+        test_can_rx();
     }
-    */
+    
 }
 
 /* --- Private helpers --- */
@@ -534,18 +534,20 @@ void test_can_tx() {
     memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
-    txBuffer->id = WRITE_ID(0x45A);
+    txBuffer->id = WRITE_ID(0x369);
     txBuffer->dlc = 1;
     txBuffer->fdf = 1;
     txBuffer->brs = 1;
     
-    txBuffer->data[0] = 0x43;
+    txBuffer->data[0] = 0xAA;
     
     bool result = CAN1_MessageTransmitFifo(1, txBuffer);
 
     if (!result) {
         printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
     }
+    
+    SYSTICK_DelayMs(2000);
     
     
 }

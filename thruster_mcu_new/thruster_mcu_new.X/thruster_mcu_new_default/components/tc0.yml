@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: tc0
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -45,7 +45,7 @@ data:
       - children:
         - attributes:
             id: tc0
-            value: '46875'
+            value: '3906'
           type: Dynamic
         type: Values
       type: Integer
@@ -84,7 +84,7 @@ data:
       - children:
         - attributes:
             id: tc0
-            value: '23436'
+            value: '1952'
           type: Dynamic
         type: Values
       type: Long
@@ -97,7 +97,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '1398.1013'
+            value: '16777.217'
           type: Float
         type: Attributes
       - children:

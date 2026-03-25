@@ -73,7 +73,7 @@
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-#define CAN1_CLOCK_FREQUENCY    48000000U
+#define CAN1_CLOCK_FREQUENCY    4000000U
 
 /* CAN1 Message RAM Configuration Size */
 #define CAN1_RX_FIFO0_ELEMENT_SIZE       72U

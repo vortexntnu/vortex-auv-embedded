@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: can0
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -55,7 +55,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '2000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -66,7 +66,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '0.000'
+            value: '100.000'
           type: Dynamic
         type: Values
       type: String
@@ -166,7 +166,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '87.5'
+            value: '825.0'
           type: Dynamic
         type: Values
       type: Float
@@ -177,7 +177,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '62.500'
+            value: '0.000'
           type: Dynamic
         type: Values
       type: String
@@ -196,7 +196,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '2'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -207,7 +207,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '8'
           type: Dynamic
         type: Values
       type: Integer
@@ -218,7 +218,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '6'
+            value: '32'
           type: Dynamic
         type: Values
       type: Integer
@@ -229,7 +229,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '1'
+            value: '16'
           type: Dynamic
         type: Values
       type: Integer
@@ -240,7 +240,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '8'
+            value: '4'
           type: Dynamic
         type: Values
       type: Integer
@@ -289,7 +289,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '2'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -311,7 +311,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '30'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -333,7 +333,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '32'
+            value: '8'
           type: Dynamic
         type: Values
       type: Integer
@@ -352,7 +352,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '96.875'
+            value: '87.5'
           type: Dynamic
         type: Values
       type: Float
@@ -363,7 +363,7 @@ data:
       - children:
         - attributes:
             id: can0
-            value: '62.500'
+            value: '250.000'
           type: Dynamic
         type: Values
       type: String
@@ -457,4 +457,15 @@ data:
           type: String
         type: Attributes
       type: File
+    CAN_CORE_CLOCK_FREQ:
+      attributes:
+        id: CAN_CORE_CLOCK_FREQ
+      children:
+      - children:
+        - attributes:
+            id: can0
+            value: '4000000'
+          type: Dynamic
+        type: Values
+      type: Integer
   userData: {}

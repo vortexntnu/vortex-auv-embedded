@@ -124,7 +124,7 @@ void TC3_CompareStop( void )
 
 uint32_t TC3_CompareFrequencyGet( void )
 {
-    return (uint32_t)(187500UL);
+    return (uint32_t)(15625UL);
 }
 
 void TC3_CompareCommandSet(TC_COMMAND command)

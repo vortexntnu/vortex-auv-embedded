@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: tcc2
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -188,7 +188,7 @@ data:
       - children:
         - attributes:
             id: tcc2
-            value: '3000000'
+            value: '250000'
           type: Dynamic
         type: Values
       type: Integer
@@ -242,7 +242,7 @@ data:
       - children:
         - attributes:
             id: tcc2
-            value: '2999'
+            value: '249'
           type: Dynamic
         type: Values
       type: Long
@@ -255,7 +255,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '21.845667'
+            value: '262.148'
           type: Float
         type: Attributes
       type: Float

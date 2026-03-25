@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: tc3
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -45,7 +45,7 @@ data:
       - children:
         - attributes:
             id: tc3
-            value: '187500'
+            value: '15625'
           type: Dynamic
         type: Values
       type: Integer
@@ -84,7 +84,7 @@ data:
       - children:
         - attributes:
             id: tc3
-            value: '65534'
+            value: '7811'
           type: Dynamic
         type: Values
       type: Long
@@ -97,7 +97,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '349.52533'
+            value: '4194.304'
           type: Float
         type: Attributes
       - children:

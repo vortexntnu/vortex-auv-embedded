@@ -26,7 +26,7 @@ int main ( void ) {
     
     //test_thrusters(to_test, count, max_us, min_us, step_us, step_delay_ms);
     //test_thrusters_seq(to_test, count, max_us, min_us, step_us, step_delay_ms);
-    test_thrusters_split(to_test, count, max_us, min_us, step_us, step_delay_ms);
+    //test_thrusters_split(to_test, count, max_us, min_us, step_us, step_delay_ms);
     
     uint32_t hold_ms = 5000;
     //test_neutral_to_max(to_test, count, max_us, hold_ms);
@@ -39,10 +39,11 @@ int main ( void ) {
                 
         //generate_pwm_signals();
         
+        test_can_tx();
         //;
         
         /* Run application logic */
-        //app_task();
+        app_task();
         
         
     }
