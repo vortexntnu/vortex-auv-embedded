@@ -196,7 +196,6 @@
                      projectFiles="true">
         <logicalFolder name="components" displayName="components" projectFiles="true">
           <itemPath>thruster_mcu_new_default/components/cmsis.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/stdio.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/sercom1.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/dfp.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/can0.yml</itemPath>
@@ -323,7 +322,7 @@
         <targetDevice>ATSAMC21J18A</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>AtmelIceTool</platformTool>
+        <platformTool>EdbgTool</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>4.60</languageToolchainVersion>
         <platform>4</platform>

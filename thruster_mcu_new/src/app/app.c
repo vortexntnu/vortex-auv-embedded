@@ -76,10 +76,10 @@ typedef enum {
 
 static uart_rx_state_t  uart_rx_state = UART_STATE_WAIT_HEADER;
 static uint8_t          uart_header[UART_HEADER_SIZE];
-static uint8_t          uart_payload[UART_MAX_PAYLOAD + 1U]; /* +1 for checksum */
-static volatile bool    uart_message_ready = false;
-static uint8_t          uart_msg_id        = 0U;
-static uint8_t          uart_msg_len       = 0U;
+uint8_t          uart_payload[UART_MAX_PAYLOAD + 1U]; /* +1 for checksum */
+volatile bool    uart_message_ready = false;
+uint8_t          uart_msg_id        = 0U;
+uint8_t          uart_msg_len       = 0U;
 
 /* Shared TX frame buffer */
 static uint8_t uart_tx_frame[UART_MAX_TX_FRAME];
@@ -177,7 +177,7 @@ static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t chann
 
 /* UART */
 static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *payload);
-static bool    uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length);
+bool    uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length);
 
 /**
  * @brief Logs thruster current readings from the IMON pins for all 8 channels.
@@ -364,17 +364,20 @@ static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *p
     return csum;
 }
 
-static bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length) {
+bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length) {
     if (SERCOM2_USART_WriteIsBusy()) {
+        printf("SERCOM2_USART_WriteIsBusy() is the fault!\n");
         return false;
     }
 
     /* Sanity check: 3 header bytes + payload + 1 checksum must fit in tx buffer */
     if ((uint16_t)length + 4U > UART_MAX_TX_FRAME) {
+        printf("(uint16_t)length + 4U > UART_MAX_TX_FRAME is the fault");
         return false;
     }
 
     uint8_t checksum = compute_checksum(msg_id, length, payload);
+    printf("checksum = ?u\n", (unsigned int)checksum);
 
     uart_tx_frame[0] = UART_START_BYTE;
     uart_tx_frame[1] = msg_id;
@@ -979,3 +982,5 @@ static void eic_pin_killswitch(uintptr_t context) {
     hw_events.killswitch_pending_mask |= 1U;
     printf("KILLSWITCH triggered \n");
 }
+
+

@@ -37,18 +37,34 @@
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include "samc21j18a.h"
 
 extern int read(int handle, void *buffer, unsigned int len);
 extern int write(int handle, void * buffer, size_t count);
 
 
-int read(int handle, void *buffer, unsigned int len)
-{
-   return -1;
+int read(int handle, void* buffer, unsigned int len) {
+    int nChars = 0;
+    bool success = false;
+    if ((handle == 0) && (len > 0U)) {
+        do {
+            success = SERCOM2_USART_Read(buffer, 1);
+        } while (!success);
+        nChars = 1;
+    }
+    return nChars;
 }
 
-int write(int handle, void * buffer, size_t count)
-{
-   return -1;
+int write(int handle, void* buffer, size_t count) {
+    bool success = false;
+    if (handle == 1) {
+        do {
+            success = SERCOM2_USART_Write(buffer, count);
+        } while (!success);
+    }
+    return (int)count;
 }

@@ -19,7 +19,6 @@ modules:
 - sercom0
 - sercom1
 - sercom2
-- stdio
 - tc0
 - tc3
 - tcc0
@@ -29,7 +28,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAMC21J18A.ld
   hash: 3fc7dbb63ae72ecd9b52572e4dd84ed79cbd37feb6064cb6d4df6fca301d09af
 - file: ../src/config/default/definitions.h
-  hash: 0e4315ac37da3b1e186e5516defa52a60e26771957d7e80b905fa15229ac611f
+  hash: bc82150dbb706933ce69f4efbd215f2dc6a467691c2634de57ab5aa6850834c6
 - file: ../src/config/default/device.h
   hash: e539bb402fa4783d95ccf06235458b2e1fe01207c83c0e046a853e0385d0b6f4
 - file: ../src/config/default/device_cache.h
@@ -39,7 +38,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: cb43fa61f2dd0433249ce1aa079d3911ceef2297f17ad29b6cf79dd70d6540d2
 - file: ../src/config/default/initialization.c
-  hash: 3587eec3d28d184b6f8284886e865f392689e7746ab67638060f7678f1496000
+  hash: 717b4b986b23859b1f0f2047816c8287a0efe8cbb69dd0cbd4963460834e3b75
 - file: ../src/config/default/interrupts.c
   hash: 232da3ca2cd540824558cb06ff26bdbc0af8b4430c6dba593969c0b0942e7e08
 - file: ../src/config/default/interrupts.h
