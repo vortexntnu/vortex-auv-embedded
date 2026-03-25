@@ -245,6 +245,7 @@ void app_init(void) {
     /* Register UART receive callback and arm the first header read.
      * From this point the receive is self-sustaining: the callback
      * always re-arms itself before returning. */
+    SERCOM2_USART_Enable();
     SERCOM2_USART_ReadCallbackRegister(uart_receive_callback, (uintptr_t)NULL);
     SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
     
