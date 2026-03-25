@@ -1154,7 +1154,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1165,8 +1165,11 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
+        - attributes:
+            value: 'true'
+          type: User
         type: Values
       type: Boolean
     SERCOM2_INTERRUPT_ENABLE:
@@ -1176,7 +1179,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1187,7 +1190,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1198,7 +1201,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1209,7 +1212,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM2_Handler
+            value: SERCOM2_USART_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -1220,7 +1223,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: SERCOM2_Handler
+            value: SERCOM2_USART_InterruptHandler
           type: Dynamic
         type: Values
       type: String

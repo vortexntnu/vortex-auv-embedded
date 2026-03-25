@@ -9,6 +9,31 @@
 
 #define TRANSFER_SIZE 16
 
+/* =============================================================================
+ * Serial framing protocol
+ * Frame format: [ 0xAA | MSG_ID | LENGTH | PAYLOAD (LENGTH bytes) | CHECKSUM ]
+ * Checksum: XOR of MSG_ID ^ LENGTH ^ all payload bytes
+ * ============================================================================= */
+
+/* Inbound message IDs */
+#define MSG_TURN_THRUSTERS_OFF   0x01U
+#define MSG_TURN_LIGHTS_OFF      0x02U
+#define MSG_RESET                0x03U
+#define MSG_SET_THRUSTER_PWM     0x04U
+#define MSG_SET_LIGHT_PWM        0x05U
+
+/* Outbound message IDs */
+#define MSG_FLT_EVENT            0x10U
+#define MSG_PGOOD_EVENT          0x11U
+#define MSG_KILLSWITCH_EVENT     0x12U
+#define MSG_CURRENT_MEASUREMENTS 0x13U
+
+/* Framing constants */
+#define UART_START_BYTE          0xAAU
+#define UART_HEADER_SIZE         3U    // START(1) + MSG_ID(1) + LENGTH(1)
+#define UART_MAX_PAYLOAD         16U   // Largest inbound payload: 8x uint16_t
+#define UART_MAX_TX_FRAME        36U   // 3 header + 32 payload + 1 checksum
+
 /* --- Constants --- */
 static const uint32_t TCC0_PERIOD               = 57000;
 static const uint32_t TCC1_PERIOD               = 57000;
@@ -42,6 +67,22 @@ enum can_events {
     SET_THRUSTER_PWM   = 0x36C,
     SET_LIGHT_PWM      = 0x36D
 };
+
+/* UART receive state machine */
+typedef enum {
+    UART_STATE_WAIT_HEADER,   /* Waiting for 3-byte header */
+    UART_STATE_WAIT_PAYLOAD,  /* Waiting for payload + checksum byte */
+} uart_rx_state_t;
+
+static uart_rx_state_t  uart_rx_state = UART_STATE_WAIT_HEADER;
+static uint8_t          uart_header[UART_HEADER_SIZE];
+static uint8_t          uart_payload[UART_MAX_PAYLOAD + 1U]; /* +1 for checksum */
+static volatile bool    uart_message_ready = false;
+static uint8_t          uart_msg_id        = 0U;
+static uint8_t          uart_msg_len       = 0U;
+
+/* Shared TX frame buffer */
+static uint8_t uart_tx_frame[UART_MAX_TX_FRAME];
 
 /* --- Private states --- */
 /* CAN */
@@ -134,6 +175,10 @@ static bool send_current_measurements(float I_arr[8]);
 
 static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel));
 
+/* UART */
+static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *payload);
+static bool    uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length);
+
 /**
  * @brief Logs thruster current readings from the IMON pins for all 8 channels.
  * 
@@ -186,6 +231,7 @@ static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks);
 static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uint32_t frame_us);
 
 /* Callbacks */
+static void uart_receive_callback(uintptr_t context);
 static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
 static void can_transmit_callback(uintptr_t context);
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext);
@@ -196,6 +242,12 @@ static void eic_pin_killswitch(uintptr_t context);
 /* --- Public functions --- */
 
 void app_init(void) {
+    /* Register UART receive callback and arm the first header read.
+     * From this point the receive is self-sustaining: the callback
+     * always re-arms itself before returning. */
+    SERCOM2_USART_ReadCallbackRegister(uart_receive_callback, (uintptr_t)NULL);
+    SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
+    
     // Configure CAN RAM & callbacks 
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
@@ -268,6 +320,7 @@ void app_init(void) {
 }
 
 void app_task(void) {
+    
 //    if (ADC0_ConversionSequenceIsFinished()) {
 //            ADC0_ConversionStart();
 //        }
@@ -290,46 +343,134 @@ void app_task(void) {
 //    }
         
     
-    if (can_message_received) {
-        can_message_received = false;
-        test_can_rx();
+//    if (can_message_received) {
+//        can_message_received = false;
+//        test_can_rx();
+//    }
+    
+    if (uart_message_ready) {
+        uart_message_ready = false;
+        message_handler();
     }
     
+}
+
+static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *payload) {
+    uint8_t csum = msg_id ^ length;
+    for (uint8_t i = 0U; i < length; i++) {
+        csum ^= payload[i];
+    }
+    return csum;
+}
+
+static bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length) {
+    if (SERCOM2_USART_WriteIsBusy()) {
+        return false;
+    }
+
+    /* Sanity check: 3 header bytes + payload + 1 checksum must fit in tx buffer */
+    if ((uint16_t)length + 4U > UART_MAX_TX_FRAME) {
+        return false;
+    }
+
+    uint8_t checksum = compute_checksum(msg_id, length, payload);
+
+    uart_tx_frame[0] = UART_START_BYTE;
+    uart_tx_frame[1] = msg_id;
+    uart_tx_frame[2] = length;
+
+    if (length > 0U && payload != NULL) {
+        memcpy(&uart_tx_frame[3], payload, length);
+    }
+
+    uart_tx_frame[3U + length] = checksum;
+
+    return SERCOM2_USART_Write(uart_tx_frame, (size_t)(4U + length));
+}
+
+static void uart_receive_callback(uintptr_t context) {
+    (void)context;
+
+    switch (uart_rx_state) {
+
+        case UART_STATE_WAIT_HEADER: {
+            /* Validate start byte */
+            if (uart_header[0] != UART_START_BYTE) {
+                /* Bad frame start - discard and wait for the next header */
+                SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
+                return;
+            }
+
+            uart_msg_id  = uart_header[1];
+            uart_msg_len = uart_header[2];
+
+            if (uart_msg_len == 0U) {
+                /* No payload: checksum is just MSG_ID ^ LENGTH ^ (no bytes) = MSG_ID ^ LENGTH.
+                 * We still need to read the single checksum byte before validating. */
+                uart_rx_state = UART_STATE_WAIT_PAYLOAD;
+                SERCOM2_USART_Read(uart_payload, 1U); /* checksum only */
+            } else {
+                if (uart_msg_len > UART_MAX_PAYLOAD) {
+                    /* LENGTH field is out of range - discard and resync */
+                    SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
+                    return;
+                }
+                /* Read payload + checksum in one shot */
+                uart_rx_state = UART_STATE_WAIT_PAYLOAD;
+                SERCOM2_USART_Read(uart_payload, (size_t)(uart_msg_len + 1U));
+            }
+            break;
+        }
+
+        case UART_STATE_WAIT_PAYLOAD: {
+            /* Checksum byte is always at uart_payload[uart_msg_len] */
+            uint8_t received_checksum = uart_payload[uart_msg_len];
+            uint8_t expected_checksum = compute_checksum(uart_msg_id, uart_msg_len, uart_payload);
+
+            if (received_checksum == expected_checksum) {
+                uart_message_ready = true; /* Signal app_task to process */
+            }
+            /* On checksum mismatch we silently drop the frame */
+
+            /* Always return to header state and re-arm */
+            uart_rx_state = UART_STATE_WAIT_HEADER;
+            SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
+            break;
+        }
+
+        default:
+            uart_rx_state = UART_STATE_WAIT_HEADER;
+            SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
+            break;
+    }
 }
 
 /* --- Private helpers --- */
 
 static void message_handler(void) {
-    // Interpret event from CAN frame id
-    CAN_RX_BUFFER *rxBuf = (CAN_RX_BUFFER *)rxFiFo0;
-    
-    uint32_t id = rxBuf->xtd ? rxBuf->id : READ_ID(rxBuf->id);
-    const uint8_t *pData = rxBuf->data;
-
-    switch (id) {
-        case TURN_THRUSTERS_OFF:
+    switch (uart_msg_id) {
+        case MSG_TURN_THRUSTERS_OFF:
             set_pwm_neutral(thrusters, 8);
             break;
 
-        case TURN_LIGHTS_OFF:
+        case MSG_TURN_LIGHTS_OFF:
             set_pwm_neutral(lights, 1);
             break;
 
-        case RESET:
-            /* Force a system reset */
+        case MSG_RESET:
             NVIC_SystemReset();
             break;
 
-        case SET_THRUSTER_PWM:
-            set_pwm_outputs(pData, thrusters, 8);
+        case MSG_SET_THRUSTER_PWM:
+            set_pwm_outputs(uart_payload, thrusters, 8);
             break;
 
-        case SET_LIGHT_PWM:
-            set_pwm_outputs(pData, lights, 1);
+        case MSG_SET_LIGHT_PWM:
+            set_pwm_outputs(uart_payload, lights, 1);
             break;
-            
+
         default:
-            /* Unknown event: ignore */
+            /* Unknown message ID - ignore */
             break;
     }
 }
@@ -339,95 +480,33 @@ static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t chann
     *mask = 0;
     for (uint8_t i = 0; i < 8; i++) {
         if (snapshot & (1U << i)) {
-            if (!send(i)) {
-                printf("ERROR: CAN Transmission failed\r\n");
-            }
+            send(i);
         }
     }
 }
 
 
-static bool send_flt_event(uint8_t context) {
-    CAN_TX_BUFFER *txBuffer = NULL;
-    
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
-    txBuffer = (CAN_TX_BUFFER*)txFiFo;
-    
-    txBuffer->id = WRITE_ID(0x45A);
-    txBuffer->dlc = 15;
-    txBuffer->fdf = 1;
-    txBuffer->brs = 1;
-    
-    txBuffer->data[0] = 0x01;
-    txBuffer->data[1] = context;   // 0x01 = FLT event
-            
-    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
-    
-    //return result;
-    return true;
+static bool send_flt_event(uint8_t channel) {
+    uint8_t payload[2] = { channel, 0x01U };
+    return uart_send_frame(MSG_FLT_EVENT, payload, 2U);
 }
 
-static bool send_pgood_event(uint8_t context) {
-    CAN_TX_BUFFER *txBuffer = NULL;
-    
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
-    txBuffer = (CAN_TX_BUFFER*)txFiFo;
-    
-    txBuffer->id = WRITE_ID(0x45A);
-    txBuffer->dlc = 15;
-    txBuffer->fdf = 1;
-    txBuffer->brs = 1;
-    
-    txBuffer->data[0] = 0x02;
-    txBuffer->data[1] = context;   // 0x02 = PGOOD event
-    
-    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
-    
-    //return result;
-    return true;
+static bool send_pgood_event(uint8_t channel) {
+    uint8_t payload[2] = { channel, 0x02U };
+    return uart_send_frame(MSG_PGOOD_EVENT, payload, 2U);
 }
 
-static bool send_killswitch_event(uint8_t context) {
-    CAN_TX_BUFFER *txBuffer = NULL;
-    
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
-    txBuffer = (CAN_TX_BUFFER*)txFiFo;
-    
-    txBuffer->id = WRITE_ID(0x45A);
-    txBuffer->dlc = 15;
-    txBuffer->fdf = 1;
-    txBuffer->brs = 1;
-    
-    txBuffer->data[0] = 0x03;   // 0x03 = Killswitch event
-    
-    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
-    
-    //return result;
-    return true;
+static bool send_killswitch_event(uint8_t channel) {
+    (void)channel;
+    return uart_send_frame(MSG_KILLSWITCH_EVENT, NULL, 0U);
 }
 
 static bool send_current_measurements(float I_arr[8]) {
-    CAN_TX_BUFFER *txBuffer = NULL;
-    
-    memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
-    txBuffer = (CAN_TX_BUFFER*)txFiFo;
-    
-    txBuffer->id = WRITE_ID(0x45A);
-    txBuffer->dlc = 15;
-    txBuffer->fdf = 1;
-    txBuffer->brs = 1;
-    
-    txBuffer->data[0] = 0x00; // 0x00 = current logs
-    
-    for (size_t i = 0; i < 8; i++) {
-        memcpy(&txBuffer->data[1 + i * sizeof(float)], &I_arr[i], sizeof(float)); // Encode in single-precision floating-point format. Assumes little-endian decoding.
+    uint8_t payload[32];
+    for (size_t i = 0U; i < 8U; i++) {
+        memcpy(&payload[i * sizeof(float)], &I_arr[i], sizeof(float));
     }
-    
-    //bool result = CAN1_MessageTransmitFifo(1, txBuffer);
-    
-    //return result;
-    return true;
-    
+    return uart_send_frame(MSG_CURRENT_MEASUREMENTS, payload, 32U);
 }
 
 static void log_current(void) {
@@ -443,6 +522,8 @@ static void log_current(void) {
         
         I_array[i] = I_out;
         
+        send_current_measurements(I_array);
+        
 //        printf("\nTH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
 //               imon_map[i].thruster,
 //               imon_map[i].ain,
@@ -450,7 +531,7 @@ static void log_current(void) {
 //               V_Imon,
 //               I_out, 
 //               (unsigned)thrusters[i].current_pulse_us);
-        printf("%u %.3f\n", (unsigned)thrusters[imon_map[i].thruster - 1].current_pulse_us, I_out);
+        //printf("%u %.3f\n", (unsigned)thrusters[imon_map[i].thruster - 1].current_pulse_us, I_out);
     }
     
     //bool result = send_current_measurements(I_array);

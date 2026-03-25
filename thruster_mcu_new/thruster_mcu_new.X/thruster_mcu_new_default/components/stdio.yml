@@ -14,29 +14,7 @@ dependency:
   version: v3.23.0
 customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
 data:
-  attachments:
-    children:
-    - children:
-      - attributes:
-          id: UART
-        children:
-        - children:
-          - attributes:
-              id: targetComponentID
-            children:
-            - type: Value
-              value: sercom2
-            type: String
-          - attributes:
-              id: targetAttachmentID
-            children:
-            - type: Value
-              value: SERCOM2_UART
-            type: String
-          type: Attributes
-        type: DirectDependency
-      type: Attachments
-    type: stdio
+  attachments: {}
   elementPosition:
     attributes:
       id: __ROOTVIEW
@@ -44,21 +22,10 @@ data:
     - children:
       - attributes:
           id: stdio
-          x: '184'
-          y: '502'
+          x: '11'
+          y: '499'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
-  symbols:
-    DEBUG_PERIPHERAL:
-      attributes:
-        id: DEBUG_PERIPHERAL
-      children:
-      - children:
-        - attributes:
-            id: stdio
-            value: sercom2
-          type: Dynamic
-        type: Values
-      type: String
+  symbols: {}
   userData: {}
