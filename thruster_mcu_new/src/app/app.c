@@ -35,9 +35,9 @@
 #define UART_MAX_TX_FRAME        36U   // 3 header + 32 payload + 1 checksum
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD               = 57000;
-static const uint32_t TCC1_PERIOD               = 57000;
-static const uint32_t TCC2_PERIOD               = 57000;
+static const uint32_t TCC0_PERIOD               = 38320;
+static const uint32_t TCC1_PERIOD               = 38320;
+static const uint32_t TCC2_PERIOD               = 38320;
 static const uint32_t TC3_PERIOD                = 65535; 
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
@@ -365,11 +365,6 @@ static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *p
 }
 
 bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length) {
-    if (SERCOM2_USART_WriteIsBusy()) {
-        printf("SERCOM2_USART_WriteIsBusy() is the fault!\n");
-        return false;
-    }
-
     /* Sanity check: 3 header bytes + payload + 1 checksum must fit in tx buffer */
     if ((uint16_t)length + 4U > UART_MAX_TX_FRAME) {
         printf("(uint16_t)length + 4U > UART_MAX_TX_FRAME is the fault");
@@ -377,7 +372,7 @@ bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length) {
     }
 
     uint8_t checksum = compute_checksum(msg_id, length, payload);
-    printf("checksum = ?u\n", (unsigned int)checksum);
+    printf("checksum = %u\n", (unsigned int)checksum);
 
     uart_tx_frame[0] = UART_START_BYTE;
     uart_tx_frame[1] = msg_id;

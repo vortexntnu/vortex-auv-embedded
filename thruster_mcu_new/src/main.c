@@ -49,13 +49,16 @@ int main ( void ) {
     SYS_Initialize ( NULL );
     
     RESET_TH_Clear();
+    
+    uint8_t byte;
+    
 
     /* Initialize application logic */
     app_init();
     
-    printf("\r\n=== UART Framing Loopback Test ===\r\n");
+    //printf("\r\n=== UART Framing Loopback Test ===\r\n");
     
-    run_test("TURN_THRUSTERS_OFF (no payload)", 0x01U, NULL, 0U);
+    //run_test("TURN_THRUSTERS_OFF (no payload)", 0x01U, NULL, 0U);
 
     
     //generate_pwm_signals();
@@ -82,6 +85,9 @@ int main ( void ) {
         
     while ( true )
     {
+        //while (!SERCOM2_USART_Read(&byte, 5)) {}
+        
+        //while (!SERCOM2_USART_Write(&byte, 5)) {}
         
         /* Sleep until an interrupt occurs*/
         //PM_IdleModeEnter();
