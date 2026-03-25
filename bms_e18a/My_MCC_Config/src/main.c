@@ -26,6 +26,7 @@
 #include <stdbool.h>                    // Defines true
 #include <stdio.h>
 #include <stdlib.h>                     // Defines EXIT_FAILURE
+#include "app/can_telemetry.h"
 #include "app/state_machine.h"
 #include "config/default/peripheral/systick/plib_systick.h"
 #include "definitions.h"                // SYS function prototypes
@@ -68,6 +69,7 @@ int main ( void )
     // bms_init_comm_voltage(); 
     SYSTICK_DelayMs(100U);
     //bms_alert_irq_init();
+    CAN_Init();
     
 
     //CommandSubcommands(FET_ENABLE); // FET_ENABLE
@@ -83,6 +85,10 @@ int main ( void )
         SYS_Tasks();
 
         voltage_test_step(); 
+        CAN_alert_pfa_send();
+        CAN_alert_ssa_send();
+        CAN_current_send();
+        CAN_voltage_send();
         //bms_alert_step();
         //spi_write_probe_step(); 
 

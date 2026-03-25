@@ -10,6 +10,19 @@
 static volatile bool flag_vol_tx = false;
 static volatile bool flag_temp_tx = false;
 
+static inline void pack_u16_le(uint8_t *dst, uint16_t value)
+{
+    dst[0] = (uint8_t)(value & 0xFFu);
+    dst[1] = (uint8_t)((value >> 8) & 0xFFu);
+}
+
+static inline void pack_s16_le(uint8_t *dst, int16_t value)
+{
+    dst[0] = (uint8_t)(value & 0xFF);
+    dst[1] = (uint8_t)((value >> 8) & 0xFF);
+}
+
+
 void CAN_telemetry_init(void) 
 {
     flag_vol_tx = false; // Initialize voltage transmission flag
@@ -51,6 +64,7 @@ void CAN_voltage_send(void)
         //handle send error
     }
 }
+
 void CAN_temp_send(void)
 {
         int16_t t1_dC, t2_dC, t3_dC;
@@ -79,6 +93,113 @@ void CAN_temp_send(void)
         {
             //handle send error
         }
+}
 
-    
+#define CAN_ALERT_SSA_ID   0x200u
+
+void CAN_alert_ssa_send(void)
+{
+    uint16_t alarm = 0U;
+    uint16_t ssa   = 0U;
+    uint16_t ssb   = 0U;
+    uint16_t ssc   = 0U;
+    uint8_t payload[8];
+    bool ok;
+
+    if (!bq_direct_command(AlarmStatus, &alarm, R))
+        return;
+
+    if (!bq_direct_command(SafetyStatusA, &ssa, R))
+        return;
+
+    if (!bq_direct_command(SafetyStatusB, &ssb, R))
+        return;
+
+    if (!bq_direct_command(SafetyStatusC, &ssc, R))
+        return;
+
+    pack_u16_le(&payload[0], alarm);
+    pack_u16_le(&payload[2], ssa);
+    pack_u16_le(&payload[4], ssb);
+    pack_u16_le(&payload[6], ssc);
+
+    ok = CAN_Send(CAN_ALERT_SSA_ID, payload, sizeof(payload));
+    if (!ok)
+    {
+        // handle send error
+    }
+}
+
+
+#define CAN_ALERT_PFA_1_ID 0x201u
+#define CAN_ALERT_PFA_2_ID 0x202u
+
+void CAN_alert_pfa_send(void)
+{
+    uint16_t pfa = 0U;
+    uint16_t pfb = 0U;
+    uint16_t pfc = 0U;
+    uint16_t pfd = 0U;
+    uint16_t fet = 0U;
+
+    uint8_t payload1[8];
+    uint8_t payload2[2];
+    bool ok;
+
+    if (!bq_direct_command(PFStatusA, &pfa, R))
+        return;
+
+    if (!bq_direct_command(PFStatusB, &pfb, R))
+        return;
+
+    if (!bq_direct_command(PFStatusC, &pfc, R))
+        return;
+
+    if (!bq_direct_command(PFStatusD, &pfd, R))
+        return;
+
+    if (!bq_direct_command(FETStatus, &fet, R))
+        return;
+
+    pack_u16_le(&payload1[0], pfa);
+    pack_u16_le(&payload1[2], pfb);
+    pack_u16_le(&payload1[4], pfc);
+    pack_u16_le(&payload1[6], pfd);
+
+    pack_u16_le(&payload2[0], fet);
+
+    ok = CAN_Send(CAN_ALERT_PFA_1_ID, payload1, sizeof(payload1));
+    if (!ok)
+    {
+        // handle send error
+        return;
+    }
+
+    ok = CAN_Send(CAN_ALERT_PFA_2_ID, payload2, sizeof(payload2));
+    if (!ok)
+    {
+        // handle send error
+    }
+}
+
+#define CAN_CURRENT_ID     0x203u
+
+void CAN_current_send(void)
+{
+    int16_t current = 0;
+    uint8_t payload[2];
+    bool ok;
+
+    if (!bq_direct_command(CC2Current, (uint16_t *)&current, R))
+    {
+        return;
+    }
+
+    pack_s16_le(&payload[0], current);
+
+    ok = CAN_Send(CAN_CURRENT_ID, payload, sizeof(payload));
+    if (!ok)
+    {
+        // handle send error
+    }
 }
