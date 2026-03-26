@@ -59,6 +59,7 @@ struct pwm_output {
     uint16_t neutral_us;
     uint32_t frame_us;
     uint16_t current_pulse_us;
+    uint16_t target_pulse_us;
 };
 
 enum can_events {
@@ -102,14 +103,14 @@ static uint16_t adc_result_array[TRANSFER_SIZE];
 
 /* Application */
 static struct pwm_output thrusters[8] = {
-    {PWM_TCC, 2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TH1 -> TCC2_CC0
-    {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TH2 -> TCC2_CC1
-    {PWM_TCC, 1, 0, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TH3 -> TCC1_CC0
-    {PWM_TCC, 1, 1, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TH4 -> TCC1_CC1
-    {PWM_TCC, 0, 1, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TH5 -> TCC0_CC1
-    {PWM_TCC, 0, 0, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TH6 -> TCC0_CC0
-    {PWM_TCC, 0, 3, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}, // TH7 -> TCC0_CC3
-    {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500}  // TH8 -> TCC0_CC2
+    {PWM_TCC, 2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH1 -> TCC2_CC0
+    {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH2 -> TCC2_CC1
+    {PWM_TCC, 1, 0, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH3 -> TCC1_CC0
+    {PWM_TCC, 1, 1, TCC1_PERIOD, 1000, 2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH4 -> TCC1_CC1
+    {PWM_TCC, 0, 1, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH5 -> TCC0_CC1
+    {PWM_TCC, 0, 0, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH6 -> TCC0_CC0
+    {PWM_TCC, 0, 3, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH7 -> TCC0_CC3
+    {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}  // TH8 -> TCC0_CC2
 };
 
 static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US, 1100}}; // TC3_CC1
@@ -241,6 +242,8 @@ static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
 static void start_adc_conversion(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
 
+static void slew_pwm_outputs(void);
+
 /* --- Public functions --- */
 
 void app_init(void) {
@@ -328,6 +331,8 @@ void app_init(void) {
 
 void app_task(void) {
     //printf("app_task\r\n");
+    
+    slew_pwm_outputs();
     
     if (adc_dma_done) {
         adc_dma_done = false;
@@ -554,19 +559,45 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
         
         pulse_us = clamp(pulse_us, outputs[i].min_us, outputs[i].max_us);
         
-        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, outputs[i].frame_us);
+        //uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, outputs[i].frame_us);
         
-        if (outputs[i].mode == PWM_TCC) {
-            tcc_write(outputs[i].instance, outputs[i].channel, ticks);
-        } else if (outputs[i].mode == MPWM_TC) {
-            TC3_Compare16bitPeriodSet(ticks);
-        } 
+//        if (outputs[i].mode == PWM_TCC) {
+//            tcc_write(outputs[i].instance, outputs[i].channel, ticks);
+//        } else if (outputs[i].mode == MPWM_TC) {
+//            TC3_Compare16bitPeriodSet(ticks);
+//        } 
         
-        outputs[i].current_pulse_us = pulse_us; // Update struct
+        outputs[i].target_pulse_us = pulse_us; 
+        //outputs[i].current_pulse_us = pulse_us; // Update struct
     }
     
     // Pet the watchdog after applying updates 
     //WDT_Clear();
+}
+
+#define PWM_MAX_STEP_US  5U
+
+static void slew_pwm_outputs(void) {
+    for (size_t i = 0; i < 8U; i++) {
+        uint16_t target  = thrusters[i].target_pulse_us;
+        uint16_t current = thrusters[i].current_pulse_us;
+
+        if (current < target) {
+            uint16_t step = target - current;
+            current += (step > PWM_MAX_STEP_US) ? PWM_MAX_STEP_US : step;
+        } else if (current > target) {
+            uint16_t step = current - target;
+            current -= (step > PWM_MAX_STEP_US) ? PWM_MAX_STEP_US : step;
+        }
+
+        if (current != thrusters[i].current_pulse_us) {
+            thrusters[i].current_pulse_us = current;
+            uint32_t ticks = us_to_ticks(thrusters[i].period_ticks,
+                                         current,
+                                         thrusters[i].frame_us);
+            tcc_write(thrusters[i].instance, thrusters[i].channel, ticks);
+        }
+    }
 }
 
 static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
@@ -580,6 +611,7 @@ static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
         } 
         
         outputs[i].current_pulse_us = outputs[i].neutral_us; // Update struct
+        outputs[i].target_pulse_us = outputs[i].neutral_us;
         
     }
     //WDT_Clear();
