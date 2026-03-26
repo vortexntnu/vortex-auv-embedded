@@ -50,8 +50,8 @@ data:
     - children:
       - attributes:
           id: sercom2
-          x: '25'
-          y: '503'
+          x: '802'
+          y: '233'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
@@ -176,7 +176,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -197,17 +197,12 @@ data:
       children:
       - children:
         - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'false'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
             id: sercom2
             value: '0'
           type: Dynamic
+        - attributes:
+            value: '1'
+          type: User
         type: Values
       type: KeyValueSet
     USART_RING_BUFFER_MODE_ENABLE:

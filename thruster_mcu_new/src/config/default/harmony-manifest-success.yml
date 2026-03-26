@@ -4,14 +4,14 @@
 
 
 project: thruster_mcu_new
-creation_date: 2026-03-17T14:30:03.033+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+creation_date: 2026-03-26T10:51:23.465+01:00[Europe/Oslo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
 operating_system: Linux
 mcc_mode: IDE            # [IDE|Standalone|Headless]
 mcc_version: v5.6.4
 mcc_core_version: v5.8.3
-mplabx_version: v6.25        # if MPLAB X plugin only
+mplabx_version: v6.30        # if MPLAB X plugin only
 harmony_version: v5.6.4
-compiler: XC32 4.60
+compiler: XC32 4.50
 
 modules:
     - {name: "csp", version: "v3.23.0"}

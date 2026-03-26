@@ -14,8 +14,9 @@ int main ( void ) {
     //generate_pwm_signals();
     printf("--- Testing can ---\r\n");
     
+    char message[] = "TEST\r\n";
+    SERCOM2_USART_Write(message, sizeof(message) - 1);
     
-    test_can_tx();
         
     while ( true )
     {
