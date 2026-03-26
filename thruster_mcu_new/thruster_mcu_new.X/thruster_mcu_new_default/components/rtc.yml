@@ -59,4 +59,14 @@ data:
           type: User
         type: Values
       type: Hex
+    RTC_MODE0_MATCHCLR:
+      attributes:
+        id: RTC_MODE0_MATCHCLR
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

@@ -238,6 +238,7 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
 static void eic_pin_flt_thruster(uintptr_t context);
 static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
+static void start_adc_conversion(uintptr_t context);
 
 /* --- Public functions --- */
 
@@ -287,8 +288,10 @@ void app_init(void) {
     ADC0_Enable();
     
     // Configure RTC
+    RTC_Timer32CompareSet(50); // 20Hz
+    RTC_Timer32CallbackRegister(start_adc_conversion, 0);
     RTC_Timer32Start();
-    RTC_Timer32CompareSet(50);
+    
     
     // Configure SysTick Timer
     SYSTICK_TimerStart();
@@ -321,10 +324,6 @@ void app_init(void) {
 }
 
 void app_task(void) {
-    
-//    if (ADC0_ConversionSequenceIsFinished()) {
-//            ADC0_ConversionStart();
-//        }
 //    
 //    if (adc_dma_done) {
 //        adc_dma_done = false;
@@ -956,6 +955,12 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
     } 
     else if (returned_event == DMAC_TRANSFER_EVENT_ERROR) {
         printf("ERROR: DMAC Transfer Failed!\r\n");
+    }
+}
+
+static void start_adc_conversion(uintptr_t context) {
+    if (ADC0_ConversionSequenceIsFinished()) {
+           ADC0_ConversionStart();
     }
 }
 
