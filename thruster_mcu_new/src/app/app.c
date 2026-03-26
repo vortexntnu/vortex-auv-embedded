@@ -575,7 +575,7 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
     //WDT_Clear();
 }
 
-#define PWM_MAX_STEP_US  5U
+#define PWM_MAX_STEP_US  1U
 
 static void slew_pwm_outputs(void) {
     for (size_t i = 0; i < 8U; i++) {
