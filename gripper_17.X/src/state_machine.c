@@ -9,14 +9,18 @@
 static uint8_t encoder_num = 0;
 static bool read_failed = true;
 
+struct state_context ctx;
 
-void state_machine(struct state_context* ctx) {
-    uint32_t ev = ctx->events;
-    ctx->events &= ~ev;
+void state_machine() {
+    uint32_t ev = ctx.events;
+    ctx.events &= ~ev;
+
+    can_recieve(&ctx.rx_frame);
 
     if (ev & EVENT_SET_PWM) {
+        printf("EVENT_SET_PWM\r\n");
         WDT_Clear();
-        if (set_servos_pwm(ctx->rx_frame.buf, NUM_ENCODERS)){
+        if (set_servos_pwm(ctx.rx_frame.buf, NUM_ENCODERS)){
           struct can_tx_frame tx;
           tx.id = 0x46B;
           tx.len = 1; 
@@ -27,36 +31,34 @@ void state_machine(struct state_context* ctx) {
 
     if (ev & EVENT_READ_ENCODER) {
 
-        ctx->tx_frame.id = CAN_SEND_ANGLES;
-        ctx->tx_frame.len = 6;
-        read_encoders(ANGLE_REGISTER, encoder_num, ctx->tx_frame.buf);
+        ctx.tx_frame.id = CAN_SEND_ANGLES;
+        ctx.tx_frame.len = 6;
+        read_encoders(ANGLE_REGISTER, encoder_num, ctx.tx_frame.buf);
 
     }
 
 
     if (read_failed && (encoder_num != 0)) {
         uint8_t prev_enc = encoder_num - 1;
-        ctx->tx_frame.buf[2*prev_enc] = 0xFF;
-        ctx->tx_frame.buf[2*prev_enc + 1] = 0xFF;
+        ctx.tx_frame.buf[2*prev_enc] = 0xFF;
+        ctx.tx_frame.buf[2*prev_enc + 1] = 0xFF;
     }
 
     if (ev & EVENT_TRANSMIT_ANGLES || (encoder_num == NUM_ENCODERS)) {
-        can_transmit(&ctx->tx_frame);
+        can_transmit(&ctx.tx_frame);
         encoder_num = 0;
     }
-
 }
 
 void can_rx_callback(uintptr_t context) {
-    struct state_context* ctx = (struct state_context*)context;
 
     printf("Entering can RX callback\r\n");
-    print_can_frame(ctx->rx_frame.id, ctx->rx_frame.len, ctx->rx_frame.timestamp, ctx->rx_frame.buf);
+    print_can_frame(ctx.rx_frame.id, ctx.rx_frame.len, ctx.rx_frame.timestamp, ctx.rx_frame.buf);
     // CAN_ERROR err = CAN0_ErrorGet();
     // if (err) {
     //     return;
     // }
-    switch (ctx->rx_frame.id) {
+    switch (ctx.rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
             break;
@@ -64,7 +66,15 @@ void can_rx_callback(uintptr_t context) {
             start_gripper();
             break;
         case SET_PWM:
-            ctx->events |= EVENT_SET_PWM;
+            ctx.events |= EVENT_SET_PWM;
+            if (set_servos_pwm(ctx.rx_frame.buf, 4)){
+              struct can_tx_frame tx;
+              tx.id = 0x46B;
+              tx.len = 1; 
+              tx.buf[0] = 1;
+              can_transmit(&tx);
+            }
+
             break;
         case RESET_MCU:
             NVIC_SystemReset();
@@ -72,17 +82,15 @@ void can_rx_callback(uintptr_t context) {
         default:
             break;
     }
-    can_recieve(&ctx->rx_frame);
+    can_recieve(&ctx.rx_frame);
 }
 
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    volatile uint32_t* events = (volatile uint32_t*)context;
-    *events |= EVENT_READ_ENCODER;
+    ctx.events |= EVENT_READ_ENCODER;
 }
 
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    volatile uint32_t* events = (volatile uint32_t*)context;
-    *events |= EVENT_TRANSMIT_ANGLES;
+    ctx.events |= EVENT_TRANSMIT_ANGLES;
 }
 
 void i2c1_callback(uintptr_t context) {
@@ -96,15 +104,12 @@ void i2c1_callback(uintptr_t context) {
 
     encoder_num += 1;
 
-    volatile uint32_t* events = (volatile uint32_t*)context;
-
-
     if (encoder_num == 3) {
-        *events |= EVENT_TRANSMIT_ANGLES;
+        ctx.events |= EVENT_TRANSMIT_ANGLES;
         return;
     }
 
-    *events |= EVENT_READ_ENCODER;
+    ctx.events |= EVENT_READ_ENCODER;
 }
 
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,

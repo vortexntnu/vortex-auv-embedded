@@ -5,7 +5,6 @@
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
-struct state_context state_context;
 static uint16_t adc_result_array[TRANSFER_SIZE];
 
 
@@ -56,18 +55,17 @@ int main(void) {
     system_init();
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
-    CAN0_RxCallbackRegister(can_rx_callback, (uintptr_t)&state_context,
+    CAN0_RxCallbackRegister(can_rx_callback,0,
                             CAN_MSG_ATTR_RX_FIFO0);
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, (const uintptr_t) adc_result_array);
-    TC0_TimerCallbackRegister(tc0_callback, (uintptr_t)&state_context.events);
-    TC1_TimerCallbackRegister(tc1_callback, (uintptr_t)&state_context.events);
+    TC0_TimerCallbackRegister(tc0_callback,0);
+    TC1_TimerCallbackRegister(tc1_callback, 0);
 
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
     // DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
     //                      (const void*)adc_result_array,
     //                      sizeof(adc_result_array));
-    SERCOM1_I2C_CallbackRegister(i2c1_callback, (uintptr_t)&state_context.events);
-    can_recieve(&state_context.rx_frame);
+    SERCOM1_I2C_CallbackRegister(i2c1_callback, 0);
 
     TC0_TimerStart();
     // TC1_TimerStart();
@@ -76,24 +74,24 @@ int main(void) {
 
     printf("Start Gripper\r\n");
     start_gripper();
-
-      struct can_tx_frame tx;
-      tx.id = 0x369;
-      tx.len = 8; 
-      tx.buf[0] = 1;
-      tx.buf[1] = 2;
-      tx.buf[2] = 3;
-      tx.buf[3] = 4;
-      tx.buf[4] = 5;
-      tx.buf[5] = 6;
-      tx.buf[6] = 7;
-      tx.buf[7] = 8;
-    printf("sending can frame\r\n");
-      can_transmit(&tx);
+    //
+    //   struct can_tx_frame tx;
+    //   tx.id = 0x369;
+    //   tx.len = 8; 
+    //   tx.buf[0] = 1;
+    //   tx.buf[1] = 2;
+    //   tx.buf[2] = 3;
+    //   tx.buf[3] = 4;
+    //   tx.buf[4] = 5;
+    //   tx.buf[5] = 6;
+    //   tx.buf[6] = 7;
+    //   tx.buf[7] = 8;
+    // printf("sending can frame\r\n");
+    //   can_transmit(&tx);
 
     while (true) {
+        state_machine();
         PM_IdleModeEnter();
-        state_machine(&state_context);
     }
 
     return EXIT_FAILURE;

@@ -1,5 +1,6 @@
 #include "gripper.h"
 #include <string.h>
+#include <stdio.h>
 
 
 
@@ -36,6 +37,7 @@ int set_servos_pwm(const uint8_t* pwm_data, uint8_t data_len) {
     memcpy(duty_cycle_us, pwm_data, sizeof(duty_cycle_us));
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
+        printf("duty cycle: %d", duty_cycle_us[i]);
         uint32_t tcc_val =
             ((uint32_t)duty_cycle_us[i] * (TCC_PERIOD + 1u)) / PWM_PERIOD_MICROSECONDS;
         servo_map[i].set_duty(servo_map[i].channel, tcc_val);
