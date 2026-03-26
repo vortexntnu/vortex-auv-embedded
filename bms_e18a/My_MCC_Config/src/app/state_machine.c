@@ -2,13 +2,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
-#include "definitions.h"
+#include "app/can_facade.h"
 #include "app/can_telemetry.h"
 #include "app/pwr_mode.h"
-#include "peripheral/port/plib_port.h"
-#include "app/can_facade.h"
+#include "definitions.h"
 #include "ic_bms/bms_spi.h"
+#include "peripheral/port/plib_port.h"
 
 extern volatile bool rxReady;
 extern uint32_t rx_messageID;
@@ -21,29 +22,23 @@ static uint32_t s_last_can_tick = 0U;
 
 #define STBY_TO_TICKS 6000U
 
-void sm_init(void)
-{
+void sm_init(void) {
     s_rtc_tick = 0U;
     s_last_can_tick = 0U;
     s_can_wake_irq = false;
 }
 
-void sm_on_can_wake(void)
-{
+void sm_on_can_wake(void) {
     s_can_wake_irq = true;
 }
 
-void sm_on_rtc_tick(void)
-{
+void sm_on_rtc_tick(void) {
     s_rtc_tick++;
 }
 
-void state_machine(void)
-{
-    switch (pwr_get_state())
-    {
-        case PWR_MODE_ACTIVE:
-        {
+void state_machine(void) {
+    switch (pwr_get_state()) {
+        case PWR_MODE_ACTIVE: {
             uint32_t now;
             bool can_alive = s_can_wake_irq;
 
@@ -51,8 +46,7 @@ void state_machine(void)
             CAN_temp_send();
             now = s_rtc_tick;
 
-            if (rxReady)
-            {
+            if (rxReady) {
                 uint32_t id = rx_messageID;
                 uint8_t len = rx_messageLength;
                 uint8_t b0 = (len > 0U) ? rx_message[0] : 0U;
@@ -60,11 +54,9 @@ void state_machine(void)
                 rxReady = false;
                 can_alive = true;
 
-                switch (id)
-                {
+                switch (id) {
                     case CAN_ID_BOTHOFF_CMD:
-                        if ((len > 0U) && (b0 == BOTHOFF_CMD_BYTE))
-                        {
+                        if ((len > 0U) && (b0 == BOTHOFF_CMD_BYTE)) {
                             bothoff_high();
                         }
                         break;
@@ -78,13 +70,14 @@ void state_machine(void)
                 }
             }
 
-            if (can_alive)
-            {
-                s_last_can_tick = now; 
-                s_can_wake_irq = false; 
+            if (can_alive) {
+                s_last_can_tick = now;
+                s_can_wake_irq = false;
             }
 
-            if ((uint32_t)(now - s_last_can_tick) >= STBY_TO_TICKS) // Check if the time since the last CAN activity exceeds the threshold
+            if ((uint32_t)(now - s_last_can_tick) >=
+                STBY_TO_TICKS)  // Check if the time since the last CAN activity
+                                // exceeds the threshold
             {
                 STB_Set();
                 pwr_set_stb_lowpower();
@@ -94,8 +87,7 @@ void state_machine(void)
         }
 
         case PWR_MODE_STANDBY:
-            if (s_can_wake_irq)
-            {
+            if (s_can_wake_irq) {
                 s_can_wake_irq = false;
                 s_last_can_tick = s_rtc_tick;
 
@@ -114,5 +106,34 @@ void state_machine(void)
             break;
     }
 
+    pwr_enter_sleep();
+}
+
+void state_machine_simple(void) {
+    if (rxReady) {
+        uint32_t id = rx_messageID;
+        uint8_t len = rx_messageLength;
+        uint8_t b0 = (len > 0U) ? rx_message[0] : 0U;
+
+        rxReady = false;
+
+        switch (id) {
+            case CAN_ID_BOTHOFF_CMD:
+                printf("BOTHOFF\r\n");
+                if ((len > 0U) && (b0 == BOTHOFF_CMD_BYTE)) {
+                    bothoff_high();
+                }
+                break;
+
+            case CAN_RST_MCU:
+
+                printf("RESET\r\n");
+                NVIC_SystemReset();
+                break;
+
+            default:
+                break;
+        }
+    }
     pwr_enter_sleep();
 }
