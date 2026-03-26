@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include "definitions.h"
 #include "app.h"
+#include <stdio.h>
 
 #define WRITE_ID(id) (id << 18)
 #define READ_ID(id) (id >> 18)
@@ -238,11 +239,12 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
 static void eic_pin_flt_thruster(uintptr_t context);
 static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
-static void start_adc_conversion(uintptr_t context);
+static void start_adc_conversion(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
 
 /* --- Public functions --- */
 
 void app_init(void) {
+    //printf("app_init\r\n\r\n");
     /* Register UART receive callback and arm the first header read.
      * From this point the receive is self-sustaining: the callback
      * always re-arms itself before returning. */
@@ -290,6 +292,7 @@ void app_init(void) {
     // Configure RTC
     RTC_Timer32CompareSet(50); // 20Hz
     RTC_Timer32CallbackRegister(start_adc_conversion, 0);
+    RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
     RTC_Timer32Start();
     
     
@@ -317,13 +320,14 @@ void app_init(void) {
     TC0_TimerStart();
     TC3_CompareStart();
     
-    ADC0_ConversionStart();
+    //ADC0_ConversionStart();
     
     // Enable watchdog
     //WDT_Enable();
 }
 
 void app_task(void) {
+    //printf("app_task\r\n");
     
     if (adc_dma_done) {
         adc_dma_done = false;
@@ -349,6 +353,7 @@ void app_task(void) {
 //    }
     
     if (uart_message_ready) {
+        //printf("message ready\r\n");
         uart_message_ready = false;
         message_handler();
     }
@@ -504,10 +509,12 @@ static bool send_current_measurements(float I_arr[8]) {
     for (size_t i = 0U; i < 8U; i++) {
         memcpy(&payload[i * sizeof(float)], &I_arr[i], sizeof(float));
     }
+    //printf("Sending current meas frame\r\n");
     return uart_send_frame(MSG_CURRENT_MEASUREMENTS, payload, 32U);
 }
 
 static void log_current(void) {
+    //printf("log current called\r\n\r\n");
     const float ADC_VREF   = 5.0f;
     const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
     const float R_IMON     = 2697.0f;    // 2.697 kOhm sense resistor for thrusters
@@ -520,8 +527,6 @@ static void log_current(void) {
         
         I_array[i] = I_out;
         
-        send_current_measurements(I_array);
-        
 //        printf("\nTH%u (AIN%u) raw=%u  V=%.4f  I=%.3f A PWM=%u us\r\n",
 //               imon_map[i].thruster,
 //               imon_map[i].ain,
@@ -529,8 +534,10 @@ static void log_current(void) {
 //               V_Imon,
 //               I_out, 
 //               (unsigned)thrusters[i].current_pulse_us);
-        //printf("%u %.3f\n", (unsigned)thrusters[imon_map[i].thruster - 1].current_pulse_us, I_out);
+        //printf("%u %.3f\r\n\r\n", (unsigned)thrusters[imon_map[i].thruster - 1].current_pulse_us, I_out);
     }
+    
+    send_current_measurements(I_array);
     
     //bool result = send_current_measurements(I_array);
     
@@ -923,7 +930,7 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context) {
     // Check CAN Status
     can_status = CAN1_ErrorGet();
-    printf("CAN interrupt occurred\r\n");
+    //printf("CAN interrupt occurred\r\n");
 
     // If no new error, handle CAN frame
     if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
@@ -948,17 +955,21 @@ static void can_transmit_callback(uintptr_t context) {
 }
 
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext) {
+    //printf("ADC Callback Entered\r\n\r\n");
     if (returned_event == DMAC_TRANSFER_EVENT_COMPLETE) {
         adc_dma_done = true;
         // Re-arm DMA for next conversion
         DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
     } 
     else if (returned_event == DMAC_TRANSFER_EVENT_ERROR) {
-        printf("ERROR: DMAC Transfer Failed!\r\n");
+        //printf("ERROR: DMAC Transfer Failed!\r\n\r\n");
     }
 }
 
-static void start_adc_conversion(uintptr_t context) {
+static void start_adc_conversion(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
+    (void)intCause;
+    (void)context;
+    //printf("RTC Callback Entered\r\n\r\n");
     if (ADC0_ConversionSequenceIsFinished()) {
            ADC0_ConversionStart();
     }
@@ -968,19 +979,19 @@ static void eic_pin_flt_thruster(uintptr_t context) {
     uint8_t channel = (uint8_t)context;
     hw_events.flt_pending_mask |= (1U << channel);
     
-    printf("Fault pin triggered for thruster %u\n", (unsigned int)channel);    
+    //printf("Fault pin triggered for thruster %u\n", (unsigned int)channel);    
 }
 
 static void eic_pin_pg_thruster(uintptr_t context) {
     uint8_t channel = (uint8_t)context;
     hw_events.pgood_pending_mask |= (1U << channel);
     
-    printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)channel);
+    //printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)channel);
 }
 
 static void eic_pin_killswitch(uintptr_t context) {
     hw_events.killswitch_pending_mask |= 1U;
-    printf("KILLSWITCH triggered \n");
+    //printf("KILLSWITCH triggered \n");
 }
 
 

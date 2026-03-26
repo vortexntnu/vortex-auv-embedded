@@ -1,6 +1,7 @@
 #include <stdlib.h>         // EXIT_FAILURE
 #include "definitions.h"    // Harmony driv
 #include "app/app.h"
+#include <stdio.h>
 
 int main ( void ) {
     /* Initialize all modules */
@@ -10,7 +11,9 @@ int main ( void ) {
     
     // uint8_t byte;
     
+    //printf("--- ADC Reading test--- \r\n\r\n");
 
+    
     /* Initialize application logic */
     app_init();
     
@@ -39,7 +42,6 @@ int main ( void ) {
 //    uint32_t hold_ms = 5000;
     //test_neutral_to_max(to_test, count, max_us, hold_ms);
     
-    
         
     while ( true )
     {
@@ -48,14 +50,16 @@ int main ( void ) {
         //while (!SERCOM2_USART_Write(&byte, 5)) {}
         
         /* Sleep until an interrupt occurs*/
-        PM_IdleModeEnter();
+        //PM_IdleModeEnter();
                 
         //generate_pwm_signals();
         
-        //printf("Hello world!\n");
+        //SYSTICK_DelayMs(100);
         
         //test_can_tx();
         //;
+        
+        
         
         /* Run application logic */
         app_task();
