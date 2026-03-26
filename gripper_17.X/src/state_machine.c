@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "can1.h"
 #include "usart.h"
+#include "system_init.h"
 #include "can_common.h"
 #include "dma.h"
 
@@ -11,16 +12,18 @@ static bool read_failed = true;
 
 struct state_context ctx;
 
+void state_machine_init(){
+    can_recieve(&ctx.rx_frame);
+}
+
 void state_machine() {
     uint32_t ev = ctx.events;
     ctx.events &= ~ev;
 
-    can_recieve(&ctx.rx_frame);
-
     if (ev & EVENT_SET_PWM) {
         printf("EVENT_SET_PWM\r\n");
         WDT_Clear();
-        if (set_servos_pwm(ctx.rx_frame.buf, NUM_ENCODERS)){
+        if (set_servos_pwm(ctx.rx_frame.buf, 4)){
           struct can_tx_frame tx;
           tx.id = 0x46B;
           tx.len = 1; 
@@ -48,12 +51,14 @@ void state_machine() {
         can_transmit(&ctx.tx_frame);
         encoder_num = 0;
     }
+    can_recieve(&ctx.rx_frame);
+    // PM_IdleModeEnter();
 }
 
 void can_rx_callback(uintptr_t context) {
 
     printf("Entering can RX callback\r\n");
-    print_can_frame(ctx.rx_frame.id, ctx.rx_frame.len, ctx.rx_frame.timestamp, ctx.rx_frame.buf);
+    // print_can_frame(ctx.rx_frame.id, ctx.rx_frame.len, ctx.rx_frame.timestamp, ctx.rx_frame.buf);
     // CAN_ERROR err = CAN0_ErrorGet();
     // if (err) {
     //     return;
@@ -67,14 +72,6 @@ void can_rx_callback(uintptr_t context) {
             break;
         case SET_PWM:
             ctx.events |= EVENT_SET_PWM;
-            if (set_servos_pwm(ctx.rx_frame.buf, 4)){
-              struct can_tx_frame tx;
-              tx.id = 0x46B;
-              tx.len = 1; 
-              tx.buf[0] = 1;
-              can_transmit(&tx);
-            }
-
             break;
         case RESET_MCU:
             NVIC_SystemReset();
@@ -82,7 +79,6 @@ void can_rx_callback(uintptr_t context) {
         default:
             break;
     }
-    can_recieve(&ctx.rx_frame);
 }
 
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {

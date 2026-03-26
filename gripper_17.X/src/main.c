@@ -88,10 +88,11 @@ int main(void) {
     //   tx.buf[7] = 8;
     // printf("sending can frame\r\n");
     //   can_transmit(&tx);
+    state_machine_init();
+    // PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
 
     while (true) {
         state_machine();
-        PM_IdleModeEnter();
     }
 
     return EXIT_FAILURE;
