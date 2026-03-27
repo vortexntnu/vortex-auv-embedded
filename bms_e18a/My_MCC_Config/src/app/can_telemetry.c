@@ -103,6 +103,34 @@ void CAN_temp_send(void)
         }
 }
 
+void CAN_tsens_send(void)
+{
+    uint16_t ts1 = 0U;
+    uint16_t ts2 = 0U;
+    uint16_t ts3 = 0U;
+    uint8_t payload[6];
+    bool ok;
+
+    if (!bq_direct_command(TS1Temperature, &ts1, R))
+        return;
+
+    if (!bq_direct_command(TS2Temperature, &ts2, R))
+        return;
+
+    if (!bq_direct_command(TS3Temperature, &ts3, R))
+        return;
+
+    pack_u16_le(&payload[0], ts1);
+    pack_u16_le(&payload[2], ts2);
+    pack_u16_le(&payload[4], ts3);
+
+    ok = CAN_Send(CAN_TEMP_ID, payload, sizeof(payload));
+    if (!ok)
+    {
+        // handle send error
+    }
+}
+
 #define CAN_ALERT_SSA_ID   0x200u
 
 void CAN_alert_ssa_send(void)

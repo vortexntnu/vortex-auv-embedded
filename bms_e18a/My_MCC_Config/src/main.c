@@ -101,6 +101,7 @@ int main(void) {
                 CAN_alert_ssa_send();
                 CAN_current_send();
                 CAN_voltage_send();
+                CAN_temp_send();
             }
         }
 
