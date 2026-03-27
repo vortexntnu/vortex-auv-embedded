@@ -53,7 +53,7 @@ void ws2812enc_byte_encode(uint8_t value, uint8_t out3[3])
     out3[2] = s_lut[value][2];
 }
 
-/* --------- Encoding (struct array GRB) ? matches header prototype -------- */
+/* --------- Encoding (struct array GRB) matches header prototype -------- */
 void ws2812enc_encode_grb(const ws2812_grb_t *in, size_t num_leds, uint8_t *out)
 {
     for (size_t i = 0; i < num_leds; i++) {
@@ -63,8 +63,13 @@ void ws2812enc_encode_grb(const ws2812_grb_t *in, size_t num_leds, uint8_t *out)
 
         uint8_t *p = &out[i * WS2812_SPI_BYTES_PER_LED];
 
-        p[0] = s_lut[g][0]; p[1] = s_lut[g][1]; p[2] = s_lut[g][2];
+        /*p[0] = s_lut[g][0]; p[1] = s_lut[g][1]; p[2] = s_lut[g][2];
         p[3] = s_lut[r][0]; p[4] = s_lut[r][1]; p[5] = s_lut[r][2];
+        p[6] = s_lut[b][0]; p[7] = s_lut[b][1]; p[8] = s_lut[b][2];*/
+        
+        // TEST: send RGB instead of GRB
+        p[0] = s_lut[r][0]; p[1] = s_lut[r][1]; p[2] = s_lut[r][2];
+        p[3] = s_lut[g][0]; p[4] = s_lut[g][1]; p[5] = s_lut[g][2];
         p[6] = s_lut[b][0]; p[7] = s_lut[b][1]; p[8] = s_lut[b][2];
     }
 }
@@ -79,8 +84,13 @@ void ws2812enc_encode_bytes_grb(const uint8_t *grb_bytes, size_t num_leds, uint8
 
         uint8_t *p = &out[i * WS2812_SPI_BYTES_PER_LED];
 
-        p[0] = s_lut[g][0]; p[1] = s_lut[g][1]; p[2] = s_lut[g][2];
+        /*p[0] = s_lut[g][0]; p[1] = s_lut[g][1]; p[2] = s_lut[g][2];
         p[3] = s_lut[r][0]; p[4] = s_lut[r][1]; p[5] = s_lut[r][2];
+        p[6] = s_lut[b][0]; p[7] = s_lut[b][1]; p[8] = s_lut[b][2];*/
+        
+        // TEST: send RGB instead of GRB
+        p[0] = s_lut[r][0]; p[1] = s_lut[r][1]; p[2] = s_lut[r][2];
+        p[3] = s_lut[g][0]; p[4] = s_lut[g][1]; p[5] = s_lut[g][2];
         p[6] = s_lut[b][0]; p[7] = s_lut[b][1]; p[8] = s_lut[b][2];
     }
 }

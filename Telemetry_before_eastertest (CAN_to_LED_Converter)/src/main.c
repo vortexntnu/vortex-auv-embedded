@@ -84,8 +84,8 @@ int main(void)
     
     /* Start with a known state */
     led_clear_all();
-    led_set(1, 255, 0, 0);
-    led_set(3, 0, 255, 0);
+    led_set(4, 0, 255, 0);
+    led_set(5, 255, 0, 0);
     //led_set(5, 0, 0, 20);
     //led_set(5, 0, 0, 0);
     led_commit_async();
