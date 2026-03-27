@@ -680,8 +680,11 @@ void BQ769x2_Init() {
     BQ769x2_SetRegister(ChgPumpControl,0x01,1); 
     BQ769x2_SetRegister(CFETOFFPinConfig, 0x00, 1);
     BQ769x2_SetRegister(DFETOFFPinConfig, 0x00, 1);
-    BQ769x2_SetRegister(CHGFETProtectionsA, 0x98, 1);
-    BQ769x2_SetRegister(CHGFETProtectionsB, 0xD5, 1);
+    // BQ769x2_SetRegister(CHGFETProtectionsA, 0x98, 1);
+    // BQ769x2_SetRegister(CHGFETProtectionsB, 0xD5, 1);
+    BQ769x2_SetRegister(CHGFETProtectionsA, 0x00, 1);
+    BQ769x2_SetRegister(CHGFETProtectionsB, 0x00, 1);
+    BQ769x2_SetRegister(CHGFETProtectionsC, 0x00, 1);
     //BQ769x2_SetRegister(CHGFETProtectionsC, 0x56, 1);
     BQ769x2_SetRegister(DSGFETProtectionsA, 0xE4, 1);
     BQ769x2_SetRegister(DSGFETProtectionsB, 0xE6, 1);
