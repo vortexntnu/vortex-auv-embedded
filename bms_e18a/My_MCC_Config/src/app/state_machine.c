@@ -128,7 +128,6 @@ void state_machine_simple(void) {
                 break;
 
             case CAN_RST_MCU:
-
                 printf("RESET\r\n");
                 NVIC_SystemReset();
                 break;
