@@ -95,7 +95,7 @@ int main(void) {
         if (rtc_timer) {
             voltage_test_step();
             rtc_timer = false;
-                    CAN_voltage_send();
+                    // CAN_voltage_send();
             if (can_tx_avaliable) {
                 CAN_alert_pfa_send();
                 CAN_alert_ssa_send();

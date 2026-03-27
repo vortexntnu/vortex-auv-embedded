@@ -539,6 +539,7 @@ void bms_init_comm_voltage(void);
 void BQ769x2_Init();
 
 void CommandSubcommands(uint16_t command); //For Command only Subcommands
+bool read_data_memory(uint16_t address, uint8_t *data, uint8_t length);
 
 
 

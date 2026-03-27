@@ -22,6 +22,14 @@ static inline void pack_s16_le(uint8_t *dst, int16_t value)
     dst[1] = (uint8_t)((value >> 8) & 0xFF);
 }
 
+static void pack_s32_le(uint8_t *dst, int32_t value)
+{
+    dst[0] = (uint8_t)((uint32_t)value & 0xFFU);
+    dst[1] = (uint8_t)(((uint32_t)value >> 8) & 0xFFU);
+    dst[2] = (uint8_t)(((uint32_t)value >> 16) & 0xFFU);
+    dst[3] = (uint8_t)(((uint32_t)value >> 24) & 0xFFU);
+}
+
 
 void CAN_telemetry_init(void) 
 {
@@ -183,23 +191,67 @@ void CAN_alert_pfa_send(void)
 }
 
 #define CAN_CURRENT_ID     0x203u
+//
+// void CAN_current_send(void)
+// {
+//     int16_t current = 0;
+//     uint8_t payload[2];
+//     bool ok;
+//
+//     if (!bq_direct_command(CC2Current, (uint16_t *)&current, R))
+//     {
+//         return;
+//     }
+//
+//     if (!read_data_memory)
+//
+//     pack_s16_le(&payload[0], current);
+//
+//     ok = CAN_Send(CAN_CURRENT_ID, payload, sizeof(payload));
+//     if (!ok)
+//     {
+//         // handle send error
+//     }
+// }
 
 void CAN_current_send(void)
 {
     int16_t current = 0;
-    uint8_t payload[2];
+    int32_t current_counts = 0;
+    uint8_t da_status5[32];
+    uint8_t payload[6];
     bool ok;
 
+    /* Read 16-bit CC2 current */
     if (!bq_direct_command(CC2Current, (uint16_t *)&current, R))
     {
         return;
     }
 
+    /* Read DASTATUS5 (0x0075) and extract raw CC2 counts at offset 24 */
+    if (!read_data_memory(DASTATUS5, da_status5, sizeof(da_status5)))
+    {
+        return;
+    }
+
+    current_counts =
+        (int32_t)(
+            ((uint32_t)da_status5[24]      ) |
+            ((uint32_t)da_status5[25] <<  8) |
+            ((uint32_t)da_status5[26] << 16) |
+            ((uint32_t)da_status5[27] << 24)
+        );
+
+    /* Pack into CAN payload:
+       bytes 0..1 = CC2Current (int16_t)
+       bytes 2..5 = raw CC2 counts (int32_t)
+    */
     pack_s16_le(&payload[0], current);
+    pack_s32_le(&payload[2], current_counts);
 
     ok = CAN_Send(CAN_CURRENT_ID, payload, sizeof(payload));
     if (!ok)
     {
-        // handle send error
+        /* handle send error */
     }
 }

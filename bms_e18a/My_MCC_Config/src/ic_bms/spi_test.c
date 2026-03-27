@@ -245,7 +245,7 @@ static void uart_write_current(void)
     }
 }
 
-static bool read_data_memory(uint16_t address, uint8_t *data, uint8_t length)
+bool read_data_memory(uint16_t address, uint8_t *data, uint8_t length)
 {
     uint8_t subcmd[2];
     uint8_t echo[2] = {0xFFU, 0xFFU};
