@@ -51,6 +51,8 @@ wake-up interrupt occurs on EIC pin 14
 
 */
 volatile bool rtc_timer = false;
+extern volatile bool can_tx_avaliable;
+
 static void TelemetryRtcCb(
     RTC_TIMER32_INT_MASK intCause,
     uintptr_t context)  // called every 100ms by the RTC timer interrupt
@@ -59,7 +61,7 @@ static void TelemetryRtcCb(
     (void)context;
     // sm_on_rtc_tick();
     // CAN_telemetry_tickISR();
-    printf("RTC interrupt\r\n");
+    // printf("RTC interrupt\r\n");
     rtc_timer = true;
 }
 
@@ -79,7 +81,7 @@ int main(void) {
     RTC_Timer32Start();
     // bms_alert_irq_init();
     CAN_Init();
-    pwr_set_idle0();
+    // pwr_set_idle0();
 
     // CommandSubcommands(FET_ENABLE); // FET_ENABLE
     voltage_test_init();
@@ -93,16 +95,18 @@ int main(void) {
         if (rtc_timer) {
             voltage_test_step();
             rtc_timer = false;
-            CAN_alert_pfa_send();
-            CAN_alert_ssa_send();
-            CAN_current_send();
-            CAN_voltage_send();
+            if (can_tx_avaliable) {
+                CAN_alert_pfa_send();
+                CAN_alert_ssa_send();
+                CAN_current_send();
+                CAN_voltage_send();
+            }
         }
 
         // bms_alert_step();
         // spi_write_probe_step();
 
-        // can_scope_test_step();
+        // can_sope_test_step();
         state_machine_simple();
     }
 

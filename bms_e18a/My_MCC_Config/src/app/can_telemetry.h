@@ -7,6 +7,9 @@
 #define BOTHOFF_CMD_BYTE 0xA5
 #define CAN_TEMP_ID 0x100         //EXAMPLE VALUE
 #define CAN_VOLTAGE_ID 0x204      //EXAMPLE VALUE
+//
+#define CAN_START_TRANSMIT 0x215
+#define CAN_STOP_TRANSMIT 0x216
 
 //legg til func for current, pressure, standbymode, reset mcu
 

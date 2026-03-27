@@ -20,6 +20,8 @@ static volatile bool s_can_wake_irq = false;
 static volatile uint32_t s_rtc_tick = 0U;
 static uint32_t s_last_can_tick = 0U;
 
+volatile bool can_tx_avaliable = false;
+
 #define STBY_TO_TICKS 6000U
 
 void sm_init(void) {
@@ -130,10 +132,17 @@ void state_machine_simple(void) {
                 printf("RESET\r\n");
                 NVIC_SystemReset();
                 break;
-
+            case CAN_START_TRANSMIT:
+                printf("CAN enabled\r\n");
+                can_tx_avaliable = true;
+                break;
+            case CAN_STOP_TRANSMIT:
+                printf("CAN disabled\r\n");
+                can_tx_avaliable = false;
+                break;
             default:
                 break;
         }
     }
-    pwr_enter_sleep();
+    // pwr_enter_sleep();
 }
