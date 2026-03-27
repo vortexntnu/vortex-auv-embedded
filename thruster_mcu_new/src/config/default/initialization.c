@@ -182,15 +182,15 @@ void SYS_Initialize ( void* data )
 
     DMAC_Initialize();
 
-    SERCOM4_USART_Initialize();
-
     CAN0_Initialize();
+
+    SERCOM4_USART_Initialize();
 
     EIC_Initialize();
 
-    RTC_Initialize();
-
     TC0_TimerInitialize();
+
+    RTC_Initialize();
 
     TC3_CompareInitialize();
 

@@ -15,7 +15,7 @@ int main ( void ) {
     printf("--- Testing can ---\r\n");
     
     char message[] = "TEST\r\n";
-    SERCOM2_USART_Write(message, sizeof(message) - 1);
+    SERCOM4_USART_Write(message, sizeof(message) - 1);
     
         
     while ( true )
