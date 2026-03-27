@@ -36,7 +36,7 @@
 #include "led_logic.h"
 #include "led_can_decode.h"
 #include "can_facade.h"
-#include "node_watchdog.h"
+//#include "node_watchdog.h"
 #include "interrupts.h"
 #include "peripheral/sercom/i2c_master/plib_sercom3_i2c_master.h"
 #include "ws2812_port_sercom0_harmony.h"
@@ -112,21 +112,21 @@ int main(void)
     // Enable watchdog (integrated into decoder module)
     // - CAN IDs and default monitor IDs are defined in led_can_decode.h
     // - You can override alive-req CAN ID / monitor IDs later via the led_can_watchdog_set_* API.
-    led_can_watchdog_set_send_cb(watchdog_can_send);
-    led_can_watchdog_init(millis());
+    //led_can_watchdog_set_send_cb(watchdog_can_send);
+    //led_can_watchdog_init(millis());
 
-    double pressure;
+    /*double pressure;
 
     wait_ms(5000u);
     MPRLS_RESET_Clear();
     wait_ms(10u);
-    MPRLS_RESET_Set();
+    MPRLS_RESET_Set();*/
 
     while (true)
     {
         SYS_Tasks();
 
-        uint8_t pDevicesList[127];
+        /*uint8_t pDevicesList[127];
         uint8_t nDevicesFound;
 
         wait_ms(5000u);
@@ -136,11 +136,11 @@ int main(void)
         start_measurement();
         wait_ms(20u);
         read_pressure(&pressure);
-        printf("%f\n", pressure);
+        printf("%f\n", pressure);*/
 
         const uint32_t ms = millis();
         led_logic_tick(ms);
-        led_can_watchdog_tick(ms);
+        //led_can_watchdog_tick(ms);
         
         
         if (rxReady)

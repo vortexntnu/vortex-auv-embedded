@@ -1,0 +1,180 @@
+configVersion: 1.0.0
+componentName: sercom0
+coreVersion: 5.8.4
+device: ATSAMC21E17A
+library: []
+dependency:
+- dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
+  name: sercom0
+  type: module
+  version: ''
+- dependencyPackage: ''
+  name: CMSIS_5
+  type: package
+  version: 5.9.0
+- dependencyPackage: ''
+  name: csp
+  type: package
+  version: v3.23.0
+customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
+data:
+  attachments: {}
+  elementPosition:
+    attributes:
+      id: __ROOTVIEW
+    children:
+    - children:
+      - attributes:
+          id: sercom0
+          x: '19'
+          y: '93'
+        type: ElementPosition
+      type: ElementPositions
+    type: ComponentGraph
+  symbols:
+    I2CM_BAUD:
+      attributes:
+        id: I2CM_BAUD
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '232'
+          type: Dynamic
+        type: Values
+      type: Hex
+    RECEIVE_DATA_REGISTER:
+      attributes:
+        id: RECEIVE_DATA_REGISTER
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '&(SERCOM0_REGS->SPIM.SERCOM_DATA)'
+          type: Dynamic
+        type: Values
+      type: String
+    SERCOM_MODE:
+      attributes:
+        id: SERCOM_MODE
+      children:
+      - children:
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    SPI_BAUD_RATE:
+      attributes:
+        id: SPI_BAUD_RATE
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '2400000'
+          type: User
+        type: Values
+      type: Integer
+    SPI_BAUD_REG_VALUE:
+      attributes:
+        id: SPI_BAUD_REG_VALUE
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '9'
+          type: Dynamic
+        type: Values
+      type: Integer
+    SPI_DOPO:
+      attributes:
+        id: SPI_DOPO
+      children:
+      - children:
+        - attributes:
+            id: visible
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    TRANSMIT_DATA_REGISTER:
+      attributes:
+        id: TRANSMIT_DATA_REGISTER
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '&(SERCOM0_REGS->SPIM.SERCOM_DATA)'
+          type: Dynamic
+        type: Values
+      type: String
+    USART_BAUD_VALUE:
+      attributes:
+        id: USART_BAUD_VALUE
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '63019'
+          type: Dynamic
+        type: Values
+      type: Integer
+    USART_LIN_MASTER_SUPPORTED:
+      attributes:
+        id: USART_LIN_MASTER_SUPPORTED
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    USART_SAMPLE_COUNT:
+      attributes:
+        id: USART_SAMPLE_COUNT
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '16'
+          type: Dynamic
+        type: Values
+      type: Integer
+    USART_SAMPLE_RATE:
+      attributes:
+        id: USART_SAMPLE_RATE
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: '0'
+          type: Dynamic
+        type: Values
+      type: Integer
+    USART_USE_FRACTIONAL_BAUD:
+      attributes:
+        id: USART_USE_FRACTIONAL_BAUD
+      children:
+      - children:
+        - attributes:
+            id: sercom0
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+  userData: {}

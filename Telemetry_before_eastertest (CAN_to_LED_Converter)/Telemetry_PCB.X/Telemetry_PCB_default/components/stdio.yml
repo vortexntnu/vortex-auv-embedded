@@ -1,0 +1,88 @@
+configVersion: 1.0.0
+componentName: stdio
+coreVersion: 5.8.4
+device: ATSAMC21E17A
+library: []
+dependency:
+- dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
+  name: stdio
+  type: module
+  version: ''
+- dependencyPackage: ''
+  name: CMSIS_5
+  type: package
+  version: 5.9.0
+- dependencyPackage: ''
+  name: csp
+  type: package
+  version: v3.23.0
+customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
+data:
+  attachments:
+    children:
+    - children:
+      - attributes:
+          id: UART
+        children:
+        - children:
+          - attributes:
+              id: targetComponentID
+            children:
+            - type: Value
+              value: sercom2
+            type: String
+          - attributes:
+              id: targetAttachmentID
+            children:
+            - type: Value
+              value: SERCOM2_UART
+            type: String
+          type: Attributes
+        type: DirectDependency
+      type: Attachments
+    type: stdio
+  elementPosition:
+    attributes:
+      id: __ROOTVIEW
+    children:
+    - children:
+      - attributes:
+          id: stdio
+          x: '180'
+          y: '325'
+        type: ElementPosition
+      type: ElementPositions
+    type: ComponentGraph
+  symbols:
+    DEBUG_PERIPHERAL:
+      attributes:
+        id: DEBUG_PERIPHERAL
+      children:
+      - children:
+        - attributes:
+            id: stdio
+            value: sercom2
+          type: Dynamic
+        type: Values
+      type: String
+    STDIN_BUFF_MODE:
+      attributes:
+        id: STDIN_BUFF_MODE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+    STDOUT_BUFF_MODE:
+      attributes:
+        id: STDOUT_BUFF_MODE
+      children:
+      - children:
+        - attributes:
+            value: 'false'
+          type: User
+        type: Values
+      type: Boolean
+  userData: {}
