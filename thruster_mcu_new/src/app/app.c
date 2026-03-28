@@ -344,15 +344,15 @@ void app_task(void) {
 //    }
         
     
-//    if (can_message_received) {
-//        can_message_received = false;
-//        test_can_rx();
-//    }
+   if (can_message_received) {
+       can_message_received = false;
+       test_can_rx();
+   }
     
-    if (uart_message_ready) {
-        uart_message_ready = false;
-        message_handler();
-    }
+    // if (uart_message_ready) {
+    //     uart_message_ready = false;
+    //     message_handler();
+    // }
     
 }
 
@@ -632,10 +632,10 @@ void test_can_tx() {
     memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
-    txBuffer->id = WRITE_ID(0x369);
+    txBuffer->id = WRITE_ID(0x215);
     txBuffer->dlc = 1;
     txBuffer->fdf = 1;
-    txBuffer->brs = 1;
+    txBuffer->brs = 0;
     
     txBuffer->data[0] = 0xAA;
     
