@@ -122,9 +122,9 @@ void state_machine_simple(void) {
         switch (id) {
             case CAN_ID_BOTHOFF_CMD:
                 printf("BOTHOFF\r\n");
-                if ((len > 0U) && (b0 == BOTHOFF_CMD_BYTE)) {
-                    bothoff_high();
-                }
+                // if ((len > 0U) && (b0 == BOTHOFF_CMD_BYTE)) {
+                //     bothoff_high();
+                // }
                 break;
 
             case CAN_RST_MCU:
