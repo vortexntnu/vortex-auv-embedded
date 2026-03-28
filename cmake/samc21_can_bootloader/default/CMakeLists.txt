@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.24.0)
 set(CMAKE_SYSTEM_NAME "Generic")
 
-project(asdf_default_project LANGUAGES C CXX ASM)
+project(samc21_can_bootloader_default_project LANGUAGES C CXX ASM)
 
 include("${CMAKE_CURRENT_LIST_DIR}/.generated/main.cmake")
 

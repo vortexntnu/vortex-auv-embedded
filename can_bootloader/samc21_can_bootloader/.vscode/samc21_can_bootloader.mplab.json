@@ -1,30 +1,5 @@
 {
-    "version": "1.8",
-    "configurations": [
-        {
-            "name": "default",
-            "id": "",
-            "device": "ATSAMC21J18A",
-            "imagePath": "./out/samc21_can_bootloader/default.elf",
-            "toolProperties": "default-tool-base",
-            "tool": "EDBG",
-            "packs": [
-                {
-                    "name": "SAMC21_DFP",
-                    "vendor": "Microchip",
-                    "version": "3.9.248"
-                },
-                {
-                    "name": "CMSIS",
-                    "vendor": "ARM",
-                    "version": "6.3.0"
-                }
-            ],
-            "fileSet": "default",
-            "toolchain": "default-XC32",
-            "userVariables": "default-uservariables"
-        }
-    ],
+    "version": "1.9",
     "propertyGroups": [
         {
             "name": "default-uservariables",
@@ -206,6 +181,32 @@
                 "samc21_boot_config/src/config/default/peripheral/dsu/plib_dsu.h",
                 "samc21_boot_config/src/config/default/peripheral/dsu/plib_dsu.c"
             ]
+        }
+    ],
+    "configurations": [
+        {
+            "name": "default",
+            "id": "",
+            "device": "ATSAMC21J18A",
+            "imagePath": "./out/samc21_can_bootloader/default.elf",
+            "toolProperties": "default-tool-base",
+            "tool": "EDBG",
+            "packs": [
+                {
+                    "name": "SAMC21_DFP",
+                    "vendor": "Microchip",
+                    "version": "3.8.119"
+                },
+                {
+                    "name": "CMSIS",
+                    "vendor": "ARM",
+                    "version": "6.3.0"
+                }
+            ],
+            "fileSet": "default",
+            "toolchain": "default-XC32",
+            "userVariables": "default-uservariables",
+            "includeLegacyMacros": true
         }
     ]
 }

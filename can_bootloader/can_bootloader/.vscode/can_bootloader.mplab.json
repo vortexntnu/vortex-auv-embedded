@@ -1,29 +1,5 @@
 {
-    "version": "1.8",
-    "configurations": [
-        {
-            "name": "default",
-            "id": "",
-            "device": "ATSAMC21J18A",
-            "imagePath": "./out/can_bootloader/default.elf",
-            "toolProperties": "default-tool-base",
-            "tool": "EDBG",
-            "packs": [
-                {
-                    "name": "SAMC21_DFP",
-                    "vendor": "Microchip",
-                    "version": "3.9.248"
-                },
-                {
-                    "name": "CMSIS",
-                    "vendor": "ARM",
-                    "version": "6.3.0"
-                }
-            ],
-            "fileSet": "default",
-            "toolchain": "default-XC32"
-        }
-    ],
+    "version": "1.9",
     "propertyGroups": [
         {
             "name": "default-XC32",
@@ -195,6 +171,31 @@
                 "can_bootloader_config/src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c",
                 "can_bootloader_config/src/config/default/libc_syscalls.c"
             ]
+        }
+    ],
+    "configurations": [
+        {
+            "name": "default",
+            "id": "",
+            "device": "ATSAMC21J18A",
+            "imagePath": "./out/can_bootloader/default.elf",
+            "toolProperties": "default-tool-base",
+            "tool": "EDBG",
+            "packs": [
+                {
+                    "name": "SAMC21_DFP",
+                    "vendor": "Microchip",
+                    "version": "3.9.248"
+                },
+                {
+                    "name": "CMSIS",
+                    "vendor": "ARM",
+                    "version": "6.3.0"
+                }
+            ],
+            "fileSet": "default",
+            "toolchain": "default-XC32",
+            "includeLegacyMacros": true
         }
     ]
 }

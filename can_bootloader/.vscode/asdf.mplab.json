@@ -1,31 +1,6 @@
 {
-    "version": "1.8",
+    "version": "1.9",
     "importedFrom": "can_bootloader.X",
-    "configurations": [
-        {
-            "name": "default",
-            "id": "conf1",
-            "device": "ATSAMC21J18A",
-            "imageType": "application",
-            "imagePath": "./out/asdf/default.elf",
-            "toolProperties": "default-tool",
-            "tool": "EDBG",
-            "packs": [
-                {
-                    "name": "SAMC21_DFP",
-                    "vendor": "Microchip",
-                    "version": "3.8.119"
-                },
-                {
-                    "name": "CMSIS",
-                    "vendor": "ARM",
-                    "version": "5.4.0"
-                }
-            ],
-            "fileSet": "Project files",
-            "toolchain": "default-XC32"
-        }
-    ],
     "propertyGroups": [
         {
             "name": "default-XC32",
@@ -224,6 +199,32 @@
                 "src/config/default/*{.c,.h,.ld}"
             ],
             "encoding": "ISO-8859-1"
+        }
+    ],
+    "configurations": [
+        {
+            "name": "default",
+            "id": "conf1",
+            "device": "ATSAMC21J18A",
+            "imageType": "application",
+            "imagePath": "./out/asdf/default.elf",
+            "toolProperties": "default-tool",
+            "tool": "EDBG",
+            "packs": [
+                {
+                    "name": "SAMC21_DFP",
+                    "vendor": "Microchip",
+                    "version": "3.8.119"
+                },
+                {
+                    "name": "CMSIS",
+                    "vendor": "ARM",
+                    "version": "5.4.0"
+                }
+            ],
+            "fileSet": "Project files",
+            "toolchain": "default-XC32",
+            "includeLegacyMacros": true
         }
     ]
 }

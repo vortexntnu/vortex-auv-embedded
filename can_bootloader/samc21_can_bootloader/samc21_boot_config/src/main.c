@@ -81,6 +81,10 @@ int main ( void )
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         //SYS_Tasks ( );
+        if (SWITCH_Get() == 0)
+        {
+          printf("still in bootloader mode\n");
+        }
         bootloader_CAN_Tasks();
     }
 

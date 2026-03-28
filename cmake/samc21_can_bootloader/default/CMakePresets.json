@@ -2,8 +2,8 @@
     "version": 6,
     "configurePresets": [
         {
-            "name": "asdf_default_conf",
-            "binaryDir": "${fileDir}/../../../_build/asdf/default",
+            "name": "samc21_can_bootloader_default_conf",
+            "binaryDir": "${fileDir}/../../../_build/samc21_can_bootloader/default",
             "generator": "Ninja",
             "toolchainFile": "${fileDir}/.generated/toolchain.cmake",
             "cacheVariables": {
