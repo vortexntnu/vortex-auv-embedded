@@ -5,19 +5,13 @@
  *      Author: vikin
  */
 
-
-/* tdoa_q15.c */
 #include "arm_math.h"
 #include <string.h>
-#include <tdoa.h>
+#include "tdoa.h"
 
 /* ---------------------------------------------------------------
- * Internal helpers — all operate in float32 internally for the
- * 3x3 linear algebra, then convert back to Q15 at the boundary.
- * This is intentional: CMSIS-DSP q15 matrix multiply exists but
- * accumulates in q63 and requires careful shift management that
- * adds no benefit for a 3x3 system on a Cortex-M7 with FPU.
- * The float path uses the M7 FPU and is fully deterministic.
+ * Internal helpers — 3x3 linear algebra in float32.
+ * Uses the M7 FPU via arm_math.h intrinsics where available.
  * --------------------------------------------------------------- */
 
 /**
@@ -49,7 +43,7 @@ static int32_t cholesky3x3(const float32_t M[3][3], float32_t L[3][3])
                 {
                     return -1; /* not positive-definite */
                 }
-                arm_sqrt_f32(sum, &L[i][j]);   /* use CMSIS sqrt (may use FPU) */
+                arm_sqrt_f32(sum, &L[i][j]);
             }
             else
             {
@@ -99,45 +93,87 @@ static void back_sub3(const float32_t L[3][3],
 }
 
 /* ---------------------------------------------------------------
- * Public function
+ * Public API — float32 version with validity mask
  * --------------------------------------------------------------- */
-int32_t TDOA_direction_solve_q15(const q15_t r[][3],
-                                  const q15_t t[],
-                                  q15_t       p[3])
+
+/**
+ * @brief  Solve for acoustic source direction using TDOA (float32).
+ *
+ * Filters the input arrays using @p valid[], compacts the active
+ * receivers into a local working set, then runs the least-squares
+ * normal-equations solver (A^T A + reg*I) via Cholesky.
+ *
+ * The first valid receiver is used as the reference (TDOA = 0).
+ * At least 2 valid receivers are required (yielding >= 1 equation).
+ * At least 4 are recommended for a well-conditioned 3-D solution.
+ *
+ * @param  r          Receiver positions, shape [n_receivers][3] (metres)
+ * @param  t          Time-of-arrival × speed-of-sound (range), shape [n_receivers] (metres)
+ *                    Entries where valid[i] == 0 are ignored.
+ * @param  valid      Boolean validity mask, shape [n_receivers].
+ *                    Non-zero = use this receiver, 0 = skip.
+ * @param  n_receivers Total number of entries in r[], t[], and valid[].
+ * @param  p_out      Output direction vector [3] (unit-less, same units as r/t)
+ *
+ * @return  0  Success.
+ *         -1  Fewer than 2 valid receivers — cannot form any equation.
+ *         -2  Cholesky failed (A^T A not positive-definite; geometry degenerate).
+ */
+int32_t TDOA_direction_solve_f32(const float32_t  r[][3],
+                                  const float32_t  t[],
+                                  const uint8_t    valid[],
+                                  uint32_t         n_receivers,
+                                  float32_t        p_out[3])
 {
-    const int32_t N = TDOA_N_RECEIVERS;
+    /* ---- 0. Compact valid receivers into local arrays ---------- */
+    /*
+     * Working arrays sized to the maximum possible active count.
+     * TDOA_MAX_RECEIVERS caps stack usage; raise it in the header
+     * if you ever exceed 16 hydrophones.
+     */
+    float32_t rf[TDOA_MAX_RECEIVERS][3];
+    float32_t tf[TDOA_MAX_RECEIVERS];
+    uint32_t  n_valid = 0;
 
-    /* --- 1. Convert Q15 inputs to float ----------------------- */
-    float32_t rf[TDOA_N_RECEIVERS][3];
-    float32_t tf[TDOA_N_RECEIVERS];
-
-    for (int32_t i = 0; i < N; i++)
+    for (uint32_t i = 0; i < n_receivers; i++)
     {
-        tf[i] = Q15_TO_FLOAT(t[i]);
-        for (int32_t j = 0; j < 3; j++)
+        if (valid[i] && n_valid < TDOA_MAX_RECEIVERS)
         {
-            rf[i][j] = Q15_TO_FLOAT(r[i][j]);
+            tf[n_valid]    = t[i];
+            rf[n_valid][0] = r[i][0];
+            rf[n_valid][1] = r[i][1];
+            rf[n_valid][2] = r[i][2];
+            n_valid++;
         }
     }
 
-    /* --- 2. Build A (n-1 x 3) and b (n-1) --------------------- */
-    /*        A[i] = r[0] - r[i+1],  b[i] = c*(t[i+1]-t[0])      */
-    /*        Note: t[] already holds c*TOA, so b[i] = tf[i+1]    */
-    /*        (caller pre-multiplies TOA by c and stores in t[])  */
-    float32_t A[TDOA_N_RECEIVERS - 1][3];
-    float32_t b_vec[TDOA_N_RECEIVERS - 1];
-
-    for (int32_t i = 0; i < N - 1; i++)
+    /* Need at least 2 valid receivers to form 1 equation */
+    if (n_valid < 2u)
     {
-        b_vec[i] = tf[i + 1] - tf[0];   /* c*(t[i+1]-t[0]) */
-        for (int32_t j = 0; j < 3; j++)
-        {
-            A[i][j] = rf[0][j] - rf[i + 1][j];
-        }
+        return -1;
     }
 
-    /* --- 3. Form M = A^T * A + reg*I  and  y = A^T * b -------- */
-    float32_t M[3][3] = {0};
+    const uint32_t n_eq = n_valid - 1u;   /* number of TDOA equations */
+
+    /* ---- 1. Build A (n_eq × 3) and b (n_eq) ------------------- */
+    /*
+     * Reference receiver is rf[0] / tf[0].
+     * Row i:  A[i] = r[0] - r[i+1]
+     *         b[i] = t[i+1] - t[0]      (t already = c * TOA)
+     */
+    float32_t A[TDOA_MAX_RECEIVERS - 1][3];
+    float32_t b_vec[TDOA_MAX_RECEIVERS - 1];
+
+    for (uint32_t i = 0; i < n_eq; i++)
+    {
+        b_vec[i]  = tf[i + 1] - tf[0];
+        A[i][0]   = rf[0][0] - rf[i + 1][0];
+        A[i][1]   = rf[0][1] - rf[i + 1][1];
+        A[i][2]   = rf[0][2] - rf[i + 1][2];
+    }
+
+    /* ---- 2. Form M = A^T * A + reg*I  and  y = A^T * b -------- */
+    float32_t M[3][3] = {{0}};
     float32_t y[3]    = {0};
 
     for (int32_t i = 0; i < 3; i++)
@@ -145,46 +181,147 @@ int32_t TDOA_direction_solve_q15(const q15_t r[][3],
         for (int32_t j = 0; j < 3; j++)
         {
             float32_t sum = 0.0f;
-            for (int32_t k = 0; k < N - 1; k++)
+            for (uint32_t k = 0; k < n_eq; k++)
             {
                 sum += A[k][i] * A[k][j];
             }
             M[i][j] = sum;
         }
-        M[i][i] += TDOA_REG_F;   /* regularisation */
+        M[i][i] += TDOA_REG_F;   /* Tikhonov regularisation */
 
         float32_t ys = 0.0f;
-        for (int32_t k = 0; k < N - 1; k++)
+        for (uint32_t k = 0; k < n_eq; k++)
         {
             ys += A[k][i] * b_vec[k];
         }
         y[i] = ys;
     }
 
-    /* --- 4. Cholesky decomposition of M ----------------------- */
+    /* ---- 3. Cholesky decomposition of M ----------------------- */
     float32_t L[3][3];
     if (cholesky3x3(M, L) != 0)
     {
-        return -1;   /* matrix not positive-definite */
+        return -2;   /* geometry degenerate / non-SPD */
     }
 
-    /* --- 5. Solve L * x = y  (forward substitution) ----------- */
+    /* ---- 4. Forward substitution: L * x = y ------------------- */
     float32_t x_vec[3];
     fwd_sub3(L, y, x_vec);
 
-    /* --- 6. Solve L^T * p_f = x  (back substitution) ---------- */
+    /* ---- 5. Back substitution: L^T * p = x -------------------- */
+    back_sub3(L, x_vec, p_out);
+
+
+    float32_t norm;
+    arm_dot_prod_f32(p_out, p_out, 3, &norm);  /* norm = p · p */
+    arm_sqrt_f32(norm, &norm);                  /* norm = |p|   */
+
+    if (norm > 1e-6f)                           /* guard against zero vector */
+    {
+        p_out[0] /= norm;
+        p_out[1] /= norm;
+        p_out[2] /= norm;
+    }
+    else
+    {
+        return -3;   /* degenerate — zero-length solution vector */
+    }
+
+    return 0;
+}
+
+
+/* ---------------------------------------------------------------
+ * Q15 version (unchanged from original, kept for compatibility)
+ * --------------------------------------------------------------- */
+int32_t TDOA_direction_solve_q15(const q15_t    r[][3],
+                                  const q15_t    t[],
+                                  const uint8_t  valid[],
+                                  uint32_t       n_receivers,
+                                  q15_t          p[3])
+{
+    /* ---- 0. Expand Q15 inputs → float and compact valid set ---- */
+    float32_t rf[TDOA_MAX_RECEIVERS][3];
+    float32_t tf[TDOA_MAX_RECEIVERS];
+    uint32_t  n_valid = 0;
+
+    for (uint32_t i = 0; i < n_receivers; i++)
+    {
+        if (valid[i] && n_valid < TDOA_MAX_RECEIVERS)
+        {
+            tf[n_valid]    = Q15_TO_FLOAT(t[i]);
+            rf[n_valid][0] = Q15_TO_FLOAT(r[i][0]);
+            rf[n_valid][1] = Q15_TO_FLOAT(r[i][1]);
+            rf[n_valid][2] = Q15_TO_FLOAT(r[i][2]);
+            n_valid++;
+        }
+    }
+
+    if (n_valid < 2u)
+    {
+        return -1;
+    }
+
+    const uint32_t n_eq = n_valid - 1u;
+
+    /* ---- 1. Build A and b ------------------------------------- */
+    float32_t A[TDOA_MAX_RECEIVERS - 1][3];
+    float32_t b_vec[TDOA_MAX_RECEIVERS - 1];
+
+    for (uint32_t i = 0; i < n_eq; i++)
+    {
+        b_vec[i]  = tf[i + 1] - tf[0];
+        A[i][0]   = rf[0][0] - rf[i + 1][0];
+        A[i][1]   = rf[0][1] - rf[i + 1][1];
+        A[i][2]   = rf[0][2] - rf[i + 1][2];
+    }
+
+    /* ---- 2. Form M = A^T * A + reg*I  and  y = A^T * b -------- */
+    float32_t M[3][3] = {{0}};
+    float32_t y[3]    = {0};
+
+    for (int32_t i = 0; i < 3; i++)
+    {
+        for (int32_t j = 0; j < 3; j++)
+        {
+            float32_t sum = 0.0f;
+            for (uint32_t k = 0; k < n_eq; k++)
+            {
+                sum += A[k][i] * A[k][j];
+            }
+            M[i][j] = sum;
+        }
+        M[i][i] += TDOA_REG_F;
+
+        float32_t ys = 0.0f;
+        for (uint32_t k = 0; k < n_eq; k++)
+        {
+            ys += A[k][i] * b_vec[k];
+        }
+        y[i] = ys;
+    }
+
+    /* ---- 3. Cholesky ------------------------------------------ */
+    float32_t L[3][3];
+    if (cholesky3x3(M, L) != 0)
+    {
+        return -2;
+    }
+
+    /* ---- 4 & 5. Forward + back substitution ------------------- */
+    float32_t x_vec[3];
+    fwd_sub3(L, y, x_vec);
+
     float32_t p_f[3];
     back_sub3(L, x_vec, p_f);
 
-    /* --- 7. Saturate and convert result back to Q15 ------------ */
+    /* ---- 6. Saturate and convert result back to Q15 ------------ */
     for (int32_t i = 0; i < 3; i++)
     {
-        /* arm_float_to_q15 expects a normalised float in [-1,1]  */
         float32_t normalised = p_f[i] / TDOA_SCALE;
 
-        /* saturate to Q15 range */
-        if      (normalised >  1.0f)  normalised =  1.0f;
-        else if (normalised < -1.0f)  normalised = -1.0f;
+        if      (normalised >  1.0f) normalised =  1.0f;
+        else if (normalised < -1.0f) normalised = -1.0f;
 
         arm_float_to_q15(&normalised, &p[i], 1);
     }
