@@ -130,7 +130,7 @@ static PLACE_IN_DTCM float32_t processing_workspace[N_HYDROPHONES][PROCESSING_FF
 static PLACE_IN_DTCM float32_t envelope[PROCESSING_FFT_SIZE];
 static PLACE_IN_DTCM float32_t envelope_edge[PROCESSING_FFT_SIZE];
 
-static PLACE_IN_DTCM uint32_t idxs[N_HYDROPHONES] = {0};
+static PLACE_IN_DTCM uint16_t idxs[N_HYDROPHONES] = {0};
 
 static PLACE_IN_DTCM float32_t hydrophone_positions[N_HYDROPHONES][3] = {
 		{0.0,0.0,0.0},
@@ -190,7 +190,7 @@ uint32_t find_da_edge(const float32_t *signal, uint32_t signal_len)
     cfg.prominence = 1000;
     cfg.distance   = 5;
 
-    if(find_troughs_f32(signal, signal_len, &cfg, trough_idxs, props, MAX_TROUGHS, &n_troughs) == FIND_PEAKS_ERR_OVERFLOW){
+    if(find_troughs_f32(signal, signal_len, &cfg, trough_idxs, props, MAX_TROUGHS, &n_troughs) != FIND_PEAKS_OK){
     	Error_Handler();
     }
 
@@ -269,7 +269,7 @@ bool signal_present(uint8_t half_idx) {
 
     if (unlikely(noise_power <= 0.0f)) return false;
 
-    float32_t signal_power = magnitude_output_f32[13] + magnitude_output_f32[14];
+    float32_t signal_power = magnitude_output_f32[14] + magnitude_output_f32[15] + magnitude_output_f32[16];
     if (likely(signal_power < SIGNAL_MIN_POWER)) return false;
 
     // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
@@ -318,10 +318,13 @@ void dump_python_array_f32(float32_t* arr, int len) {
     if (arr == NULL || len <= 0) return;
 
     printf("[");
-    for (int i = 0; i < len - 1; i++) {
-        printf("%ld.%06ld,", f32_whole(arr[i]), f32_frac(arr[i], 6));
+    for (int i = 0; i < len; i++) {
+        if (arr[i] < 0.0f && f32_whole(arr[i]) == 0)
+            printf("-");
+        printf("%ld.%06ld", f32_whole(arr[i]), f32_frac(arr[i], 6));
+        if (i < len - 1) printf(",");
     }
-    printf("%ld.%06ld]", f32_whole(arr[len - 1]), f32_frac(arr[len - 1], 6));
+    printf("]");
 }
 
 #define DUMP_ARRAY_NAMED_DICT_Q15(name, arr, len) do { \
@@ -503,11 +506,23 @@ int main(void)
 	    	    	printf(",\r\n\t");
 	    	    }
 	    	    //normalize
+	    	    scalar = 0;
 	    	    arm_mean_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);   // Step 1: compute mean
-	    	    arm_offset_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN); // Step 2: subtract it
+	    	    arm_offset_f32(processing_workspace[i],-scalar,processing_workspace[i],WORKSPACE_LEN); // Step 2: subtract it
+	    	    scalar = 0;
 				arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
 				scalar = 1/scalar;
 				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
+			}
+
+			printf("\"normalized\" : [\r\n\t");
+			for(int i = 0; i < N_HYDROPHONES; i++){
+				dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
+	    	    if(i == N_HYDROPHONES - 1){
+	    	    	printf("\r\n],\r\n");
+	    	    }else{
+	    	    	printf(",\r\n\t");
+	    	    }
 			}
 
 			printf("\"cwt\" : [\r\n\t");

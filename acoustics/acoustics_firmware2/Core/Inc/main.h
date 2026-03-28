@@ -69,7 +69,7 @@ typedef enum {
 #define TARGET_FREQUENCY 30000
 #define BIN_RESOLUTION ((float)SAMPLE_RATE_HZ / (float)DETECTION_FFT_SIZE)
 
-#define LINEAR_THRESHOLD  1 // 5dB => 10^(5/10) ~= 3.16
+#define LINEAR_THRESHOLD  3.16 // 5dB => 10^(5/10) ~= 3.16
 #define SIGNAL_MIN_POWER 1e-5f
 
 extern SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES];

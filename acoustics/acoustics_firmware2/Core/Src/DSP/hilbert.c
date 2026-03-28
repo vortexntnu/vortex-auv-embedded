@@ -39,8 +39,8 @@ static PLACE_IN_DTCM arm_cfft_instance_q15  hilbert_cfft_q15;
  * ============================================================ */
 
 static PLACE_IN_DTCM float32_t hilbert_fft_input_f32[HILBERT_FFT_SIZE];
-/* packed rfft output + working buffer for cfft, worst-case size = N*2 */
-static PLACE_IN_DTCM float32_t hilbert_fft_buf_f32[HILBERT_FFT_SIZE * 2];
+static PLACE_IN_DTCM float32_t hilbert_fft_output_f32[HILBERT_FFT_SIZE * 2];
+static PLACE_IN_DTCM float32_t hilbert_cfft_buf[HILBERT_FFT_SIZE * 2];
 static PLACE_IN_DTCM arm_rfft_fast_instance_f32 hilbert_rfft_f32;
 static PLACE_IN_DTCM const arm_cfft_instance_f32 *hilbert_cfft_f32;
 
@@ -188,30 +188,30 @@ void hilbert_transform_f32(const float32_t *pSrc,
      * but we keep a clean copy in case we need to reuse pSrc) */
     memcpy(hilbert_fft_input_f32, pSrc, N * sizeof(float32_t));
 
-    /* Forward real FFT — output written into hilbert_fft_buf_f32 in
+    /* Forward real FFT — output written into hilbert_fft_output_f32 in
      * "packed" format (length N floats) */
     arm_rfft_fast_f32(&hilbert_rfft_f32,
                       hilbert_fft_input_f32,
-                      hilbert_fft_buf_f32,
+                      hilbert_fft_output_f32,
                       0 /* ifftFlag = 0 → forward */);
 
     /* Expand packed rfft output to full complex, zero negative frequencies,
      * and apply -j rotation to positive frequencies */
-    hilbert_build_analytic_f32(hilbert_fft_buf_f32);
+    hilbert_build_analytic_f32(hilbert_fft_output_f32);
 
     /* Inverse complex FFT — in-place, bit-reversal enabled */
     arm_cfft_f32(hilbert_cfft_f32,
-                 hilbert_fft_buf_f32,
+                 hilbert_fft_output_f32,
                  1 /* ifftFlag = 1 → inverse */,
                  1 /* bitReverseFlag */);
 
     /* Scale by 1/N to obtain a properly normalised IFFT.
      * arm_cfft_f32 does NOT apply the 1/N factor automatically. */
     const float32_t scale = 1.0f / (float32_t)N;
-    arm_scale_f32(hilbert_fft_buf_f32, scale, hilbert_fft_buf_f32, N * 2);
+    arm_scale_f32(hilbert_fft_output_f32, scale, hilbert_fft_output_f32, N * 2);
 
     /* Copy interleaved Re/Im to output */
-    memcpy(pDst, hilbert_fft_buf_f32, N * 2 * sizeof(float32_t));
+    memcpy(pDst, hilbert_fft_output_f32, N * 2 * sizeof(float32_t));
 }
 
 
@@ -229,33 +229,33 @@ void hilbert_imag_f32(const float32_t *pSrc, float32_t *pDst)
     /* Step 1: Real FFT (packed output) */
     arm_rfft_fast_f32(&hilbert_rfft_f32,
                       pSrc,
-                      hilbert_fft_buf_f32,
+                      hilbert_fft_output_f32,
                       0);
 
     /* Step 2: Build analytic signal spectrum in-place
      *
      * Packed format:
-     *   buf[0] = Re[0]
-     *   buf[1] = Re[N/2]
-     *   buf[2k], buf[2k+1] = Re/Im[k]
+     *   __buf__[0] = Re[0]
+     *   __buf__[1] = Re[N/2]
+     *   __buf__[2k], __buf__[2k+1] = Re/__Im__[k]
      */
 
     /* --- DC → 0 --- */
-    hilbert_fft_buf_f32[0] = 0.0f;
+    hilbert_fft_output_f32[0] = 0.0f;
 
-    /* --- Nyquist → 0 --- */
-    hilbert_fft_buf_f32[1] = 0.0f;
+    /* --- __Nyquist__ → 0 --- */
+    hilbert_fft_output_f32[1] = 0.0f;
 
-    /* --- Positive frequencies: apply Hilbert transform ---
+    /* --- Positive frequencies: apply __Hilbert__ transform ---
      * Multiply by (-j * 2)
      */
     for (uint32_t k = 1; k < half; k++)
     {
-        float32_t re = hilbert_fft_buf_f32[2 * k];
-        float32_t im = hilbert_fft_buf_f32[2 * k + 1];
+        float32_t re = hilbert_fft_output_f32[2 * k];
+        float32_t im = hilbert_fft_output_f32[2 * k + 1];
 
-        hilbert_fft_buf_f32[2 * k]     =  2.0f * im;   /* Re' */
-        hilbert_fft_buf_f32[2 * k + 1] = -2.0f * re;   /* Im' */
+        hilbert_fft_output_f32[2 * k]     =  2.0f * im;   /* Re' */
+        hilbert_fft_output_f32[2 * k + 1] = -2.0f * re;   /* __Im__' */
     }
 
     /* NOTE:
@@ -265,11 +265,11 @@ void hilbert_imag_f32(const float32_t *pSrc, float32_t *pDst)
 
     /* Step 3: Inverse real FFT */
     arm_rfft_fast_f32(&hilbert_rfft_f32,
-                      hilbert_fft_buf_f32,
+                      hilbert_fft_output_f32,
                       pDst,
                       1);
 
-    /* Step 4: Normalize (CMSIS FFT is unscaled) */
+    /* Step 4: Normalize (CMSIS FFT is __unscaled__) */
     arm_scale_f32(pDst, 1.0f / (float32_t)N, pDst, N);
 }
 
