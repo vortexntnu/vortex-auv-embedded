@@ -227,6 +227,7 @@ void ad7606_trigger_burst(SPI_HandleTypeDef *hspi);
 // Conversion utilities
 double ad7606_reading_to_voltage(struct ad7606_device* device, uint8_t channel_id, int16_t reading);
 double ad7606_voltage_to_temp(double voltage);
+double ad7606_channel_scaling_factor(struct ad7606_device* device, uint8_t channel_id);
 
 #ifdef __cplusplus
 }

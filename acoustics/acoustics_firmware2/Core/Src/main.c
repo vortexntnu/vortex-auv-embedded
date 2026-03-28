@@ -125,10 +125,20 @@ PLACE_IN_DTCM volatile bool mdma_done_flag = false;
 PLACE_IN_DTCM arm_rfft_instance_q15 processing_fft_instance;
 PLACE_IN_DTCM arm_rfft_instance_q15 processing_ifft_instance;
 
-static PLACE_IN_DTCM q15_t processing_workspace[N_HYDROPHONES][PROCESSING_FFT_SIZE];
+static PLACE_IN_DTCM float32_t processing_workspace[N_HYDROPHONES][PROCESSING_FFT_SIZE];
 
-static PLACE_IN_DTCM q15_t envelope[PROCESSING_FFT_SIZE];
-static PLACE_IN_DTCM q15_t envelope_edge[PROCESSING_FFT_SIZE];
+static PLACE_IN_DTCM float32_t envelope[PROCESSING_FFT_SIZE];
+static PLACE_IN_DTCM float32_t envelope_edge[PROCESSING_FFT_SIZE];
+
+static PLACE_IN_DTCM uint32_t idxs[N_HYDROPHONES] = {0};
+
+static PLACE_IN_DTCM float32_t hydrophone_positions[N_HYDROPHONES][3] = {
+		{0.0,0.0,0.0},
+		{0.0,0.0,0.0},
+		{0.5,0.0,0.0},
+		{0.25,0.25,0.354},
+		{0.25,-0.25,0.354}
+};
 
 volatile PLACE_IN_DTCM uint8_t dump_trigger = 0;
 /* USER CODE END PV */
@@ -155,7 +165,7 @@ static void MX_RTC_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-static void init_adc_and_buffers(void);
+static void init_adc_and_buffers(bool verbose);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -163,24 +173,24 @@ static void init_adc_and_buffers(void);
 
 #define MAX_TROUGHS WORKSPACE_LEN
 
-uint32_t find_da_edge(const q15_t *signal, uint32_t signal_len)
+uint32_t find_da_edge(const float32_t *signal, uint32_t signal_len)
 {
 
-	q15_t buf_min;
+	float32_t buf_min;
 	uint32_t min_idx;
-	arm_min_q15(signal, signal_len, &buf_min, &min_idx);
-	q15_t min_depth = (q15_t)(((int32_t)(buf_min) * 22938) >> 15); //71% of deepest trough
+	arm_min_f32(signal, signal_len, &buf_min, &min_idx);
+	float32_t min_depth = buf_min*0.71f; //71% of deepest trough
 
     uint32_t           trough_idxs[MAX_TROUGHS];
-    find_peaks_props_t props[MAX_TROUGHS];
+    find_peaks_props_f32_t props[MAX_TROUGHS];
     uint32_t           n_troughs;
 
-    find_peaks_config_t cfg = FIND_PEAKS_CONFIG_DEFAULT;
+    find_peaks_config_f32_t cfg = FIND_PEAKS_CONFIG_F32_DEFAULT;
     cfg.height     = min_depth;
     cfg.prominence = 1000;
     cfg.distance   = 5;
 
-    if(find_troughs(signal, signal_len, &cfg, trough_idxs, props, MAX_TROUGHS, &n_troughs) == FIND_PEAKS_ERR_OVERFLOW){
+    if(find_troughs_f32(signal, signal_len, &cfg, trough_idxs, props, MAX_TROUGHS, &n_troughs) == FIND_PEAKS_ERR_OVERFLOW){
     	Error_Handler();
     }
 
@@ -191,7 +201,7 @@ uint32_t find_da_edge(const q15_t *signal, uint32_t signal_len)
     if (n_troughs > 0) {
         first_trough = trough_idxs[0];          // leftmost peak (min index)
     } else {
-        arm_min_q15(signal, signal_len, &buf_min, &first_trough);  // fallback: argmin
+        arm_min_f32(signal, signal_len, &buf_min, &first_trough);  // fallback: argmin
     }
     return first_trough;
 }
@@ -243,16 +253,18 @@ bool signal_present(uint8_t half_idx) {
 
     arm_q15_to_float(detection_buffer[half_idx], fft_input_f32, DETECTION_FFT_SIZE);
     arm_rfft_fast_f32(&detection_fft_instance, fft_input_f32, fft_output_f32, 0);
-    arm_cmplx_mag_squared_f32(fft_output_f32 + 2, magnitude_output_f32, DETECTION_FFT_SIZE/2 - 1);
+    arm_cmplx_mag_squared_f32(fft_output_f32, magnitude_output_f32, DETECTION_FFT_SIZE/2);
 
-    const uint32_t NOISE_BINS_LOW  = 13;   // bins 1..13  (indices 0..12)
-    const uint32_t NOISE_BINS_HIGH = DETECTION_FFT_SIZE / 2 - 17; // bins 17..N/2-1 (indices 16..N/2-2)
-    const uint32_t NOISE_BIN_COUNT = NOISE_BINS_LOW + NOISE_BINS_HIGH;
+
+    const uint32_t SIGNAL_BIN_LOW = 14;
+    const uint32_t SIGNAL_BIN_HIGH = 17;
+    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
+    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
 
     float32_t noise_power = 0.0f;
-    for (int i = 0; i < 13; i++)
+    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
         noise_power += magnitude_output_f32[i];
-    for (int i = 16; i < DETECTION_FFT_SIZE / 2 - 1; i++)
+    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
         noise_power += magnitude_output_f32[i];
 
     if (unlikely(noise_power <= 0.0f)) return false;
@@ -261,7 +273,7 @@ bool signal_present(uint8_t half_idx) {
     if (likely(signal_power < SIGNAL_MIN_POWER)) return false;
 
     // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
-    return (signal_power * NOISE_BIN_COUNT) > (noise_power * 2.0f * LINEAR_THRESHOLD);
+    return (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
 }
 
 
@@ -348,12 +360,30 @@ void clear_buffer(q15_t* arr, int len){
 	for(int i = 0; i < len; i++) arr[i] = 0;
 }
 
-void circular_buffer_copy_to_straight(q15_t* src, q15_t* dst, uint32_t data_len, uint32_t buffer_len, uint32_t start_idx){
-	int idx = start_idx;
-	for(int i = 0; i < data_len; i++){
-		idx = (start_idx + i)%buffer_len;
-		dst[i] = src[idx];
-	}
+/**
+ * @brief Unwraps a circular Q15 buffer into a linear float32 array.
+ *
+ * @param src        Pointer to the circular Q15 buffer
+ * @param dst        Pointer to the output float32 array (must be at least data_len long)
+ * @param data_len   Number of samples to copy and convert
+ * @param buffer_len Total length of the circular buffer
+ * @param start_idx  Index of the oldest sample (read head)
+ */
+void circ_unwrap_to_f32(q15_t *src, float32_t *dst, uint32_t data_len,
+                         uint32_t buffer_len, uint32_t start_idx)
+{
+    /* How many samples from start_idx to the end of the buffer */
+    uint32_t chunk1 = buffer_len - start_idx;
+
+    if (chunk1 >= data_len) {
+        /* No wrap-around: all data sits in one contiguous block */
+        arm_q15_to_float(src + start_idx, dst, data_len);
+    } else {
+        /* Two chunks: tail of buffer, then beginning of buffer */
+        uint32_t chunk2 = data_len - chunk1;
+        arm_q15_to_float(src + start_idx, dst,          chunk1);
+        arm_q15_to_float(src,             dst + chunk1, chunk2);
+    }
 }
 /* USER CODE END 0 */
 
@@ -419,10 +449,10 @@ int main(void)
 
 	stm_temp_sensor_init(&hadc3, &htim6);
 
-	init_adc_and_buffers();
+	init_adc_and_buffers(false);
 	arm_rfft_fast_init_f32(&detection_fft_instance, DETECTION_FFT_SIZE);
-	cwt_init_q15(TARGET_FREQUENCY, SAMPLING_FREQUENCY, 0.5);
-	hilbert_init();
+	cwt_init_f32(TARGET_FREQUENCY, SAMPLING_FREQUENCY, 0.5);
+	hilbert_init_f32();
 
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
@@ -445,26 +475,45 @@ int main(void)
 
     	if(unlikely(signal_present(processing_half))){ // processing_half
 			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
-			HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
-			for (int i = 0; i < 5; i++) {
-				HAL_SPI_DMAStop(my_ADC.spi_handles[i]);
-			}
+			HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
+
 
 			printf("dump = {\r\n");
 
 //			DUMP_ARRAY_NAMED_DICT("detection",detection_buffer[0],BLOCK_LEN*2);
 //			printf(",");
 
+			magnitude_output_f32[0] = 0;
 			DUMP_ARRAY_NAMED_DICT_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
 			printf(",");
 
 			uint16_t workspace_idx = (target_block*BLOCK_LEN+BUFFER_LEN-WORKSPACE_LEN/2)%BUFFER_LEN;
 
-			printf("\t\"raw\" : [\r\n\t");
+			printf("\t\"raw_mv\" : [\r\n\t");
 			for(int i = 0; i < N_HYDROPHONES; i++){
 				q15_t* buffer_flat = (q15_t*)hydrophone_buffers[i];
-				circular_buffer_copy_to_straight(buffer_flat ,processing_workspace[i], WORKSPACE_LEN, BUFFER_LEN, (uint32_t)workspace_idx);
-	    	    dump_python_array_q15(processing_workspace[i], WORKSPACE_LEN);
+				circ_unwrap_to_f32(buffer_flat ,processing_workspace[i], WORKSPACE_LEN, BUFFER_LEN, (uint32_t)workspace_idx);
+				float32_t scalar = 32768.0*ad7606_channel_scaling_factor(&my_ADC, i)*1000.0;
+				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
+				dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
+	    	    if(i == N_HYDROPHONES - 1){
+	    	    	printf("\r\n],\r\n");
+	    	    }else{
+	    	    	printf(",\r\n\t");
+	    	    }
+	    	    //normalize
+	    	    arm_mean_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);   // Step 1: compute mean
+	    	    arm_offset_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN); // Step 2: subtract it
+				arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
+				scalar = 1/scalar;
+				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
+			}
+
+			printf("\"cwt\" : [\r\n\t");
+			for(int i = 0; i < N_HYDROPHONES; i++){
+				cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
+				dump_python_array_f32(envelope, WORKSPACE_LEN);
 	    	    if(i == N_HYDROPHONES - 1){
 	    	    	printf("\r\n],\r\n");
 	    	    }else{
@@ -472,25 +521,36 @@ int main(void)
 	    	    }
 			}
 
-			cwt_morlet_magnitude_q15(processing_workspace[0], envelope);
-			DUMP_ARRAY_NAMED_DICT_Q15("cwt",envelope,WORKSPACE_LEN);
-			printf(",");
+			printf("\"envelope_edge\" : [\r\n\t");
+			for(int i = 0; i < N_HYDROPHONES; i++){
+				cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
+				hilbert_imag_f32(envelope,envelope_edge);
+				dump_python_array_f32(envelope_edge, PROCESSING_FFT_SIZE);
+				idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+	    	    if(i == N_HYDROPHONES - 1){
+	    	    	printf("\r\n],\r\n");
+	    	    }else{
+	    	    	printf(",\r\n\t");
+	    	    }
+			}
 
-			hilbert_imag_q15(envelope,envelope_edge);
-			DUMP_ARRAY_NAMED_DICT_Q15("envelope_edge",envelope_edge,WORKSPACE_LEN);
+			DUMP_ARRAY_NAMED_DICT_Q15("idxs", (q15_t*)idxs, 5);
 
 			fflush(stdout);
 			printf("}\r\n");
-			fflush(stdout);
-			uint32_t edge_idx = 0;
-			edge_idx = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
 
+			__NOP();
 
-			printf("edge_idx = %d\r\n",(int)edge_idx);
-		    fflush(stdout);
-
-			//__asm("BKPT #0");
-    	    break;
+			for(int i = 0; i < 5; i++){
+				clear_buffer(hydrophone_buffers[i][0], BUFFER_LEN);
+			}
+			clear_buffer(detection_buffer[0], BLOCK_LEN*2);
+			clear_buffer(detection_buffer[1], BLOCK_LEN*2);
+			HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+			init_adc_and_buffers(false);
+			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+			HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
+			mdma_done_flag = true;
     	}
 		  while(mdma_done_flag == false) {
 			__NOP();
@@ -1414,7 +1474,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-static void init_adc_and_buffers(void)	{
+static void init_adc_and_buffers(bool verbose)	{
 	struct ad7606_pins pins = {
 			.cs = {CS},
 			.busy = {BUSY},
@@ -1453,8 +1513,11 @@ static void init_adc_and_buffers(void)	{
 //			AD7606_MUX_CTRL_A_GND,
 //			AD7606_MUX_CTRL_AV_CC;
 		AD7606_CHANNEL_MUX_CTRL mux_ctrl = AD7606_MUX_CTRL_A_IN; // = (i != 8) ? (AD7606_MUX_CTRL_A_IN) : (AD7606_MUX_CTRL_TEMP);
-		AD7606_CHANNEL_RANGE range = AD7606_RANGE_SE_PM_12_5V;
+		AD7606_CHANNEL_RANGE range = AD7606_RAGNE_SE_PM_5V;
 		switch(i){
+			case(1):
+				range = AD7606_RANGE_SE_PM_2_5V;
+			break;
 			case(5):
 				mux_ctrl = AD7606_MUX_CTRL_A_GND;
 				range = AD7606_RANGE_SE_PM_2_5V;
@@ -1506,38 +1569,41 @@ static void init_adc_and_buffers(void)	{
 
 	my_ADC.cooked = true;
 	ad7606_init(&my_ADC, &ADC_regs, pins, spi, &ADC_settings, &diagnostics_sample);
+	if(verbose){
+		printf("ADC initialized. Status register:\t");
+		print_binary(ad7606_check_status(&my_ADC),8);
+		printf("\r\n");
 
-	printf("ADC initialized. Status register:\t");
-	print_binary(ad7606_check_status(&my_ADC),8);
-	printf("\r\n");
-
-	printf("Digital diagnostics error register:\t");
-	print_binary(ad7606_check_digital_error(&my_ADC),8);
-	printf("\r\n");
+		printf("Digital diagnostics error register:\t");
+		print_binary(ad7606_check_digital_error(&my_ADC),8);
+		printf("\r\n");
+	}
 
 	uint8_t interface_check_result[8];
 	ad7606_check_interface(&my_ADC, interface_check_result);
-	printf("Interface check result:\r\n");
-	for(int i = 0; i < 8; i++){
-		printf("Channel V%d: ",i+1);
-	  switch(interface_check_result[i]){
-	  case 0xFF:
-		  printf("Not configured");
-		  break;
-	  case 0:
-		  printf("Fail");
-		  break;
-	  case 1:
-		  printf("Pass");
-		break;
-	  default:
-		printf("Unknown result");
-		break;
-	  }
-	  printf("\t\t\t");
-	  if(i%4 == 3) printf("\r\n");
+	if(verbose){
+		printf("Interface check result:\r\n");
+		for(int i = 0; i < 8; i++){
+			printf("Channel V%d: ",i+1);
+		  switch(interface_check_result[i]){
+		  case 0xFF:
+			  printf("Not configured");
+			  break;
+		  case 0:
+			  printf("Fail");
+			  break;
+		  case 1:
+			  printf("Pass");
+			break;
+		  default:
+			printf("Unknown result");
+			break;
+		  }
+		  printf("\t\t\t");
+		  if(i%4 == 3) printf("\r\n");
+		}
+		printf("\r\n");
 	}
-	printf("\r\n");
 
 	int lengths[8] = {
 			BUFFER_LEN,
@@ -1608,10 +1674,11 @@ void Error_Handler(void)
 	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
     __disable_irq();
     HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
     while(1){
-    	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
+    	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
     	utils_DWT_delay_ms(500);
-    	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
+    	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_RESET);
     	utils_DWT_delay_ms(500);
     }
   /* USER CODE END Error_Handler_Debug */

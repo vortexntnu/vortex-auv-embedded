@@ -69,7 +69,7 @@ typedef enum {
 #define TARGET_FREQUENCY 30000
 #define BIN_RESOLUTION ((float)SAMPLE_RATE_HZ / (float)DETECTION_FFT_SIZE)
 
-#define LINEAR_THRESHOLD  5.0 // 5dB => 10^(5/10) ~= 3.16
+#define LINEAR_THRESHOLD  1 // 5dB => 10^(5/10) ~= 3.16
 #define SIGNAL_MIN_POWER 1e-5f
 
 extern SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES];
@@ -122,8 +122,10 @@ extern UART_HandleTypeDef huart1;
 #define CS GPIOE, GPIO_PIN_9
 #define CONVST GPIOE, GPIO_PIN_14
 
+
 #define GREEN_LED GPIOD, GPIO_PIN_11
 #define YELLOW_LED GPIOD, GPIO_PIN_12
+#define RED_LED GPIOD, GPIO_PIN_13
 /* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);

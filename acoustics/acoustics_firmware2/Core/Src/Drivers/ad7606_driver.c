@@ -540,6 +540,11 @@ double ad7606_reading_to_voltage(struct ad7606_device* device, uint8_t channel_i
     return (double)reading * ad7606_conversion_table[range];
 }
 
+double ad7606_channel_scaling_factor(struct ad7606_device* device, uint8_t channel_id){
+    AD7606_CHANNEL_RANGE range = device->settings->channels[channel_id].range;
+    return ad7606_conversion_table[range];
+}
+
 double ad7606_voltage_to_temp(double voltage){
     return (voltage - 0.18353)/0.000480 + 25;
 }
