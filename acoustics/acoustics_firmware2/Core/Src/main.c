@@ -527,6 +527,9 @@ int main(void)
 	arm_rfft_fast_init_f32(&detection_fft_instance, DETECTION_FFT_SIZE);
 	cwt_init_f32(TARGET_FREQUENCY, SAMPLING_FREQUENCY, 0.5);
 	hilbert_init_f32();
+	direction_of_arrival[0] = 1.0;
+	direction_of_arrival[1] = 0.0;
+	direction_of_arrival[2] = 0.0;
 	while(1){
 		CAN_SendVec3(&hfdcan1, 0x200, direction_of_arrival);
 		//HAL_Delay(100);
