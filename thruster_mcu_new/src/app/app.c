@@ -113,7 +113,7 @@ static struct pwm_output thrusters[8] = {
     {PWM_TCC, 0, 2, TCC0_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}  // TH8 -> TCC0_CC2
 };
 
-static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US, 1100}}; // TC3_CC1
+static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900, 1100, LIGHT_PWM_PERIOD_US, 1100, 1100}}; // TC3_CC1
 
 static const struct {
     uint8_t ain;

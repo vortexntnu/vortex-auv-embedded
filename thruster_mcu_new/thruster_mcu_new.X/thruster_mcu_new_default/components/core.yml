@@ -2022,7 +2022,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x0'
+            value: '0x2'
           type: Dynamic
         type: Values
       type: String
@@ -2033,7 +2033,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -2043,7 +2043,7 @@ data:
       children:
       - children:
         - attributes:
-            value: ''
+            value: GPIO
           type: User
         type: Values
       type: String
@@ -5908,6 +5908,66 @@ data:
       - children:
         - attributes:
             value: XOUT
+          type: User
+        type: Values
+      type: String
+    PIN_61_MODE:
+      attributes:
+        id: PIN_61_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_61_FUNCTION_TYPE:
+      attributes:
+        id: PIN_61_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: GPIO
+          type: User
+        type: Values
+      type: String
+    PIN_61_INEN:
+      attributes:
+        id: PIN_61_INEN
+      children:
+      - children:
+        - attributes:
+            value: 'True'
+          type: User
+        type: Values
+      type: String
+    PIN_61_DIR:
+      attributes:
+        id: PIN_61_DIR
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_61_FUNCTION_NAME:
+      attributes:
+        id: PIN_61_FUNCTION_NAME
+      children:
+      - children:
+        - attributes:
+            value: GPIO_PB00
+          type: User
+        type: Values
+      type: String
+    PIN_61_PULLEN:
+      attributes:
+        id: PIN_61_PULLEN
+      children:
+      - children:
+        - attributes:
+            value: ''
           type: User
         type: Values
       type: String
