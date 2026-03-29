@@ -67,6 +67,8 @@ void NVIC_Initialize( void )
     NVIC_EnableIRQ(SERCOM3_IRQn);
     NVIC_SetPriority(CAN0_IRQn, 3);
     NVIC_EnableIRQ(CAN0_IRQn);
+    NVIC_SetPriority(TC2_IRQn, 3);
+    NVIC_EnableIRQ(TC2_IRQn);
     NVIC_SetPriority(TC3_IRQn, 3);
     NVIC_EnableIRQ(TC3_IRQn);
     NVIC_SetPriority(TC4_IRQn, 3);

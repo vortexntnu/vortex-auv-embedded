@@ -54,6 +54,7 @@
               <itemPath>../src/config/default/peripheral/tc/plib_tc_common.h</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc3.h</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc4.h</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc2.h</itemPath>
             </logicalFolder>
           </logicalFolder>
           <itemPath>../src/config/default/toolchain_specifics.h</itemPath>
@@ -267,6 +268,7 @@
             <logicalFolder name="tc" displayName="tc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tc/plib_tc3.c</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc4.c</itemPath>
+              <itemPath>../src/config/default/peripheral/tc/plib_tc2.c</itemPath>
             </logicalFolder>
           </logicalFolder>
           <logicalFolder name="stdio" displayName="stdio" projectFiles="true">

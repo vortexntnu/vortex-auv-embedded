@@ -261,7 +261,8 @@ void led_logic_init(void)
     s_output_dirty     = true;
 
     // Fail-safe: mark all subsystems as FAULT until cleared
-    for (uint8_t id=1; id <= (uint8_t)LED_LOGIC_NUM_SUBSYSTEMS; id++) {
+    //for (uint8_t id=1; id <= (uint8_t)LED_LOGIC_NUM_SUBSYSTEMS; id++) {
+    for (uint8_t id=1; id <= (uint8_t)LED_LOGIC_NUM_SUBSYSTEMS-6; id++) {
         const unsigned slot = (unsigned)(id-1u);
         if (slot >= LED_LOGIC_MAX_FAULTS) break;
         s_faults[slot].active = true;
