@@ -208,7 +208,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            value: '65535'
+            value: '39999'
           type: User
         type: Values
       type: Long
@@ -231,7 +231,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '65535'
+            value: '39999'
           type: Long
         - attributes:
             id: visible
