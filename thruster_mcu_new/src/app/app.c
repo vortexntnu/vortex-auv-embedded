@@ -100,7 +100,7 @@ static uint8_t rxFiFo0[CAN1_RX_FIFO0_SIZE];
 
 /* ADC */
 static volatile bool adc_dma_done = false;
-static uint16_t adc_result_array[TRANSFER_SIZE];
+static volatile uint16_t adc_result_array[TRANSFER_SIZE];
 
 
 /* Application */
