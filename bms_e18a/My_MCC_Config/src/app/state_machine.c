@@ -11,6 +11,17 @@
 #include "ic_bms/bms_spi.h"
 #include "peripheral/port/plib_port.h"
 
+
+typedef enum
+{
+    CAN_STATE_OK = 0,
+    CAN_STATE_RECOVERING,
+    CAN_STATE_OFFLINE
+} CAN_STATE;
+
+static CAN_STATE can0State = CAN_STATE_OK;
+static uint8_t can0RecoveryAttempts = 0;
+
 extern volatile bool rxReady;
 extern uint32_t rx_messageID;
 extern uint8_t rx_message[64];
@@ -111,6 +122,96 @@ void state_machine(void) {
     pwr_enter_sleep();
 }
 
+static bool CAN0_IsBusOff(void)
+{
+    CAN_ERROR err = CAN0_ErrorGet();
+
+    if (err == CAN_ERROR_INVALID)
+        return true;
+
+    return ((err & CAN_ERROR_BUS_OFF) != 0U);
+}
+
+static bool CAN0_IsDegraded(void)
+{
+    CAN_ERROR err = CAN0_ErrorGet();
+
+    if (err == CAN_ERROR_INVALID)
+        return true;
+
+    if ((err & CAN_ERROR_PASSIVE) != 0U)
+        return true;
+
+    if ((err & CAN_ERROR_WARNING_STATUS) != 0U)
+        return true;
+
+    return false;
+}
+
+static void CAN0_Recover(void)
+{
+    can0State = CAN_STATE_RECOVERING;
+
+    // Optional for TCAN3414:
+    // TCAN_SHDN_Set();
+    // SYSTICK_DelayMs(2);
+    // TCAN_SHDN_Clear();
+    // SYSTICK_DelayMs(2);
+
+    // Let supply / transceiver settle
+    SYSTICK_DelayMs(10);
+
+    CAN0_Initialize();
+
+    // Clear interrupt flags your app uses
+    CAN0_InterruptClear(0xFFFFFFFFU);
+
+    can0State = CAN_STATE_OK;
+}
+
+static void CAN0_HandleError(void)
+{
+    CAN_ERROR err = CAN0_ErrorGet();
+    uint8_t txe = 0U;
+    uint8_t rxe = 0U;
+
+    CAN0_ErrorCountGet(&txe, &rxe);
+
+    if (err == CAN_ERROR_INVALID)
+    {
+        can0State = CAN_STATE_OFFLINE;
+        CAN0_Recover();
+        return;
+    }
+
+    if ((err & CAN_ERROR_BUS_OFF) != 0U)
+    {
+        can0State = CAN_STATE_OFFLINE;
+        CAN0_Recover();
+        return;
+    }
+
+    if ((err & CAN_ERROR_PASSIVE) != 0U)
+    {
+        can0State = CAN_STATE_RECOVERING;
+
+        // Brief backoff first
+        SYSTICK_DelayMs(2);
+
+        CAN0_ErrorCountGet(&txe, &rxe);
+
+        // Only escalate if still bad
+        if ((txe > 200U) || (rxe > 200U))
+        {
+            CAN0_Recover();
+        }
+        else
+        {
+            can0State = CAN_STATE_OK;
+        }
+    }
+}
+
 void state_machine_simple(void) {
     if (rxReady) {
         uint32_t id = rx_messageID;
@@ -142,6 +243,16 @@ void state_machine_simple(void) {
             default:
                 break;
         }
+    }
+
+    if (CAN0_IsBusOff())
+    {
+        CAN0_HandleError();
+        can_tx_avaliable = false;
+    }
+    else if (CAN0_IsDegraded())
+    {
+        CAN0_HandleError();
     }
     // pwr_enter_sleep();
 }
