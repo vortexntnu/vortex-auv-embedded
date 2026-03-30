@@ -607,7 +607,7 @@ static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
         if (outputs[i].mode == PWM_TCC) {
             tcc_write(outputs[i].instance, outputs[i].channel, ticks);
         } else if (outputs[i].mode == MPWM_TC) {
-            TC3_Compare16bitPeriodSet(ticks);
+            TC3_Compare16bitMatch1Set(ticks);
         } 
         
         outputs[i].current_pulse_us = outputs[i].neutral_us; // Update struct
