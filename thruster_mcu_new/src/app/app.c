@@ -595,7 +595,11 @@ static void slew_pwm_outputs(void) {
             uint32_t ticks = us_to_ticks(thrusters[i].period_ticks,
                                          current,
                                          thrusters[i].frame_us);
-            tcc_write(thrusters[i].instance, thrusters[i].channel, ticks);
+            if (outputs[i].mode == PWM_TCC) {
+                tcc_write(thrusters[i].instance, thrusters[i].channel, ticks);
+            } else if (outputs[i].mode == MPWM_TC) {
+                TC3_Compare16bitMatch1Set(ticks);
+            }
         }
     }
 }
