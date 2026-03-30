@@ -164,7 +164,7 @@ void test_can_tx();
  */
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count);
 
-static void set_light_output(const uint8_t *data, struct pwm_output *outputs, size_t count) {
+static void set_light_output(const uint8_t *data, struct pwm_output *outputs, size_t count);
 
 
 /**
