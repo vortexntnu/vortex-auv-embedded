@@ -256,4 +256,14 @@ data:
           type: User
         type: Values
       type: Boolean
+    TC_COMPARE_DRVCTRL_INVEN1:
+      attributes:
+        id: TC_COMPARE_DRVCTRL_INVEN1
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

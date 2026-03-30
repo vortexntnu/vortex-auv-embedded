@@ -120,7 +120,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/tc/plib_tc0.h
   hash: 80f5f12e6bd2d74cb475d898d9874cd2361a3bdea3828b4719d6eeb0e5c05028
 - file: ../src/config/default/peripheral/tc/plib_tc3.c
-  hash: 6018b2d58a1852c9c5319c4e05d6fcb83299663e501220193feb351c32840fe7
+  hash: 76b0287526fa121fd5eb3913336a5a4ecfb98ba5ab6933b036bb3845e1543343
 - file: ../src/config/default/peripheral/tc/plib_tc3.h
   hash: 3c9ece56a3c4c2b14754596ffbef286b44c9491413e1993e8ef49656a8b97ca5
 - file: ../src/config/default/peripheral/tc/plib_tc_common.h
