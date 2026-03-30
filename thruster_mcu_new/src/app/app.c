@@ -297,7 +297,7 @@ void app_init(void) {
     ADC0_Enable();
     
     // Configure RTC
-    RTC_Timer32CompareSet(50); // 20Hz
+    RTC_Timer32CompareSet(51); // ~20Hz
     RTC_Timer32CallbackRegister(rtc_callback, 0);
     RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
     RTC_Timer32Start();
@@ -555,7 +555,7 @@ static void set_light_output(const uint8_t *data, struct pwm_output *outputs, si
     //WDT_Clear();
 }
 
-#define PWM_MAX_STEP_US  1U
+#define PWM_MAX_STEP_US  25U
 
 static void slew_pwm_outputs(void) {
     for (size_t i = 0; i < 8U; i++) {
