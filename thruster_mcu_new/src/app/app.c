@@ -83,6 +83,8 @@ volatile bool    uart_message_ready = false;
 uint8_t          uart_msg_id        = 0U;
 uint8_t          uart_msg_len       = 0U;
 
+static volatile bool slew_tick = false;
+
 /* Shared TX frame buffer */
 static uint8_t uart_tx_frame[UART_MAX_TX_FRAME];
 
@@ -162,6 +164,9 @@ void test_can_tx();
  */
 static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count);
 
+static void set_light_output(const uint8_t *data, struct pwm_output *outputs, size_t count) {
+
+
 /**
  * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
  */
@@ -240,7 +245,7 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
 static void eic_pin_flt_thruster(uintptr_t context);
 static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
-static void start_adc_conversion(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
+static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
 
 static void slew_pwm_outputs(void);
 
@@ -293,7 +298,7 @@ void app_init(void) {
     
     // Configure RTC
     RTC_Timer32CompareSet(50); // 20Hz
-    RTC_Timer32CallbackRegister(start_adc_conversion, 0);
+    RTC_Timer32CallbackRegister(rtc_callback, 0);
     RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
     RTC_Timer32Start();
     
@@ -323,8 +328,10 @@ void app_init(void) {
 }
 
 void app_task(void) {
-    
-    slew_pwm_outputs();
+    if (slew_tick) {
+        slew_tick = false;
+        slew_pwm_outputs();
+    }
     
     if (adc_dma_done) {
         adc_dma_done = false;
@@ -457,7 +464,7 @@ static void message_handler(void) {
             break;
 
         case MSG_SET_LIGHT_PWM:
-            set_pwm_outputs(uart_payload, lights, 1);
+            set_light_output(uart_payload, lights, 1);
             break;
 
         default:
@@ -533,6 +540,21 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
     //WDT_Clear();
 }
 
+static void set_light_output(const uint8_t *data, struct pwm_output *outputs, size_t count) {
+    const uint16_t *pulse_data = (const uint16_t *)data;
+    for (size_t i = 0; i < count; i++) {
+        uint16_t pulse_us = pulse_data[i];
+        pulse_us = clamp(pulse_us, outputs[i].min_us, outputs[i].max_us);
+
+        uint32_t ticks = us_to_ticks(outputs[i].period_ticks, pulse_us, outputs[i].frame_us);
+        TC3_Compare16bitMatch1Set(ticks);
+
+        outputs[i].current_pulse_us = pulse_us;
+        outputs[i].target_pulse_us  = pulse_us;
+    }
+    //WDT_Clear();
+}
+
 #define PWM_MAX_STEP_US  1U
 
 static void slew_pwm_outputs(void) {
@@ -553,11 +575,9 @@ static void slew_pwm_outputs(void) {
             uint32_t ticks = us_to_ticks(thrusters[i].period_ticks,
                                          current,
                                          thrusters[i].frame_us);
-            if (outputs[i].mode == PWM_TCC) {
-                tcc_write(thrusters[i].instance, thrusters[i].channel, ticks);
-            } else if (outputs[i].mode == MPWM_TC) {
-                TC3_Compare16bitMatch1Set(ticks);
-            }
+            
+            tcc_write(thrusters[i].instance, thrusters[i].channel, ticks);
+            
         }
     }
 }
@@ -653,10 +673,10 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDma
     }
 }
 
-static void start_adc_conversion(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
+static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
     (void)intCause;
     (void)context;
-    //printf("RTC Callback Entered\r\n\r\n");
+    slew_tick = true;
     if (ADC0_ConversionSequenceIsFinished()) {
            ADC0_ConversionStart();
     }
