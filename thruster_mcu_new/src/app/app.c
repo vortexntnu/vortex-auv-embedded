@@ -286,64 +286,139 @@ static void start_adc_conversion(RTC_TIMER32_INT_MASK intCause,
 
 static void slew_pwm_outputs(void);
 
-#define UART_BRIDGE_BUFFER_SIZE 256U
-#define UART_TX_CHUNK_SIZE 32U
+#define UART_BRIDGE_BUFFER_SIZE   256U
+#define UART_TX_CHUNK_SIZE        32U
 
 static volatile uint8_t rx_byte_sercom2;
+static volatile uint8_t rx_byte_sercom4;
+
+static volatile bool sercom2_tx_busy = false;
 static volatile bool sercom4_tx_busy = false;
 
-static uint8_t bridge_fifo[UART_BRIDGE_BUFFER_SIZE];
-static volatile uint16_t fifo_head = 0;
-static volatile uint16_t fifo_tail = 0;
+/* FIFO for SERCOM2 RX -> SERCOM4 TX */
+static uint8_t fifo_2_to_4[UART_BRIDGE_BUFFER_SIZE];
+static volatile uint16_t fifo_2_to_4_head = 0U;
+static volatile uint16_t fifo_2_to_4_tail = 0U;
 
-static uint8_t tx_chunk[UART_TX_CHUNK_SIZE];
+/* FIFO for SERCOM4 RX -> SERCOM2 TX */
+static uint8_t fifo_4_to_2[UART_BRIDGE_BUFFER_SIZE];
+static volatile uint16_t fifo_4_to_2_head = 0U;
+static volatile uint16_t fifo_4_to_2_tail = 0U;
 
-static bool fifo_is_empty(void) {
-    return (fifo_head == fifo_tail);
+/* Separate TX staging buffers */
+static uint8_t tx_chunk_2_to_4[UART_TX_CHUNK_SIZE];
+static uint8_t tx_chunk_4_to_2[UART_TX_CHUNK_SIZE];
+
+/* Optional overflow counters for debugging */
+static volatile uint32_t overflow_2_to_4 = 0U;
+static volatile uint32_t overflow_4_to_2 = 0U;
+
+
+static bool fifo_is_empty(volatile uint16_t head, volatile uint16_t tail)
+{
+    return (head == tail);
 }
 
-static bool fifo_is_full(void) {
-    return (((fifo_head + 1U) % UART_BRIDGE_BUFFER_SIZE) == fifo_tail);
-}
+static bool fifo_push(uint8_t *fifo,
+                      volatile uint16_t *head,
+                      volatile uint16_t *tail,
+                      uint8_t byte)
+{
+    uint16_t next = (uint16_t)((*head + 1U) % UART_BRIDGE_BUFFER_SIZE);
 
-static bool fifo_push(uint8_t byte) {
-    uint16_t next = (fifo_head + 1U) % UART_BRIDGE_BUFFER_SIZE;
-
-    if (next == fifo_tail) {
-        return false;  // overflow
+    if (next == *tail) {
+        return false; /* full */
     }
 
-    bridge_fifo[fifo_head] = byte;
-    fifo_head = next;
+    fifo[*head] = byte;
+    *head = next;
     return true;
 }
 
-static bool fifo_pop(uint8_t* byte) {
-    if (fifo_is_empty()) {
-        return false;
+static bool fifo_pop(uint8_t *fifo,
+                     volatile uint16_t *head,
+                     volatile uint16_t *tail,
+                     uint8_t *byte)
+{
+    if (*head == *tail) {
+        return false; /* empty */
     }
 
-    *byte = bridge_fifo[fifo_tail];
-    fifo_tail = (fifo_tail + 1U) % UART_BRIDGE_BUFFER_SIZE;
+    *byte = fifo[*tail];
+    *tail = (uint16_t)((*tail + 1U) % UART_BRIDGE_BUFFER_SIZE);
     return true;
 }
 
-static void bridge_kick_tx(void) {
+static void bridge_kick_tx_4(void)
+{
     if (sercom4_tx_busy) {
         return;
     }
 
-    size_t count = 0;
+    size_t count = 0U;
     uint8_t b;
 
-    while ((count < UART_TX_CHUNK_SIZE) && fifo_pop(&b)) {
-        tx_chunk[count++] = b;
+    while ((count < UART_TX_CHUNK_SIZE) &&
+           fifo_pop(fifo_2_to_4, &fifo_2_to_4_head, &fifo_2_to_4_tail, &b))
+    {
+        tx_chunk_2_to_4[count++] = b;
     }
 
     if (count > 0U) {
         sercom4_tx_busy = true;
-        SERCOM4_USART_Write(tx_chunk, count);
+        SERCOM4_USART_Write(tx_chunk_2_to_4, count);
     }
+}
+
+static void bridge_kick_tx_2(void)
+{
+    if (sercom2_tx_busy) {
+        return;
+    }
+
+    size_t count = 0U;
+    uint8_t b;
+
+    while ((count < UART_TX_CHUNK_SIZE) &&
+           fifo_pop(fifo_4_to_2, &fifo_4_to_2_head, &fifo_4_to_2_tail, &b))
+    {
+        tx_chunk_4_to_2[count++] = b;
+    }
+
+    if (count > 0U) {
+        sercom2_tx_busy = true;
+        SERCOM2_USART_Write(tx_chunk_4_to_2, count);
+    }
+}
+
+static void sercom2_rx_callback(uintptr_t context)
+{
+    (void)context;
+
+    if (!fifo_push(fifo_2_to_4, &fifo_2_to_4_head, &fifo_2_to_4_tail, rx_byte_sercom2)) {
+        overflow_2_to_4++;
+    }
+
+    /* Re-arm immediately */
+    SERCOM2_USART_Read((void *)&rx_byte_sercom2, 1U);
+
+    /* Try to start TX on opposite UART */
+    bridge_kick_tx_4();
+}
+
+static void sercom4_rx_callback(uintptr_t context)
+{
+    (void)context;
+
+    if (!fifo_push(fifo_4_to_2, &fifo_4_to_2_head, &fifo_4_to_2_tail, rx_byte_sercom4)) {
+        overflow_4_to_2++;
+    }
+
+    /* Re-arm immediately */
+    SERCOM4_USART_Read((void *)&rx_byte_sercom4, 1U);
+
+    /* Try to start TX on opposite UART */
+    bridge_kick_tx_2();
 }
 
 static void sercom4_tx_callback(uintptr_t context)
@@ -351,31 +426,42 @@ static void sercom4_tx_callback(uintptr_t context)
     (void)context;
 
     sercom4_tx_busy = false;
-    bridge_kick_tx();
+    bridge_kick_tx_4();
 }
 
-static void sercom2_rx_callback(uintptr_t context) {
+static void sercom2_tx_callback(uintptr_t context)
+{
     (void)context;
 
-    /* Push received byte into FIFO */
-    (void)fifo_push(rx_byte_sercom2);
-
-    /* Re-arm next byte receive immediately */
-    SERCOM2_USART_Read((void*)&rx_byte_sercom2, 1U);
-
-    /* Try to kick transmitter */
-    bridge_kick_tx();
+    sercom2_tx_busy = false;
+    bridge_kick_tx_2();
 }
 
-void uart_bridge_init(void) {
+void uart_bridge_init(void)
+{
+    sercom2_tx_busy = false;
+    sercom4_tx_busy = false;
+
+    fifo_2_to_4_head = 0U;
+    fifo_2_to_4_tail = 0U;
+    fifo_4_to_2_head = 0U;
+    fifo_4_to_2_tail = 0U;
+
+    overflow_2_to_4 = 0U;
+    overflow_4_to_2 = 0U;
+
     SERCOM2_USART_Enable();
     SERCOM4_USART_Enable();
 
     SERCOM2_USART_ReadCallbackRegister(sercom2_rx_callback, (uintptr_t)NULL);
+    SERCOM4_USART_ReadCallbackRegister(sercom4_rx_callback, (uintptr_t)NULL);
+
+    SERCOM2_USART_WriteCallbackRegister(sercom2_tx_callback, (uintptr_t)NULL);
     SERCOM4_USART_WriteCallbackRegister(sercom4_tx_callback, (uintptr_t)NULL);
 
-    /* Start receiving first byte on SERCOM2 */
-    SERCOM2_USART_Read((void*)&rx_byte_sercom2, 1U);
+    /* Start both receive paths */
+    SERCOM2_USART_Read((void *)&rx_byte_sercom2, 1U);
+    SERCOM4_USART_Read((void *)&rx_byte_sercom4, 1U);
 }
 
 
