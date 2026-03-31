@@ -162,6 +162,7 @@ static void CAN0_Recover(void)
     SYSTICK_DelayMs(10);
 
     CAN0_Initialize();
+    CAN_Init();
 
     // Clear interrupt flags your app uses
     CAN0_InterruptClear(0xFFFFFFFFU);

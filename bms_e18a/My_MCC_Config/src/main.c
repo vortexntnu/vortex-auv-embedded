@@ -24,6 +24,7 @@
 
 #include <stdbool.h>  // Defines true
 #include <stddef.h>   // Defines NULL
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>  // Defines EXIT_FAILURE
 #include "app/can_telemetry.h"
@@ -52,6 +53,8 @@ wake-up interrupt occurs on EIC pin 14
 */
 volatile bool rtc_timer = false;
 extern volatile bool can_tx_avaliable;
+
+volatile uint32_t ticks_dsg_off = 0;
 
 static void TelemetryRtcCb(
     RTC_TIMER32_INT_MASK intCause,
@@ -93,9 +96,9 @@ int main(void) {
     while (true) {
         SYS_Tasks();
         if (rtc_timer) {
-            voltage_test_step();
+            uint8_t fet = voltage_test_step();
             rtc_timer = false;
-                    // CAN_voltage_send();
+            // CAN_voltage_send();
             if (can_tx_avaliable) {
                 CAN_alert_pfa_send();
                 CAN_alert_ssa_send();
@@ -103,6 +106,14 @@ int main(void) {
                 CAN_voltage_send();
                 CAN_temp_send();
             }
+
+            // if ((fet & (1 << 2)) != (1 << 2)) {
+            //     ticks_dsg_off++;
+            //
+            //     if (ticks_dsg_off == 10000) {
+            //         NVIC_SystemReset();
+            //     }
+            // }
         }
 
         // bms_alert_step();

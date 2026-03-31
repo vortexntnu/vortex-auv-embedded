@@ -1,6 +1,6 @@
 /*
  Platform:
-    ATSAMC21 
+    ATSAMC21
 
  Company:
     Vortex NTNU.
@@ -12,101 +12,83 @@
     can_facade.c
  */
 
- #include "definitions.h"
- #include "peripheral/port/plib_port.h"
- #include "can_facade.h"
-  
-  /* ===== RX variables ===== */
-  volatile bool rxReady = false;
-  
-  uint32_t rx_messageID = 0;
-  uint8_t  rx_message[64] = {0};
-  uint8_t  rx_messageLength = 0;
-  uint16_t timestamp = 0;
-  
-  static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
-  
-  /* ===== CAN RAM ===== */
-  static bool s_ram_bound = false;
-  static uint8_t s_can_msg_ram[CAN0_MESSAGE_RAM_CONFIG_SIZE];
-  
-  /* ===== ISR callback ===== */
-  void APP_CAN_Callback(uintptr_t context)
-  {
-      (void)context;
-  
-      rxReady = true;
-      
-     
-  
-      /* Re-arm RX */
-      CAN0_MessageReceive(&rx_messageID,
-                          &rx_messageLength,
-                          rx_message,
-                          &timestamp,
-                          CAN_MSG_ATTR_RX_FIFO0,
-                          &msgFrameAttr);
-  }
-  
-  /* ===== Init ===== */
-  void CAN_Init(void)
-  {
- 
+#include "can_facade.h"
+#include "definitions.h"
+#include "peripheral/port/plib_port.h"
+
+/* ===== RX variables ===== */
+volatile bool rxReady = false;
+
+uint32_t rx_messageID = 0;
+uint8_t rx_message[64] = {0};
+uint8_t rx_messageLength = 0;
+uint16_t timestamp = 0;
+
+static CAN_MSG_RX_FRAME_ATTRIBUTE msgFrameAttr = CAN_MSG_RX_DATA_FRAME;
+
+/* ===== CAN RAM ===== */
+static bool s_ram_bound = false;
+static uint8_t s_can_msg_ram[CAN0_MESSAGE_RAM_CONFIG_SIZE];
+
+/* ===== ISR callback ===== */
+void APP_CAN_Callback(uintptr_t context) {
+    (void)context;
+
+    rxReady = true;
+
+    /* Re-arm RX */
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+}
+
+/* ===== Init ===== */
+void CAN_Init(void) {
     STB_OutputEnable();
     STB_Clear();
     //////////////////////
-    
-      if (!s_ram_bound) 
-      {
-          CAN0_MessageRAMConfigSet(s_can_msg_ram); // Bind the CAN message RAM to the driver
-          s_ram_bound = true; 
-      }
-  
-      CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)NULL, CAN_MSG_ATTR_RX_FIFO0);
-  
-      CAN0_MessageReceive(&rx_messageID,
-                          &rx_messageLength,
-                          rx_message,
-                          &timestamp,
-                          CAN_MSG_ATTR_RX_FIFO0,
-                          &msgFrameAttr);
-  }
-  
-  /* ===== Send ===== */
-  bool CAN_Send(uint32_t id, uint8_t *data, uint8_t len)
-  {
-      const CAN_MODE mode = CAN_MODE_FD_WITHOUT_BRS;
-      const CAN_MSG_TX_ATTRIBUTE attr = CAN_MSG_ATTR_TX_FIFO_DATA_FRAME;
-  
-      return CAN0_MessageTransmit(id, len, data, mode, attr);
-  }
 
-  bool CAN_TryRead(uint32_t *id, uint8_t *len, uint8_t *data)
-  {
-      uint8_t local_len;
+    // if (!s_ram_bound)
+    // {
+    CAN0_MessageRAMConfigSet(
+        s_can_msg_ram);  // Bind the CAN message RAM to the driver
+    // }
 
-      if (!rxReady)
-      {
-          return false;
-      }
+    CAN0_RxCallbackRegister(APP_CAN_Callback, (uintptr_t)NULL,
+                            CAN_MSG_ATTR_RX_FIFO0);
 
-      rxReady = false;
-      local_len = rx_messageLength;
+    CAN0_MessageReceive(&rx_messageID, &rx_messageLength, rx_message,
+                        &timestamp, CAN_MSG_ATTR_RX_FIFO0, &msgFrameAttr);
+}
 
-      if (id != NULL)
-      {
-          *id = rx_messageID;
-      }
+/* ===== Send ===== */
+bool CAN_Send(uint32_t id, uint8_t* data, uint8_t len) {
+    const CAN_MODE mode = CAN_MODE_FD_WITHOUT_BRS;
+    const CAN_MSG_TX_ATTRIBUTE attr = CAN_MSG_ATTR_TX_FIFO_DATA_FRAME;
 
-      if (len != NULL)
-      {
-          *len = local_len;
-      }
+    return CAN0_MessageTransmit(id, len, data, mode, attr);
+}
 
-      if ((data != NULL) && (local_len > 0U))
-      {
-          (void) memcpy(data, rx_message, local_len);
-      }
+bool CAN_TryRead(uint32_t* id, uint8_t* len, uint8_t* data) {
+    uint8_t local_len;
 
-      return true;
-  }
+    if (!rxReady) {
+        return false;
+    }
+
+    rxReady = false;
+    local_len = rx_messageLength;
+
+    if (id != NULL) {
+        *id = rx_messageID;
+    }
+
+    if (len != NULL) {
+        *len = local_len;
+    }
+
+    if ((data != NULL) && (local_len > 0U)) {
+        (void)memcpy(data, rx_message, local_len);
+    }
+
+    return true;
+}

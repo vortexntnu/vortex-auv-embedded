@@ -689,8 +689,8 @@ void BQ769x2_Init() {
     BQ769x2_SetRegister(CHGFETProtectionsC, 0x00, 1);
     //BQ769x2_SetRegister(CHGFETProtectionsC, 0x56, 1);
     BQ769x2_SetRegister(DSGFETProtectionsA, 0xE4, 1);
-    BQ769x2_SetRegister(DSGFETProtectionsB, 0xE6, 1);
-    //BQ769x2_SetRegister(DSGFETProtectionsC, 0xE2, 1);
+    BQ769x2_SetRegister(DSGFETProtectionsB, 0x44, 1);
+    BQ769x2_SetRegister(DSGFETProtectionsC, 0x00, 1);
     BQ769x2_SetRegister(PrechargeStartVoltage, 0, 2);
     BQ769x2_SetRegister(PrechargeStopVoltage, 0, 2);
 
@@ -742,8 +742,8 @@ void BQ769x2_Init() {
 	// Set up SCD Threshold - 0x9286 = 0x05 (100 mV = 100A across 1mOhm sense resistor)  0x05=100mV
 	BQ769x2_SetRegister(SCDThreshold, 0x05, 1);
 
-    BQ769x2_SetRegister(OCDLRecoveryThreshold, 0, 2);
-    BQ769x2_SetRegister(SCDLRecoveryThreshold, 0, 2);
+    BQ769x2_SetRegister(OCDLRecoveryThreshold, 100, 2);
+    BQ769x2_SetRegister(SCDLRecoveryThreshold, 100, 2);
 
 	// Set up SCD Delay - 0x9287 = 0x03 (30 us) Enabled with a delay of (value - 1) * 15 µs; min value of 1    
 	BQ769x2_SetRegister(SCDDelay, 0x03, 1);
