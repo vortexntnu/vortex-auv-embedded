@@ -36,10 +36,10 @@
 #define UART_MAX_TX_FRAME        36U   // 3 header + 32 payload + 1 checksum
 
 /* --- Constants --- */
-static const uint32_t TCC0_PERIOD               = 38320;
-static const uint32_t TCC1_PERIOD               = 38320;
-static const uint32_t TCC2_PERIOD               = 38320;
-static const uint32_t TC3_PERIOD                = 39999; 
+static const uint32_t TCC0_PERIOD               = 38275;
+static const uint32_t TCC1_PERIOD               = 38250;
+static const uint32_t TCC2_PERIOD               = 38250;
+static const uint32_t TC3_PERIOD                = 38250; 
 static const uint32_t THRUSTER_PWM_PERIOD_US    = 20000U; // 50Hz
 static const uint32_t LIGHT_PWM_PERIOD_US       = 20000U; // 50Hz
 

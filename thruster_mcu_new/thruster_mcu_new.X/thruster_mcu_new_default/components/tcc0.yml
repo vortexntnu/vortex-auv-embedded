@@ -198,7 +198,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '38320'
+            value: '38275'
           type: User
         type: Values
       type: Integer
@@ -231,7 +231,7 @@ data:
       - children:
         - attributes:
             id: tcc0
-            value: '38320'
+            value: '38275'
           type: Dynamic
         type: Values
       type: Integer
@@ -349,4 +349,24 @@ data:
           type: User
         type: Values
       type: Boolean
+    TCC_WEXCTRL_DTLS:
+      attributes:
+        id: TCC_WEXCTRL_DTLS
+      children:
+      - children:
+        - attributes:
+            value: '0'
+          type: User
+        type: Values
+      type: Integer
+    TCC_WEXCTRL_DTHS:
+      attributes:
+        id: TCC_WEXCTRL_DTHS
+      children:
+      - children:
+        - attributes:
+            value: '0'
+          type: User
+        type: Values
+      type: Integer
   userData: {}

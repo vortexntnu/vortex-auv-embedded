@@ -126,15 +126,15 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/tc/plib_tc_common.h
   hash: 487b4f489229b8e16b24ab48ddc1f414b095585439f0e10d53b2285fc3979f63
 - file: ../src/config/default/peripheral/tcc/plib_tcc0.c
-  hash: 223543f26ef2667c0069b05554725c6bea59234c1f99976bf47931e85b5d8c0d
+  hash: 860eb4cd717a6cd7802b2d67fc934d6b66662b6b36193a8f8c60a6b3cdae1b13
 - file: ../src/config/default/peripheral/tcc/plib_tcc0.h
   hash: 81f7d4577b88b3b9113e4e29151b4d5e8f528334ae653924dd9a6ce364147c25
 - file: ../src/config/default/peripheral/tcc/plib_tcc1.c
-  hash: c01b6a03ff21fa66eb75788f1d09d19cd7dbb6c5c8f1f9610b4e09211331d565
+  hash: 5d5c1b3f44db471cddd4fbaed889a51ed43a66fd204cfad9a6513ebf9968a86b
 - file: ../src/config/default/peripheral/tcc/plib_tcc1.h
   hash: cc639012cd76b4c34eb4b693b7215b19c70fffcb09c8a7957c841735647096d9
 - file: ../src/config/default/peripheral/tcc/plib_tcc2.c
-  hash: 12a97e086d67eff6772c4d297fc14f4b3a1a72722595f3e930fe5790eaa8dd2a
+  hash: b67dbe01a3d326b630ef522b131294e928a6d35a8e5524ff8935facc2a7a861f
 - file: ../src/config/default/peripheral/tcc/plib_tcc2.h
   hash: 262a01b0e1637396dec22f20c73ba6c959711e858b5f741e38fb24e64ff68859
 - file: ../src/config/default/peripheral/tcc/plib_tcc_common.h
