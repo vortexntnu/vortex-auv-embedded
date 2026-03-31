@@ -250,9 +250,9 @@ void app_init(void) {
     SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
     
     // Configure CAN RAM & callbacks 
-    CAN1_MessageRAMConfigSet(Can1MessageRAM);
-    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
-    CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
+    CAN0_MessageRAMConfigSet(Can1MessageRAM);
+    CAN0_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
+    CAN0_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
     // Configure callback for killswitch
     EIC_NMICallbackRegister(eic_pin_killswitch, 0);
@@ -632,14 +632,14 @@ void test_can_tx() {
     memset(txFiFo, 0x00, CAN1_TX_FIFO_BUFFER_SIZE);
     txBuffer = (CAN_TX_BUFFER*)txFiFo;
     
-    txBuffer->id = WRITE_ID(0x215);
+    txBuffer->id = WRITE_ID(0x104);
     txBuffer->dlc = 1;
     txBuffer->fdf = 1;
     txBuffer->brs = 0;
     
     txBuffer->data[0] = 0xAA;
     
-    bool result = CAN1_MessageTransmitFifo(1, txBuffer);
+    bool result = CAN0_MessageTransmitFifo(1, txBuffer);
 
     if (!result) {
         printf("ERROR: CAN1_MessageTransmitFifo failed!\r\n");
@@ -949,7 +949,7 @@ static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context) {
         ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
         
         memset(rxFiFo0, 0x00, (numberOfMessage * CAN1_RX_FIFO0_ELEMENT_SIZE));
-        if (CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, numberOfMessage, (CAN_RX_BUFFER *)rxFiFo0) == true) {
+        if (CAN0_MessageReceiveFifo(CAN_RX_FIFO_0, numberOfMessage, (CAN_RX_BUFFER *)rxFiFo0) == true) {
             can_message_received = true;
             // Optionally print can frame
         } 

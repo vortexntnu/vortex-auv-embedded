@@ -70,7 +70,7 @@ static const can_sidfe_registers_t can0StdFilter[] =
 {
     {
         .CAN_SIDFE_0 = CAN_SIDFE_0_SFT(0UL) |
-                  CAN_SIDFE_0_SFID1(0x369UL) |
+                  CAN_SIDFE_0_SFID1(0x01) |
                   CAN_SIDFE_0_SFID2(0x36dUL) |
                   CAN_SIDFE_0_SFEC(1UL)
     },
@@ -119,10 +119,18 @@ void CAN0_Initialize(void)
     CAN0_REGS->CAN_CCCR |= CAN_CCCR_CCE_Msk;
 
     /* Set Data Bit Timing and Prescaler Register */
-    CAN0_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(0UL) | CAN_DBTP_DTSEG1(5UL) | CAN_DBTP_DBRP(2UL) | CAN_DBTP_DSJW(0UL);
+    // CAN0_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(0UL) | CAN_DBTP_DTSEG1(5UL) | CAN_DBTP_DBRP(2UL) | CAN_DBTP_DSJW(0UL);
+    //
+    // /* Set Nominal Bit timing and Prescaler Register */
+    // CAN0_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(29UL) | CAN_NBTP_NBRP(2UL) | CAN_NBTP_NSJW(0UL);
+    CAN0_REGS->CAN_DBTP = CAN_DBTP_DTSEG2(5) | CAN_DBTP_DTSEG1(16) |
+                          CAN_DBTP_DBRP(0) | CAN_DBTP_DSJW(4);
 
     /* Set Nominal Bit timing and Prescaler Register */
-    CAN0_REGS->CAN_NBTP  = CAN_NBTP_NTSEG2(0UL) | CAN_NBTP_NTSEG1(29UL) | CAN_NBTP_NBRP(2UL) | CAN_NBTP_NSJW(0UL);
+    CAN0_REGS->CAN_NBTP = CAN_NBTP_NTSEG2(5) | CAN_NBTP_NTSEG1(16) |
+                          CAN_NBTP_NBRP(3) | CAN_NBTP_NSJW(4);
+
+
 
     /* Receive Buffer / FIFO Element Size Configuration Register */
     CAN0_REGS->CAN_RXESC = 0UL  | CAN_RXESC_F0DS(7UL) | CAN_RXESC_F1DS(7UL);
