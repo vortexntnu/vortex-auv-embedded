@@ -99,7 +99,6 @@ UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_usart1_tx;
 
 MDMA_HandleTypeDef hmdma_mdma_channel0_sw_0;
-
 /* USER CODE BEGIN PV */
 static struct ad7606_device my_ADC;
 static union ad7606_registers ADC_regs;
@@ -145,7 +144,11 @@ static PLACE_IN_DTCM float32_t hydrophone_positions[N_HYDROPHONES][3] = {
 		{0.25,-0.25,0.354}
 };
 
-volatile PLACE_IN_DTCM uint8_t dump_trigger = 0;
+volatile PLACE_IN_DTCM bool dump_trigger = false;
+volatile PLACE_IN_DTCM bool send_magnitude = false;
+volatile PLACE_IN_DTCM bool verbose = false;
+
+volatile PLACE_IN_DTCM bool detected = false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -170,7 +173,7 @@ static void MX_RTC_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-static void init_adc_and_buffers(bool verbose);
+static void init_adc_and_buffers();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -188,7 +191,7 @@ uint32_t find_da_edge(const float32_t *signal, uint32_t signal_len)
 
 	float32_t min_prominence = 0.001;
 	arm_std_f32(signal, signal_len, &min_prominence);
-	min_prominence *= 0.707;
+	min_prominence *= 0.01;
 
     uint32_t           trough_idxs[MAX_TROUGHS];
     find_peaks_props_f32_t props[MAX_TROUGHS];
@@ -282,7 +285,12 @@ bool signal_present(uint8_t half_idx) {
     if (likely(signal_power < SIGNAL_MIN_POWER)) return false;
 
     // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
-    return (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
+    bool present = (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
+    if(unlikely(present ^ detected)){
+    	detected = present;
+    	return present;
+    }
+    return false;
 }
 
 
@@ -364,10 +372,6 @@ void dump_python_array_f32(float32_t* arr, int len) {
     printf("\r\n");                                \
 } while(0)
 
-__attribute__((used)) void dump_magnitude(void) {
-    DUMP_ARRAY_NAMED_DICT_F32("magnitude", magnitude_output_f32, DETECTION_FFT_SIZE/2 - 1);
-}
-
 void clear_buffer(q15_t* arr, int len){
 	for(int i = 0; i < len; i++) arr[i] = 0;
 }
@@ -398,16 +402,10 @@ void circ_unwrap_to_f32(q15_t *src, float32_t *dst, uint32_t data_len,
     }
 }
 
-typedef struct {
-    float x;
-    float y;
-    float z;
-} Vec3;
-
-void CAN_SendVec3(FDCAN_HandleTypeDef *hfdcan, uint32_t id, float32_t vec[3])
+void CAN_send_direction(FDCAN_HandleTypeDef *hfdcan, uint32_t id, float32_t vec[3], float32_t weight)
 {
     FDCAN_TxHeaderTypeDef txHeader;
-    uint8_t txData[12];  // 3 x float32 = 12 bytes
+    uint8_t txData[16];  // 3 x float32 = 12 bytes
 
     memcpy(txData, vec, 12);
 
@@ -416,7 +414,7 @@ void CAN_SendVec3(FDCAN_HandleTypeDef *hfdcan, uint32_t id, float32_t vec[3])
     txHeader.TxFrameType         = FDCAN_DATA_FRAME;
     txHeader.DataLength          = FDCAN_DLC_BYTES_12;
     txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-    txHeader.BitRateSwitch       = FDCAN_BRS_OFF;
+    txHeader.BitRateSwitch       = FDCAN_BRS_ON;
     txHeader.FDFormat            = FDCAN_FD_CAN;
     txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
     txHeader.MessageMarker       = 0;
@@ -424,6 +422,158 @@ void CAN_SendVec3(FDCAN_HandleTypeDef *hfdcan, uint32_t id, float32_t vec[3])
     while (HAL_FDCAN_GetTxFifoFreeLevel(hfdcan) == 0);
 
     HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, txData);
+}
+
+void UART_send_direction(UART_HandleTypeDef *huart, float32_t vec[3])
+{
+    char buf[128];
+    int len = 0;
+
+    // Helper to append each component
+    for (int i = 0; i < 3; i++)
+    {
+        int32_t whole = f32_whole(vec[i]);
+        int32_t frac  = f32_frac(vec[i], 4);
+
+        if (i == 0)
+            len += snprintf(buf + len, sizeof(buf) - len, "[");
+
+        if (vec[i] < 0.0f && whole == 0)
+            len += snprintf(buf + len, sizeof(buf) - len, "-0.%04ld", frac);
+        else
+            len += snprintf(buf + len, sizeof(buf) - len, "%ld.%04ld", whole, frac);
+
+        if (i < 2)
+            len += snprintf(buf + len, sizeof(buf) - len, ", ");
+        else
+            len += snprintf(buf + len, sizeof(buf) - len, "]\r\n");
+    }
+
+    HAL_UART_Transmit(huart, (uint8_t*)buf, len, 100);
+}
+
+__attribute__((used, noinline)) void dump_magnitude(void){
+	magnitude_output_f32[0] = 0;
+	DUMP_ARRAY_NAMED_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
+}
+
+__attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
+	printf("dump = {\r\n");
+
+	magnitude_output_f32[0] = 0;
+	DUMP_ARRAY_NAMED_DICT_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
+	printf(",");
+
+	printf("\t\"raw_mv\" : [\r\n\t");
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		q15_t* buffer_flat = (q15_t*)hydrophone_buffers[i];
+		circ_unwrap_to_f32(buffer_flat ,processing_workspace[i], WORKSPACE_LEN, BUFFER_LEN, (uint32_t)workspace_idx);
+		float32_t scalar = 32768.0*ad7606_channel_scaling_factor(&my_ADC, i)*1000.0;
+		arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
+			dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
+			if(i == N_HYDROPHONES - 1){
+				printf("\r\n],\r\n");
+			}else{
+				printf(",\r\n\t");
+			}
+	    //normalize
+	    scalar = 0;
+	    arm_mean_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);   // Step 1: compute mean
+	    arm_offset_f32(processing_workspace[i],-scalar,processing_workspace[i],WORKSPACE_LEN); // Step 2: subtract it
+	    scalar = 0;
+		arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
+		scalar = 1/scalar;
+		arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
+	}
+
+	printf("\"normalized\" : [\r\n\t");
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
+		if(i == N_HYDROPHONES - 1){
+			printf("\r\n],\r\n");
+		}else{
+			printf(",\r\n\t");
+		}
+	}
+
+	printf("\"cwt\" : [\r\n\t");
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
+		dump_python_array_f32(envelope, WORKSPACE_LEN);
+		if(i == N_HYDROPHONES - 1){
+			printf("\r\n],\r\n");
+		}else{
+			printf(",\r\n\t");
+		}
+	}
+
+	printf("\"envelope_edge\" : [\r\n\t");
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
+		hilbert_imag_f32(envelope,envelope_edge);
+		dump_python_array_f32(envelope_edge, PROCESSING_FFT_SIZE);
+		idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+		if(i == N_HYDROPHONES - 1){
+			printf("\r\n],\r\n");
+		}else{
+			printf(",\r\n\t");
+		}
+	}
+
+	DUMP_ARRAY_NAMED_DICT_Q15("idxs", (q15_t*)idxs, N_HYDROPHONES);
+	printf(",");
+
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
+	}
+
+	idxs[2] = idxs[0] + 118-137;
+	idxs[3] = idxs[0] + 160-162;
+	idxs[4] = idxs[0] + 167-144;
+	for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
+
+	int32_t tdoa_status = 0;
+	tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
+										  times_of_arrival,
+										  hydrophone_valid,
+										  N_HYDROPHONES,
+										  direction_of_arrival);
+
+	printf("\"hydrophone_pos\" : [\r\n\t");
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		dump_python_array_f32(hydrophone_positions[i], 3);
+		if(i == N_HYDROPHONES - 1){
+			printf("\r\n],\r\n");
+		}else{
+			printf(",\r\n\t");
+		}
+	}
+
+
+	DUMP_ARRAY_NAMED_DICT_F32("direction_of_arrival",direction_of_arrival, 3);
+	printf(",");
+	DUMP_ARRAY_NAMED_DICT_F32("valid",hydrophone_valid,N_HYDROPHONES);
+
+	fflush(stdout);
+	printf("}\r\n");
+}
+
+float32_t estimate_SNR(void){
+    const uint32_t SIGNAL_BIN_LOW = 14;
+    const uint32_t SIGNAL_BIN_HIGH = 17;
+    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
+    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
+
+    float32_t noise_power = 0.0f;
+    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
+        noise_power += magnitude_output_f32[i];
+    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
+        noise_power += magnitude_output_f32[i];
+
+    float32_t signal_power = magnitude_output_f32[14] + magnitude_output_f32[15] + magnitude_output_f32[16];
+
+    return (signal_power * NOISE_BIN_COUNT) / (noise_power * SIGNAL_BIN_COUNT);
+
 }
 /* USER CODE END 0 */
 
@@ -446,9 +596,14 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-
   /* USER CODE BEGIN Init */
   SWO_Init();
+  dump_trigger = false;
+  send_magnitude = false;
+  verbose = false;
+  SNR = 1;
+  mdma_half = 0;
+  mdma_done_flag = false;
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -491,7 +646,7 @@ int main(void)
 
 	HAL_FDCAN_Start(&hfdcan1);
 	FDCAN_TxHeaderTypeDef txHeader;
-	uint8_t txData[8] = {0x4F, 0x4B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // "OK"
+	uint8_t txData[12] = {0x4F, 0x4B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // "OK"
 
 	txHeader.Identifier          = 0x123;
 	txHeader.IdType              = FDCAN_STANDARD_ID;
@@ -508,12 +663,20 @@ int main(void)
 	    Error_Handler();
 	}
 
+//	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = {
+//			{0.0,0.0,0.0},
+//			{0.0,0.0,0.0},
+//			{0.5,0.0,0.0},
+//			{0.25,0.25,0.354},
+//			{0.25,-0.25,0.354}
+//	};
+
 	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = {
 			{0.0,0.0,0.0},
 			{0.0,0.0,0.0},
-			{0.5,0.0,0.0},
-			{0.25,0.25,0.354},
-			{0.25,-0.25,0.354}
+			{0.0,0.45,0.0},
+			{0.45,0.0,0.0},
+			{0.0,0.0,-0.45}
 	};
 
 	for(int i = 0; i < N_HYDROPHONES; i++){
@@ -523,16 +686,16 @@ int main(void)
 		hydrophone_positions[i][2] = hydrophone_positions_temp[i][2];
 	}
 
-	init_adc_and_buffers(false);
+	init_adc_and_buffers();
 	arm_rfft_fast_init_f32(&detection_fft_instance, DETECTION_FFT_SIZE);
 	cwt_init_f32(TARGET_FREQUENCY, SAMPLING_FREQUENCY, 0.5);
 	hilbert_init_f32();
 	direction_of_arrival[0] = 1.0;
 	direction_of_arrival[1] = 0.0;
 	direction_of_arrival[2] = 0.0;
-	while(1){
-		CAN_SendVec3(&hfdcan1, 0x200, direction_of_arrival);
-		//HAL_Delay(100);
+
+	if(!dump_trigger){
+		printf("dump = [\r\n\t");
 	}
 
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -546,13 +709,19 @@ int main(void)
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
 
     while (1) {
-      uint8_t target_block = fast_get_detection_block_pos();
-      uint8_t processing_half = !mdma_half;
-      fast_MDMA_copy_block(hydrophone_buffers[0][target_block], detection_buffer[mdma_half], &hmdma_mdma_channel0_sw_0);
-      //process data ...
+		uint8_t target_block = fast_get_detection_block_pos();
+		uint8_t processing_half = !mdma_half;
+		fast_MDMA_copy_block(hydrophone_buffers[0][target_block], detection_buffer[mdma_half], &hmdma_mdma_channel0_sw_0);
+		//process data ...
 
-      diagnostics_temp = (float32_t)ad7606_voltage_to_temp(ad7606_reading_to_voltage(&my_ADC,7,diagnostics_sample));
-      stm32_temp = stm_temp_get_latest();
+		diagnostics_temp = (float32_t)ad7606_voltage_to_temp(ad7606_reading_to_voltage(&my_ADC,7,diagnostics_sample));
+		stm32_temp = stm_temp_get_latest();
+
+		__NOP();
+
+		if(unlikely(send_magnitude)){
+			dump_magnitude();
+		}
 
     	if(unlikely(signal_present(processing_half))){ // processing_half
 			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
@@ -574,12 +743,6 @@ int main(void)
 				circ_unwrap_to_f32(buffer_flat ,processing_workspace[i], WORKSPACE_LEN, BUFFER_LEN, (uint32_t)workspace_idx);
 				float32_t scalar = 32768.0*ad7606_channel_scaling_factor(&my_ADC, i)*1000.0;
 				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
-//				dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
-//	    	    if(i == N_HYDROPHONES - 1){
-//	    	    	printf("\r\n],\r\n");
-//	    	    }else{
-//	    	    	printf(",\r\n\t");
-//	    	    }
 	    	    //normalize
 	    	    scalar = 0;
 	    	    arm_mean_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);   // Step 1: compute mean
@@ -588,50 +751,16 @@ int main(void)
 				arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
 				scalar = 1/scalar;
 				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
-			}
-
-//			printf("\"normalized\" : [\r\n\t");
-//			for(int i = 0; i < N_HYDROPHONES; i++){
-//				dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
-//	    	    if(i == N_HYDROPHONES - 1){
-//	    	    	printf("\r\n],\r\n");
-//	    	    }else{
-//	    	    	printf(",\r\n\t");
-//	    	    }
-//			}
-
-//			printf("\"cwt\" : [\r\n\t");
-//			for(int i = 0; i < N_HYDROPHONES; i++){
-//				cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-//				dump_python_array_f32(envelope, WORKSPACE_LEN);
-//	    	    if(i == N_HYDROPHONES - 1){
-//	    	    	printf("\r\n],\r\n");
-//	    	    }else{
-//	    	    	printf(",\r\n\t");
-//	    	    }
-//			}
-
-//			printf("\"envelope_edge\" : [\r\n\t");
-			for(int i = 0; i < N_HYDROPHONES; i++){
 				cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
 				hilbert_imag_f32(envelope,envelope_edge);
-//				dump_python_array_f32(envelope_edge, PROCESSING_FFT_SIZE);
 				idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
-//	    	    if(i == N_HYDROPHONES - 1){
-//	    	    	printf("\r\n],\r\n");
-//	    	    }else{
-//	    	    	printf(",\r\n\t");
-//	    	    }
-			}
-
-//			DUMP_ARRAY_NAMED_DICT_Q15("idxs", (q15_t*)idxs, 5);
-
-//			fflush(stdout);
-//			printf("}\r\n");
-
-			for(int i = 0; i < N_HYDROPHONES; i++){
 				times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
 			}
+
+			idxs[2] = idxs[0] + 118-137;
+			idxs[3] = idxs[0] + 160-162;
+			idxs[4] = idxs[0] + 167-144;
+			for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
 
 			int32_t tdoa_status = 0;
 			tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
@@ -640,10 +769,22 @@ int main(void)
 												  N_HYDROPHONES,
 												  direction_of_arrival);
 
-			CAN_SendVec3(&hfdcan1, 0x200, direction_of_arrival);
+			CAN_send_direction(&hfdcan1, 0x200, direction_of_arrival);
+			UART_send_direction(&huart1, direction_of_arrival);
 
-			dump_python_array_f32(direction_of_arrival, 3);
-			printf("\r\n");
+			__NOP();
+
+			if(unlikely(dump_trigger)){
+				dump_everything(workspace_idx);
+				__NOP();
+			}else{
+				printf("{");
+				dump_python_array_f32(direction_of_arrival, 3);
+				printf(",");
+				float32_t snr = estimate_SNR();
+				printf("%ld.%06ld", f32_whole(snr), f32_frac(snr, 6));
+				printf("},\r\n\t");
+			}
 
 			__NOP();
 
@@ -653,7 +794,7 @@ int main(void)
 			clear_buffer(detection_buffer[0], BLOCK_LEN*2);
 			clear_buffer(detection_buffer[1], BLOCK_LEN*2);
 			HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-			init_adc_and_buffers(false);
+			init_adc_and_buffers();
 			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 			HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
 			mdma_done_flag = true;
@@ -893,31 +1034,31 @@ static void MX_FDCAN1_Init(void)
 
   /* USER CODE END FDCAN1_Init 1 */
   hfdcan1.Instance = FDCAN1;
-  hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_NO_BRS;
+  hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
   hfdcan1.Init.AutoRetransmission = DISABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
-  hfdcan1.Init.NominalPrescaler = 16;
+  hfdcan1.Init.NominalPrescaler = 1;
   hfdcan1.Init.NominalSyncJumpWidth = 1;
-  hfdcan1.Init.NominalTimeSeg1 = 1;
-  hfdcan1.Init.NominalTimeSeg2 = 1;
+  hfdcan1.Init.NominalTimeSeg1 = 131;
+  hfdcan1.Init.NominalTimeSeg2 = 28;
   hfdcan1.Init.DataPrescaler = 1;
   hfdcan1.Init.DataSyncJumpWidth = 1;
-  hfdcan1.Init.DataTimeSeg1 = 1;
-  hfdcan1.Init.DataTimeSeg2 = 1;
+  hfdcan1.Init.DataTimeSeg1 = 31;
+  hfdcan1.Init.DataTimeSeg2 = 8;
   hfdcan1.Init.MessageRAMOffset = 0;
   hfdcan1.Init.StdFiltersNbr = 0;
   hfdcan1.Init.ExtFiltersNbr = 0;
   hfdcan1.Init.RxFifo0ElmtsNbr = 0;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_12;
-  hfdcan1.Init.RxFifo1ElmtsNbr = 0;
+  hfdcan1.Init.RxFifo1ElmtsNbr = 4;
   hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_12;
-  hfdcan1.Init.RxBuffersNbr = 0;
+  hfdcan1.Init.RxBuffersNbr = 4;
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_12;
   hfdcan1.Init.TxEventsNbr = 0;
   hfdcan1.Init.TxBuffersNbr = 1;
-  hfdcan1.Init.TxFifoQueueElmtsNbr = 12;
+  hfdcan1.Init.TxFifoQueueElmtsNbr = 16;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
   hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_12;
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
@@ -1442,9 +1583,6 @@ static void MX_BDMA_Init(void)
   __HAL_RCC_BDMA_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMAMUX2_OVR_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMAMUX2_OVR_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMAMUX2_OVR_IRQn);
   /* BDMA_Channel0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(BDMA_Channel0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(BDMA_Channel0_IRQn);
@@ -1597,7 +1735,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-static void init_adc_and_buffers(bool verbose)	{
+static void init_adc_and_buffers()	{
 	struct ad7606_pins pins = {
 			.cs = {CS},
 			.busy = {BUSY},
@@ -1636,9 +1774,9 @@ static void init_adc_and_buffers(bool verbose)	{
 //			AD7606_MUX_CTRL_A_GND,
 //			AD7606_MUX_CTRL_AV_CC;
 		AD7606_CHANNEL_MUX_CTRL mux_ctrl = AD7606_MUX_CTRL_A_IN; // = (i != 8) ? (AD7606_MUX_CTRL_A_IN) : (AD7606_MUX_CTRL_TEMP);
-		AD7606_CHANNEL_RANGE range = AD7606_RAGNE_SE_PM_5V;
+		AD7606_CHANNEL_RANGE range = AD7606_RANGE_SE_PM_12_5V;
 		switch(i){
-			case(1):
+			case(2):
 				range = AD7606_RANGE_SE_PM_2_5V;
 			break;
 			case(5):
