@@ -54,8 +54,8 @@
 // Section: Global Data
 // *****************************************************************************
 // *****************************************************************************
-/* SERCOM2 USART baud value for 115200 Hz baud rate */
-#define SERCOM2_USART_INT_BAUD_VALUE            (63019UL)
+/* SERCOM2 USART baud value for 9600 Hz baud rate */
+#define SERCOM2_USART_INT_BAUD_VALUE            (65326UL)
 
 static volatile SERCOM_USART_OBJECT sercom2USARTObj;
 

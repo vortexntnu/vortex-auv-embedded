@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: sercom2
-coreVersion: 5.8.3
+coreVersion: 5.8.4
 device: ATSAMC21J18A
 library: []
 dependency:
@@ -165,7 +165,7 @@ data:
       - children:
         - attributes:
             id: sercom2
-            value: '63019'
+            value: '65326'
           type: Dynamic
         type: Values
       type: Integer
@@ -259,4 +259,25 @@ data:
           type: User
         type: Values
       type: KeyValueSet
+    USART_7816_BAUD_VALUE:
+      attributes:
+        id: USART_7816_BAUD_VALUE
+      children:
+      - children:
+        - attributes:
+            id: sercom2
+            value: '185'
+          type: Dynamic
+        type: Values
+      type: Integer
+    USART_BAUD_RATE:
+      attributes:
+        id: USART_BAUD_RATE
+      children:
+      - children:
+        - attributes:
+            value: '9600'
+          type: User
+        type: Values
+      type: Integer
   userData: {}
