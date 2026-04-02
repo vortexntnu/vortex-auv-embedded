@@ -363,39 +363,6 @@ void ad7606_start_conversion_and_wait(struct ad7606_device* device){
 //       Failure to do so will leave EOT/TXTF flags set and lock the SPI peripheral.
 // =============================================================================
 
-void ad7606_fast_spi_init(struct ad7606_device* device)
-{
-    HAL_SPI_Abort(SDI);
-
-    SDI->Instance->CR1 &= ~SPI_CR1_SPE;
-    SDI->Instance->CR2  =  1U;
-
-    SDI->Instance->IER |= SPI_IER_EOTIE;
-
-    HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-}
-
-void ad7606_fast_spi_run(SPI_HandleTypeDef *hspi)
-{
-    hspi->Instance->CR1 &= ~SPI_CR1_SPE;
-    hspi->Instance->CR2  =  1U;
-    hspi->Instance->CR1 |=  SPI_CR1_SPE;
-
-    *(volatile uint16_t*)&hspi->Instance->TXDR = 0xFFFF;
-    hspi->Instance->CR1 |= SPI_CR1_CSTART;
-}
-
-void ad7606_fast_spi_callback(int device_id){
-    struct ad7606_device* device = _ad7606_devices[device_id];
-    if (device == NULL) return;
-    if (SDI->Instance->SR & SPI_SR_EOT){
-        if (device->diagnostic_sample != NULL) {
-            *device->diagnostic_sample = *(volatile uint16_t*)&SDI->Instance->RXDR;
-        }
-        SDI->Instance->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
-    }
-}
-
 static uint32_t buffer_size = 1;
 static volatile uint32_t rx_head = 0; /* incremented in EOT ISR    */
 static int16_t* rx_buf;
@@ -439,6 +406,9 @@ void ad7606_dma_spi_init(struct ad7606_device* device,
                   (uint32_t)&hspi->Instance->RXDR, // source: SPI RX FIFO
                   (uint32_t)__rx_buf,                 // dest:   your buffer
 				  buffer_size);                // circular length
+
+     hdma_rx->XferErrorCallback = ad7606_dma_error_callback;
+     __HAL_DMA_ENABLE_IT(hdma_rx, DMA_IT_TE); // Transfer Error
 
     /* CS low — AD7606 ready */
     HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
@@ -485,50 +455,21 @@ void ad7606_eot_callback(SPI_HandleTypeDef *hspi, int device_id)
     }
 }
 
-/*// faster???
-void ad7606_fast_spi_init(struct ad7606_device* device)
+static void ad7606_dma_error_callback(DMA_HandleTypeDef *hdma)
 {
-    HAL_SPI_Abort(SDI);
+    // Log / set a flag for diagnostics
+	printf("SPI Error\r\n");
 
-    SDI->Instance->CR1 &= ~SPI_CR1_SPE;
+	struct ad7606_device* device = _ad7606_devices[0];
+	SPI_HandleTypeDef* hspi = SDI;
 
-    // Set RXONLY master mode, 1 frame to receive
-    SDI->Instance->CR1 |=  SPI_CR1_RXONLY;
-    SDI->Instance->CR2  =  1U;
-
-    SDI->Instance->IER |= SPI_IER_EOTIE;
-
-    HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
+    // Restart the stream
+    HAL_DMA_Abort(hdma);
+    HAL_DMA_Start(hdma,
+                  (uint32_t)&hspi->Instance->RXDR,
+                  (uint32_t)rx_buf,
+                  buffer_size);
 }
-
-void ad7606_fast_spi_run(SPI_HandleTypeDef *hspi)
-{
-    hspi->Instance->CR1 &= ~SPI_CR1_SPE;
-
-    // Ensure RXONLY is set, 1 frame
-    hspi->Instance->CR1 |=  SPI_CR1_RXONLY;
-    hspi->Instance->CR2  =  1U;
-
-    hspi->Instance->CR1 |=  SPI_CR1_SPE;
-
-    // CSTART kicks off the clock in RXONLY master mode
-    hspi->Instance->CR1 |=  SPI_CR1_CSTART;
-}
-
-void ad7606_fast_spi_callback(void)
-{
-    for (int i = 0; i < AD7606_MAX_DEVICES; i++) {
-        struct ad7606_device* device = _ad7606_devices[i];
-        if (device == NULL) continue;
-        if (SDI->Instance->SR & SPI_SR_EOT) {
-            if (device->diagnostic_sample != NULL) {
-                *device->diagnostic_sample = *(volatile uint16_t*)&SDI->Instance->RXDR;
-            }
-            SDI->Instance->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
-        }
-    }
-}
- */
 
 // =============================================================================
 // Conversion utilities
