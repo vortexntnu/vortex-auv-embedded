@@ -648,7 +648,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   SWO_Init();
-  dump_trigger = true;
+  dump_trigger = false;
   send_magnitude = false;
   verbose = false;
   SNR = 1;
@@ -807,9 +807,9 @@ int main(void)
 				times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
 			}
 
-			idxs[2] = idxs[0] + 167-144;
-			idxs[3] = idxs[0] + 173-177;
-			idxs[4] = idxs[0] + 161-151;
+//			idxs[2] = idxs[0] + 167-144;
+//			idxs[3] = idxs[0] + 173-177;
+//			idxs[4] = idxs[0] + 161-151;
 			for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
 
 			int32_t tdoa_status = 0;
