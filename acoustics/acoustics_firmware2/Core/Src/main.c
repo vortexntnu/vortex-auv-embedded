@@ -187,9 +187,9 @@ uint32_t find_da_edge(const float32_t *signal, uint32_t signal_len)
 	float32_t buf_min;
 	uint32_t min_idx;
 	arm_min_f32(signal, signal_len, &buf_min, &min_idx);
-	float32_t min_depth = buf_min*0.707f; //1/sqrt(2)% of deepest trough
+	float32_t min_depth = buf_min*0.1f; //deepest trough
 
-	float32_t min_prominence = 0;
+	float32_t min_prominence;
 	arm_std_f32(signal, signal_len, &min_prominence);
 	min_prominence *= 0.01;
 
@@ -625,6 +625,48 @@ void restart_buffers_and_spi(void){
 	HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_ERROR_CB_ID, MyMDMA_ErrorCallback);
 	ad7606_dma_spi_init(&my_ADC, &hdma_spi6_rx, diagnostics_buffer, BLOCK_LEN);
 }
+
+float32_t abs_f32(float32_t x){
+	if(x >= 0){
+		return x;
+	}else{
+		return -x;
+	}
+}
+
+bool is_along_axis(float32_t vec[3]){
+	float32_t sum = 0;
+	for(int i = 0; i < 3; i++) sum += abs_f32(vec[i]);
+	return sum <= 1;
+}
+
+bool is_too_long(float32_t vec[3]){
+	float32_t sum = 0;
+	for(int i = 0; i < 3; i++) sum += abs_f32(vec[i]);
+	return sum > 1.732050807569f;
+}
+
+bool is_valid(float32_t vec[3]){
+	if(is_along_axis(vec)) return false;
+
+	if(is_too_long(vec)) return false;
+
+	return true;
+}
+
+uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32_t threshold){
+    int lo = 0, hi = signal_len - 1, result = -1;
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (signal[mid] <= threshold) {
+            result = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    return result;
+}
 /* USER CODE END 0 */
 
 /**
@@ -648,7 +690,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   SWO_Init();
-  dump_trigger = false;
+  dump_trigger = true;
   send_magnitude = false;
   verbose = false;
   SNR = 1;
@@ -802,15 +844,19 @@ int main(void)
 				scalar = 1/scalar;
 				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
 				cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-				hilbert_imag_f32(envelope,envelope_edge);
-				idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
-				times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
+				float32_t mean;
+				arm_mean_f32(envelope, WORKSPACE_LEN, &mean);
+				mean *= 0.05;
+				//threshold_binary_search(envelope,WORKSPACE_LEN, mean);
+				//hilbert_imag_f32(envelope,envelope_edge);
+				idxs[i] = threshold_binary_search(envelope,WORKSPACE_LEN, mean); //find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+				times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
 			}
 
 //			idxs[2] = idxs[0] + 167-144;
 //			idxs[3] = idxs[0] + 173-177;
 //			idxs[4] = idxs[0] + 161-151;
-			for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
+			//for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
 
 			int32_t tdoa_status = 0;
 			tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
@@ -820,23 +866,25 @@ int main(void)
 												  direction_of_arrival);
 			float32_t snr = estimate_SNR();
 
-			CAN_send_direction(&hfdcan1, 0x200, direction_of_arrival, snr);
-			UART_send_direction(&huart1, direction_of_arrival, snr);
+			if(is_valid(direction_of_arrival)){
+				CAN_send_direction(&hfdcan1, 0x200, direction_of_arrival, snr);
+				UART_send_direction(&huart1, direction_of_arrival, snr);
 
-			__NOP();
-
-			if(unlikely(dump_trigger)){
-				dump_everything(workspace_idx);
 				__NOP();
-			}else{
-				printf("{");
-				dump_python_array_f32(direction_of_arrival, 3);
-				printf(",");
-				printf("%ld.%06ld", f32_whole(snr), f32_frac(snr, 6));
-				printf("},\r\n\t");
-			}
 
-			__NOP();
+				if(unlikely(dump_trigger)){
+					dump_everything(workspace_idx);
+					__NOP();
+				}else{
+					printf("{");
+					dump_python_array_f32(direction_of_arrival, 3);
+					printf(",");
+					printf("%ld.%06ld", f32_whole(snr), f32_frac(snr, 6));
+					printf("},\r\n\t");
+				}
+
+				__NOP();
+			}
 
 			for(int i = 0; i < 5; i++){
 				clear_buffer_f32(processing_workspace[i], WORKSPACE_LEN);
