@@ -14,8 +14,9 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 # CAN Configuration
 # =========================
 CAN_ID = 0x200
-INTERFACE = "gs_usb"
-CHANNEL = 1
+INTERFACE = "slcan"
+SERIAL_PORT = "COM9"
+SERIAL_BAUDRATE = 115200
 BITRATE = 500000
 DATA_BITRATE = 2000000
 FD = True
@@ -25,20 +26,25 @@ FD = True
 # Plot Configuration
 # =========================
 MAX_SAMPLES = 200
-FADE_SECONDS = 4.0
+FADE_SECONDS = 10.0
 PLOT_INTERVAL_MS = 100
 
 SNR_MIN = 0.0
 SNR_MAX = 50.0
 
-hydrophones = np.array([
+hydrophones_local = np.array([
     [0.0, 0.0, 0.0],
     [0.0, 0.0, 0.0],
-    [0.45, 0.0, 0.0],
-    [0.0, 0.45, 0.0],
-    [0.0, 0.0, -0.45],
+    [32.3, -4.3, 3.66],
+    [-6.6, 34.7, 1.66],
+    [-4.6, 0.0, -34.34]
 ], dtype=float)
 
+longest_hydrophone_length = np.linalg.norm(hydrophones_local, axis=1).max()
+hydrophones_local /= longest_hydrophone_length * 0.5  # Scale down for better visualization
+
+hydrophones_pitch = 90 - 19.323971
+hydrophones_yaw = 45.0
 
 # =========================
 # Data storage
@@ -57,10 +63,67 @@ NORM = mcolors.Normalize(vmin=SNR_MIN, vmax=SNR_MAX)
 CMAP = plt.cm.viridis
 
 
+def rotate_vector_x(vector, degrees):
+    v = np.asarray(vector, dtype=float)
+    if v.shape != (3,):
+        raise ValueError("vector must be a 3-element vector")
+
+    theta = np.deg2rad(degrees)
+    c = np.cos(theta)
+    s = np.sin(theta)
+    rotation = np.array([
+        [1.0, 0.0, 0.0],
+        [0.0, c, -s],
+        [0.0, s, c],
+    ])
+    return rotation @ v
+
+
+def rotate_vector_y(vector, degrees):
+    v = np.asarray(vector, dtype=float)
+    if v.shape != (3,):
+        raise ValueError("vector must be a 3-element vector")
+
+    theta = np.deg2rad(degrees)
+    c = np.cos(theta)
+    s = np.sin(theta)
+    rotation = np.array([
+        [c, 0.0, s],
+        [0.0, 1.0, 0.0],
+        [-s, 0.0, c],
+    ])
+    return rotation @ v
+
+
+def rotate_vector_z(vector, degrees):
+    v = np.asarray(vector, dtype=float)
+    if v.shape != (3,):
+        raise ValueError("vector must be a 3-element vector")
+
+    theta = np.deg2rad(degrees)
+    c = np.cos(theta)
+    s = np.sin(theta)
+    rotation = np.array([
+        [c, -s, 0.0],
+        [s, c, 0.0],
+        [0.0, 0.0, 1.0],
+    ])
+    return rotation @ v
+
+def hydrophone_local_to_global(local):
+    rotated = rotate_vector_z(local, -hydrophones_yaw)
+    rotated = rotate_vector_y(rotated, hydrophones_pitch)
+    return rotated
+
+hydrophones_global = hydrophones_local.copy()  # Store original positions for global reference
+for i in range(len(hydrophones_local)):
+    hydrophones_global[i] = hydrophone_local_to_global(hydrophones_local[i])
+
+
 def create_bus():
     return can.Bus(
         interface=INTERFACE,
-        channel=CHANNEL,
+        channel=f"{SERIAL_PORT}@{SERIAL_BAUDRATE}",
         bitrate=BITRATE,
         data_bitrate=DATA_BITRATE,
         fd=FD,
@@ -69,20 +132,33 @@ def create_bus():
 
 def parse_message(data: bytes):
     if len(data) != 16:
+        print(f"Received message with invalid data length {len(data)}, expected 16 bytes.")
         return None
 
     try:
         x, y, z, snr = struct.unpack("<4f", data)
     except struct.error:
+        print("Received message with invalid data format, unable to unpack.")
         return None
 
     norm = (x * x + y * y + z * z) ** 0.5
     if norm <= 1e-9:
+        print("Received message with near-zero vector, ignoring.")
         return None
 
     x /= norm
     y /= norm
     z /= norm
+
+    try:
+        snr = 10.*np.log10(snr)
+    except (struct.error, np.linalg.LinAlgError):
+        print("SNR value is invalid, unable to convert to dB.")
+        return None
+    
+    vec = np.array([x, y, z])
+    vec = hydrophone_local_to_global(vec)
+    x, y, z = vec.tolist()
 
     return x, y, z, snr
 
@@ -98,13 +174,16 @@ def poll_can_messages(bus):
             break
 
         if msg.arbitration_id != CAN_ID:
+            print(f"Received message with unexpected ID 0x{msg.arbitration_id:X}, ignoring.")
             continue
 
         parsed = parse_message(bytes(msg.data))
         if parsed is None:
+            print(f"Received message with invalid data, ignoring.")
             continue
 
         x, y, z, snr = parsed
+        print(f"Received vector=({x:.3f}, {y:.3f}, {z:.3f}) weight={snr:.2f}")
         samples.append((time.time(), x, y, z, snr))
         count += 1
 
@@ -143,11 +222,11 @@ def setup_3d_axes(ax):
     ax.plot_wireframe(SPHERE_X, SPHERE_Y, SPHERE_Z, alpha=0.08)
 
     # Reference hydrophone
-    ref = hydrophones[0]
+    ref = hydrophones_global[0]
     ax.scatter([ref[0]], [ref[1]], [ref[2]], c="black", s=80, marker="o", depthshade=False)
 
     # Hydrophones + lines from H0
-    for i, (hx, hy, hz) in enumerate(hydrophones):
+    for i, (hx, hy, hz) in enumerate(hydrophones_global):
         ax.scatter([hx], [hy], [hz], c="red", s=60, marker="^", depthshade=False)
         ax.text(hx, hy, hz, f" H{i}", fontsize=8)
 
@@ -172,7 +251,10 @@ def setup_az_el_axes(ax2):
 
 
 def main():
-    print(f"Listening for CAN FD ID 0x{CAN_ID:X} on {INTERFACE}, channel={CHANNEL}...")
+    print(
+        f"Listening for CAN FD ID 0x{CAN_ID:X} on {INTERFACE}, "
+        f"port={SERIAL_PORT}, tty_baudrate={SERIAL_BAUDRATE}..."
+    )
 
     bus = create_bus()
 
@@ -235,7 +317,7 @@ def main():
         latest3d.set_edgecolors([[1.0, 0.0, 0.0, 1.0]])
 
         # Azimuth / elevation
-        az = np.degrees(np.arctan2(ys, xs))
+        az = -np.degrees(np.arctan2(ys, xs))
         el = np.degrees(np.arcsin(np.clip(zs, -1.0, 1.0)))
 
         scatter2d.set_offsets(np.column_stack((az, el)))

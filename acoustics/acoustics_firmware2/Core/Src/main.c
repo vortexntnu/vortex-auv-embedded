@@ -174,6 +174,8 @@ static void MX_ADC3_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 static void init_adc_and_buffers();
+uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32_t threshold);
+uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -425,7 +427,7 @@ void CAN_send_direction(FDCAN_HandleTypeDef *hfdcan, uint32_t id, float32_t vec[
     txHeader.Identifier          = id;
     txHeader.IdType              = FDCAN_STANDARD_ID;
     txHeader.TxFrameType         = FDCAN_DATA_FRAME;
-    txHeader.DataLength          = FDCAN_DLC_BYTES_12;
+    txHeader.DataLength          = FDCAN_DLC_BYTES_16;
     txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
     txHeader.BitRateSwitch       = FDCAN_BRS_ON;
     txHeader.FDFormat            = FDCAN_FD_CAN;
@@ -540,7 +542,13 @@ __attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
 		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
 		hilbert_imag_f32(envelope,envelope_edge);
 		dump_python_array_f32(envelope_edge, PROCESSING_FFT_SIZE);
-		idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+		float32_t mean;
+		arm_mean_f32(envelope, WORKSPACE_LEN, &mean);
+		mean *= 0.05;
+		//hilbert_imag_f32(envelope,envelope_edge);
+		//idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+		idxs[i] = threshold_search(envelope,WORKSPACE_LEN, mean); //
+		times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
 		if(i == N_HYDROPHONES - 1){
 			printf("\r\n],\r\n");
 		}else{
@@ -551,14 +559,7 @@ __attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
 	DUMP_ARRAY_NAMED_DICT_Q15("idxs", (q15_t*)idxs, N_HYDROPHONES);
 	printf(",");
 
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
-	}
 
-	idxs[2] = idxs[0] + 118-137;
-	idxs[3] = idxs[0] + 160-162;
-	idxs[4] = idxs[0] + 167-144;
-	for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
 
 	int32_t tdoa_status = 0;
 	tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
@@ -667,6 +668,17 @@ uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32
     }
     return result;
 }
+
+uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold){
+	bool threshold_passed = signal[0] > threshold;
+	for(uint32_t i = 0; i < signal_len; i++){
+		if(!threshold_passed && (signal[i] > threshold)){
+		    return i;
+		}
+		threshold_passed = (signal[i] > threshold);
+	}
+	return 0;
+}
 /* USER CODE END 0 */
 
 /**
@@ -690,7 +702,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   SWO_Init();
-  dump_trigger = true;
+  dump_trigger = false;
   send_magnitude = false;
   verbose = false;
   SNR = 1;
@@ -766,9 +778,9 @@ int main(void)
 	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = {
 			{0.0,0.0,0.0},
 			{0.0,0.0,0.0},
-			{0.45,0.0,0.0},
-			{0.0,0.45,0.0},
-			{0.0,0.0,-0.45}
+			{32.3,-4.3,3.66},
+			{-6.6,34.7,1.66},
+			{-4.6,0.0,-34.34}
 	};
 
 	for(int i = 0; i < N_HYDROPHONES; i++){
@@ -844,12 +856,12 @@ int main(void)
 				scalar = 1/scalar;
 				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
 				cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-				float32_t mean;
-				arm_mean_f32(envelope, WORKSPACE_LEN, &mean);
-				mean *= 0.05;
-				//threshold_binary_search(envelope,WORKSPACE_LEN, mean);
-				//hilbert_imag_f32(envelope,envelope_edge);
-				idxs[i] = threshold_binary_search(envelope,WORKSPACE_LEN, mean); //find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+//				float32_t mean;
+//				arm_mean_f32(envelope, WORKSPACE_LEN, &mean);
+//				mean *= 0.05;
+				hilbert_imag_f32(envelope,envelope_edge);
+				idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+//				idxs[i] = threshold_search(envelope,WORKSPACE_LEN, mean); //
 				times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
 			}
 
@@ -871,6 +883,8 @@ int main(void)
 				UART_send_direction(&huart1, direction_of_arrival, snr);
 
 				__NOP();
+
+				utils_DWT_delay_ms(300);
 
 				if(unlikely(dump_trigger)){
 					dump_everything(workspace_idx);
