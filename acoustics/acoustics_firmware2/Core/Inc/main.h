@@ -55,12 +55,12 @@ typedef enum {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 #define BLOCK_LEN 			64
-#define N_BLOCKS 			  8
+#define N_BLOCKS 			8
 
 #define BUFFER_LEN 			(N_BLOCKS * BLOCK_LEN)
-#define N_SACRIFICAL_BLOCKS 3
+#define N_SACRIFICAL_BLOCKS   3
 #define WORKSPACE_OFFSET      3
-#define WORKSPACE_LEN 		  ((N_BLOCKS - N_SACRIFICAL_BLOCKS - 1) * BLOCK_LEN)
+#define WORKSPACE_LEN 		  ((N_BLOCKS - N_SACRIFICAL_BLOCKS -1) * BLOCK_LEN)
 #define N_HYDROPHONES 		  5
 
 #define DETECTION_FFT_SIZE BLOCK_LEN // match this to your buffer size
@@ -68,6 +68,8 @@ typedef enum {
 #define SAMPLING_FREQUENCY 125000
 #define TARGET_FREQUENCY 30000
 #define BIN_RESOLUTION ((float)SAMPLE_RATE_HZ / (float)DETECTION_FFT_SIZE)
+
+#define DETECTION_PATIENCE 10
 
 #define LINEAR_THRESHOLD  10 // 10dB => 10^(10/10) = 10
 #define SIGNAL_MIN_POWER 1e-5f

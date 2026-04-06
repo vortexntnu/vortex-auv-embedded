@@ -27,6 +27,8 @@
 #include "memory_placement.h"
 #include "embedded_macros.h"
 #include "find_peaks.h"
+#define CWT_FFT_SIZE WORKSPACE_LEN
+#define HILBERT_FFT_SIZE WORKSPACE_LEN
 #include "dsp.h"
 #include "cwt.h"
 #include "hilbert.h"
@@ -148,7 +150,7 @@ volatile PLACE_IN_DTCM bool dump_trigger = false;
 volatile PLACE_IN_DTCM bool send_magnitude = false;
 volatile PLACE_IN_DTCM bool verbose = false;
 
-volatile PLACE_IN_DTCM bool detected = false;
+volatile PLACE_IN_DTCM uint8_t detected = false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -175,7 +177,9 @@ static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 static void init_adc_and_buffers();
 uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32_t threshold);
-uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold);
+uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold, const uint32_t patience);
+float32_t min_max_threshold(float32_t* signal, uint32_t signal_len, float32_t threshold, uint32_t n_high, uint32_t n_low);
+void threshold_applier(float32_t* signal, uint32_t signal_len, float32_t threshold);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -294,12 +298,19 @@ bool signal_present(uint8_t half_idx) {
     // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
     present = (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
     if(unlikely(present && !detected)){
-    	detected = true;
+    	detected = DETECTION_PATIENCE;
     	return true;
     }
 
     NO_SIGNAL_PRESENT:
-		detected = present;
+		switch(detected){
+			case(0):
+				detected = false;
+			break;
+			default:
+				detected--;
+			break;
+		}
 		return false;
 }
 
@@ -537,23 +548,44 @@ __attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
 		}
 	}
 
-	printf("\"envelope_edge\" : [\r\n\t");
+
+
+	printf("\"thresholded\" : [\r\n\t");
 	for(int i = 0; i < N_HYDROPHONES; i++){
 		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-		hilbert_imag_f32(envelope,envelope_edge);
-		dump_python_array_f32(envelope_edge, PROCESSING_FFT_SIZE);
-		float32_t mean;
-		arm_mean_f32(envelope, WORKSPACE_LEN, &mean);
-		mean *= 0.05;
-		//hilbert_imag_f32(envelope,envelope_edge);
-		//idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
-		idxs[i] = threshold_search(envelope,WORKSPACE_LEN, mean); //
-		times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
+		float32_t threshold = min_max_threshold(envelope, WORKSPACE_LEN, 0.01, 15, 100);
+		threshold_applier(envelope, WORKSPACE_LEN, threshold);
+		dump_python_array_f32(envelope, WORKSPACE_LEN);
 		if(i == N_HYDROPHONES - 1){
 			printf("\r\n],\r\n");
 		}else{
 			printf(",\r\n\t");
 		}
+	}
+
+	printf("\"envelope_edge\" : [\r\n\t");
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
+		hilbert_imag_f32(envelope,envelope_edge);
+		dump_python_array_f32(envelope_edge, PROCESSING_FFT_SIZE);
+		if(i == N_HYDROPHONES - 1){
+			printf("\r\n],\r\n");
+		}else{
+			printf(",\r\n\t");
+		}
+	}
+
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
+
+		float32_t threshold = min_max_threshold(envelope, WORKSPACE_LEN, 0.01, 15, 100);
+		threshold_applier(envelope, WORKSPACE_LEN, threshold);
+
+//		hilbert_imag_f32(envelope,envelope_edge);
+
+		//idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
+		idxs[i] = threshold_search(envelope,WORKSPACE_LEN, 50 , 3); //
+		times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
 	}
 
 	DUMP_ARRAY_NAMED_DICT_Q15("idxs", (q15_t*)idxs, N_HYDROPHONES);
@@ -669,15 +701,83 @@ uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32
     return result;
 }
 
-uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold){
-	bool threshold_passed = signal[0] > threshold;
-	for(uint32_t i = 0; i < signal_len; i++){
-		if(!threshold_passed && (signal[i] > threshold)){
-		    return i;
-		}
-		threshold_passed = (signal[i] > threshold);
+uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold, const uint32_t patience)
+{
+    uint32_t i = signal_len;
+    uint32_t remaining_patience = patience;
+
+    while (i--)
+    {
+        if (signal[i] < threshold){
+        	remaining_patience--;
+        }else{
+        	remaining_patience = patience;
+        }
+        if(remaining_patience == 0){
+        	return i + patience;
+        }
+    }
+
+    return 0;
+}
+
+float32_t min_max_threshold(float32_t* signal, uint32_t signal_len, float32_t threshold, uint32_t n_high, uint32_t n_low)
+{
+    /*
+     * Finds the average of the bottom N and top N points in the array,
+     * then returns an interpolated threshold between those two averages.
+     *
+     * threshold = 0.0 -> returns the low average
+     * threshold = 1.0 -> returns the high average
+     * threshold = 0.5 -> returns the midpoint between them
+     */
+
+    /* --- Sort a copy of the signal using an in-place insertion sort ---
+     * For large arrays consider a faster algorithm, but insertion sort
+     * has zero heap allocation and is fine for typical DSP frame sizes. */
+    float32_t sorted[signal_len];
+    arm_copy_f32(signal, sorted, signal_len);
+
+    /* Insertion sort (ascending) */
+    for (uint32_t i = 1; i < signal_len; i++)
+    {
+        float32_t key = sorted[i];
+        int32_t j = (int32_t)i - 1;
+        while (j >= 0 && sorted[j] > key)
+        {
+            sorted[j + 1] = sorted[j];
+            j--;
+        }
+        sorted[j + 1] = key;
+    }
+
+    /* --- Average the N lowest values --- */
+    float32_t low_mean = 0.0f;
+    arm_mean_f32(sorted, n_low, &low_mean);
+
+    /* --- Average the N highest values --- */
+    float32_t high_mean = 0.0f;
+    arm_mean_f32(&sorted[signal_len - n_high], n_high, &high_mean);
+
+    /* --- Interpolate between the two averages --- */
+    /* result = low + threshold * (high - low) */
+    float32_t result = 0.0f;
+    arm_add_f32(                          /* low + t*(high-low)          */
+        &low_mean,                        /* not a vector call, so we    */
+        &(float32_t){threshold *          /* use scalar arithmetic below */
+            (high_mean - low_mean)},
+        &result, 1);
+
+    /* Simpler and equally valid on Cortex-M7 with FPU: */
+    result = low_mean + threshold * (high_mean - low_mean);
+
+    return result;
+}
+
+void threshold_applier(float32_t* signal, uint32_t signal_len, float32_t threshold){
+	for(int i = 0; i < signal_len; i++){
+		signal[i] = 100*(signal[i] > threshold);
 	}
-	return 0;
 }
 /* USER CODE END 0 */
 
@@ -845,25 +945,41 @@ int main(void)
 			for(int i = 0; i < N_HYDROPHONES; i++){
 				q15_t* buffer_flat = (q15_t*)hydrophone_buffers[i];
 				circ_unwrap_to_f32(buffer_flat ,processing_workspace[i], WORKSPACE_LEN, BUFFER_LEN, (uint32_t)workspace_idx);
-				float32_t scalar = 32768.0*ad7606_channel_scaling_factor(&my_ADC, i)*1000.0;
-				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
 	    	    //normalize
-	    	    scalar = 0;
+	    	    float32_t scalar = 0;
 	    	    arm_mean_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);   // Step 1: compute mean
 	    	    arm_offset_f32(processing_workspace[i],-scalar,processing_workspace[i],WORKSPACE_LEN); // Step 2: subtract it
 	    	    scalar = 0;
 				arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
 				scalar = 1/scalar;
 				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
-				cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-//				float32_t mean;
-//				arm_mean_f32(envelope, WORKSPACE_LEN, &mean);
-//				mean *= 0.05;
-				hilbert_imag_f32(envelope,envelope_edge);
-				idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
-//				idxs[i] = threshold_search(envelope,WORKSPACE_LEN, mean); //
+				cwt_morlet_magnitude_f32(processing_workspace[i], processing_workspace[i]);
+			}
+
+			uint8_t valid_buffers = 0;
+			for(int i = 0; i < N_HYDROPHONES; i++){
+				uint32_t search_result = threshold_search(processing_workspace[i],WORKSPACE_LEN, 0.05, WORKSPACE_LEN/8);
+				const uint32_t border_size = 10;
+				valid_buffers += (search_result > border_size) && (search_result < WORKSPACE_LEN - border_size);
+			}
+			bool valid_data = (valid_buffers > 3);
+
+			valid_buffers = 0;
+
+			for(int i = 0; i < N_HYDROPHONES; i++){
+				float32_t linear_threshold = 0.01;
+				uint8_t max_retries = 6;
+				uint32_t dead_space = WORKSPACE_LEN/4;
+				idxs[i] = 0;
+				while(idxs[i] < dead_space && max_retries--){
+					float32_t threshold = min_max_threshold(processing_workspace[i], WORKSPACE_LEN, linear_threshold, 15, dead_space);
+					idxs[i] = threshold_search(processing_workspace[i],WORKSPACE_LEN, threshold , 3);
+					linear_threshold *= 2;
+				}
 				times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
 			}
+
+
 
 //			idxs[2] = idxs[0] + 167-144;
 //			idxs[3] = idxs[0] + 173-177;
@@ -871,14 +987,17 @@ int main(void)
 			//for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
 
 			int32_t tdoa_status = 0;
-			tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
-												  times_of_arrival,
-												  hydrophone_valid,
-												  N_HYDROPHONES,
-												  direction_of_arrival);
-			float32_t snr = estimate_SNR();
+			if(valid_data){
+				tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
+													  times_of_arrival,
+													  hydrophone_valid,
+													  N_HYDROPHONES,
+													  direction_of_arrival);
+			}
+			bool valid_result = valid_data && is_valid(direction_of_arrival);
 
-			if(is_valid(direction_of_arrival)){
+			if(valid_result){
+				float32_t snr = estimate_SNR();
 				CAN_send_direction(&hfdcan1, 0x200, direction_of_arrival, snr);
 				UART_send_direction(&huart1, direction_of_arrival, snr);
 

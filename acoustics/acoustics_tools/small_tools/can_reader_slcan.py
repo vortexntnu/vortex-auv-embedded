@@ -1,5 +1,6 @@
 import time
 import struct
+import csv
 from collections import deque
 
 import can
@@ -26,11 +27,18 @@ FD = True
 # Plot Configuration
 # =========================
 MAX_SAMPLES = 200
-FADE_SECONDS = 10.0
+MAX_SAMPLES_LOG = 1024  # For logging all received samples, not just visible ones
+FADE_SECONDS = 30.0
 PLOT_INTERVAL_MS = 100
 
 SNR_MIN = 0.0
-SNR_MAX = 50.0
+SNR_MAX = 30.0
+
+DENSITY_AZ_BINS = 180
+DENSITY_EL_BINS = 90
+DENSITY_SIGMA_BINS = 2.7
+DENSITY_ALPHA_MAX = 0.6
+NEW_POINT_MARKER_SECONDS = 1.0
 
 hydrophones_local = np.array([
     [0.0, 0.0, 0.0],
@@ -49,7 +57,10 @@ hydrophones_yaw = 45.0
 # =========================
 # Data storage
 # =========================
+LOG_DIR = "small_tools/can_log_samples/"
+LOG_NAME = f"can_samples_log_"
 samples = deque(maxlen=MAX_SAMPLES)
+samples_log = deque(maxlen=MAX_SAMPLES_LOG)  # For logging all received samples, not just visible ones
 
 
 # Precompute unit sphere once
@@ -185,6 +196,10 @@ def poll_can_messages(bus):
         x, y, z, snr = parsed
         print(f"Received vector=({x:.3f}, {y:.3f}, {z:.3f}) weight={snr:.2f}")
         samples.append((time.time(), x, y, z, snr))
+        samples_log.append((time.time(), x, y, z, snr))
+        if(len(samples_log) >= MAX_SAMPLES_LOG):
+            write_samples_log_to_csv(LOG_DIR + LOG_NAME + time.strftime("%Y%m%d_%H%M%S") + ".csv")
+            samples_log.clear()
         count += 1
 
     return count
@@ -207,7 +222,61 @@ def get_visible_arrays(now):
     colors = CMAP(NORM(snrs))
     colors[:, 3] = alphas
 
-    return xs, ys, zs, snrs, colors
+    return xs, ys, zs, snrs, colors, alphas, ages
+
+
+def gaussian_kernel_1d(sigma_bins):
+    if sigma_bins <= 0:
+        return np.array([1.0], dtype=float)
+
+    radius = int(np.ceil(3.0 * sigma_bins))
+    x = np.arange(-radius, radius + 1, dtype=float)
+    kernel = np.exp(-(x * x) / (2.0 * sigma_bins * sigma_bins))
+    kernel /= np.sum(kernel)
+    return kernel
+
+
+def smooth_2d_density(grid, sigma_bins):
+    kernel = gaussian_kernel_1d(sigma_bins)
+
+    smoothed = np.apply_along_axis(
+        lambda row: np.convolve(row, kernel, mode="same"),
+        axis=1,
+        arr=grid,
+    )
+    smoothed = np.apply_along_axis(
+        lambda col: np.convolve(col, kernel, mode="same"),
+        axis=0,
+        arr=smoothed,
+    )
+    return smoothed
+
+
+def build_az_el_density(azimuth_deg, elevation_deg, weights):
+    hist, _, _ = np.histogram2d(
+        elevation_deg,
+        azimuth_deg,
+        bins=[DENSITY_EL_BINS, DENSITY_AZ_BINS],
+        range=[[-90.0, 90.0], [-180.0, 180.0]],
+        weights=weights,
+    )
+
+    smoothed = smooth_2d_density(hist, DENSITY_SIGMA_BINS)
+    scaled = np.log1p(smoothed)
+    peak = float(np.max(scaled))
+    if peak > 1e-12:
+        scaled /= peak
+
+    return scaled
+
+
+def write_samples_log_to_csv(path="samples_log.csv"):
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["timestamp", "x", "y", "z", "snr_db"])
+        writer.writerows(samples_log)
+
+    print(f"Saved {len(samples_log)} samples to {path}")
 
 
 def setup_3d_axes(ax):
@@ -249,6 +318,21 @@ def setup_az_el_axes(ax2):
     ax2.set_ylim(-90, 90)
     ax2.grid(True, alpha=0.3)
 
+    density_img = ax2.imshow(
+        np.zeros((DENSITY_EL_BINS, DENSITY_AZ_BINS), dtype=float),
+        extent=[-180, 180, -90, 90],
+        origin="lower",
+        cmap="inferno",
+        interpolation="bilinear",
+        vmin=0.0,
+        vmax=1.0,
+        alpha=0.0,
+        aspect="auto",
+        zorder=0,
+    )
+
+    return density_img
+
 
 def main():
     print(
@@ -265,7 +349,7 @@ def main():
     cax = fig.add_axes([0.90, 0.15, 0.02, 0.70])
 
     setup_3d_axes(ax)
-    setup_az_el_axes(ax2)
+    density_img = setup_az_el_axes(ax2)
 
     mappable = plt.cm.ScalarMappable(norm=NORM, cmap=CMAP)
     mappable.set_array([])
@@ -275,10 +359,10 @@ def main():
     # Dynamic artists created once
     scatter3d = ax.scatter([], [], [], s=30, depthshade=False)
     scatter_ground = ax.scatter([], [], [], s=10, depthshade=False)
-    latest3d = ax.scatter([], [], [], s=100, marker="x", linewidths=2, depthshade=False)
+    recent3d = ax.scatter([], [], [], s=90, marker="x", linewidths=2, depthshade=False)
 
     scatter2d = ax2.scatter([], [], s=25)
-    latest2d = ax2.scatter([], [], s=100, marker="x", linewidths=2)
+    recent2d = ax2.scatter([], [], s=90, marker="x", linewidths=2)
 
     latest_text_3d = ax.text2D(0.02, 0.95, "", transform=ax.transAxes, fontsize=9)
     latest_text_2d = ax2.text(0.02, 0.98, "", transform=ax2.transAxes, va="top", fontsize=9)
@@ -291,14 +375,16 @@ def main():
             ax.set_title("Hydrophone Relative Position | waiting for CAN data...")
             latest_text_3d.set_text("")
             latest_text_2d.set_text("")
+            density_img.set_data(np.zeros((DENSITY_EL_BINS, DENSITY_AZ_BINS), dtype=float))
+            density_img.set_alpha(0.0)
             scatter3d._offsets3d = ([], [], [])
             scatter_ground._offsets3d = ([], [], [])
-            latest3d._offsets3d = ([], [], [])
+            recent3d._offsets3d = ([], [], [])
             scatter2d.set_offsets(np.empty((0, 2)))
-            latest2d.set_offsets(np.empty((0, 2)))
-            return scatter3d, scatter_ground, latest3d, scatter2d, latest2d, latest_text_3d, latest_text_2d
+            recent2d.set_offsets(np.empty((0, 2)))
+            return density_img, scatter3d, scatter_ground, recent3d, scatter2d, recent2d, latest_text_3d, latest_text_2d
 
-        xs, ys, zs, snrs, colors = visible
+        xs, ys, zs, snrs, colors, alphas, ages = visible
 
         # 3D cloud
         scatter3d._offsets3d = (xs, ys, zs)
@@ -310,15 +396,34 @@ def main():
         scatter_ground.set_facecolors(colors)
         scatter_ground.set_edgecolors(colors)
 
-        # Latest point
+        # Latest point info in text
         x_last, y_last, z_last, snr_last = xs[-1], ys[-1], zs[-1], snrs[-1]
-        latest3d._offsets3d = ([x_last], [y_last], [z_last])
-        latest3d.set_facecolors([[1.0, 0.0, 0.0, 1.0]])
-        latest3d.set_edgecolors([[1.0, 0.0, 0.0, 1.0]])
+
+        # Mark all points newer than NEW_POINT_MARKER_SECONDS with fading X markers
+        recent_mask = ages <= NEW_POINT_MARKER_SECONDS
+        if np.any(recent_mask):
+            rx = xs[recent_mask]
+            ry = ys[recent_mask]
+            rz = zs[recent_mask]
+            recent_ages = ages[recent_mask]
+            recent_marker_alpha = np.clip(1.0 - recent_ages / NEW_POINT_MARKER_SECONDS, 0.0, 1.0)
+            recent_colors = np.zeros((len(rx), 4), dtype=float)
+            recent_colors[:, 0] = 1.0
+            recent_colors[:, 3] = recent_marker_alpha
+
+            recent3d._offsets3d = (rx, ry, rz)
+            recent3d.set_facecolors(recent_colors)
+            recent3d.set_edgecolors(recent_colors)
+        else:
+            recent3d._offsets3d = ([], [], [])
 
         # Azimuth / elevation
         az = -np.degrees(np.arctan2(ys, xs))
         el = np.degrees(np.arcsin(np.clip(zs, -1.0, 1.0)))
+
+        density = build_az_el_density(az, el, alphas)
+        density_img.set_data(density)
+        density_img.set_alpha(DENSITY_ALPHA_MAX)
 
         scatter2d.set_offsets(np.column_stack((az, el)))
         scatter2d.set_facecolors(colors)
@@ -326,9 +431,21 @@ def main():
 
         az_last = az[-1]
         el_last = el[-1]
-        latest2d.set_offsets([[az_last, el_last]])
-        latest2d.set_facecolors([[1.0, 0.0, 0.0, 1.0]])
-        latest2d.set_edgecolors([[1.0, 0.0, 0.0, 1.0]])
+
+        if np.any(recent_mask):
+            raz = az[recent_mask]
+            rel = el[recent_mask]
+            recent_ages = ages[recent_mask]
+            recent_marker_alpha = np.clip(1.0 - recent_ages / NEW_POINT_MARKER_SECONDS, 0.0, 1.0)
+            recent_colors = np.zeros((len(raz), 4), dtype=float)
+            recent_colors[:, 0] = 1.0
+            recent_colors[:, 3] = recent_marker_alpha
+
+            recent2d.set_offsets(np.column_stack((raz, rel)))
+            recent2d.set_facecolors(recent_colors)
+            recent2d.set_edgecolors(recent_colors)
+        else:
+            recent2d.set_offsets(np.empty((0, 2)))
 
         ax.set_title(
             f"Hydrophone Relative Position | "
@@ -338,7 +455,7 @@ def main():
         latest_text_3d.set_text(f"latest: ({x_last:.2f}, {y_last:.2f}, {z_last:.2f})")
         latest_text_2d.set_text(f"latest: ({az_last:.1f}°, {el_last:.1f}°)")
 
-        return scatter3d, scatter_ground, latest3d, scatter2d, latest2d, latest_text_3d, latest_text_2d
+        return density_img, scatter3d, scatter_ground, recent3d, scatter2d, recent2d, latest_text_3d, latest_text_2d
 
     anim = FuncAnimation(
         fig,
