@@ -50,7 +50,7 @@ int set_servos_pwm(const uint8_t* pwm_data, uint8_t data_len) {
 int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* out){
 
     uint8_t encoder_addr = encoder_addresses[enc_num];
-    uint8_t* buf = out + enc_num;
+    uint8_t* buf = out + 2 * enc_num;
 
     if (!SERCOM1_I2C_WriteRead(encoder_addr, &reg, 1, buf, 2)) {
         return -1;
