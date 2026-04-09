@@ -2,11 +2,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "can1.h"
-#include "gripper.h"
-#include "usart.h"
-#include "system_init.h"
 #include "can_common.h"
 #include "dma.h"
+#include "gripper.h"
+#include "system_init.h"
+#include "usart.h"
 
 static uint8_t encoder_num = 0;
 static bool read_failed = true;
@@ -16,7 +16,7 @@ static uint8_t raw_encoder_angles[2 * NUM_ENCODERS] = {0};
 
 struct state_context ctx;
 
-void state_machine_init(){
+void state_machine_init() {
     can_recieve(&ctx.rx_frame);
 }
 
@@ -27,26 +27,29 @@ void state_machine() {
     if (ev & EVENT_SET_PWM) {
         printf("EVENT_SET_PWM\r\n");
         WDT_Clear();
-        if (set_servos_pwm(ctx.rx_frame.buf, 4)){
-          struct can_tx_frame tx;
-          tx.id = 0x46B;
-          tx.len = 1; 
-          tx.buf[0] = 1;
-          can_transmit(&tx);
+        if (set_servos_pwm(ctx.rx_frame.buf, 4)) {
+            struct can_tx_frame tx;
+            tx.id = 0x46B;
+            tx.len = 1;
+            tx.buf[0] = 1;
+            can_transmit(&tx);
         }
     }
 
     if (ev & EVENT_READ_ENCODER_START) {
-        start_encoder_read(&encoder_reg, encoder_num, encoder_rx_buf);   // kicks off async I2C
+        start_encoder_read(&encoder_reg, encoder_num,
+                           encoder_rx_buf);  // kicks off async I2C
     }
 
     if (ev & EVENT_READ_ENCODER_DONE) {
         if (read_failed) {
-            raw_encoder_angles[2 * encoder_num]     = 0xFF;
+            raw_encoder_angles[2 * encoder_num] = 0xFF;
             raw_encoder_angles[2 * encoder_num + 1] = 0xFF;
         } else {
-            raw_encoder_angles[2 * encoder_num]     = encoder_rx_buf[1]; // little-endian low byte
-            raw_encoder_angles[2 * encoder_num + 1] = encoder_rx_buf[0]; // little-endian high byte
+            raw_encoder_angles[2 * encoder_num] =
+                encoder_rx_buf[1];  // little-endian low byte
+            raw_encoder_angles[2 * encoder_num + 1] =
+                encoder_rx_buf[0];  // little-endian high byte
         }
 
         encoder_num++;
@@ -74,11 +77,10 @@ void state_machine() {
 }
 
 void can_rx_callback(uintptr_t context) {
-
     printf("Entering can RX callback\r\n");
-    // print_can_frame(ctx.rx_frame.id, ctx.rx_frame.len, ctx.rx_frame.timestamp, ctx.rx_frame.buf);
-    // CAN_ERROR err = CAN0_ErrorGet();
-    // if (err) {
+    // print_can_frame(ctx.rx_frame.id, ctx.rx_frame.len,
+    // ctx.rx_frame.timestamp, ctx.rx_frame.buf); CAN_ERROR err =
+    // CAN0_ErrorGet(); if (err) {
     //     return;
     // }
     switch (ctx.rx_frame.id) {
@@ -107,8 +109,7 @@ void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
     ctx.events |= EVENT_TRANSMIT_ANGLES;
 }
 
-void i2c1_callback(uintptr_t context)
-{
+void i2c1_callback(uintptr_t context) {
     SERCOM_I2C_ERROR err = SERCOM1_I2C_ErrorGet();
     read_failed = (err != SERCOM_I2C_ERROR_NONE);
 

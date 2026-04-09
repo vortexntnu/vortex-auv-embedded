@@ -7,8 +7,6 @@ uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
 
 static uint16_t adc_result_array[TRANSFER_SIZE];
 
-
-
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     /* duty cycle values */
     static int8_t increment1 = 1;
@@ -55,10 +53,10 @@ int main(void) {
     system_init();
 
     CAN0_MessageRAMConfigSet(Can0MessageRAM);
-    CAN0_RxCallbackRegister(can_rx_callback,0,
-                            CAN_MSG_ATTR_RX_FIFO0);
-    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback, (const uintptr_t) adc_result_array);
-    TC0_TimerCallbackRegister(tc0_callback,0);
+    CAN0_RxCallbackRegister(can_rx_callback, 0, CAN_MSG_ATTR_RX_FIFO0);
+    DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, dmac_channel0_callback,
+                                 (const uintptr_t)adc_result_array);
+    TC0_TimerCallbackRegister(tc0_callback, 0);
     TC1_TimerCallbackRegister(tc1_callback, 0);
 
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
@@ -77,7 +75,7 @@ int main(void) {
     //
     //   struct can_tx_frame tx;
     //   tx.id = 0x369;
-    //   tx.len = 8; 
+    //   tx.len = 8;
     //   tx.buf[0] = 1;
     //   tx.buf[1] = 2;
     //   tx.buf[2] = 3;
