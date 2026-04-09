@@ -3,14 +3,12 @@
 #define GRIPPER_H
 
 #include <stdint.h>
+#include "adc0.h"
+#include "rtc.h"
 #include "sercom1_i2c.h"
 #include "tcc.h"
 #include "tcc0.h"
-#include "adc0.h"
 #include "wdt.h"
-#include "rtc.h"
-
-
 
 // Encoder
 #define SHOULDER_ADDR 0x40
@@ -22,17 +20,15 @@
 
 #define RTC_COMPARE_VAL 50
 
-
 #ifdef __cplusplus
-extern "C"{
-#endif // __cplusplus
-
+extern "C" {
+#endif  // __cplusplus
 
 /**
  * @brief Read encoder angle registers over I2C.
  *
  *
- * @param[in]  reg   Register address to read from each encoder.
+ * @param[in]  reg  Address to which register to read from encoder
  * @param[in]  enc_num   Encoder number
  * @param[out] out  Pointer to a buffer that will receive the angle data.
  *                   Must be at least 2 * NUM_ENCODERS bytes long.
@@ -40,20 +36,18 @@ extern "C"{
  * @return  0  on success,
  *         -1  on failure
  */
-int read_encoders(uint8_t reg, uint8_t enc_num, uint8_t* data);
-
+int start_encoder_read(uint8_t* reg, uint8_t enc_num, uint8_t* angle);
 
 /**
  * @brief Set servo PWM duty cycles.
  *
  * @param[in] pwm_data  Pointer to an array containing the PWM duty values
- *                      in microseconds. Must be little endian and contain 
+ *                      in microseconds. Must be little endian and contain
  *                      duty cycle values for up to three servos
  * @param[in] data_len  Length of data, must be equal to number of encoders
  * @return    0 on sucess, -1 if data_len is not equal to num encoders
  */
 int set_servos_pwm(const uint8_t* pwm_data, uint8_t data_len);
-
 
 static inline void stop_gripper(void) {
     WDT_Disable();
@@ -72,9 +66,8 @@ static inline void start_gripper(void) {
     PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
 }
 
-
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif  // __cplusplus
 
-#endif // !GRIPPER_H
+#endif  // !GRIPPER_H

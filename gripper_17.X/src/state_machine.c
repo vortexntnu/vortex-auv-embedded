@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "can1.h"
+#include "gripper.h"
 #include "usart.h"
 #include "system_init.h"
 #include "can_common.h"
@@ -9,6 +10,9 @@
 
 static uint8_t encoder_num = 0;
 static bool read_failed = true;
+static uint8_t encoder_rx_buf[2] = {0};
+static uint8_t encoder_reg = ANGLE_REGISTER;
+static uint8_t raw_encoder_angles[2 * NUM_ENCODERS] = {0};
 
 struct state_context ctx;
 
@@ -32,22 +36,36 @@ void state_machine() {
         }
     }
 
-    if (ev & EVENT_READ_ENCODER) {
+    if (ev & EVENT_READ_ENCODER_START) {
+        start_encoder_read(&encoder_reg, encoder_num, encoder_rx_buf);   // kicks off async I2C
+    }
 
+    if (ev & EVENT_READ_ENCODER_DONE) {
+        if (read_failed) {
+            raw_encoder_angles[2 * encoder_num]     = 0xFF;
+            raw_encoder_angles[2 * encoder_num + 1] = 0xFF;
+        } else {
+            raw_encoder_angles[2 * encoder_num]     = encoder_rx_buf[1]; // little-endian low byte
+            raw_encoder_angles[2 * encoder_num + 1] = encoder_rx_buf[0]; // little-endian high byte
+        }
+
+        encoder_num++;
+
+        if (encoder_num == NUM_ENCODERS) {
+            ctx.events |= EVENT_TRANSMIT_ANGLES;
+        } else {
+            ctx.events |= EVENT_READ_ENCODER_START;
+        }
+    }
+
+    if (ev & EVENT_TRANSMIT_ANGLES) {
         ctx.tx_frame.id = CAN_SEND_ANGLES;
-        ctx.tx_frame.len = 6;
-        read_encoders(ANGLE_REGISTER, encoder_num, ctx.tx_frame.buf);
+        ctx.tx_frame.len = 2 * NUM_ENCODERS;
 
-    }
+        for (int i = 0; i < 2 * NUM_ENCODERS; i++) {
+            ctx.tx_frame.buf[i] = raw_encoder_angles[i];
+        }
 
-
-    if (read_failed && (encoder_num != 0)) {
-        uint8_t prev_enc = encoder_num - 1;
-        ctx.tx_frame.buf[2*prev_enc] = 0xFF;
-        ctx.tx_frame.buf[2*prev_enc + 1] = 0xFF;
-    }
-
-    if (ev & EVENT_TRANSMIT_ANGLES || (encoder_num == NUM_ENCODERS)) {
         can_transmit(&ctx.tx_frame);
         encoder_num = 0;
     }
@@ -82,30 +100,19 @@ void can_rx_callback(uintptr_t context) {
 }
 
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    ctx.events |= EVENT_READ_ENCODER;
+    ctx.events |= EVENT_READ_ENCODER_START;
 }
 
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
     ctx.events |= EVENT_TRANSMIT_ANGLES;
 }
 
-void i2c1_callback(uintptr_t context) {
+void i2c1_callback(uintptr_t context)
+{
     SERCOM_I2C_ERROR err = SERCOM1_I2C_ErrorGet();
+    read_failed = (err != SERCOM_I2C_ERROR_NONE);
 
-    if (err == SERCOM_I2C_ERROR_NONE){
-        read_failed = false;
-    } else {
-        read_failed = true;
-    }
-
-    encoder_num += 1;
-
-    if (encoder_num == 3) {
-        ctx.events |= EVENT_TRANSMIT_ANGLES;
-        return;
-    }
-
-    ctx.events |= EVENT_READ_ENCODER;
+    ctx.events |= EVENT_READ_ENCODER_DONE;
 }
 
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,

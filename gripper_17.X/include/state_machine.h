@@ -16,10 +16,11 @@
 #define CURRENT_TRESHOLD 2.7f  // 1 A
 #define VOLTAGE_THRESHOLD 2048
 
+#define EVENT_READ_ENCODER_START (1 << 1)
+#define EVENT_READ_ENCODER_DONE (1 << 2)
 #define EVENT_SET_PWM (1 << 3)
-#define EVENT_READ_ENCODER (1 << 4)
-#define EVENT_START_GRIPPER (1 << 5)
-#define EVENT_TRANSMIT_ANGLES (1 << 6)
+#define EVENT_START_GRIPPER (1 << 4)
+#define EVENT_TRANSMIT_ANGLES (1 << 5)
 
 typedef enum {
     STOP_GRIPPER = 0x469,
