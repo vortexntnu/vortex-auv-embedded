@@ -9,7 +9,7 @@
 #include "usart.h"
 
 static uint8_t encoder_num = 0;
-static bool read_failed = true;
+static volatile bool read_failed = true;
 static uint8_t encoder_rx_buf[2] = {0};
 static uint8_t encoder_reg = ANGLE_REGISTER;
 static uint8_t raw_encoder_angles[2 * NUM_ENCODERS] = {0};
@@ -46,10 +46,11 @@ void state_machine() {
             raw_encoder_angles[2 * encoder_num] = 0xFF;
             raw_encoder_angles[2 * encoder_num + 1] = 0xFF;
         } else {
-            raw_encoder_angles[2 * encoder_num] =
-                encoder_rx_buf[1];  // little-endian low byte
-            raw_encoder_angles[2 * encoder_num + 1] =
-                encoder_rx_buf[0];  // little-endian high byte
+            uint16_t angle =
+                ((uint16_t)encoder_rx_buf[0] << 6) | (encoder_rx_buf[1] & 0x3F);
+
+            raw_encoder_angles[2 * encoder_num] = (uint8_t)(angle & 0xFF);
+            raw_encoder_angles[2 * encoder_num + 1] = (uint8_t)(angle >> 8);
         }
 
         encoder_num++;
