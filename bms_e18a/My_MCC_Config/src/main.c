@@ -35,6 +35,7 @@
 #include "ic_bms/bms_spi.h"
 #include "ic_bms/spi_test.h"
 #include "peripheral/port/plib_port.h"
+#include "app/can_facade.h"
 
 // *****************************************************************************
 // *****************************************************************************

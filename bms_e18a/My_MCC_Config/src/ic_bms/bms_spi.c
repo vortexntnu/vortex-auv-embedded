@@ -739,18 +739,21 @@ void BQ769x2_Init() {
 	BQ769x2_SetRegister(OCD1Threshold, 0x14, 1);
     BQ769x2_SetRegister(OCD2Threshold,0x19 , 1);
 
+    //EnabledProtectionsC: TEST
+    BQ769x2_SetRegister(EnabledProtectionsC, 0x40, 1); 
 	// Set up SCD Threshold - 0x9286 = 0x05 (100 mV = 100A across 1mOhm sense resistor)  0x05=100mV
 	BQ769x2_SetRegister(SCDThreshold, 0x05, 1);
 
     BQ769x2_SetRegister(OCDLRecoveryThreshold, 100, 2);
     BQ769x2_SetRegister(SCDLRecoveryThreshold, 100, 2);
+    BQ769x2_SetRegister(SCDLRecoveryTime, 15, 1);
 
 	// Set up SCD Delay - 0x9287 = 0x03 (30 us) Enabled with a delay of (value - 1) * 15 µs; min value of 1    
 	BQ769x2_SetRegister(SCDDelay, 0x03, 1);
 
 	// Set up SCDL Latch Limit to 1 to set SCD recovery only with load removal 0x9295 = 0x01
 	// If this is not set, then SCD will recover based on time (SCD Recovery Time parameter).
-	BQ769x2_SetRegister(SCDLLatchLimit, 0x00, 1);
+	BQ769x2_SetRegister(SCDLLatchLimit, 0x01, 1);
 
 	// Exit CONFIGUPDATE mode  - Subcommand 0x0092
 	CommandSubcommands(EXIT_CFGUPDATE);
