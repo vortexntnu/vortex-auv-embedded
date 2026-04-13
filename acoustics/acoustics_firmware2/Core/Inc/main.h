@@ -55,7 +55,7 @@ typedef enum {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 #define BLOCK_LEN 			64
-#define N_BLOCKS 			8
+#define N_BLOCKS 			12
 
 #define BUFFER_LEN 			(N_BLOCKS * BLOCK_LEN)
 #define N_SACRIFICAL_BLOCKS   3
@@ -70,9 +70,14 @@ typedef enum {
 #define BIN_RESOLUTION ((float)SAMPLE_RATE_HZ / (float)DETECTION_FFT_SIZE)
 
 #define DETECTION_PATIENCE 10
+#define PROCESSING_PATIENCE 3
 
 #define LINEAR_THRESHOLD  10 // 10dB => 10^(10/10) = 10
 #define SIGNAL_MIN_POWER 1e-5f
+
+#define MINIMUM_VALID_BUFFERS 4
+
+#define WAVE_SPEED 1490
 
 extern SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES];
 extern volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1];

@@ -10,7 +10,7 @@
 #include "arm_math_types.h"
 
 #ifndef CWT_FFT_SIZE
-#define CWT_FFT_SIZE 256
+#define CWT_FFT_SIZE 512
 #endif
 
 void cwt_init_q15(float32_t target_frequency, float32_t sampling_frequency, float32_t cycles);

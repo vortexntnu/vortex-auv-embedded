@@ -12,7 +12,7 @@
 #include "arm_math.h"
 
 #ifndef HILBERT_FFT_SIZE
-#define HILBERT_FFT_SIZE 256
+#define HILBERT_FFT_SIZE 512
 #endif
 
 /* ------------------------------------------------------------
@@ -69,6 +69,6 @@ void hilbert_transform_f32(const float32_t *pSrc,
  * @param  pSrc  Real input,  length HILBERT_FFT_SIZE (float32_t).
  * @param  pDst  Imaginary output, length HILBERT_FFT_SIZE (float32_t).
  */
-void hilbert_imag_f32(const float32_t *pSrc, float32_t *pDst);
+void hilbert_imag_f32(float32_t *pSrc, float32_t *pDst);
 
 #endif /* INC_DSP_HILBERT_H_ */

@@ -11,7 +11,7 @@ from matplotlib import colors as mcolors
 SNR_MIN = 0.0
 SNR_MAX = 50.0
 # Set to None to load all rows, or an integer to load only the latest N rows.
-MAX_LOADED_SAMPLES = 22000
+MAX_LOADED_SAMPLES = 30000
 
 hydrophones_local = np.array([
 	[0.0, 0.0, 0.0],
@@ -72,6 +72,11 @@ def rotate_vector_z(vector, degrees):
 def hydrophone_local_to_global(local):
 	rotated = rotate_vector_z(local, -hydrophones_yaw)
 	rotated = rotate_vector_y(rotated, hydrophones_pitch)
+	return rotated
+
+def hydrophone_global_to_local(global_pos):
+	rotated = rotate_vector_y(global_pos, -hydrophones_pitch)
+	rotated = rotate_vector_z(rotated, hydrophones_yaw)
 	return rotated
 
 

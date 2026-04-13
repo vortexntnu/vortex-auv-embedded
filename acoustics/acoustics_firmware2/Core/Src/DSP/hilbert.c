@@ -40,7 +40,6 @@ static PLACE_IN_DTCM arm_cfft_instance_q15  hilbert_cfft_q15;
 
 static PLACE_IN_DTCM float32_t hilbert_fft_input_f32[HILBERT_FFT_SIZE];
 static PLACE_IN_DTCM float32_t hilbert_fft_output_f32[HILBERT_FFT_SIZE * 2];
-static PLACE_IN_DTCM float32_t hilbert_cfft_buf[HILBERT_FFT_SIZE * 2];
 static PLACE_IN_DTCM arm_rfft_fast_instance_f32 hilbert_rfft_f32;
 static PLACE_IN_DTCM const arm_cfft_instance_f32 *hilbert_cfft_f32;
 
@@ -221,7 +220,7 @@ void hilbert_transform_f32(const float32_t *pSrc,
  * Returns only the imaginary part of the analytic signal —
  * the classical Hilbert transform output, length HILBERT_FFT_SIZE floats.
  */
-void hilbert_imag_f32(const float32_t *pSrc, float32_t *pDst)
+void hilbert_imag_f32(float32_t *pSrc, float32_t *pDst)
 {
     const uint32_t N    = HILBERT_FFT_SIZE;
     const uint32_t half = N / 2;

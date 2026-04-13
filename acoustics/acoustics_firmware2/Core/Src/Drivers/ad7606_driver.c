@@ -106,6 +106,7 @@ static void ad7606_set_channels(struct ad7606_device* device, struct ad7606_chan
 static void ad7606_set_digital_diagnostics(struct ad7606_device* device, struct ad7606_digital_diagnostics diagnostics);
 static void ad7606_set_oversampling(struct ad7606_device* device, struct ad7606_oversampling oversampling);
 static void ad7606_write_all_registers(struct ad7606_device* device);
+static void ad7606_dma_error_callback(DMA_HandleTypeDef *hdma);
 
 static struct ad7606_device* _ad7606_devices[AD7606_MAX_DEVICES] = {NULL};
 static uint8_t _ad7606_device_count = 0;

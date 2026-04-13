@@ -27,8 +27,6 @@
 #include "memory_placement.h"
 #include "embedded_macros.h"
 #include "find_peaks.h"
-#define CWT_FFT_SIZE WORKSPACE_LEN
-#define HILBERT_FFT_SIZE WORKSPACE_LEN
 #include "dsp.h"
 #include "cwt.h"
 #include "hilbert.h"
@@ -52,6 +50,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 /* USER CODE END Includes */
 
@@ -110,16 +109,22 @@ SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES] = {DOUTA, DOUTB, DO
 volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
 
 PLACE_IN_D2_SRAM q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
+
 PLACE_IN_D3_SRAM q15_t diagnostics_buffer[BLOCK_LEN];
 volatile uint16_t diagnostics_sample;
 float32_t diagnostics_temp;
 PLACE_IN_D3_SRAM float32_t stm32_temp;
 
-PLACE_IN_DTCM arm_rfft_fast_instance_f32 detection_fft_instance;
+PLACE_IN_DTCM arm_rfft_fast_instance_f32 detection_fft_instance_f32;
+PLACE_IN_DTCM arm_rfft_instance_q15 detection_fft_instance_q15;
 MDMA_BUF_DTCM(ALIGN_DMA_BURST_8_WORD) q15_t detection_buffer[2][BLOCK_LEN];
 PLACE_IN_DTCM float32_t fft_input_f32[DETECTION_FFT_SIZE];
 PLACE_IN_DTCM float32_t fft_output_f32[DETECTION_FFT_SIZE * 2];
 PLACE_IN_DTCM float32_t magnitude_output_f32[DETECTION_FFT_SIZE / 2];
+
+
+PLACE_IN_DTCM q15_t fft_output_q15[DETECTION_FFT_SIZE * 2];
+PLACE_IN_DTCM q15_t magnitude_output_q15[DETECTION_FFT_SIZE / 2];
 PLACE_IN_DTCM float32_t SNR = 1;
 
 PLACE_IN_DTCM volatile uint8_t mdma_half = 0;
@@ -145,6 +150,8 @@ static PLACE_IN_DTCM float32_t hydrophone_positions[N_HYDROPHONES][3] = {
 		{0.25,0.25,0.354},
 		{0.25,-0.25,0.354}
 };
+
+static PLACE_IN_DTCM uint16_t max_idx_difference;
 
 volatile PLACE_IN_DTCM bool dump_trigger = false;
 volatile PLACE_IN_DTCM bool send_magnitude = false;
@@ -180,6 +187,7 @@ uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32
 uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold, const uint32_t patience);
 float32_t min_max_threshold(float32_t* signal, uint32_t signal_len, float32_t threshold, uint32_t n_high, uint32_t n_low);
 void threshold_applier(float32_t* signal, uint32_t signal_len, float32_t threshold);
+void spike_filter(float32_t *signal, uint32_t signal_len, float32_t threshold);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -270,9 +278,8 @@ void MyMDMA_ErrorCallback(MDMA_HandleTypeDef *hmdma) {
 bool signal_present(uint8_t half_idx) {
 
     arm_q15_to_float(detection_buffer[half_idx], fft_input_f32, DETECTION_FFT_SIZE);
-    arm_rfft_fast_f32(&detection_fft_instance, fft_input_f32, fft_output_f32, 0);
+    arm_rfft_fast_f32(&detection_fft_instance_f32, fft_input_f32, fft_output_f32, 0);
     arm_cmplx_mag_squared_f32(fft_output_f32, magnitude_output_f32, DETECTION_FFT_SIZE/2);
-
 
     const uint32_t SIGNAL_BIN_LOW = 14;
     const uint32_t SIGNAL_BIN_HIGH = 17;
@@ -312,6 +319,75 @@ bool signal_present(uint8_t half_idx) {
 			break;
 		}
 		return false;
+}
+
+bool signal_present_q15(uint8_t half_idx) {
+
+    arm_rfft_q15(&detection_fft_instance_q15, detection_buffer[half_idx], fft_output_q15);
+    dsp_fill_headroom_q15(fft_output_q15, DETECTION_FFT_SIZE);
+    arm_cmplx_mag_fast_q15(fft_output_q15, magnitude_output_q15, DETECTION_FFT_SIZE/2);
+
+    const uint32_t SIGNAL_BIN_LOW = 14;
+    const uint32_t SIGNAL_BIN_HIGH = 17;
+    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
+    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
+
+    uint32_t noise_power = 0;
+    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
+        noise_power += magnitude_output_q15[i];
+    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
+        noise_power += magnitude_output_q15[i];
+
+    bool present = false;
+
+    uint32_t signal_power = magnitude_output_q15[14] + magnitude_output_q15[15] + magnitude_output_q15[16];
+
+    // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
+    present = (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
+    if(unlikely(present && !detected)){
+    	detected = DETECTION_PATIENCE;
+    	return true;
+    }
+
+	switch(detected){
+		case(0):
+			detected = false;
+		break;
+		default:
+			detected--;
+		break;
+	}
+	return false;
+}
+
+bool signal_present_f32(float32_t* signal){
+
+	arm_copy_f32(signal, fft_input_f32, DETECTION_FFT_SIZE);
+    arm_rfft_fast_f32(&detection_fft_instance_f32, fft_input_f32, fft_output_f32, 0);
+    arm_cmplx_mag_f32(fft_output_f32, magnitude_output_f32, DETECTION_FFT_SIZE/2);
+
+    const uint32_t SIGNAL_BIN_LOW = 14;
+    const uint32_t SIGNAL_BIN_HIGH = 17;
+    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
+    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
+
+    float32_t noise_power = 0.0f;
+    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
+        noise_power += magnitude_output_f32[i];
+    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
+        noise_power += magnitude_output_f32[i];
+
+    if (unlikely(noise_power <= 0.0f)){
+    	return false;
+    }
+
+    float32_t signal_power = magnitude_output_f32[14] + magnitude_output_f32[15] + magnitude_output_f32[16];
+    if (likely(signal_power < SIGNAL_MIN_POWER)){
+    	return false;
+    }
+
+    // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
+    return (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
 }
 
 
@@ -498,7 +574,7 @@ __attribute__((used, noinline)) void dump_magnitude(void){
 	DUMP_ARRAY_NAMED_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
 }
 
-__attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
+__attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx, uint8_t valid){
 	printf("dump = {\r\n");
 
 	magnitude_output_f32[0] = 0;
@@ -525,6 +601,7 @@ __attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
 		arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
 		scalar = 1/scalar;
 		arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
+		spike_filter(processing_workspace[i],WORKSPACE_LEN,10);
 	}
 
 	printf("\"normalized\" : [\r\n\t");
@@ -549,11 +626,24 @@ __attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
 	}
 
 
+	float32_t thresholds[5];
 
 	printf("\"thresholded\" : [\r\n\t");
 	for(int i = 0; i < N_HYDROPHONES; i++){
 		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-		float32_t threshold = min_max_threshold(envelope, WORKSPACE_LEN, 0.01, 15, 100);
+
+		float32_t linear_threshold = 0.01;
+		uint8_t max_retries = 6;
+		uint32_t dead_space = WORKSPACE_LEN/4;
+		idxs[i] = 0;
+		float32_t threshold;
+		while(idxs[i] < dead_space && max_retries--){
+			threshold = min_max_threshold(envelope, WORKSPACE_LEN, linear_threshold, 15, dead_space);
+			idxs[i] = threshold_search(envelope,WORKSPACE_LEN, threshold , 3);
+			linear_threshold *= 2;
+		}
+
+		thresholds[i] = threshold;
 		threshold_applier(envelope, WORKSPACE_LEN, threshold);
 		dump_python_array_f32(envelope, WORKSPACE_LEN);
 		if(i == N_HYDROPHONES - 1){
@@ -578,13 +668,15 @@ __attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
 	for(int i = 0; i < N_HYDROPHONES; i++){
 		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
 
-		float32_t threshold = min_max_threshold(envelope, WORKSPACE_LEN, 0.01, 15, 100);
-		threshold_applier(envelope, WORKSPACE_LEN, threshold);
-
-//		hilbert_imag_f32(envelope,envelope_edge);
-
-		//idxs[i] = find_da_edge(envelope_edge, PROCESSING_FFT_SIZE);
-		idxs[i] = threshold_search(envelope,WORKSPACE_LEN, 50 , 3); //
+		float32_t linear_threshold = 0.01;
+		uint8_t max_retries = 6;
+		uint32_t dead_space = WORKSPACE_LEN/4;
+		idxs[i] = 0;
+		while(idxs[i] < dead_space && max_retries--){
+			float32_t threshold = min_max_threshold(envelope, WORKSPACE_LEN, linear_threshold, 15, dead_space);
+			idxs[i] = threshold_search(envelope,WORKSPACE_LEN, threshold , 3);
+			linear_threshold *= 2;
+		}
 		times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
 	}
 
@@ -610,10 +702,11 @@ __attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx){
 		}
 	}
 
-
+	DUMP_ARRAY_NAMED_DICT_F32("thresholds",thresholds, 5);
+	printf(",");
 	DUMP_ARRAY_NAMED_DICT_F32("direction_of_arrival",direction_of_arrival, 3);
 	printf(",");
-	DUMP_ARRAY_NAMED_DICT_F32("valid",hydrophone_valid,N_HYDROPHONES);
+	printf("\t\"valid\" : %d",valid);
 
 	fflush(stdout);
 	printf("}\r\n");
@@ -660,6 +753,14 @@ void restart_buffers_and_spi(void){
 }
 
 float32_t abs_f32(float32_t x){
+	if(x >= 0){
+		return x;
+	}else{
+		return -x;
+	}
+}
+
+int32_t abs_int32(int32_t x){
 	if(x >= 0){
 		return x;
 	}else{
@@ -779,6 +880,35 @@ void threshold_applier(float32_t* signal, uint32_t signal_len, float32_t thresho
 		signal[i] = 100*(signal[i] > threshold);
 	}
 }
+
+void spike_filter(float32_t *signal, uint32_t signal_len, float32_t threshold){
+	const uint8_t window_radius = 3; //left and right distance
+	for(int i = window_radius; i < signal_len - window_radius; i++){
+		float32_t sum = 0;
+		for(int j = -window_radius; j < window_radius + 1; j++){
+			if(j != 0){
+				sum += abs_f32(signal[i+j]);
+			}
+		}
+		sum /= window_radius*2;
+		if(abs_f32(signal[i]) > sum*threshold){
+			signal[i] = sum;
+		}
+	}
+}
+
+float32_t distance_3d(float32_t vec1[3], float32_t vec2[3])
+{
+    float32_t diff[3];
+    float32_t dot;
+    float32_t result;
+
+    arm_sub_f32(vec1, vec2, diff, 3);
+    arm_dot_prod_f32(diff, diff, 3, &dot);
+    arm_sqrt_f32(dot, &result);
+
+    return result;
+}
 /* USER CODE END 0 */
 
 /**
@@ -802,7 +932,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   SWO_Init();
-  dump_trigger = false;
+  dump_trigger = true;
   send_magnitude = false;
   verbose = false;
   SNR = 1;
@@ -890,8 +1020,31 @@ int main(void)
 		hydrophone_positions[i][2] = hydrophone_positions_temp[i][2];
 	}
 
+	float32_t biggest_distance = 0;
+	for(int i = 1; i < N_HYDROPHONES; i++){
+		float32_t dist = distance_3d(hydrophone_positions[0],hydrophone_positions[i]);
+		if(dist > biggest_distance){
+			biggest_distance = dist;
+		}
+	}
+	{
+		float32_t idx_distance = (biggest_distance/(WAVE_SPEED*100)*SAMPLING_FREQUENCY) + BLOCK_LEN/4;
+		uint16_t n = (uint16_t)ceilf(idx_distance);
+		n--;
+		n |= n >> 1;
+		n |= n >> 2;
+		n |= n >> 4;
+		n |= n >> 8;
+		n |= n >> 16;
+		n++;
+		max_idx_difference = n;
+	}
+
+
+
 	init_adc_and_buffers();
-	arm_rfft_fast_init_f32(&detection_fft_instance, DETECTION_FFT_SIZE);
+	arm_rfft_fast_init_f32(&detection_fft_instance_f32, DETECTION_FFT_SIZE);
+	arm_rfft_init_q15(&detection_fft_instance_q15, DETECTION_FFT_SIZE, 0, 1);
 	cwt_init_f32(TARGET_FREQUENCY, SAMPLING_FREQUENCY, 0.5);
 	hilbert_init_f32();
 	direction_of_arrival[0] = 1.0;
@@ -939,7 +1092,11 @@ int main(void)
 			//DUMP_ARRAY_NAMED_DICT_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
 			//printf(",");
 
-			uint16_t workspace_idx = (target_block*BLOCK_LEN+BUFFER_LEN-WORKSPACE_LEN/2)%BUFFER_LEN;
+			if(!dump_trigger){
+				dump_magnitude();
+			}
+
+			uint16_t workspace_idx = (target_block*BLOCK_LEN+BUFFER_LEN-(WORKSPACE_LEN-WORKSPACE_OFFSET*BLOCK_LEN))%BUFFER_LEN;
 
 			//printf("\t\"raw_mv\" : [\r\n\t");
 			for(int i = 0; i < N_HYDROPHONES; i++){
@@ -956,45 +1113,76 @@ int main(void)
 				cwt_morlet_magnitude_f32(processing_workspace[i], processing_workspace[i]);
 			}
 
-			uint8_t valid_buffers = 0;
-			for(int i = 0; i < N_HYDROPHONES; i++){
-				uint32_t search_result = threshold_search(processing_workspace[i],WORKSPACE_LEN, 0.05, WORKSPACE_LEN/8);
-				const uint32_t border_size = 10;
-				valid_buffers += (search_result > border_size) && (search_result < WORKSPACE_LEN - border_size);
-			}
-			bool valid_data = (valid_buffers > 3);
+			bool valid_result = false;
+			uint8_t max_calculation_retries = 3;
 
-			valid_buffers = 0;
+			while(!valid_result && max_calculation_retries--){
 
-			for(int i = 0; i < N_HYDROPHONES; i++){
+				uint8_t valid_buffers = 0;
+				uint8_t valid_buffers_array[N_HYDROPHONES] = {0};
+
+				for(int i = 0; i < N_HYDROPHONES; i++){
+					valid_buffers_array[i] = hydrophone_valid[i];
+					uint8_t n_signal_present_blocks = 0;
+					for(int j; j < WORKSPACE_LEN/BLOCK_LEN; j++){
+						n_signal_present_blocks += signal_present_f32(&processing_workspace[i][j*BLOCK_LEN]);
+					}
+					bool valid = (n_signal_present_blocks < WORKSPACE_LEN/BLOCK_LEN);
+					valid_buffers += valid;
+					valid_buffers_array[i] &= valid;
+				}
+				bool valid_data = (valid_buffers >= MINIMUM_VALID_BUFFERS);
+
 				float32_t linear_threshold = 0.01;
 				uint8_t max_retries = 6;
-				uint32_t dead_space = WORKSPACE_LEN/4;
-				idxs[i] = 0;
-				while(idxs[i] < dead_space && max_retries--){
-					float32_t threshold = min_max_threshold(processing_workspace[i], WORKSPACE_LEN, linear_threshold, 15, dead_space);
-					idxs[i] = threshold_search(processing_workspace[i],WORKSPACE_LEN, threshold , 3);
+				uint32_t dead_space = WORKSPACE_LEN/2;
+				idxs[0] = 0;
+				while(((idxs[0] < dead_space) || (idxs[0] > (WORKSPACE_LEN-(WORKSPACE_OFFSET-1)*BLOCK_LEN))) && max_retries--){
+					float32_t threshold = min_max_threshold(processing_workspace[0], WORKSPACE_LEN, linear_threshold, 15, dead_space);
+					idxs[0] = threshold_search(processing_workspace[0],WORKSPACE_LEN, threshold , PROCESSING_PATIENCE);
 					linear_threshold *= 2;
 				}
-				times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
+				times_of_arrival[0] = (float32_t)idxs[0];
+
+				for(int i = 1; i < N_HYDROPHONES; i++){
+					float32_t linear_threshold = 0.01;
+					uint8_t max_retries = 6;
+					uint32_t dead_space = WORKSPACE_LEN/2;
+					idxs[i] = 0;
+					while(((abs_int32(idxs[0] - idxs[i])) > max_idx_difference) && max_retries--){
+						float32_t threshold = min_max_threshold(processing_workspace[i], WORKSPACE_LEN, linear_threshold, 15, dead_space);
+						idxs[i] = threshold_search(processing_workspace[i],WORKSPACE_LEN, threshold , PROCESSING_PATIENCE);
+						linear_threshold *= 2;
+					}
+					times_of_arrival[i] = (float32_t)idxs[i];
+				}
+
+				valid_buffers = 0;
+
+				for(int i = 1; i < N_HYDROPHONES; i++){
+					bool valid = (max_idx_difference > abs_int32(idxs[0] - idxs[i]));
+					valid_buffers += valid;
+					valid_buffers_array[i] &= valid;
+				}
+
+				bool valid_idxs = (valid_buffers >= (MINIMUM_VALID_BUFFERS - 1));
+
+				int32_t tdoa_status = 0;
+				if(valid_data){
+					tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
+														  times_of_arrival,
+														  valid_buffers_array,
+														  N_HYDROPHONES,
+														  direction_of_arrival);
+				}
+
+				valid_result = valid_data && is_valid(direction_of_arrival) && valid_idxs && (tdoa_status == 0);
 			}
 
-
-
-//			idxs[2] = idxs[0] + 167-144;
-//			idxs[3] = idxs[0] + 173-177;
-//			idxs[4] = idxs[0] + 161-151;
-			//for(int i = 0; i < 5; i++) times_of_arrival[i] = (float32_t)idxs[i]*1/SAMPLING_FREQUENCY;
-
-			int32_t tdoa_status = 0;
-			if(valid_data){
-				tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
-													  times_of_arrival,
-													  hydrophone_valid,
-													  N_HYDROPHONES,
-													  direction_of_arrival);
+			if(unlikely(dump_trigger)){
+				dump_everything(workspace_idx, valid_result);
+				__NOP();
 			}
-			bool valid_result = valid_data && is_valid(direction_of_arrival);
 
 			if(valid_result){
 				float32_t snr = estimate_SNR();
@@ -1005,18 +1193,15 @@ int main(void)
 
 				utils_DWT_delay_ms(300);
 
-				if(unlikely(dump_trigger)){
-					dump_everything(workspace_idx);
-					__NOP();
-				}else{
-					printf("{");
-					dump_python_array_f32(direction_of_arrival, 3);
-					printf(",");
-					printf("%ld.%06ld", f32_whole(snr), f32_frac(snr, 6));
-					printf("},\r\n\t");
-				}
+				printf("{");
+				dump_python_array_f32(direction_of_arrival, 3);
+				printf(",");
+				printf("%ld.%06ld", f32_whole(snr), f32_frac(snr, 6));
+				printf("},\r\n\t");
 
 				__NOP();
+			}else{
+				printf("invalid ping\r\n");
 			}
 
 			for(int i = 0; i < 5; i++){
@@ -1882,7 +2067,7 @@ static void MX_MDMA_Init(void)
   hmdma_mdma_channel0_sw_0.Init.SourceDataSize = MDMA_SRC_DATASIZE_WORD;
   hmdma_mdma_channel0_sw_0.Init.DestDataSize = MDMA_DEST_DATASIZE_WORD;
   hmdma_mdma_channel0_sw_0.Init.DataAlignment = MDMA_DATAALIGN_PACKENABLE;
-  hmdma_mdma_channel0_sw_0.Init.BufferTransferLength = 128;
+  hmdma_mdma_channel0_sw_0.Init.BufferTransferLength = 256;
   hmdma_mdma_channel0_sw_0.Init.SourceBurst = MDMA_SOURCE_BURST_SINGLE;
   hmdma_mdma_channel0_sw_0.Init.DestBurst = MDMA_DEST_BURST_SINGLE;
   hmdma_mdma_channel0_sw_0.Init.SourceBlockAddressOffset = 0;
@@ -2170,9 +2355,10 @@ void Error_Handler(void)
     HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
     while(1){
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
-    	utils_DWT_delay_ms(500);
+    	utils_DWT_delay_ms(1000);
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_RESET);
-    	utils_DWT_delay_ms(500);
+
+    	HAL_NVIC_SystemReset();
     }
   /* USER CODE END Error_Handler_Debug */
 }

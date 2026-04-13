@@ -223,7 +223,6 @@ void ad7606_dma_spi_init(struct ad7606_device* device,
 						 uint32_t buff_size);
 void ad7606_eot_callback(SPI_HandleTypeDef *hspi, int device_id);
 void ad7606_trigger_burst(SPI_HandleTypeDef *hspi);
-static void ad7606_dma_error_callback(DMA_HandleTypeDef *hdma);
 
 // Conversion utilities
 double ad7606_reading_to_voltage(struct ad7606_device* device, uint8_t channel_id, int16_t reading);

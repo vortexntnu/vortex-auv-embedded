@@ -94,10 +94,10 @@ void start_convst(void){
 
 uint8_t fast_get_detection_block_pos(void) {
     uint16_t remaining     = (uint16_t)__HAL_DMA_GET_COUNTER(hspi2.hdmarx);
-    uint16_t current_idx = (BUFFER_LEN - remaining) % BUFFER_LEN; // claude might be wrong here
+    uint16_t current_idx = (BUFFER_LEN - remaining) % BUFFER_LEN;
     uint8_t  current_block = current_idx / BLOCK_LEN;
 
-    return (uint8_t)((current_block + N_BLOCKS - WORKSPACE_OFFSET)%N_BLOCKS);
+    return (uint8_t)((current_block + N_BLOCKS - WORKSPACE_OFFSET - 1)%N_BLOCKS);
 }
 
 void init_hyrdophone_buffers(void){
