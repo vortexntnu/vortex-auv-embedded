@@ -1,5 +1,5 @@
 {
-    "mplab.clangd.path": "/opt/microchip/xc32/v4.50/bin/xc32-clangd",
+    "mplab.clangd.path": "/opt/microchip/xc32/v4.60/bin/xc32-clangd",
     "memory-inspector.debugTypes": [
         "arm-debugger",
         "embedded-debug",

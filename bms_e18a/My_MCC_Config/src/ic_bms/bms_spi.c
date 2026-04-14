@@ -634,7 +634,7 @@ void BQ769x2_Init() {
 	// 'REG12 Config' - Enable REG1 with 3.3V output (0x0D for 3.3V, 0x0F for 5V)
 	BQ769x2_SetRegister(REG12Config, 0x0D, 1);
 
-    BQ769x2_SetRegister(0x923C, 0x40, 1);
+    BQ769x2_SetRegister(SPIConfiguration, 0x40, 1);
 
 	// Set DFETOFF pin to control BOTH CHG and DSG FET - 0x92FB = 0x42 (set to 0x00 to disable)
 	BQ769x2_SetRegister(DFETOFFPinConfig, 0x00, 1);
@@ -669,6 +669,8 @@ void BQ769x2_Init() {
 	// OTC (over-temperature in charge), UTINT (internal under-temperature), UTD (under-temperature in discharge), UTC (under-temperature in charge)
 	// BQ769x2_SetRegister(EnabledProtectionsB, 0xF7, 1);
     BQ769x2_SetRegister(EnabledProtectionsB, 0x44, 1);
+
+
 
 	// 'Default Alarm Mask' - 0x..82 Enables the FullScan and ADScan bits, default value = 0xF800
 	BQ769x2_SetRegister(DefaultAlarmMask, 0xF882, 2);
@@ -739,10 +741,18 @@ void BQ769x2_Init() {
 	BQ769x2_SetRegister(OCD1Threshold, 0x14, 1);
     BQ769x2_SetRegister(OCD2Threshold,0x19 , 1);
 
-    //EnabledProtectionsC: TEST
-    BQ769x2_SetRegister(EnabledProtectionsC, 0x40, 1); 
-	// Set up SCD Threshold - 0x9286 = 0x05 (100 mV = 100A across 1mOhm sense resistor)  0x05=100mV
-	BQ769x2_SetRegister(SCDThreshold, 0x05, 1);
+    //EnabledProtectionsC: Flow
+    //Once EnabledProtectionsC has bit 7 set, 
+    // the sequence should work: 
+    // short occurs → SCD fires at 200 A / 30 µs → 
+    // SCDL counts 1 event → 
+    // latches → 
+    // DSG stays off 
+    // → only clears when load drops below 100 mA for 15 s.
+    BQ769x2_SetRegister(EnabledProtectionsC, 0xC0, 1); 
+	// Set up SCD Threshold - 0x9286 = 0x05 (100 mV = 100A across 1mOhm sense resistor)  0x05=100mV => 100 mV/0.5 mΩ = 200 A
+    // 0x03 → 60 mV → 60 mV / 0.5 mΩ = 120 A  (closer to OCD2 (100 A))
+	BQ769x2_SetRegister(SCDThreshold, 0x03, 1);
 
     BQ769x2_SetRegister(OCDLRecoveryThreshold, 100, 2);
     BQ769x2_SetRegister(SCDLRecoveryThreshold, 100, 2);
