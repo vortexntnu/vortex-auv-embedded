@@ -6,65 +6,65 @@
 extern "C" {
 #endif
 
-// ============================================================================
-// CAN IDs (single source of truth) - edit these manually when your system changes
-// ============================================================================
+// ===========
+// CAN IDs
+// ===========
 
-// ---------------- Node CAN IDs (messages directed to this LED MCU) ----------------
+// ---------------- Node CAN IDs (messages directed to Telemetry MCU) ----------------
 #ifndef CAN_ID_PI
-#define CAN_ID_PI                  (0x101u)
+#define CAN_ID_PI                  (0x151u) // Temp
 #endif
 #ifndef CAN_ID_ORIN
-#define CAN_ID_ORIN                (0x102u)
+#define CAN_ID_ORIN                (0x152u) // Temp
 #endif
 #ifndef CAN_ID_MCU_POWER
-#define CAN_ID_MCU_POWER           (0x103u)
+#define CAN_ID_MCU_POWER           (0x153u) // Temp
 #endif
 #ifndef CAN_ID_KILLSWITCH
-#define CAN_ID_KILLSWITCH          (0x104u)
+#define CAN_ID_KILLSWITCH          (0x404u) // Get from PI if thrustercontrol is on UART
 #endif
 #ifndef CAN_ID_PRESSURE
-#define CAN_ID_PRESSURE            (0x105u)
+#define CAN_ID_PRESSURE            (0x405u) // Replace with local logic
 #endif
 #ifndef CAN_ID_ETHERNET
-#define CAN_ID_ETHERNET            (0x106u)
+#define CAN_ID_ETHERNET            (0x106u) // PI
 #endif
 #ifndef CAN_ID_TEMPERATURE
-#define CAN_ID_TEMPERATURE         (0x107u)
+#define CAN_ID_TEMPERATURE         (0x407u) // Replace with local logic
 #endif
 #ifndef CAN_ID_THRUSTERS
-#define CAN_ID_THRUSTERS           (0x108u)
+#define CAN_ID_THRUSTERS           (0x108u) // Get from PI if thrustercontrol is on UART 
 #endif
 #ifndef CAN_ID_SENSORS
-#define CAN_ID_SENSORS             (0x109u)
+#define CAN_ID_SENSORS             (0x409u) // Remove?
 #endif
 #ifndef CAN_ID_POWER_CONSUMPTION
-#define CAN_ID_POWER_CONSUMPTION   (0x10Au)
+#define CAN_ID_POWER_CONSUMPTION   (0x10Au) 
 #endif
 #ifndef CAN_ID_SOFTWARE_MODE
-#define CAN_ID_SOFTWARE_MODE       (0x10Bu)
+#define CAN_ID_SOFTWARE_MODE       (0x10Bu) // PI
 #endif
 
 // ---------------- Watchdog monitor CAN IDs (periodic traffic / heartbeat) ----------------
 // These must be sent REGULARLY by each node (one-directional traffic).
 // They should NOT be CAN_ID_PI/CAN_ID_ORIN if those are only sent on state changes.
 #ifndef CAN_ID_MON_GRIPPER
-#define CAN_ID_MON_GRIPPER         (0x300u)
+#define CAN_ID_MON_GRIPPER         (0x46Du)
 #endif
 #ifndef CAN_ID_MON_BMS
-#define CAN_ID_MON_BMS             (0x301u)
+#define CAN_ID_MON_BMS             (0x203u)
 #endif
 #ifndef CAN_ID_MON_THRUSTER
-#define CAN_ID_MON_THRUSTER        (0x302u)
+#define CAN_ID_MON_THRUSTER        (0x302u) //Temp
 #endif
 #ifndef CAN_ID_MON_ACOUSTICS
-#define CAN_ID_MON_ACOUSTICS       (0x303u)
+#define CAN_ID_MON_ACOUSTICS       (0x215u) //Temp
 #endif
 #ifndef CAN_ID_MON_PI
-#define CAN_ID_MON_PI              (0x304u)
+#define CAN_ID_MON_PI              (0x304u) //Temp
 #endif
 #ifndef CAN_ID_MON_ORIN
-#define CAN_ID_MON_ORIN            (0x305u)
+#define CAN_ID_MON_ORIN            (0x305u) //Temp
 #endif
 
 // ---------------- Watchdog active probe CAN ID ----------------
@@ -83,10 +83,6 @@ extern "C" {
 #ifndef WATCHDOG_MIN_PROBE_INTERVAL_MS
 #define WATCHDOG_MIN_PROBE_INTERVAL_MS (500u)
 #endif
-
-// ============================================================================
-// Existing API (verified): decoder -> LED logic updates
-// ============================================================================
 
 // Decode a received CAN frame and update LED logic.
 // Returns true if the message was recognized/used.
