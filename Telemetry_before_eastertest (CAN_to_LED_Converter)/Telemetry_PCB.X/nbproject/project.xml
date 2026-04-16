@@ -15,6 +15,8 @@
                 <sourceRootElem>../drivers/ws2812/src</sourceRootElem>
                 <sourceRootElem>../utils/include</sourceRootElem>
                 <sourceRootElem>../utils/src</sourceRootElem>
+                <sourceRootElem>../drivers/bmp280/src</sourceRootElem>
+                <sourceRootElem>../drivers/bmp280/include</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

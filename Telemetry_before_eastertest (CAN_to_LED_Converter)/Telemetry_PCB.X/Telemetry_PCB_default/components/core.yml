@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: core
-coreVersion: 5.8.4
+coreVersion: 5.8.3
 device: ATSAMC21E17A
 library: []
 dependency:
@@ -594,7 +594,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM3_USART_InterruptHandler
+            value: SERCOM3_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String
@@ -1948,7 +1948,7 @@ data:
       - children:
         - attributes:
             id: sercom3
-            value: SERCOM3_USART_InterruptHandler
+            value: SERCOM3_I2C_InterruptHandler
           type: Dynamic
         type: Values
       type: String

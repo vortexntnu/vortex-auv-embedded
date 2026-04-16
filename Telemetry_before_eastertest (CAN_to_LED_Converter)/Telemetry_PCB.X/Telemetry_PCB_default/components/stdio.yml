@@ -1,6 +1,6 @@
 configVersion: 1.0.0
 componentName: stdio
-coreVersion: 5.8.4
+coreVersion: 5.8.3
 device: ATSAMC21E17A
 library: []
 dependency:
