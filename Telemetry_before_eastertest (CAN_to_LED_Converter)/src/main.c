@@ -24,6 +24,7 @@
 
 //#define LED_CMD_STDID        (0x469u)
 #define WATCHDOG_DISABLE_ID  (0x666u)
+#define INT_PT_SENSOR_ID (0x780u)
 
 /* RX variables defined in CAN_facade.c */
 extern volatile bool rxReady;
@@ -62,6 +63,7 @@ int main(void)
     CAN_Init();
     led_init();
     led_logic_init();
+    bmp280_init_device();
 
     SysTick_Config(CPU_CLOCK_FREQUENCY / 1000u);
 
@@ -84,6 +86,9 @@ int main(void)
     /* Configure watchdog, but do not run it until first CAN activity */
     led_can_watchdog_set_send_cb(watchdog_can_send);
     led_can_watchdog_init(millis());
+
+    float temperature;
+    float pressure;
 
     while (true)
     {
@@ -168,6 +173,13 @@ int main(void)
             }
             printf("\r\n");
             */
+        }
+
+        if (bmp280_read_sample(&temperature, &pressure) == 0) {
+            uint8_t can_payload[8] = {0};
+            can_payload[0] = temperature;
+            can_payload[4] = pressure;
+            CAN_Send(INT_PT_SENSOR_ID, can_payload, sizeof(can_payload));
         }
     }
 }
