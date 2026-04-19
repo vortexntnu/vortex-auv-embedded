@@ -13,6 +13,7 @@ static volatile bool read_failed = true;
 static uint8_t encoder_rx_buf[2] = {0};
 static uint8_t encoder_reg = ANGLE_REGISTER;
 static uint8_t raw_encoder_angles[2 * NUM_ENCODERS] = {0};
+static volatile bool can_tx_avaliable = false;
 
 struct state_context ctx;
 
@@ -70,7 +71,10 @@ void state_machine() {
             ctx.tx_frame.buf[i] = raw_encoder_angles[i];
         }
 
-        can_transmit(&ctx.tx_frame);
+        if (can_tx_avaliable){
+            can_transmit(&ctx.tx_frame);
+        }
+
         encoder_num = 0;
     }
     can_recieve(&ctx.rx_frame);
@@ -84,6 +88,7 @@ void can_rx_callback(uintptr_t context) {
     // CAN0_ErrorGet(); if (err) {
     //     return;
     // }
+    can_tx_avaliable = true;
     switch (ctx.rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
