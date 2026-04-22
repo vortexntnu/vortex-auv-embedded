@@ -7,6 +7,7 @@
 
 #include "tcc.h"
 #include "sam.h"
+#include "tcc_common.h"
 
 TCC_CALLBACK_OBJECT TCC1_CallbackObj;
 
@@ -30,11 +31,11 @@ void TCC1_PWMInitialize(void) {
 
     /* Configure duty cycle values */  // All set to 1500 micro seconds duty
                                        // cycle
-    TCC1_REGS->TCC_CC[0] = 9000;
-    TCC1_REGS->TCC_CC[1] = 9000;
-    TCC1_REGS->TCC_CC[2] = 9000;
-    TCC1_REGS->TCC_CC[3] = 9000;
-    TCC1_REGS->TCC_PER = 119999;
+    TCC1_REGS->TCC_CC[0] = PWM_IDLE;
+    TCC1_REGS->TCC_CC[1] = PWM_IDLE;
+    TCC1_REGS->TCC_CC[2] = PWM_IDLE;
+    TCC1_REGS->TCC_CC[3] = PWM_IDLE;
+    TCC1_REGS->TCC_PER = TCC_PERIOD;
 
     // Max duty cycle: 2300 micro seconds
     // Idle duty cycle: 1500 micro seconds = 9000

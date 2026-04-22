@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "gripper.h"
 #include "state_machine.h"
 #include "system_init.h"
 
@@ -71,7 +72,8 @@ int main(void) {
     // WDT_Enable();
 
     printf("Start Gripper\r\n");
-    start_gripper();
+    // start_gripper();
+    stop_gripper();
     //
     //   struct can_tx_frame tx;
     //   tx.id = 0x369;

@@ -20,9 +20,9 @@ typedef struct {
 } servo_map_t;
 
 static const servo_map_t servo_map[] = {
-    {TCC0_PWM24bitDutySet, 3},  // servo 0
-    {TCC1_PWM24bitDutySet, 0},  // servo 1
     {TCC1_PWM24bitDutySet, 1},  // servo 2
+    {TCC1_PWM24bitDutySet, 0},  // servo 1
+    {TCC0_PWM24bitDutySet, 3},  // servo 0
 };
 
 int set_servos_pwm(const uint8_t* pwm_data, uint8_t data_len) {
@@ -35,7 +35,7 @@ int set_servos_pwm(const uint8_t* pwm_data, uint8_t data_len) {
     memcpy(duty_cycle_us, pwm_data, sizeof(duty_cycle_us));
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
-        printf("duty cycle: %d", duty_cycle_us[i]);
+        // printf("duty cycle: %d", duty_cycle_us[i]);
         uint32_t tcc_val = ((uint32_t)duty_cycle_us[i] * (TCC_PERIOD + 1u)) /
                            PWM_PERIOD_MICROSECONDS;
         servo_map[i].set_duty(servo_map[i].channel, tcc_val);

@@ -82,7 +82,7 @@ void state_machine() {
 }
 
 void can_rx_callback(uintptr_t context) {
-    printf("Entering can RX callback\r\n");
+    // printf("Entering can RX callback\r\n");
     // print_can_frame(ctx.rx_frame.id, ctx.rx_frame.len,
     // ctx.rx_frame.timestamp, ctx.rx_frame.buf); CAN_ERROR err =
     // CAN0_ErrorGet(); if (err) {
@@ -97,7 +97,8 @@ void can_rx_callback(uintptr_t context) {
             start_gripper();
             break;
         case SET_PWM:
-            ctx.events |= EVENT_SET_PWM;
+            // ctx.events |= EVENT_SET_PWM;
+            set_servos_pwm(ctx.rx_frame.buf, 4);
             break;
         case RESET_MCU:
             NVIC_SystemReset();
