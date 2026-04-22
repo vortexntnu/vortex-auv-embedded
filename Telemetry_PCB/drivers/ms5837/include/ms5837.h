@@ -35,7 +35,7 @@ typedef struct
     uint8_t model;
     float fluidDensity;
     bool initialized;
-} ms5837_t;
+} MS5837_t;
 
 /* User/platform function:
  * Replace with your Harmony delay method if desired.

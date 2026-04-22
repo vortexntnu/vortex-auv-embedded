@@ -39,6 +39,7 @@
 #include "led_logic.h"
 // #include "node_watchdog.h"
 #include "interrupts.h"
+#include "../drivers/ms5837/include/ms5837.h"
 #include "mprls_pressure.h"
 #include "peripheral/sercom/i2c_master/plib_sercom3_i2c_master.h"
 #include "ws2812_port_sercom0_harmony.h"
@@ -56,6 +57,7 @@ static volatile bool uncommitted_changes = false;
 MS5837_t external_pressure_device;
 uint32_t last_pressure_read = 0;
 const uint32_t pressure_interval_ms = 20;
+#define PRESSURE_ID 0x600
 
 uint8_t tx_counter = 0;
 uint32_t last_spin = 0;
@@ -201,6 +203,7 @@ int main(void) {
                 ext_pressure[1] = MS5837_Temperature(&external_pressure_device);
                 ext_pressure[2] = MS5837_Depth(&external_pressure_device);
                 ext_pressure[3] = MS5837_Altitude(&external_pressure_device);
+                CAN_Send(PRESSURE_ID, ext_pressure, sizeof(ext_pressure));
             }
         }
     }

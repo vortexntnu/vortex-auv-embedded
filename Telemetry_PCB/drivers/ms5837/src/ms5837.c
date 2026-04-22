@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* Include your Harmony-generated I2C header here */
-#include "plib_sercom3_i2c_master.h"   // adjust filename if needed
+#include "definitions.h"
 
 /* Thresholds from your original code/context */
 #define MS5837_02BA_MAX_SENSITIVITY    49000U

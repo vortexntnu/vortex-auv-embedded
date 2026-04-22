@@ -310,6 +310,7 @@
       </logicalFolder>
       <itemPath>../src/config/default/pin_configurations.csv</itemPath>
       <itemPath>../src/main.c</itemPath>
+      <itemPath>../drivers/ms5837/src/ms5837.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -324,6 +325,7 @@
     <Elem>../drivers/wsen_pads/src</Elem>
     <Elem>../drivers/leakage-sensor/src</Elem>
     <Elem>../drivers/mprls</Elem>
+    <Elem>../drivers/ms5837/src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -333,14 +335,14 @@
         <targetDevice>ATSAMC21E17A</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>AtmelIceTool</platformTool>
+        <platformTool>noID</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>4.60</languageToolchainVersion>
-        <platform>3</platform>
+        <languageToolchainVersion>4.50</languageToolchainVersion>
+        <platform>2</platform>
       </toolsSet>
       <packs>
-        <pack name="CMSIS" vendor="ARM" version="5.4.0"/>
         <pack name="SAMC21_DFP" vendor="Microchip" version="3.8.119"/>
+        <pack name="CMSIS" vendor="ARM" version="5.4.0"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -428,7 +430,6 @@
       <C32>
         <property key="additional-warnings" value="true"/>
         <property key="addresss-attribute-use" value="false"/>
-        <property key="appendMe" value=""/>
         <property key="cast-align" value="false"/>
         <property key="code-model" value="default"/>
         <property key="const-model" value="default"/>
@@ -443,7 +444,7 @@
         <property key="exclude-floating-point" value="false"/>
         <property key="expand-pragma-config" value="false"/>
         <property key="extra-include-directories"
-                  value="../app/include;../app/src;../drivers/ws2812/include ;../drivers/ws2812/src ;../src;../src/config/default;../src/packs/ATSAMC21E17A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../utils/include;..\drivers\mprls;..\drivers\wsen_pads;..\drivers\wsen_pads\include"/>
+                  value="../app/include;../app/src;../drivers/ws2812/include ;../drivers/ws2812/src ;../src;../src/config/default;../src/packs/ATSAMC21E17A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../utils/include;..\drivers\mprls;..\drivers\wsen_pads;..\drivers\wsen_pads\include;../drivers/ms5837/include"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>
@@ -507,7 +508,6 @@
         <property key="additional-options-use-response-files" value="false"/>
         <property key="additional-options-write-sla" value="false"/>
         <property key="allocate-dinit" value="false"/>
-        <property key="appendMe" value=""/>
         <property key="code-dinit" value="false"/>
         <property key="ebase-addr" value=""/>
         <property key="enable-check-sections" value="false"/>
@@ -553,7 +553,6 @@
       <C32CPP>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
-        <property key="appendMe" value=""/>
         <property key="check-new" value="false"/>
         <property key="eh-specs" value="true"/>
         <property key="enable-app-io" value="false"/>
