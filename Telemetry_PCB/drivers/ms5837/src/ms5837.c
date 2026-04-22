@@ -1,6 +1,7 @@
 #include "ms5837.h"
 #include <math.h>
 #include <string.h>
+#include <stdint.h>
 
 /* Include your Harmony-generated I2C header here */
 #include "plib_sercom3_i2c_master.h"   // adjust filename if needed
@@ -15,23 +16,21 @@ static bool MS5837_Reset(void);
 static bool MS5837_ReadPROM(MS5837_t *dev);
 static void MS5837_Calculate(MS5837_t *dev);
 
+
+extern volatile uint32_t ms;
 /* -------------------------------------------------------------------------- */
 /* Replace this with a proper Harmony delay                                    */
 /* -------------------------------------------------------------------------- */
-void MS5837_DelayMs(uint32_t ms)
+
+static inline uint32_t millis(void)
 {
-    /* Examples:
-       - SYS_TIME_DelayMS(ms, &handle);
-       - or a simple blocking loop if you already have one
-       For now this is a stub to be implemented by you.
-    */
-    volatile uint32_t i, j;
-    for (i = 0; i < ms; i++)
-    {
-        for (j = 0; j < 4000U; j++)
-        {
-            __asm__ volatile ("nop");
-        }
+    return ms;
+}
+
+void MS5837_DelayMs(uint32_t delay_ms)
+{
+    const uint32_t start = millis();
+    while ((uint32_t)(millis() - start) < delay_ms) {
     }
 }
 
