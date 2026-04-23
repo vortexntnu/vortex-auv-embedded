@@ -62,14 +62,6 @@ struct pwm_output {
     uint16_t target_pulse_us;
 };
 
-enum can_events {
-    TURN_THRUSTERS_OFF = 0x369,
-    TURN_LIGHTS_OFF    = 0x36A,
-    RESET              = 0x36B,
-    SET_THRUSTER_PWM   = 0x36C,
-    SET_LIGHT_PWM      = 0x36D
-};
-
 typedef enum {
     UART_STATE_WAIT_HEADER,   /* Waiting for 3-byte header */
     UART_STATE_WAIT_PAYLOAD,  /* Waiting for payload + checksum byte */
@@ -143,7 +135,7 @@ static void set_light_output(const uint8_t *data, struct pwm_output *outputs, si
 
 
 /**
- * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
+ * @brief Handles incoming UART messages and dispatches them to their corresponding action.
  */
 static void message_handler(void);
 
