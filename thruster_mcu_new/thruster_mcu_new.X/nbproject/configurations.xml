@@ -42,13 +42,10 @@
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h</itemPath>
-                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.h</itemPath>
-                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.h</itemPath>
               </logicalFolder>
             </logicalFolder>
             <logicalFolder name="tc" displayName="tc" projectFiles="true">
               <itemPath>../src/config/default/peripheral/tc/plib_tc_common.h</itemPath>
-              <itemPath>../src/config/default/peripheral/tc/plib_tc0.h</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc3.h</itemPath>
             </logicalFolder>
             <logicalFolder name="tcc" displayName="tcc" projectFiles="true">
@@ -188,12 +185,9 @@
                      projectFiles="true">
         <logicalFolder name="components" displayName="components" projectFiles="true">
           <itemPath>thruster_mcu_new_default/components/cmsis.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/sercom1.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/dfp.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/tc0.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/eic.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/pm.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/sercom0.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/tcc1.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/rtc.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/evsys.yml</itemPath>
@@ -262,12 +256,9 @@
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
               <logicalFolder name="usart" displayName="usart" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom2_usart.c</itemPath>
-                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom1_usart.c</itemPath>
-                <itemPath>../src/config/default/peripheral/sercom/usart/plib_sercom0_usart.c</itemPath>
               </logicalFolder>
             </logicalFolder>
             <logicalFolder name="tc" displayName="tc" projectFiles="true">
-              <itemPath>../src/config/default/peripheral/tc/plib_tc0.c</itemPath>
               <itemPath>../src/config/default/peripheral/tc/plib_tc3.c</itemPath>
             </logicalFolder>
             <logicalFolder name="tcc" displayName="tcc" projectFiles="true">

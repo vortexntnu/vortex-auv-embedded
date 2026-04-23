@@ -146,10 +146,6 @@ void SYS_Initialize ( void* data )
 
     NVMCTRL_Initialize( );
 
-    SERCOM1_USART_Initialize();
-
-    SERCOM0_USART_Initialize();
-
     EVSYS_Initialize();
 
     DMAC_Initialize();
@@ -157,8 +153,6 @@ void SYS_Initialize ( void* data )
     EIC_Initialize();
 
     RTC_Initialize();
-
-    TC0_TimerInitialize();
 
     TC3_CompareInitialize();
 

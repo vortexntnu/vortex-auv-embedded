@@ -278,8 +278,7 @@ void app_init(void) {
     set_pwm_neutral(thrusters, 8);
     set_pwm_neutral(lights, 1);
     
-    // Enable TC
-    TC0_TimerStart();
+    // Enable TC3
     TC3_CompareStart();
     
     // Enable watchdog

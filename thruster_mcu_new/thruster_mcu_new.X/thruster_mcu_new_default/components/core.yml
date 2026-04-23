@@ -362,7 +362,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x29e0f'
+            value: '0x28e09'
           type: Dynamic
         type: Values
       type: String
@@ -780,7 +780,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -791,7 +791,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -802,18 +802,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    SERCOM0_CORE_CLOCK_ENABLE:
-      attributes:
-        id: SERCOM0_CORE_CLOCK_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: sercom0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -824,7 +813,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -835,18 +824,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    SERCOM0_INTERRUPT_ENABLE:
-      attributes:
-        id: SERCOM0_INTERRUPT_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: sercom0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -857,18 +835,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    SERCOM0_INTERRUPT_HANDLER_LOCK:
-      attributes:
-        id: SERCOM0_INTERRUPT_HANDLER_LOCK
-      children:
-      - children:
-        - attributes:
-            id: sercom0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -879,18 +846,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM0_USART_InterruptHandler
-          type: Dynamic
-        type: Values
-      type: String
-    SERCOM0_INTERRUPT_HANDLER:
-      attributes:
-        id: SERCOM0_INTERRUPT_HANDLER
-      children:
-      - children:
-        - attributes:
-            id: sercom0
-            value: SERCOM0_USART_InterruptHandler
+            value: SERCOM0_Handler
           type: Dynamic
         type: Values
       type: String
@@ -901,7 +857,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -912,7 +868,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -923,18 +879,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    SERCOM1_CORE_CLOCK_ENABLE:
-      attributes:
-        id: SERCOM1_CORE_CLOCK_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: sercom1
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -945,7 +890,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -956,18 +901,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    SERCOM1_INTERRUPT_ENABLE:
-      attributes:
-        id: SERCOM1_INTERRUPT_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: sercom1
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -978,18 +912,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    SERCOM1_INTERRUPT_HANDLER_LOCK:
-      attributes:
-        id: SERCOM1_INTERRUPT_HANDLER_LOCK
-      children:
-      - children:
-        - attributes:
-            id: sercom1
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1000,18 +923,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: SERCOM1_USART_InterruptHandler
-          type: Dynamic
-        type: Values
-      type: String
-    SERCOM1_INTERRUPT_HANDLER:
-      attributes:
-        id: SERCOM1_INTERRUPT_HANDLER
-      children:
-      - children:
-        - attributes:
-            id: sercom1
-            value: SERCOM1_USART_InterruptHandler
+            value: SERCOM1_Handler
           type: Dynamic
         type: Values
       type: String
@@ -1223,7 +1135,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -1234,7 +1146,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -1245,7 +1157,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1256,7 +1168,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1282,17 +1194,6 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
-    TC0_INTERRUPT_ENABLE:
-      attributes:
-        id: TC0_INTERRUPT_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: tc0
-            value: 'false'
-          type: Dynamic
-        type: Values
-      type: Boolean
     NVIC_20_0_HANDLER:
       attributes:
         id: NVIC_20_0_HANDLER
@@ -1304,17 +1205,6 @@ data:
           type: Dynamic
         type: Values
       type: String
-    TC0_INTERRUPT_HANDLER:
-      attributes:
-        id: TC0_INTERRUPT_HANDLER
-      children:
-      - children:
-        - attributes:
-            id: tc0
-            value: TC0_Handler
-          type: Dynamic
-        type: Values
-      type: String
     NVIC_20_0_HANDLER_LOCK:
       attributes:
         id: NVIC_20_0_HANDLER_LOCK
@@ -1322,17 +1212,6 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    TC0_INTERRUPT_HANDLER_LOCK:
-      attributes:
-        id: TC0_INTERRUPT_HANDLER_LOCK
-      children:
-      - children:
-        - attributes:
-            id: tc0
             value: 'false'
           type: Dynamic
         type: Values
