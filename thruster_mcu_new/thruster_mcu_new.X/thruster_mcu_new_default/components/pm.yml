@@ -22,8 +22,8 @@ data:
     - children:
       - attributes:
           id: pm
-          x: '347'
-          y: '164'
+          x: '5'
+          y: '157'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph

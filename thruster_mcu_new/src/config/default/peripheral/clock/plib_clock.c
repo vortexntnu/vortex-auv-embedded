@@ -125,20 +125,6 @@ void CLOCK_Initialize (void)
     {
         /* Wait for synchronization */
     }
-    /* Selection of the Generator and write Lock for CAN0 */
-    GCLK_REGS->GCLK_PCHCTRL[26] = GCLK_PCHCTRL_GEN(0x0UL)  | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[26] & GCLK_PCHCTRL_CHEN_Msk) != GCLK_PCHCTRL_CHEN_Msk)
-    {
-        /* Wait for synchronization */
-    }
-    /* Selection of the Generator and write Lock for CAN1 */
-    GCLK_REGS->GCLK_PCHCTRL[27] = GCLK_PCHCTRL_GEN(0x0UL)  | GCLK_PCHCTRL_CHEN_Msk;
-
-    while ((GCLK_REGS->GCLK_PCHCTRL[27] & GCLK_PCHCTRL_CHEN_Msk) != GCLK_PCHCTRL_CHEN_Msk)
-    {
-        /* Wait for synchronization */
-    }
     /* Selection of the Generator and write Lock for TCC0 TCC1 */
     GCLK_REGS->GCLK_PCHCTRL[28] = GCLK_PCHCTRL_GEN(0x0UL)  | GCLK_PCHCTRL_CHEN_Msk;
 
@@ -174,8 +160,6 @@ void CLOCK_Initialize (void)
     {
         /* Wait for synchronization */
     }
-    /* Configure the AHB Bridge Clocks */
-    MCLK_REGS->MCLK_AHBMASK = 0x1fffU;
 
 
 

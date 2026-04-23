@@ -8,7 +8,6 @@
 #define WRITE_ID(id) (id << 18)
 #define READ_ID(id) (id >> 18)
 
-#define TRANSFER_SIZE 16
 #define PWM_MAX_STEP_US  25U
 
 /* =============================================================================
@@ -86,7 +85,7 @@ static uint8_t          uart_tx_frame[UART_MAX_TX_FRAME];
 static volatile bool slew_tick = false;
 
 static volatile bool adc_dma_done = false;
-static volatile uint16_t adc_result_array[TRANSFER_SIZE];
+static volatile uint16_t adc_result_array[16];
 
 
 static struct pwm_output thrusters[8] = {
@@ -265,10 +264,6 @@ void app_init(void) {
     RTC_Timer32CallbackRegister(rtc_callback, 0);
     RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
     RTC_Timer32Start();
-    
-    
-    // Configure SysTick Timer
-    SYSTICK_TimerStart();
     
     // Configure DMA
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, adc_dma_callback, 0);

@@ -6,8 +6,6 @@ deviceLibrary: {}
 groupModules: []
 modules:
 - adc0
-- can0
-- can1
 - cmsis
 - core
 - dfp
@@ -28,7 +26,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/ATSAMC21J18A.ld
   hash: 3fc7dbb63ae72ecd9b52572e4dd84ed79cbd37feb6064cb6d4df6fca301d09af
 - file: ../src/config/default/definitions.h
-  hash: bc82150dbb706933ce69f4efbd215f2dc6a467691c2634de57ab5aa6850834c6
+  hash: 9308331b843dbe3525de2055a0b31182767af6274364e21f4ec4a18fe4f39d22
 - file: ../src/config/default/device.h
   hash: e539bb402fa4783d95ccf06235458b2e1fe01207c83c0e046a853e0385d0b6f4
 - file: ../src/config/default/device_cache.h
@@ -38,11 +36,11 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/exceptions.c
   hash: cb43fa61f2dd0433249ce1aa079d3911ceef2297f17ad29b6cf79dd70d6540d2
 - file: ../src/config/default/initialization.c
-  hash: 717b4b986b23859b1f0f2047816c8287a0efe8cbb69dd0cbd4963460834e3b75
+  hash: 011b17fa2e87ea3e1e79077f84c4d16e2a8f6068901f01f3d50b119e548aa12b
 - file: ../src/config/default/interrupts.c
-  hash: 232da3ca2cd540824558cb06ff26bdbc0af8b4430c6dba593969c0b0942e7e08
+  hash: f2fcc14b2a7d37aab99dab4c7f5dc721651a3ad3941df5f6c7a1f0549d17bc9b
 - file: ../src/config/default/interrupts.h
-  hash: 824fd12d80e20ce4c6a3a788d4877db219e532ffa80642c949786e050a22cd10
+  hash: 2e9b338d13fed7365bd456f5804a6f75e7e79da56a85bad2ce40d31ff2ea984b
 - file: ../src/config/default/libc_syscalls.c
   hash: 88bb2e34c939601b5b7ad076556e3ee0fcedf388436b8cddb6d6fd3e9d07472f
 - file: ../src/config/default/peripheral/adc/plib_adc0.c
@@ -51,18 +49,8 @@ generatedFileHashHistoryMap:
   hash: cea1d95751212e42a22fd26a1a37f5aba58d6cd7506a5da1fca4d0e4059793bd
 - file: ../src/config/default/peripheral/adc/plib_adc_common.h
   hash: c3ed4d59b7017ce8159a3dd0773d5744387f9673350f439f3665b52446376d79
-- file: ../src/config/default/peripheral/can/plib_can0.c
-  hash: bff9c196ec883e8cae6bf065e2474cc9731aaa0205e6751b51868452c1b85a1f
-- file: ../src/config/default/peripheral/can/plib_can0.h
-  hash: 5abaf94e273c23066f29d9cbbb4ccedf1836692aff56250aa33f57d5ce195243
-- file: ../src/config/default/peripheral/can/plib_can1.c
-  hash: 58ced29d8c4c8d6d1caab5a255896a8d721113e4c2e51b616c1deb71e46be592
-- file: ../src/config/default/peripheral/can/plib_can1.h
-  hash: f804432034e53981967ddbdf933522709e6ae8e14d4bd83e658401fc07301cd7
-- file: ../src/config/default/peripheral/can/plib_can_common.h
-  hash: e0e3b54f69be9d8811bbe507f91daa443ae7bff5dc724ac51baebc160097b2d6
 - file: ../src/config/default/peripheral/clock/plib_clock.c
-  hash: 3e0dcce421f5c4053edc3e849772033805387127c12a13c2e6a08e888a8659ab
+  hash: 8f7edfbddff0d1f4524f24a7d94b4dc5be1d29be52e66da1bbc8bce863da44e3
 - file: ../src/config/default/peripheral/clock/plib_clock.h
   hash: 01c269741541514e997ef61546f4dbb0e23f66e27c6a957162557f13b4638baf
 - file: ../src/config/default/peripheral/dmac/plib_dmac.c
@@ -78,7 +66,7 @@ generatedFileHashHistoryMap:
 - file: ../src/config/default/peripheral/evsys/plib_evsys.h
   hash: 7bf0ec7eb0763980ca2f91b2a2dbc7d090dad0294db9248c57698b77e3d2216e
 - file: ../src/config/default/peripheral/nvic/plib_nvic.c
-  hash: a128c99fcf0a22808c2eec229a92c1a0f4548995d15bc50e870582505dc9db5d
+  hash: 1d8c225e51e29f77c967b7c772bb31263c979a300c8104d1a104b8cf1687ac05
 - file: ../src/config/default/peripheral/nvic/plib_nvic.h
   hash: 9936ac782115af41003255283fa2f603f4ff2212d16275b7c80ea8d067a9e208
 - file: ../src/config/default/peripheral/nvmctrl/plib_nvmctrl.c
@@ -111,10 +99,6 @@ generatedFileHashHistoryMap:
   hash: 09c17c725b402654121033ff2450cf410b4c9745efc6583f9725677fd909607b
 - file: ../src/config/default/peripheral/sercom/usart/plib_sercom_usart_common.h
   hash: 3653b66472c558c50f7037a1dd25d2678e9a13aa718f3c53a2195e6f3919ea48
-- file: ../src/config/default/peripheral/systick/plib_systick.c
-  hash: 6f71481bfea2b4f803ec8e8814bae21cf02d77b7000f5728174b28f37a205b11
-- file: ../src/config/default/peripheral/systick/plib_systick.h
-  hash: 37e205f2220dcafb325816bc1eba9e7bab84b82b77bde961255295e6541fc3da
 - file: ../src/config/default/peripheral/tc/plib_tc0.c
   hash: 30cb065e0a659801979aecdbc67fa11136b867a686273cacf5e259c8de0ef7ad
 - file: ../src/config/default/peripheral/tc/plib_tc0.h

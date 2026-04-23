@@ -549,7 +549,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1fff'
+            value: '0x1cff'
           type: Dynamic
         type: Values
       type: String
@@ -560,7 +560,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -571,7 +571,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -582,18 +582,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    CAN0_CLOCK_ENABLE:
-      attributes:
-        id: CAN0_CLOCK_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: can0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -604,7 +593,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -615,18 +604,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    CAN0_INTERRUPT_ENABLE:
-      attributes:
-        id: CAN0_INTERRUPT_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: can0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -637,18 +615,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: CAN0_InterruptHandler
-          type: Dynamic
-        type: Values
-      type: String
-    CAN0_INTERRUPT_HANDLER:
-      attributes:
-        id: CAN0_INTERRUPT_HANDLER
-      children:
-      - children:
-        - attributes:
-            id: can0
-            value: CAN0_InterruptHandler
+            value: CAN0_Handler
           type: Dynamic
         type: Values
       type: String
@@ -659,18 +626,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    CAN0_INTERRUPT_HANDLER_LOCK:
-      attributes:
-        id: CAN0_INTERRUPT_HANDLER_LOCK
-      children:
-      - children:
-        - attributes:
-            id: can0
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -681,7 +637,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -692,7 +648,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '0'
           type: Dynamic
         type: Values
       type: Integer
@@ -703,18 +659,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    CAN1_CLOCK_ENABLE:
-      attributes:
-        id: CAN1_CLOCK_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -725,7 +670,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'false'
+            value: 'true'
           type: Dynamic
         type: Values
       type: Boolean
@@ -736,18 +681,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    CAN1_INTERRUPT_ENABLE:
-      attributes:
-        id: CAN1_INTERRUPT_ENABLE
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -758,18 +692,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: CAN1_InterruptHandler
-          type: Dynamic
-        type: Values
-      type: String
-    CAN1_INTERRUPT_HANDLER:
-      attributes:
-        id: CAN1_INTERRUPT_HANDLER
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: CAN1_InterruptHandler
+            value: CAN1_Handler
           type: Dynamic
         type: Values
       type: String
@@ -780,18 +703,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
-          type: Dynamic
-        type: Values
-      type: Boolean
-    CAN1_INTERRUPT_HANDLER_LOCK:
-      attributes:
-        id: CAN1_INTERRUPT_HANDLER_LOCK
-      children:
-      - children:
-        - attributes:
-            id: can1
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -5371,7 +5283,7 @@ data:
             id: enabled
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       type: File
@@ -5384,7 +5296,7 @@ data:
             id: enabled
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       type: File
@@ -5397,7 +5309,7 @@ data:
             id: enabled
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       type: File
@@ -5410,7 +5322,7 @@ data:
             id: enabled
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       type: File
@@ -5420,7 +5332,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -5971,6 +5883,80 @@ data:
           type: User
         type: Values
       type: String
+    SysTick_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: SysTick_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_-1_0_ENABLE:
+      attributes:
+        id: NVIC_-1_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_-1_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_-1_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    USE_SYSTICK_INTERRUPT:
+      attributes:
+        id: USE_SYSTICK_INTERRUPT
+      children:
+      - children:
+        - attributes:
+            id: readOnly
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    SysTick_INTERRUPT_ENABLE:
+      attributes:
+        id: SysTick_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    SysTick_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: SysTick_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData:
     children:
     - attributes:
