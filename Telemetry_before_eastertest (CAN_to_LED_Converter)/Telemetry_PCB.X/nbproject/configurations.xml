@@ -10,6 +10,7 @@
         <itemPath>../app/include/led_facade.h</itemPath>
         <itemPath>../app/include/led_logic.h</itemPath>
         <itemPath>../app/include/bmp280_service.h</itemPath>
+        <itemPath>../app/include/pressure_calc.h</itemPath>
       </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
@@ -239,6 +240,7 @@
         <itemPath>../app/src/led_facade.c</itemPath>
         <itemPath>../app/src/led_logic.c</itemPath>
         <itemPath>../app/src/bmp280_service.c</itemPath>
+        <itemPath>../app/src/pressure_calc.c</itemPath>
       </logicalFolder>
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
@@ -332,8 +334,8 @@
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="SAMC21_DFP" vendor="Microchip" version="3.8.119"/>
         <pack name="CMSIS" vendor="ARM" version="5.4.0"/>
+        <pack name="SAMC21_DFP" vendor="Microchip" version="3.8.119"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -436,7 +438,7 @@
         <property key="exclude-floating-point" value="false"/>
         <property key="expand-pragma-config" value="false"/>
         <property key="extra-include-directories"
-                  value="../app/include;../app/src;../drivers/ws2812/include ;../drivers/ws2812/src ;../src;../src/config/default;../src/packs/ATSAMC21E17A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../utils/include"/>
+                  value="../app/include;../app/src;../drivers/ws2812/include ;../drivers/ws2812/src ;../src;../src/config/default;../src/packs/ATSAMC21E17A_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../utils/include;..\drivers\bmp280\include"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>

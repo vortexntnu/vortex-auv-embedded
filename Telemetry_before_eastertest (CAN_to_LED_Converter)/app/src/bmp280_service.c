@@ -4,7 +4,7 @@
 
 #include "bme280.h"
 
-#include "peripheral/sercom/i2c_master/plib_sercom2_i2c_master.h"
+#include "peripheral/sercom/i2c_master/plib_sercom3_i2c_master.h"
 #include "peripheral/systick/plib_systick.h"
 
 static uint8_t dev_addr = BME280_I2C_ADDR_PRIM;
@@ -24,11 +24,11 @@ static int8_t platform_i2c_wait(uint32_t timeout_ms)
 {
     uint32_t loops = timeout_ms * 1000U;
 
-    while (SERCOM2_I2C_IsBusy())
+    while (SERCOM3_I2C_IsBusy())
     {
         if (loops == 0U)
         {
-            SERCOM2_I2C_TransferAbort();
+            SERCOM3_I2C_TransferAbort();
             return -1;
         }
 
@@ -36,7 +36,7 @@ static int8_t platform_i2c_wait(uint32_t timeout_ms)
         loops--;
     }
 
-    if (SERCOM2_I2C_ErrorGet() != SERCOM_I2C_ERROR_NONE)
+    if (SERCOM3_I2C_ErrorGet() != SERCOM_I2C_ERROR_NONE)
     {
         return -1;
     }
@@ -48,7 +48,7 @@ static int8_t platform_i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t le
 {
     uint8_t dev_addr_local = *(uint8_t *)intf_ptr;
 
-    if (SERCOM2_I2C_WriteRead(dev_addr_local, &reg_addr, 1, reg_data, len) == false)
+    if (SERCOM3_I2C_WriteRead(dev_addr_local, &reg_addr, 1, reg_data, len) == false)
     {
         return -1;
     }
@@ -72,7 +72,7 @@ static int8_t platform_i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint
         tx[i + 1U] = reg_data[i];
     }
 
-    if (SERCOM2_I2C_Write(dev_addr_local, tx, len + 1U) == false)
+    if (SERCOM3_I2C_Write(dev_addr_local, tx, len + 1U) == false)
     {
         return -1;
     }

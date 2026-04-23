@@ -65,7 +65,8 @@ int main(void)
     CAN_Init();
     led_init();
     led_logic_init();
-    bmp280_init_device();
+    GND_Clear();
+    int rslt = bmp280_init_device();
     struct leak_det leak_detector;
     leakdet_init(&leak_detector, NULL);
 
@@ -96,6 +97,10 @@ int main(void)
     bool bmp_sample_pipeline_started = false;
 
     timing_tc1_init_5hz();
+    
+    uint8_t can_payload[8] = {0};
+    can_payload[0] = (uint8_t)rslt;
+    CAN_Send(INT_PT_SENSOR_ID, can_payload, sizeof(can_payload));
 
     while (true)
     {
@@ -182,6 +187,8 @@ int main(void)
             printf("\r\n");
             */
         }
+        uint8_t can_payload[8] = {0};
+        //CAN_Send(INT_PT_SENSOR_ID, can_payload, sizeof(can_payload));
 
         if (leakdet_tick) {
             leakdet_tick = false;
@@ -189,11 +196,12 @@ int main(void)
             if (!can_activity_seen) {
                 bmp_sample_pipeline_started = false;
             } else {
+                int res = bmp280_try_read_sample(now, &temperature, &pressure);
                 if (bmp_sample_pipeline_started &&
-                    bmp280_try_read_sample(now, &temperature, &pressure) == 0) {
+                    (res == 0)) {
                 uint8_t can_payload[8] = {0};
-                can_payload[0] = (uint8_t)temperature;
-                can_payload[4] = (uint8_t)pressure;
+                memcpy(can_payload, &temperature, 4);
+                memcpy(can_payload + 4, &pressure, 4);
                 CAN_Send(INT_PT_SENSOR_ID, can_payload, sizeof(can_payload));
 
                 bool fast = false;
@@ -215,7 +223,8 @@ int main(void)
                 }
 
                 (void)bmp280_start_sample(now);
-                bmp_sample_pipeline_started = true;
+                bmp_sample_pipeline_started = true;               
+                
             }
         }
 
