@@ -80,7 +80,6 @@ static volatile uint16_t adc_result_array[16];
 static volatile uint16_t thruster_cmd_timeout = 0U;
 static volatile bool thruster_timeout_flag = false;
 
-
 static struct pwm_output thrusters[8] = {
     {PWM_TCC, 2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH1 -> TCC2_CC0
     {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH2 -> TCC2_CC1
@@ -103,24 +102,54 @@ typedef struct {
 static hw_event_flags_t hw_events = {0};
 
 /**
- * @brief Sets PWM pulse widths for multiple PWM outputs (e.g Thrusters and/or lights).
- * 
- * Parses the data buffer containing pulse width values,
- * clamps each to the valid range, and updates the corresponding PWM channels.
- * 
- * @param data Pointer to buffer containing pulse widths in microseconds (format: [MSB, LSB] per output)
- * @param outputs Pointer to array of pwm_output structs
- * @param count Number of outputs to set
+ * @brief Steps all thruster PWM outputs one increment toward their target pulse width.
+ *
+ * Called once per RTC tick. Each channel moves at most PWM_MAX_STEP_US
+ * per call, limiting the rate of change to avoid thrusters from crashing.
  */
-static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count);
+static void slew_thruster_pwm(void);
 
-static void set_light_output(const uint8_t *data, struct pwm_output *outputs, size_t count);
+/**
+ * @brief Sets target pulse widths for thruster PWM outputs.
+ *
+ * Parses the data buffer containing pulse width values,
+ * clamps each to the valid range, and updates the target pulse width
+ * for each thruster. Outputs are ramped toward the target by the slew mechanism.
+ *
+ * @param data Pointer to buffer containing pulse widths in microseconds
+ * @param outputs Pointer to array of pwm_output structs
+ * @param count Number of thrusters to set
+ */
+static void set_thruster_pwm(const uint8_t *data, struct pwm_output *outputs, size_t count);
+
+/**
+ * @brief Sets the light PWM outputs directly without slewing.
+ *
+ * Unlike thruster outputs, light commands are applied immediately
+ * rather than being ramped via the slew mechanism.
+ *
+ * @param data Pointer to buffer containing pulse widths in microseconds (one uint16_t per output)
+ * @param outputs Pointer to array of pwm_output structs
+ * @param count Number of lights to set
+ */
+static void set_light_pwm(const uint8_t *data, struct pwm_output *outputs, size_t count);
 
 
 /**
  * @brief Handles incoming UART messages and dispatches them to their corresponding action.
  */
 static void message_handler(void);
+
+/**
+ * @brief Dispatches pending hardware events from an interrupt-set bitmask.
+ *
+ * Takes a snapshot of the mask, clears it, then calls the provided send
+ * function once per set bit, passing the bit index as the channel number.
+ *
+ * @param mask Pointer to the volatile event bitmask to drain
+ * @param send Function to call for each pending event, receives the channel index
+ */
+static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel));
 
 static bool send_flt_event(uint8_t context);
 
@@ -130,11 +159,27 @@ static bool send_killswitch_event(uint8_t context);
 
 static bool send_current_measurements(float I_arr[8]);
 
-static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel));
-
+/**
+ * @brief Computes the XOR checksum for a UART frame.
+ *
+ * @param msg_id Message ID byte
+ * @param length Payload length byte
+ * @param payload Pointer to payload data
+ * @return XOR of msg_id, length, and all payload bytes
+ */
 static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *payload);
 
-bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length);
+/**
+ * @brief Transmits a framed UART message.
+ *
+ * Builds a complete serial frame and transmits it over SERCOM2.
+ *
+ * @param msg_id Message ID byte
+ * @param payload Pointer to payload data, or NULL if length is 0
+ * @param length Number of payload bytes
+ * @return true if the transmission was successfully initiated, false if the frame exceeds the TX buffer
+ */
+static bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length);
 
 /**
  * @brief Logs thruster current readings from the IMON pins for all 8 channels.
@@ -195,10 +240,7 @@ static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
 static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
 
-static void slew_pwm_outputs(void);
-
 /* --- Public functions --- */
-
 void app_init(void) {
     // Configure USART
     SERCOM2_USART_Enable();
@@ -264,7 +306,7 @@ void app_init(void) {
 void app_task(void) {
     if (slew_tick) {
         slew_tick = false;
-        slew_pwm_outputs();
+        slew_thruster_pwm();
     }
     
     if (adc_dma_done) {
@@ -304,7 +346,7 @@ static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *p
     return csum;
 }
 
-bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length) {
+static bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length) {
     /* Sanity check: 3 header bytes + payload + 1 checksum must fit in tx buffer */
     if ((uint16_t)length + 4U > UART_MAX_TX_FRAME) {
         return false;
@@ -397,13 +439,13 @@ static void message_handler(void) {
             break;
 
         case MSG_SET_THRUSTER_PWM:
-            set_pwm_outputs(uart_payload, thrusters, 8);
+            set_thruster_pwm(uart_payload, thrusters, 8);
             thruster_cmd_timeout = 0U;
             thruster_timeout_flag = false;
             break;
 
         case MSG_SET_LIGHT_PWM:
-            set_light_output(uart_payload, lights, 1);
+            set_light_pwm(uart_payload, lights, 1);
             break;
 
         default:
@@ -464,7 +506,7 @@ static void log_current(void) {
     send_current_measurements(I_array);
 }
 
-static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, size_t count) {
+static void set_thruster_pwm(const uint8_t *data, struct pwm_output *outputs, size_t count) {
     const uint16_t *pulse_data = (const uint16_t *)data;
     for (size_t i = 0; i < count; i++) {
         
@@ -476,7 +518,7 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
     }
 }
 
-static void set_light_output(const uint8_t *data, struct pwm_output *outputs, size_t count) {
+static void set_light_pwm(const uint8_t *data, struct pwm_output *outputs, size_t count) {
     const uint16_t *pulse_data = (const uint16_t *)data;
     for (size_t i = 0; i < count; i++) {
         uint16_t pulse_us = pulse_data[i];
@@ -490,7 +532,7 @@ static void set_light_output(const uint8_t *data, struct pwm_output *outputs, si
     }
 }
 
-static void slew_pwm_outputs(void) {
+static void slew_thruster_pwm(void) {
     for (size_t i = 0; i < 8U; i++) {
         uint16_t target  = thrusters[i].target_pulse_us;
         uint16_t current = thrusters[i].current_pulse_us;
@@ -541,7 +583,6 @@ static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
     }
     
 }
-
 
 static inline void tcc_write(uint8_t instance, uint8_t channel, uint32_t ticks) {
     switch (instance) {
