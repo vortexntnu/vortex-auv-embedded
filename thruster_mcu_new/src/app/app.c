@@ -9,6 +9,7 @@
 #define READ_ID(id) (id >> 18)
 
 #define TRANSFER_SIZE 16
+#define PWM_MAX_STEP_US  25U
 
 /* =============================================================================
  * Serial framing protocol
@@ -48,7 +49,6 @@ enum operating_mode {
     MPWM_TC,
 };
 
-/* --- Types --- */
 struct pwm_output {
     enum operating_mode mode;
     uint8_t  instance;
@@ -70,7 +70,6 @@ enum can_events {
     SET_LIGHT_PWM      = 0x36D
 };
 
-/* UART receive state machine */
 typedef enum {
     UART_STATE_WAIT_HEADER,   /* Waiting for 3-byte header */
     UART_STATE_WAIT_PAYLOAD,  /* Waiting for payload + checksum byte */
@@ -78,32 +77,18 @@ typedef enum {
 
 static uart_rx_state_t  uart_rx_state = UART_STATE_WAIT_HEADER;
 static uint8_t          uart_header[UART_HEADER_SIZE];
-uint8_t          uart_payload[UART_MAX_PAYLOAD + 1U]; /* +1 for checksum */
-volatile bool    uart_message_ready = false;
-uint8_t          uart_msg_id        = 0U;
-uint8_t          uart_msg_len       = 0U;
+uint8_t                 uart_payload[UART_MAX_PAYLOAD + 1U]; /* +1 for checksum */
+volatile bool           uart_message_ready = false;
+uint8_t                 uart_msg_id        = 0U;
+uint8_t                 uart_msg_len       = 0U;
+static uint8_t          uart_tx_frame[UART_MAX_TX_FRAME];
 
 static volatile bool slew_tick = false;
 
-/* Shared TX frame buffer */
-static uint8_t uart_tx_frame[UART_MAX_TX_FRAME];
-
-/* --- Private states --- */
-/* CAN */
-static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
-
-static volatile uint32_t can_status = 0;
-static volatile bool can_message_received = false;
-
-static uint8_t txFiFo[CAN1_TX_FIFO_BUFFER_SIZE];
-static uint8_t rxFiFo0[CAN1_RX_FIFO0_SIZE];
-
-/* ADC */
 static volatile bool adc_dma_done = false;
 static volatile uint16_t adc_result_array[TRANSFER_SIZE];
 
 
-/* Application */
 static struct pwm_output thrusters[8] = {
     {PWM_TCC, 2, 0, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH1 -> TCC2_CC0
     {PWM_TCC, 2, 1, TCC2_PERIOD, 1000 ,2000, 1500, THRUSTER_PWM_PERIOD_US, 1500, 1500}, // TH2 -> TCC2_CC1
@@ -139,19 +124,6 @@ typedef struct {
 
 static hw_event_flags_t hw_events = {0};
 
-// FOR TESTING
-void test_thrusters(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms);
-void test_thrusters_seq(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint16_t step_delay_ms);
-void test_neutral_to_max(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint32_t hold_ms);
-void test_thrusters_split(const uint8_t *thruster_indices, size_t count, uint16_t max_us, uint16_t min_us, uint16_t step_us, uint32_t step_delay_ms);
-
-
-void generate_pwm_signals();
-void test_can_rx();
-void test_can_tx();
-
-/* --- Private function prototypes --- */
-
 /**
  * @brief Sets PWM pulse widths for multiple PWM outputs (e.g Thrusters and/or lights).
  * 
@@ -182,9 +154,9 @@ static bool send_current_measurements(float I_arr[8]);
 
 static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel));
 
-/* UART */
 static uint8_t compute_checksum(uint8_t msg_id, uint8_t length, const uint8_t *payload);
-bool    uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length);
+
+bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t length);
 
 /**
  * @brief Logs thruster current readings from the IMON pins for all 8 channels.
@@ -239,8 +211,6 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
 
 /* Callbacks */
 static void uart_receive_callback(uintptr_t context);
-static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context);
-static void can_transmit_callback(uintptr_t context);
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext);
 static void eic_pin_flt_thruster(uintptr_t context);
 static void eic_pin_pg_thruster(uintptr_t context);
@@ -252,17 +222,11 @@ static void slew_pwm_outputs(void);
 /* --- Public functions --- */
 
 void app_init(void) {
-    /* Register UART receive callback and arm the first header read.
-     * From this point the receive is self-sustaining: the callback
-     * always re-arms itself before returning. */
+    // Configure USART
     SERCOM2_USART_Enable();
     SERCOM2_USART_ReadCallbackRegister(uart_receive_callback, (uintptr_t)NULL);
     SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
     
-    // Configure CAN RAM & callbacks 
-    CAN1_MessageRAMConfigSet(Can1MessageRAM);
-    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
-    CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
     
     // Configure callback for killswitch
     EIC_NMICallbackRegister(eic_pin_killswitch, 0);
@@ -392,9 +356,8 @@ static void uart_receive_callback(uintptr_t context) {
     switch (uart_rx_state) {
 
         case UART_STATE_WAIT_HEADER: {
-            /* Validate start byte */
             if (uart_header[0] != UART_START_BYTE) {
-                /* Bad frame start - discard and wait for the next header */
+                /* Bad frame start, discard and wait for the next header */
                 SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
                 return;
             }
@@ -404,12 +367,12 @@ static void uart_receive_callback(uintptr_t context) {
 
             if (uart_msg_len == 0U) {
                 /* No payload: checksum is just MSG_ID ^ LENGTH ^ (no bytes) = MSG_ID ^ LENGTH.
-                 * We still need to read the single checksum byte before validating. */
+                 * Still need to read the single checksum byte before validating. */
                 uart_rx_state = UART_STATE_WAIT_PAYLOAD;
                 SERCOM2_USART_Read(uart_payload, 1U); /* checksum only */
             } else {
                 if (uart_msg_len > UART_MAX_PAYLOAD) {
-                    /* LENGTH field is out of range - discard and resync */
+                    /* LENGTH field is out of range, discard and resync */
                     SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
                     return;
                 }
@@ -428,7 +391,6 @@ static void uart_receive_callback(uintptr_t context) {
             if (received_checksum == expected_checksum) {
                 uart_message_ready = true; /* Signal app_task to process */
             }
-            /* On checksum mismatch we silently drop the frame */
 
             /* Always return to header state and re-arm */
             uart_rx_state = UART_STATE_WAIT_HEADER;
@@ -442,8 +404,6 @@ static void uart_receive_callback(uintptr_t context) {
             break;
     }
 }
-
-/* --- Private helpers --- */
 
 static void message_handler(void) {
     switch (uart_msg_id) {
@@ -468,7 +428,7 @@ static void message_handler(void) {
             break;
 
         default:
-            /* Unknown message ID - ignore */
+            /* Unknown message ID */
             break;
     }
 }
@@ -510,8 +470,8 @@ static bool send_current_measurements(float I_arr[8]) {
 
 static void log_current(void) {
     const float ADC_VREF   = 5.0f;
-    const float G_IMON     = 18.31e-6f;  // Efuse current monitor gain: 18.31 uA/A
-    const float R_IMON     = 2697.0f;    // 2.697 kOhm sense resistor for thrusters
+    const float G_IMON     = 18.31e-6f;  
+    const float R_IMON     = 2697.0f;
     
     float I_array[8] = {0};
     
@@ -536,7 +496,6 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
         outputs[i].target_pulse_us = pulse_us; 
     }
     
-    // Pet the watchdog after applying updates 
     //WDT_Clear();
 }
 
@@ -552,10 +511,9 @@ static void set_light_output(const uint8_t *data, struct pwm_output *outputs, si
         outputs[i].current_pulse_us = pulse_us;
         outputs[i].target_pulse_us  = pulse_us;
     }
+    
     //WDT_Clear();
 }
-
-#define PWM_MAX_STEP_US  25U
 
 static void slew_pwm_outputs(void) {
     for (size_t i = 0; i < 8U; i++) {
@@ -592,7 +550,7 @@ static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
             TC3_Compare16bitMatch1Set(ticks);
         } 
         
-        outputs[i].current_pulse_us = outputs[i].neutral_us; // Update struct
+        outputs[i].current_pulse_us = outputs[i].neutral_us; 
         outputs[i].target_pulse_us = outputs[i].neutral_us;
         
     }
@@ -634,49 +592,19 @@ static inline uint32_t us_to_ticks(uint32_t period_ticks, uint16_t pulse_us, uin
     return ((uint32_t)pulse_us * (period_ticks + 1U)) / frame_us;
 }
 
-static void can_receive_callback(uint8_t numberOfMessage, uintptr_t context) {
-    // Check CAN Status
-    can_status = CAN1_ErrorGet();
-    //printf("CAN interrupt occurred\r\n");
-
-    // If no new error, handle CAN frame
-    if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
-        ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        
-        memset(rxFiFo0, 0x00, (numberOfMessage * CAN1_RX_FIFO0_ELEMENT_SIZE));
-        if (CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, numberOfMessage, (CAN_RX_BUFFER *)rxFiFo0) == true) {
-            can_message_received = true;
-            // Optionally print can frame
-        } 
-    } 
-}
-
-static void can_transmit_callback(uintptr_t context) {
-    // Check CAN Status
-    can_status = CAN1_ErrorGet();
-
-    if (((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_NONE) ||
-        ((can_status & CAN_PSR_LEC_Msk) == CAN_ERROR_LEC_NC)) {
-        //printf("CAN TX successful\r\n");
-    } 
-}
-
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext) {
-    //printf("ADC Callback Entered\r\n\r\n");
     if (returned_event == DMAC_TRANSFER_EVENT_COMPLETE) {
         adc_dma_done = true;
         // Re-arm DMA for next conversion
         DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
     } 
-    else if (returned_event == DMAC_TRANSFER_EVENT_ERROR) {
-        //printf("ERROR: DMAC Transfer Failed!\r\n\r\n");
-    }
 }
 
 static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
     (void)intCause;
     (void)context;
     slew_tick = true;
+    
     if (ADC0_ConversionSequenceIsFinished()) {
            ADC0_ConversionStart();
     }
@@ -684,21 +612,16 @@ static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
 
 static void eic_pin_flt_thruster(uintptr_t context) {
     uint8_t channel = (uint8_t)context;
-    hw_events.flt_pending_mask |= (1U << channel);
-    
-    //printf("Fault pin triggered for thruster %u\n", (unsigned int)channel);    
+    hw_events.flt_pending_mask |= (1U << channel);  
 }
 
 static void eic_pin_pg_thruster(uintptr_t context) {
     uint8_t channel = (uint8_t)context;
     hw_events.pgood_pending_mask |= (1U << channel);
-    
-    //printf("PGOOD pin triggered for thruster  %u\n", (unsigned int)channel);
 }
 
 static void eic_pin_killswitch(uintptr_t context) {
     hw_events.killswitch_pending_mask |= 1U;
-    //printf("KILLSWITCH triggered \n");
 }
 
 
