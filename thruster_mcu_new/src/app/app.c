@@ -9,6 +9,7 @@
 #define READ_ID(id) (id >> 18)
 
 #define PWM_MAX_STEP_US  25U
+#define THRUSTER_TIMEOUT_TICKS 100U // ~5 seconds at 20Hz
 
 /* =============================================================================
  * Serial framing protocol
@@ -86,6 +87,9 @@ static volatile bool slew_tick = false;
 
 static volatile bool adc_dma_done = false;
 static volatile uint16_t adc_result_array[16];
+
+static volatile uint16_t thruster_cmd_timeout = 0U;
+static volatile bool thruster_timeout_flag = false;
 
 
 static struct pwm_output thrusters[8] = {
@@ -280,9 +284,6 @@ void app_init(void) {
     
     // Enable TC3
     TC3_CompareStart();
-    
-    // Enable watchdog
-    //WDT_Enable();
 }
 
 void app_task(void) {
@@ -311,6 +312,11 @@ void app_task(void) {
     if (uart_message_ready) {
         uart_message_ready = false;
         message_handler();
+    }
+    
+    if (thruster_timeout_flag) {
+        thruster_timeout_flag = false;
+        set_pwm_neutral(thrusters, 8);
     }
     
 }
@@ -403,6 +409,8 @@ static void message_handler(void) {
     switch (uart_msg_id) {
         case MSG_TURN_THRUSTERS_OFF:
             set_pwm_neutral(thrusters, 8);
+            thruster_cmd_timeout = 0U;
+            thruster_timeout_flag = false;
             break;
 
         case MSG_TURN_LIGHTS_OFF:
@@ -415,6 +423,8 @@ static void message_handler(void) {
 
         case MSG_SET_THRUSTER_PWM:
             set_pwm_outputs(uart_payload, thrusters, 8);
+            thruster_cmd_timeout = 0U;
+            thruster_timeout_flag = false;
             break;
 
         case MSG_SET_LIGHT_PWM:
@@ -489,8 +499,6 @@ static void set_pwm_outputs(const uint8_t *data, struct pwm_output *outputs, siz
         
         outputs[i].target_pulse_us = pulse_us; 
     }
-    
-    //WDT_Clear();
 }
 
 static void set_light_output(const uint8_t *data, struct pwm_output *outputs, size_t count) {
@@ -505,8 +513,6 @@ static void set_light_output(const uint8_t *data, struct pwm_output *outputs, si
         outputs[i].current_pulse_us = pulse_us;
         outputs[i].target_pulse_us  = pulse_us;
     }
-    
-    //WDT_Clear();
 }
 
 static void slew_pwm_outputs(void) {
@@ -548,7 +554,6 @@ static void set_pwm_neutral(struct pwm_output *outputs, size_t count) {
         outputs[i].target_pulse_us = outputs[i].neutral_us;
         
     }
-    //WDT_Clear();
 }
 
 static inline uint16_t clamp(uint16_t value, uint16_t low, uint16_t high) {
@@ -598,6 +603,12 @@ static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
     (void)intCause;
     (void)context;
     slew_tick = true;
+    
+    if (thruster_cmd_timeout < THRUSTER_TIMEOUT_TICKS) {
+        thruster_cmd_timeout++;
+    } else {
+        thruster_timeout_flag = true;
+    }
     
     if (ADC0_ConversionSequenceIsFinished()) {
            ADC0_ConversionStart();
