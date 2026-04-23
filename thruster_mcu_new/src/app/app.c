@@ -183,10 +183,6 @@ static bool uart_send_frame(uint8_t msg_id, const uint8_t *payload, uint8_t leng
 
 /**
  * @brief Logs thruster current readings from the IMON pins for all 8 channels.
- * 
- * Reads ADC samples collected via DMA sleepwalking, converts to current using
- * the efuse IMON transfer function: I_out = V_Imon / (G_Imon * R_Imon)
- * where G_Imon = 18.31 uA/A and R_Imon = 2.697 kOhm for thrusters.
  */
 static void log_current(void);
 
@@ -240,18 +236,13 @@ static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
 static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
 
-/* --- Public functions --- */
 void app_init(void) {
-    // Configure USART
     SERCOM2_USART_Enable();
     SERCOM2_USART_ReadCallbackRegister(uart_receive_callback, (uintptr_t)NULL);
     SERCOM2_USART_Read(uart_header, UART_HEADER_SIZE);
     
-    
-    // Configure callback for killswitch
     EIC_NMICallbackRegister(eic_pin_killswitch, 0);
     
-    // Configure callbacks for FLT pins
     EIC_CallbackRegister(EIC_PIN_0, eic_pin_pg_thruster, 4);
     EIC_CallbackRegister(EIC_PIN_1, eic_pin_flt_thruster, 4);
     
@@ -277,30 +268,26 @@ void app_init(void) {
     EIC_CallbackRegister(EIC_PIN_15, eic_pin_pg_thruster, 0);
     
     
-    // Enable ADC
     ADC0_Enable();
     
-    // Configure RTC
     RTC_Timer32CompareSet(51); // ~20Hz
     RTC_Timer32CallbackRegister(rtc_callback, 0);
     RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
     RTC_Timer32Start();
     
-    // Configure DMA
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, adc_dma_callback, 0);
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
     
-    // Enable TCC 
     TCC0_PWMStart();
     TCC1_PWMStart();
     TCC2_PWMStart();
+    
+    TC3_CompareStart();
     
     // Set all thrusters and lights to neutral on startup
     set_pwm_neutral(thrusters, 8);
     set_pwm_neutral(lights, 1);
     
-    // Enable TC3
-    TC3_CompareStart();
 }
 
 void app_task(void) {
