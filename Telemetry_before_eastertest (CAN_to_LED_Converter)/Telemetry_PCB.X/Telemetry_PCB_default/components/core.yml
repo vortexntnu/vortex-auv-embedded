@@ -2475,6 +2475,80 @@ data:
           type: User
         type: Values
       type: String
+    PIN_27_MODE:
+      attributes:
+        id: PIN_27_MODE
+      children:
+      - children:
+        - attributes:
+            value: ''
+          type: User
+        type: Values
+      type: String
+    PIN_27_FUNCTION_TYPE:
+      attributes:
+        id: PIN_27_FUNCTION_TYPE
+      children:
+      - children:
+        - attributes:
+            value: EIC_EXTINT8
+          type: User
+        type: Values
+      type: String
+    PORT_GROUP_0_PMUX14:
+      attributes:
+        id: PORT_GROUP_0_PMUX14
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x0'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PAD_28:
+      attributes:
+        id: PORT_GROUP_0_PAD_28
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: PA28
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PINCFG28:
+      attributes:
+        id: PORT_GROUP_0_PINCFG28
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0x1'
+          type: Dynamic
+        type: Values
+      type: String
+    PORT_GROUP_0_PIN_28_USED:
+      attributes:
+        id: PORT_GROUP_0_PIN_28_USED
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    PIN_27_PERIPHERAL_FUNCTION:
+      attributes:
+        id: PIN_27_PERIPHERAL_FUNCTION
+      children:
+      - children:
+        - attributes:
+            value: A
+          type: User
+        type: Values
+      type: String
   userData:
     children:
     - attributes:

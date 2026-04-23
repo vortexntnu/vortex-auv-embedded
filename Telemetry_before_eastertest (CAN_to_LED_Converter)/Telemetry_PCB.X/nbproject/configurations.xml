@@ -319,6 +319,8 @@
     <Elem>../utils/src</Elem>
     <Elem>../drivers/bmp280/src</Elem>
     <Elem>../drivers/bmp280/include</Elem>
+    <Elem>../drivers/leakage-sensor/src</Elem>
+    <Elem>../drivers/leakage-sensor/include</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -399,6 +401,8 @@
         <property key="memories.programmemory" value="true"/>
         <property key="memories.programmemory.ranges" value="0-1ffff"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/Users/rikke/vortex/vortex-auv-embedded/Telemetry_before_eastertest (CAN_to_LED_Converter)/Telemetry_PCB.X/debug/default/Telemetry_PCB_ptg"/>
         <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preservedataflash.ranges"

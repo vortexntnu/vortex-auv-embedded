@@ -26,7 +26,9 @@
 
 //#define LED_CMD_STDID        (0x469u)
 #define WATCHDOG_DISABLE_ID  (0x666u)
-#define INT_PT_SENSOR_ID (0x333u)
+#define INT_PT_SENSOR_ID (0x480u)
+#define FAST_LEAK_ALARM_ID (0x334u)
+#define SLOW_LEAK_ALARM_ID (0x335u)
 
 /* RX variables defined in CAN_facade.c */
 extern volatile bool rxReady;
@@ -206,19 +208,15 @@ int main(void)
 
                 bool fast = false;
                 bool slow = false;
-                leakdet_update(&leak_detector,
-                               pressure,
-                               temperature,
-                               &fast,
-                               &slow);
+                //leakdet_update(&leak_detector,pressure,temperature,&slow);
 
                 if (fast) {
                     uint8_t can_payload[8] = {0};
-                    //CAN_Send(FAST_LEAK_ALARM_STDID, can_payload, sizeof(can_payload));
+                    //CAN_Send(FAST_LEAK_ALARM_ID, can_payload, sizeof(can_payload));
                 }
                 if (slow) {
                     uint8_t can_payload[8] = {0};
-                    //CAN_Send(SLOW_LEAK_ALARM_STDID, can_payload, sizeof(can_payload));
+                    //CAN_Send(SLOW_LEAK_ALARM_ID, can_payload, sizeof(can_payload));
                 }
                 }
 
