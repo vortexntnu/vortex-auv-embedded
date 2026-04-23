@@ -1,5 +1,7 @@
 #include "bmp280_service.h"
 
+#include <stdbool.h>
+
 #include "bme280.h"
 
 #include "peripheral/sercom/i2c_master/plib_sercom2_i2c_master.h"
@@ -9,6 +11,14 @@ static uint8_t dev_addr = BME280_I2C_ADDR_PRIM;
 static struct bme280_dev dev;
 static struct bme280_settings settings;
 static uint8_t settings_sel;
+static bool sample_pending = false;
+static uint32_t sample_ready_ms = 0U;
+
+enum
+{
+    BMP280_SAMPLE_OK = 0,
+    BMP280_SAMPLE_NOT_READY = 1
+};
 
 static int8_t platform_i2c_wait(uint32_t timeout_ms)
 {
@@ -104,7 +114,73 @@ int8_t bmp280_init_device(void)
                BME280_SEL_FILTER |
                BME280_SEL_STANDBY;
 
-    return bme280_set_sensor_settings(settings_sel, &settings, &dev);
+    rslt = bme280_set_sensor_settings(settings_sel, &settings, &dev);
+    if (rslt == BME280_OK)
+    {
+        sample_pending = false;
+        sample_ready_ms = 0U;
+    }
+
+    return rslt;
+}
+
+int8_t bmp280_start_sample(uint32_t now_ms)
+{
+    int8_t rslt;
+    uint32_t delay_us;
+    uint32_t delay_ms;
+
+    if (sample_pending)
+    {
+        return BMP280_SAMPLE_NOT_READY;
+    }
+
+    rslt = bme280_set_sensor_mode(BME280_POWERMODE_FORCED, &dev);
+    if (rslt != BME280_OK)
+    {
+        return rslt;
+    }
+
+    bme280_cal_meas_delay(&delay_us, &settings);
+    delay_ms = (delay_us + 999U) / 1000U;
+
+    sample_ready_ms = now_ms + delay_ms;
+    sample_pending = true;
+
+    return BMP280_SAMPLE_OK;
+}
+
+int8_t bmp280_try_read_sample(uint32_t now_ms, float *temperature, float *pressure)
+{
+    int8_t rslt;
+    struct bme280_data data;
+
+    if ((temperature == NULL) || (pressure == NULL))
+    {
+        return BME280_E_NULL_PTR;
+    }
+
+    if (!sample_pending)
+    {
+        return BMP280_SAMPLE_NOT_READY;
+    }
+
+    if ((uint32_t)(now_ms - sample_ready_ms) < 0x80000000U)
+    {
+        rslt = bme280_get_sensor_data(BME280_PRESS | BME280_TEMP, &data, &dev);
+        if (rslt == BME280_OK)
+        {
+            *temperature = data.temperature;
+            *pressure = data.pressure;
+            sample_pending = false;
+            return BMP280_SAMPLE_OK;
+        }
+
+        sample_pending = false;
+        return rslt;
+    }
+
+    return BMP280_SAMPLE_NOT_READY;
 }
 
 int8_t bmp280_read_sample(float *temperature, float *pressure)

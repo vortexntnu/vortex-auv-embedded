@@ -9,6 +9,8 @@ extern "C" {
 
 int8_t bmp280_init_device(void);
 int8_t bmp280_read_sample(float *temperature, float *pressure);
+int8_t bmp280_start_sample(uint32_t now_ms);
+int8_t bmp280_try_read_sample(uint32_t now_ms, float *temperature, float *pressure);
 
 #ifdef __cplusplus
 }

@@ -1,22 +1,21 @@
 /*******************************************************************************
- System Interrupts File
+  Interface definition of SYSTICK PLIB.
 
   Company:
     Microchip Technology Inc.
 
   File Name:
-    interrupt.h
+    plib_systick.h
 
   Summary:
-    Interrupt vectors mapping
+    Interface definition of the System Timer Plib (SYSTICK).
 
   Description:
-    This file contains declarations of device vectors used by Harmony 3
- *******************************************************************************/
+    This file defines the interface for the SYSTICK Plib.
+*******************************************************************************/
 
-// DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -36,39 +35,44 @@
 * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
- *******************************************************************************/
-// DOM-IGNORE-END
+*******************************************************************************/
 
-#ifndef INTERRUPTS_H
-#define INTERRUPTS_H
+#ifndef PLIB_SYSTICK_H    // Guards against multiple inclusion
+#define PLIB_SYSTICK_H
 
-// *****************************************************************************
-// *****************************************************************************
-// Section: Included Files
-// *****************************************************************************
-// *****************************************************************************
 #include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 
+#ifdef __cplusplus // Provide C++ Compatibility
+    extern "C" {
+#endif
 
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Handler Routines
+// Section: Interface
 // *****************************************************************************
 // *****************************************************************************
-void Reset_Handler (void);
-void NonMaskableInt_Handler (void);
-void HardFault_Handler (void);
-void DMAC_InterruptHandler (void);
-void SERCOM0_SPI_InterruptHandler (void);
-void SERCOM1_USART_InterruptHandler (void);
-void SERCOM3_I2C_InterruptHandler (void);
-void CAN0_InterruptHandler (void);
-void TC1_TimerInterruptHandler (void);
-void TC2_TimerInterruptHandler (void);
-void TC3_TimerInterruptHandler (void);
-void TC4_TimerInterruptHandler (void);
+
+#define SYSTICK_FREQ   48000000U
 
 
+/***************************** SYSTICK API *******************************/
+void SYSTICK_TimerInitialize ( void );
+void SYSTICK_TimerRestart ( void );
+void SYSTICK_TimerStart ( void );
+void SYSTICK_TimerStop ( void );
+void SYSTICK_TimerPeriodSet ( uint32_t period );
+uint32_t SYSTICK_TimerPeriodGet ( void );
+uint32_t SYSTICK_TimerCounterGet ( void );
+uint32_t SYSTICK_TimerFrequencyGet ( void );
+void SYSTICK_DelayMs ( uint32_t delay_ms );
+void SYSTICK_DelayUs ( uint32_t delay_us );
 
-#endif // INTERRUPTS_H
+bool SYSTICK_TimerPeriodHasExpired(void);
+#ifdef __cplusplus // Provide C++ Compatibility
+ }
+#endif
+
+#endif

@@ -506,7 +506,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1801e'
+            value: '0x1a01e'
           type: Dynamic
         type: Values
       type: String
@@ -2199,6 +2199,189 @@ data:
           type: User
         type: Values
       type: String
+    SYSTICK_FILE_0:
+      attributes:
+        id: SYSTICK_FILE_0
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    SYSTICK_FILE_1:
+      attributes:
+        id: SYSTICK_FILE_1
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    SYSTICK_FILE_2:
+      attributes:
+        id: SYSTICK_FILE_2
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    systickSystemInitFile:
+      attributes:
+        id: systickSystemInitFile
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    systickEnable:
+      attributes:
+        id: systickEnable
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TC1_CLOCK_FREQUENCY:
+      attributes:
+        id: TC1_CLOCK_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_30_FREQ:
+      attributes:
+        id: GCLK_ID_30_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_30_CHEN:
+      attributes:
+        id: GCLK_ID_30_CHEN
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC1_CLOCK_ENABLE:
+      attributes:
+        id: TC1_CLOCK_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC1_INTERRUPT_ENABLE_UPDATE:
+      attributes:
+        id: TC1_INTERRUPT_ENABLE_UPDATE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_21_0_ENABLE:
+      attributes:
+        id: NVIC_21_0_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC1_INTERRUPT_ENABLE:
+      attributes:
+        id: TC1_INTERRUPT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: tc1
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    NVIC_21_0_HANDLER:
+      attributes:
+        id: NVIC_21_0_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: TC1_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    TC1_INTERRUPT_HANDLER:
+      attributes:
+        id: TC1_INTERRUPT_HANDLER
+      children:
+      - children:
+        - attributes:
+            id: tc1
+            value: TC1_TimerInterruptHandler
+          type: Dynamic
+        type: Values
+      type: String
+    NVIC_21_0_HANDLER_LOCK:
+      attributes:
+        id: NVIC_21_0_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
+    TC1_INTERRUPT_HANDLER_LOCK:
+      attributes:
+        id: TC1_INTERRUPT_HANDLER_LOCK
+      children:
+      - children:
+        - attributes:
+            id: tc1
+            value: 'true'
+          type: Dynamic
+        type: Values
+      type: Boolean
   userData:
     children:
     - attributes:

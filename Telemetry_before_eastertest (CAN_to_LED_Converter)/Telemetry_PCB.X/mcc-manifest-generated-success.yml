@@ -2,12 +2,12 @@
 
 manifest_file_version: 1.0.0
 project: Telemetry_PCB
-creation_date: 2026-04-16T14:57:54.285+02:00[Europe/Berlin]
+creation_date: 2026-04-23T10:00:54.053+02:00[Europe/Berlin]
 operating_system: Windows 11
 mcc_mode: IDE
 mcc_mode_version: v6.25
 device_name: ATSAMC21E17A
-compiler: XC32 4.45
+compiler: XC32 5.00
 mcc_version: 5.6.3
 mcc_core_version: 5.8.3
 content_manager_version: 6.0.3

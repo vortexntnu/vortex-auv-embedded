@@ -21,10 +21,12 @@
 #include "node_watchdog.h"
 #include "interrupts.h"
 #include "ws2812_port_sercom0_harmony.h"
+#include "pressure_calc.h"
+#include "bmp280_service.h"
 
 //#define LED_CMD_STDID        (0x469u)
 #define WATCHDOG_DISABLE_ID  (0x666u)
-#define INT_PT_SENSOR_ID (0x780u)
+#define INT_PT_SENSOR_ID (0x333u)
 
 /* RX variables defined in CAN_facade.c */
 extern volatile bool rxReady;
@@ -64,6 +66,8 @@ int main(void)
     led_init();
     led_logic_init();
     bmp280_init_device();
+    struct leak_det leak_detector;
+    leakdet_init(&leak_detector, NULL);
 
     SysTick_Config(CPU_CLOCK_FREQUENCY / 1000u);
 
@@ -87,8 +91,11 @@ int main(void)
     led_can_watchdog_set_send_cb(watchdog_can_send);
     led_can_watchdog_init(millis());
 
-    float temperature;
-    float pressure;
+    float temperature = 0.0f;
+    float pressure = 0.0f;
+    bool bmp_sample_pipeline_started = false;
+
+    timing_tc1_init_5hz();
 
     while (true)
     {
@@ -127,6 +134,7 @@ int main(void)
             if (rx_messageID == WATCHDOG_DISABLE_ID)
             {
                 can_activity_seen = false;
+                bmp_sample_pipeline_started = false;
 
                 /* Reset watchdog internal timing/state */
                 led_can_watchdog_init(now);
@@ -175,11 +183,41 @@ int main(void)
             */
         }
 
-        if (bmp280_read_sample(&temperature, &pressure) == 0) {
-            uint8_t can_payload[8] = {0};
-            can_payload[0] = temperature;
-            can_payload[4] = pressure;
-            CAN_Send(INT_PT_SENSOR_ID, can_payload, sizeof(can_payload));
+        if (leakdet_tick) {
+            leakdet_tick = false;
+
+            if (!can_activity_seen) {
+                bmp_sample_pipeline_started = false;
+            } else {
+                if (bmp_sample_pipeline_started &&
+                    bmp280_try_read_sample(now, &temperature, &pressure) == 0) {
+                uint8_t can_payload[8] = {0};
+                can_payload[0] = (uint8_t)temperature;
+                can_payload[4] = (uint8_t)pressure;
+                CAN_Send(INT_PT_SENSOR_ID, can_payload, sizeof(can_payload));
+
+                bool fast = false;
+                bool slow = false;
+                leakdet_update(&leak_detector,
+                               pressure,
+                               temperature,
+                               &fast,
+                               &slow);
+
+                if (fast) {
+                    uint8_t can_payload[8] = {0};
+                    //CAN_Send(FAST_LEAK_ALARM_STDID, can_payload, sizeof(can_payload));
+                }
+                if (slow) {
+                    uint8_t can_payload[8] = {0};
+                    //CAN_Send(SLOW_LEAK_ALARM_STDID, can_payload, sizeof(can_payload));
+                }
+                }
+
+                (void)bmp280_start_sample(now);
+                bmp_sample_pipeline_started = true;
+            }
         }
+
     }
 }

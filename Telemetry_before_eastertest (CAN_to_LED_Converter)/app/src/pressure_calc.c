@@ -265,7 +265,7 @@ void leakdet_update(struct leak_det* ld,
 
 volatile bool leakdet_tick = false;  // Set to true every 0.2s (5Hz frequency)
 
-static void tc2_cb(TC_TIMER_STATUS status, uintptr_t context) {
+static void tc1_cb(TC_TIMER_STATUS status, uintptr_t context) {
     (void)context;
     leakdet_tick = true;
 }
@@ -274,7 +274,7 @@ static void tc2_cb(TC_TIMER_STATUS status, uintptr_t context) {
  * @brief Initializes a timer that sets leakdet_tick to true at a frequency of
  * 5Hz. Used in main to call leakdet_update at the correct frequency.
  */
-void timing_tc2_init_5hz(void) {
-    TC2_TimerCallbackRegister(tc2_cb, 0);
-    TC2_TimerStart();
+void timing_tc1_init_5hz(void) {
+    TC1_TimerCallbackRegister(tc1_cb, 0);
+    TC1_TimerStart();
 }
