@@ -5,9 +5,6 @@
 #include "app.h"
 #include <stdio.h>
 
-#define WRITE_ID(id) (id << 18)
-#define READ_ID(id) (id >> 18)
-
 #define PWM_MAX_STEP_US  25U
 #define THRUSTER_TIMEOUT_TICKS 100U // ~5 seconds at 20Hz
 
