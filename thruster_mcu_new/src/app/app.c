@@ -66,10 +66,10 @@ typedef enum {
 
 static uart_rx_state_t  uart_rx_state = UART_STATE_WAIT_HEADER;
 static uint8_t          uart_header[UART_HEADER_SIZE];
-uint8_t                 uart_payload[UART_MAX_PAYLOAD + 1U]; /* +1 for checksum */
-volatile bool           uart_message_ready = false;
-uint8_t                 uart_msg_id        = 0U;
-uint8_t                 uart_msg_len       = 0U;
+static uint8_t          uart_payload[UART_MAX_PAYLOAD + 1U]; /* +1 for checksum */
+static volatile bool    uart_message_ready = false;
+static uint8_t          uart_msg_id        = 0U;
+static uint8_t          uart_msg_len       = 0U;
 static uint8_t          uart_tx_frame[UART_MAX_TX_FRAME];
 
 static volatile bool slew_tick = false;
