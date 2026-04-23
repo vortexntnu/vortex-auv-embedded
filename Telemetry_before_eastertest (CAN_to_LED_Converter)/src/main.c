@@ -99,10 +99,6 @@ int main(void)
     bool bmp_sample_pipeline_started = false;
 
     timing_tc1_init_5hz();
-    
-    uint8_t can_payload[8] = {0};
-    can_payload[0] = (uint8_t)rslt;
-    CAN_Send(INT_PT_SENSOR_ID, can_payload, sizeof(can_payload));
 
     while (true)
     {
