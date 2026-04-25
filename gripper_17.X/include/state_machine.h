@@ -10,6 +10,7 @@
 
 
 #define CAN_SEND_ANGLES 0x46D
+#define CAN_SEND_VOLTAGE 0x46E
 
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f

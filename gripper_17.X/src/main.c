@@ -61,9 +61,9 @@ int main(void) {
     TC1_TimerCallbackRegister(tc1_callback, 0);
 
     // TCC0_PWMCallbackRegister(TCC_PeriodEventHandler, (uintptr_t)NULL);
-    // DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
-    //                      (const void*)adc_result_array,
-    //                      sizeof(adc_result_array));
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
     SERCOM1_I2C_CallbackRegister(i2c1_callback, 0);
 
     TC0_TimerStart();

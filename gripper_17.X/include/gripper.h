@@ -12,7 +12,7 @@
 
 // Encoder
 #define SHOULDER_ADDR 0x40
-#define WRIST_ADDR 0x41
+#define WRIST_ADDR 0x40
 #define GRIP_ADDR 0x42
 #define ANGLE_REGISTER 0xFE
 #define I2C_TIMEOUT 100000

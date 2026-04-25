@@ -10,10 +10,13 @@
 
 static uint8_t encoder_num = 0;
 static volatile bool read_failed = true;
-static uint8_t encoder_rx_buf[2] = {0};
+static uint8_t encoder_rx_buf[4] = {0};
 static uint8_t encoder_reg = ANGLE_REGISTER;
 static uint8_t raw_encoder_angles[2 * NUM_ENCODERS] = {0};
 static volatile bool can_tx_avaliable = false;
+static uint8_t servo = SERVO_1;
+static uint16_t input_voltage = 0;
+static bool adc_ready = false;
 
 struct state_context ctx;
 
@@ -39,7 +42,7 @@ void state_machine() {
 
     if (ev & EVENT_READ_ENCODER_START) {
         start_encoder_read(&encoder_reg, encoder_num,
-                           encoder_rx_buf);  // kicks off async I2C
+                           encoder_rx_buf + 2 * encoder_num);  // kicks off async I2C
     }
 
     if (ev & EVENT_READ_ENCODER_DONE) {
@@ -48,7 +51,7 @@ void state_machine() {
             raw_encoder_angles[2 * encoder_num + 1] = 0xFF;
         } else {
             uint16_t angle =
-                ((uint16_t)encoder_rx_buf[0] << 6) | (encoder_rx_buf[1] & 0x3F);
+                ((uint16_t)encoder_rx_buf[0 + 2 * encoder_num] << 6) | (encoder_rx_buf[1 + 2 * encoder_num] & 0x3F);
 
             raw_encoder_angles[2 * encoder_num] = (uint8_t)(angle & 0xFF);
             raw_encoder_angles[2 * encoder_num + 1] = (uint8_t)(angle >> 8);
@@ -77,6 +80,23 @@ void state_machine() {
 
         encoder_num = 0;
     }
+    
+    if (adc_ready){
+        ctx.tx_frame.buf[0] = servo;
+        ctx.tx_frame.buf[1] = servo;
+        ctx.tx_frame.buf[2] = input_voltage & 0xFF;
+        ctx.tx_frame.buf[3] = (input_voltage >> 8) & 0xFF;
+
+        ctx.tx_frame.id = CAN_SEND_VOLTAGE;
+        ctx.tx_frame.len = 4;
+
+        if (can_tx_avaliable){
+            can_transmit(&ctx.tx_frame);
+        }
+        adc_ready = false;
+
+    }
+
     can_recieve(&ctx.rx_frame);
     // PM_IdleModeEnter();
 }
@@ -125,9 +145,8 @@ void i2c1_callback(uintptr_t context) {
 
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext) {
-    printf("entering dmac callback\r\n");
+    // printf("entering dmac callback\r\n");
     uint16_t* adc_results = (uint16_t*)MyDmacContext;
-    static uint8_t servo = SERVO_1;
 
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
                          (const void*)adc_results, sizeof(*adc_results));
@@ -137,7 +156,6 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
     }
 
     bool overCurrent = false;
-    uint16_t input_voltage = 0;
     for (size_t sample = 0; sample < TRANSFER_SIZE; sample++) {
         input_voltage += adc_results[sample];
 
@@ -147,17 +165,19 @@ void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
          * /*/
         /*    0.4;*/
 
-        printf(
-            "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "
-            "\n\r",
-            adc_results[sample], (int)input_voltage,
-            (int)((input_voltage - (int)input_voltage) * 100.0));
+        // printf(
+        //     "ADC Count = 0x%03x, ADC Input Current = %d.%03d A "
+        //     "\n\r",
+        //     adc_results[sample], (int)input_voltage,
+        //     (int)((input_voltage - (int)input_voltage) * 100.0));
     }
     input_voltage = input_voltage / TRANSFER_SIZE;
+    adc_ready = true;
 
     if (input_voltage > VOLTAGE_THRESHOLD) {
         overCurrent = true;
     }
+
     switch (servo) {
         case SERVO_1:
             if (overCurrent) {
