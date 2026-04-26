@@ -17,6 +17,7 @@ static volatile bool can_tx_avaliable = false;
 static uint8_t servo = SERVO_1;
 static uint16_t input_voltage = 0;
 static bool adc_ready = false;
+static bool gripper_on = false;
 
 struct state_context ctx;
 
@@ -74,10 +75,12 @@ void state_machine() {
             ctx.tx_frame.buf[i] = raw_encoder_angles[i];
         }
 
-        if (can_tx_avaliable){
+        if (can_tx_avaliable && gripper_on){
             can_transmit(&ctx.tx_frame);
         }
 
+
+        // ctx.events |= EVENT_READ_ENCODER_START;
         encoder_num = 0;
     }
     
@@ -112,9 +115,12 @@ void can_rx_callback(uintptr_t context) {
     switch (ctx.rx_frame.id) {
         case STOP_GRIPPER:
             stop_gripper();
+            gripper_on = false;
             break;
         case START_GRIPPER:
             start_gripper();
+            gripper_on = true;
+            // ctx.events |= EVENT_READ_ENCODER_START;
             break;
         case SET_PWM:
             // ctx.events |= EVENT_SET_PWM;
