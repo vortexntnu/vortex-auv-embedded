@@ -22,15 +22,22 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ad7606_driver.h"
+
 #include "acoustics.h"
+#include "can_interface.h"
+#include "debug.h"
+#include "interrupts.h"
+#include <hydrophone_interface.h>
+
 #include "utils.h"
 #include "memory_placement.h"
 #include "embedded_macros.h"
+
 #include "find_peaks.h"
 #include "dsp.h"
 #include "cwt.h"
 #include "hilbert.h"
-#include "interrupts.h"
+
 #include "fast_mdma.h"
 #include "stm_temp_driver.h"
 #include "tdoa.h"
@@ -101,63 +108,13 @@ DMA_HandleTypeDef hdma_usart1_tx;
 
 MDMA_HandleTypeDef hmdma_mdma_channel0_sw_0;
 /* USER CODE BEGIN PV */
-static struct ad7606_device my_ADC;
-static union ad7606_registers ADC_regs;
-static struct ad7606_settings ADC_settings;
 
-SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES] = {DOUTA, DOUTB, DOUTC, DOUTD, DOUTE};
-volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1] = {DMA_SPI_IDLE};
+PLACE_IN_DTCM volatile statemachine_state program_state;
+PLACE_IN_DTCM volatile uint8_t stale_data_patience;
+PLACE_IN_DTCM volatile float32_t previous_SNR;
 
-PLACE_IN_D2_SRAM q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
-
-PLACE_IN_D3_SRAM q15_t diagnostics_buffer[BLOCK_LEN];
-volatile uint16_t diagnostics_sample;
-float32_t diagnostics_temp;
 PLACE_IN_D3_SRAM float32_t stm32_temp;
 
-PLACE_IN_DTCM arm_rfft_fast_instance_f32 detection_fft_instance_f32;
-PLACE_IN_DTCM arm_rfft_instance_q15 detection_fft_instance_q15;
-MDMA_BUF_DTCM(ALIGN_DMA_BURST_8_WORD) q15_t detection_buffer[2][BLOCK_LEN];
-PLACE_IN_DTCM float32_t fft_input_f32[DETECTION_FFT_SIZE];
-PLACE_IN_DTCM float32_t fft_output_f32[DETECTION_FFT_SIZE * 2];
-PLACE_IN_DTCM float32_t magnitude_output_f32[DETECTION_FFT_SIZE / 2];
-
-
-PLACE_IN_DTCM q15_t fft_output_q15[DETECTION_FFT_SIZE * 2];
-PLACE_IN_DTCM q15_t magnitude_output_q15[DETECTION_FFT_SIZE / 2];
-PLACE_IN_DTCM float32_t SNR = 1;
-
-PLACE_IN_DTCM volatile uint8_t mdma_half = 0;
-PLACE_IN_DTCM volatile bool mdma_done_flag = false;
-
-PLACE_IN_DTCM arm_rfft_instance_q15 processing_fft_instance;
-PLACE_IN_DTCM arm_rfft_instance_q15 processing_ifft_instance;
-
-static PLACE_IN_DTCM float32_t processing_workspace[N_HYDROPHONES][PROCESSING_FFT_SIZE];
-
-static PLACE_IN_DTCM float32_t envelope[PROCESSING_FFT_SIZE];
-static PLACE_IN_DTCM float32_t envelope_edge[PROCESSING_FFT_SIZE];
-
-static PLACE_IN_DTCM uint16_t idxs[N_HYDROPHONES] = {0};
-static PLACE_IN_DTCM float32_t times_of_arrival[N_HYDROPHONES] = {0};
-static PLACE_IN_DTCM float32_t direction_of_arrival[3] = {0};
-
-PLACE_IN_D3_SRAM uint8_t hydrophone_valid[N_HYDROPHONES] = {0};
-static PLACE_IN_DTCM float32_t hydrophone_positions[N_HYDROPHONES][3] = {
-		{0.0,0.0,0.0},
-		{0.0,0.0,0.0},
-		{0.5,0.0,0.0},
-		{0.25,0.25,0.354},
-		{0.25,-0.25,0.354}
-};
-
-static PLACE_IN_DTCM uint16_t max_idx_difference;
-
-volatile PLACE_IN_DTCM bool dump_trigger = false;
-volatile PLACE_IN_DTCM bool send_magnitude = false;
-volatile PLACE_IN_DTCM bool verbose = false;
-
-volatile PLACE_IN_DTCM uint8_t detected = false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -182,72 +139,11 @@ static void MX_RTC_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-static void init_adc_and_buffers();
-uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32_t threshold);
-uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold, const uint32_t patience);
-float32_t min_max_threshold(float32_t* signal, uint32_t signal_len, float32_t threshold, uint32_t n_high, uint32_t n_low);
-void threshold_applier(float32_t* signal, uint32_t signal_len, float32_t threshold);
-void spike_filter(float32_t *signal, uint32_t signal_len, float32_t threshold);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-#define MAX_TROUGHS WORKSPACE_LEN
-
-uint32_t find_da_edge(const float32_t *signal, uint32_t signal_len)
-{
-
-	float32_t buf_min;
-	uint32_t min_idx;
-	arm_min_f32(signal, signal_len, &buf_min, &min_idx);
-	float32_t min_depth = buf_min*0.1f; //deepest trough
-
-	float32_t min_prominence;
-	arm_std_f32(signal, signal_len, &min_prominence);
-	min_prominence *= 0.01;
-
-    uint32_t           trough_idxs[MAX_TROUGHS];
-    find_peaks_props_f32_t props[MAX_TROUGHS];
-    uint32_t           n_troughs;
-
-    find_peaks_config_f32_t cfg = FIND_PEAKS_CONFIG_F32_DEFAULT;
-    cfg.height     = min_depth;
-    cfg.prominence = min_prominence;
-    cfg.distance   = 5;
-
-    if(find_troughs_f32(signal, signal_len, &cfg, trough_idxs, props, MAX_TROUGHS, &n_troughs) != FIND_PEAKS_OK){
-    	Error_Handler();
-    }
-
-
-    // 4. first_peak = np.min(find_peaks_data) → lowest index found
-    //    peak_idx is already in ascending index order, so index 0 is the first
-    uint32_t first_trough;
-    if (n_troughs > 0) {
-        first_trough = trough_idxs[0];          // leftmost peak (min index)
-    } else {
-        arm_min_f32(signal, signal_len, &buf_min, &first_trough);  // fallback: argmin
-    }
-    return first_trough;
-}
-
-
-
-void print_binary(uint16_t value, uint8_t bits) {
-    for (int i = bits - 1; i >= 0; i--) {
-        printf("%c", (value >> i) & 1 ? '1' : '0');
-    }
-}
-
-void read_all_registers_binary(void){
-	for(int i = 0; i < 44; i++){
-		printf("Register %#04x:\t",my_ADC.registers->all[i].address);
-		uint8_t data = ad7606_read_register(&my_ADC, my_ADC.registers->all[i]);
-		print_binary(data,8);
-		printf("\r\n");
-	}
-}
 
 void SWO_Init(void)
 {
@@ -260,654 +156,6 @@ void SWO_Init(void)
     /* Enable ITM port 0 */
     ITM->TCR |= ITM_TCR_ITMENA_Msk;
     ITM->TER |= (1UL << 0);  // Enable stimulus port 0
-}
-
-void MyMDMA_TransferCompleteCallback(MDMA_HandleTypeDef *hmdma) {
-    // Handle transfer complete
-    mdma_done_flag = 1;
-    mdma_half = (mdma_half) ? 0 : 1;
-}
-
-void MyMDMA_ErrorCallback(MDMA_HandleTypeDef *hmdma) {
-    // Handle error
-	Error_Handler();
-}
-
-
-
-bool signal_present(uint8_t half_idx) {
-
-    arm_q15_to_float(detection_buffer[half_idx], fft_input_f32, DETECTION_FFT_SIZE);
-    arm_rfft_fast_f32(&detection_fft_instance_f32, fft_input_f32, fft_output_f32, 0);
-    arm_cmplx_mag_squared_f32(fft_output_f32, magnitude_output_f32, DETECTION_FFT_SIZE/2);
-
-    const uint32_t SIGNAL_BIN_LOW = 14;
-    const uint32_t SIGNAL_BIN_HIGH = 17;
-    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
-    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
-
-    float32_t noise_power = 0.0f;
-    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
-        noise_power += magnitude_output_f32[i];
-    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
-        noise_power += magnitude_output_f32[i];
-
-    bool present = false;
-    if (unlikely(noise_power <= 0.0f)){
-    	goto NO_SIGNAL_PRESENT;
-    }
-
-    float32_t signal_power = magnitude_output_f32[14] + magnitude_output_f32[15] + magnitude_output_f32[16];
-    if (likely(signal_power < SIGNAL_MIN_POWER)){
-    	goto NO_SIGNAL_PRESENT;
-    }
-
-    // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
-    present = (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
-    if(unlikely(present && !detected)){
-    	detected = DETECTION_PATIENCE;
-    	return true;
-    }
-
-    NO_SIGNAL_PRESENT:
-		switch(detected){
-			case(0):
-				detected = false;
-			break;
-			default:
-				detected--;
-			break;
-		}
-		return false;
-}
-
-bool signal_present_q15(uint8_t half_idx) {
-
-    arm_rfft_q15(&detection_fft_instance_q15, detection_buffer[half_idx], fft_output_q15);
-    dsp_fill_headroom_q15(fft_output_q15, DETECTION_FFT_SIZE);
-    arm_cmplx_mag_fast_q15(fft_output_q15, magnitude_output_q15, DETECTION_FFT_SIZE/2);
-
-    const uint32_t SIGNAL_BIN_LOW = 14;
-    const uint32_t SIGNAL_BIN_HIGH = 17;
-    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
-    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
-
-    uint32_t noise_power = 0;
-    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
-        noise_power += magnitude_output_q15[i];
-    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
-        noise_power += magnitude_output_q15[i];
-
-    bool present = false;
-
-    uint32_t signal_power = magnitude_output_q15[14] + magnitude_output_q15[15] + magnitude_output_q15[16];
-
-    // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
-    present = (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
-    if(unlikely(present && !detected)){
-    	detected = DETECTION_PATIENCE;
-    	return true;
-    }
-
-	switch(detected){
-		case(0):
-			detected = false;
-		break;
-		default:
-			detected--;
-		break;
-	}
-	return false;
-}
-
-bool signal_present_f32(float32_t* signal){
-
-	arm_copy_f32(signal, fft_input_f32, DETECTION_FFT_SIZE);
-    arm_rfft_fast_f32(&detection_fft_instance_f32, fft_input_f32, fft_output_f32, 0);
-    arm_cmplx_mag_f32(fft_output_f32, magnitude_output_f32, DETECTION_FFT_SIZE/2);
-
-    const uint32_t SIGNAL_BIN_LOW = 14;
-    const uint32_t SIGNAL_BIN_HIGH = 17;
-    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
-    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
-
-    float32_t noise_power = 0.0f;
-    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
-        noise_power += magnitude_output_f32[i];
-    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
-        noise_power += magnitude_output_f32[i];
-
-    if (unlikely(noise_power <= 0.0f)){
-    	return false;
-    }
-
-    float32_t signal_power = magnitude_output_f32[14] + magnitude_output_f32[15] + magnitude_output_f32[16];
-    if (likely(signal_power < SIGNAL_MIN_POWER)){
-    	return false;
-    }
-
-    // signal_power/2 > (noise_power/NOISE_BIN_COUNT) * LINEAR_THRESHOLD
-    return (signal_power * NOISE_BIN_COUNT) > (noise_power * SIGNAL_BIN_COUNT * LINEAR_THRESHOLD);
-}
-
-
-// claude generated
-// Add this to the top of your file
-#define DWT_CYCCNT  (*((volatile uint32_t *)0xE0001004))
-#define DWT_CTRL    (*((volatile uint32_t *)0xE0001000))
-#define DEM_CR      (*((volatile uint32_t *)0xE000EDFC))
-
-// Enable DWT cycle counter (do this once in init)
-void DWT_Init(void) {
-    DEM_CR    |= (1 << 24);  // Enable TRC
-    DWT_CYCCNT = 0;
-    DWT_CTRL  |= (1 << 0);   // Enable CYCCNT
-}
-
-// claude generated
-int32_t f32_whole(float32_t x) {
-    return (int32_t)x;
-}
-
-int32_t f32_frac(float32_t x, uint8_t decimals) {
-    int32_t whole = (int32_t)x;
-    float32_t frac = x - (float32_t)whole;
-    if (frac < 0) frac = -frac;
-    uint32_t scale = 1;
-    for (uint8_t i = 0; i < decimals; i++) scale *= 10;
-    return (int32_t)(frac * scale);
-}
-
-void dump_python_array_q15(q15_t* arr, int len) {
-    if (arr == NULL || len <= 0) return;
-
-    printf("[");
-    for (int i = 0; i < len - 1; i++) {
-        printf("%d,", arr[i]);
-    }
-    printf("%d]", arr[len - 1]);
-}
-
-void dump_python_array_f32(float32_t* arr, int len) {
-    if (arr == NULL || len <= 0) return;
-
-    printf("[");
-    for (int i = 0; i < len; i++) {
-        if (arr[i] < 0.0f && f32_whole(arr[i]) == 0)
-            printf("-");
-        printf("%ld.%06ld", f32_whole(arr[i]), f32_frac(arr[i], 6));
-        if (i < len - 1) printf(",");
-    }
-    printf("]");
-}
-
-#define DUMP_ARRAY_NAMED_DICT_Q15(name, arr, len) do { \
-    printf("\t\"" name "\" : ");                        \
-    fflush(stdout);                                     \
-    dump_python_array_q15((q15_t*)(arr), (len));        \
-    printf("\r\n");                                     \
-} while(0)
-
-#define DUMP_ARRAY_NAMED_DICT_F32(name, arr, len) do { \
-    printf("\t\"" name "\" : ");                        \
-    fflush(stdout);                                     \
-    dump_python_array_f32((float32_t*)(arr), (len));    \
-    printf("\r\n");                                     \
-} while(0)
-
-#define DUMP_ARRAY_NAMED_Q15(name, arr, len) do { \
-    printf(name " = ");                            \
-    fflush(stdout);                                \
-    dump_python_array_q15((q15_t*)(arr), (len));   \
-    printf("\r\n");                                \
-} while(0)
-
-#define DUMP_ARRAY_NAMED_F32(name, arr, len) do { \
-    printf(name " = ");                            \
-    fflush(stdout);                                \
-    dump_python_array_f32((float32_t*)(arr), (len)); \
-    printf("\r\n");                                \
-} while(0)
-
-void clear_buffer_q15(q15_t* arr, int len){
-	for(int i = 0; i < len; i++) arr[i] = 0;
-}
-
-void clear_buffer_f32(float32_t* arr, int len){
-	for(int i = 0; i < len; i++) arr[i] = 0;
-}
-
-/**
- * @brief Unwraps a circular Q15 buffer into a linear float32 array.
- *
- * @param src        Pointer to the circular Q15 buffer
- * @param dst        Pointer to the output float32 array (must be at least data_len long)
- * @param data_len   Number of samples to copy and convert
- * @param buffer_len Total length of the circular buffer
- * @param start_idx  Index of the oldest sample (read head)
- */
-void circ_unwrap_to_f32(q15_t *src, float32_t *dst, uint32_t data_len,
-                         uint32_t buffer_len, uint32_t start_idx)
-{
-    /* How many samples from start_idx to the end of the buffer */
-    uint32_t chunk1 = buffer_len - start_idx;
-
-    if (chunk1 >= data_len) {
-        /* No wrap-around: all data sits in one contiguous block */
-        arm_q15_to_float(src + start_idx, dst, data_len);
-    } else {
-        /* Two chunks: tail of buffer, then beginning of buffer */
-        uint32_t chunk2 = data_len - chunk1;
-        arm_q15_to_float(src + start_idx, dst,          chunk1);
-        arm_q15_to_float(src,             dst + chunk1, chunk2);
-    }
-}
-
-void CAN_send_direction(FDCAN_HandleTypeDef *hfdcan, uint32_t id, float32_t vec[3], float32_t weight)
-{
-    FDCAN_TxHeaderTypeDef txHeader;
-    uint8_t txData[16];  // 3 x float32 = 12 bytes
-
-    memcpy(txData, vec, 12);
-    memcpy(txData + 12, &weight, 4);
-
-    txHeader.Identifier          = id;
-    txHeader.IdType              = FDCAN_STANDARD_ID;
-    txHeader.TxFrameType         = FDCAN_DATA_FRAME;
-    txHeader.DataLength          = FDCAN_DLC_BYTES_16;
-    txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-    txHeader.BitRateSwitch       = FDCAN_BRS_ON;
-    txHeader.FDFormat            = FDCAN_FD_CAN;
-    txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
-    txHeader.MessageMarker       = 0;
-
-    while (HAL_FDCAN_GetTxFifoFreeLevel(hfdcan) == 0);
-
-    HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, txData);
-}
-
-void UART_send_direction_verbose(UART_HandleTypeDef *huart, float32_t vec[3], float32_t weight)
-{
-    char buf[128];
-    int len = 0;
-
-    // Helper to append each component
-    for (int i = 0; i < 3; i++)
-    {
-        int32_t whole = f32_whole(vec[i]);
-        int32_t frac  = f32_frac(vec[i], 4);
-
-        if (i == 0)
-            len += snprintf(buf + len, sizeof(buf) - len, "[");
-
-        if (vec[i] < 0.0f && whole == 0)
-            len += snprintf(buf + len, sizeof(buf) - len, "-0.%04ld", frac);
-        else
-            len += snprintf(buf + len, sizeof(buf) - len, "%ld.%04ld", whole, frac);
-
-        if (i < 2)
-            len += snprintf(buf + len, sizeof(buf) - len, ", ");
-        else
-            len += snprintf(buf + len, sizeof(buf) - len, "],");
-    }
-
-    int32_t whole = f32_whole(weight);
-    int32_t frac  = f32_frac(weight, 4);
-
-    len += snprintf(buf + len, sizeof(buf) - len, "%ld.%04ld\r\n",whole, frac);
-
-    HAL_UART_Transmit(huart, (uint8_t*)buf, len, 100);
-}
-
-void UART_send_direction(UART_HandleTypeDef *huart, float32_t vec[3], float32_t weight)
-{
-    uint8_t buf[16];
-
-    memcpy(buf, vec, 12);
-    memcpy(buf + 12, &weight, 4);
-
-    HAL_UART_Transmit(huart, (uint8_t*)buf, sizeof(buf), 100);
-}
-
-__attribute__((used, noinline)) void dump_magnitude(void){
-	magnitude_output_f32[0] = 0;
-	DUMP_ARRAY_NAMED_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
-}
-
-__attribute__((used, noinline)) void dump_everything(uint16_t workspace_idx, uint8_t valid){
-	printf("dump = {\r\n");
-
-	magnitude_output_f32[0] = 0;
-	DUMP_ARRAY_NAMED_DICT_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
-	printf(",");
-
-	printf("\t\"raw_mv\" : [\r\n\t");
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		q15_t* buffer_flat = (q15_t*)hydrophone_buffers[i];
-		circ_unwrap_to_f32(buffer_flat ,processing_workspace[i], WORKSPACE_LEN, BUFFER_LEN, (uint32_t)workspace_idx);
-		float32_t scalar = 32768.0*ad7606_channel_scaling_factor(&my_ADC, i)*1000.0;
-		arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
-			dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
-			if(i == N_HYDROPHONES - 1){
-				printf("\r\n],\r\n");
-			}else{
-				printf(",\r\n\t");
-			}
-	    //normalize
-	    scalar = 0;
-	    arm_mean_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);   // Step 1: compute mean
-	    arm_offset_f32(processing_workspace[i],-scalar,processing_workspace[i],WORKSPACE_LEN); // Step 2: subtract it
-	    scalar = 0;
-		arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
-		scalar = 1/scalar;
-		arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
-		spike_filter(processing_workspace[i],WORKSPACE_LEN,10);
-	}
-
-	printf("\"normalized\" : [\r\n\t");
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		dump_python_array_f32(processing_workspace[i], WORKSPACE_LEN);
-		if(i == N_HYDROPHONES - 1){
-			printf("\r\n],\r\n");
-		}else{
-			printf(",\r\n\t");
-		}
-	}
-
-	printf("\"cwt\" : [\r\n\t");
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-		dump_python_array_f32(envelope, WORKSPACE_LEN);
-		if(i == N_HYDROPHONES - 1){
-			printf("\r\n],\r\n");
-		}else{
-			printf(",\r\n\t");
-		}
-	}
-
-
-	float32_t thresholds[5];
-
-	printf("\"thresholded\" : [\r\n\t");
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-
-		float32_t linear_threshold = 0.01;
-		uint8_t max_retries = 6;
-		uint32_t dead_space = WORKSPACE_LEN/4;
-		idxs[i] = 0;
-		float32_t threshold;
-		while(idxs[i] < dead_space && max_retries--){
-			threshold = min_max_threshold(envelope, WORKSPACE_LEN, linear_threshold, 15, dead_space);
-			idxs[i] = threshold_search(envelope,WORKSPACE_LEN, threshold , 3);
-			linear_threshold *= 2;
-		}
-
-		thresholds[i] = threshold;
-		threshold_applier(envelope, WORKSPACE_LEN, threshold);
-		dump_python_array_f32(envelope, WORKSPACE_LEN);
-		if(i == N_HYDROPHONES - 1){
-			printf("\r\n],\r\n");
-		}else{
-			printf(",\r\n\t");
-		}
-	}
-
-	printf("\"envelope_edge\" : [\r\n\t");
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-		hilbert_imag_f32(envelope,envelope_edge);
-		dump_python_array_f32(envelope_edge, PROCESSING_FFT_SIZE);
-		if(i == N_HYDROPHONES - 1){
-			printf("\r\n],\r\n");
-		}else{
-			printf(",\r\n\t");
-		}
-	}
-
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		cwt_morlet_magnitude_f32(processing_workspace[i], envelope);
-
-		float32_t linear_threshold = 0.01;
-		uint8_t max_retries = 6;
-		uint32_t dead_space = WORKSPACE_LEN/4;
-		idxs[i] = 0;
-		while(idxs[i] < dead_space && max_retries--){
-			float32_t threshold = min_max_threshold(envelope, WORKSPACE_LEN, linear_threshold, 15, dead_space);
-			idxs[i] = threshold_search(envelope,WORKSPACE_LEN, threshold , 3);
-			linear_threshold *= 2;
-		}
-		times_of_arrival[i] = (float32_t)idxs[i];//*1/SAMPLING_FREQUENCY;
-	}
-
-	DUMP_ARRAY_NAMED_DICT_Q15("idxs", (q15_t*)idxs, N_HYDROPHONES);
-	printf(",");
-
-
-
-	int32_t tdoa_status = 0;
-	tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
-										  times_of_arrival,
-										  hydrophone_valid,
-										  N_HYDROPHONES,
-										  direction_of_arrival);
-
-	printf("\"hydrophone_pos\" : [\r\n\t");
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		dump_python_array_f32(hydrophone_positions[i], 3);
-		if(i == N_HYDROPHONES - 1){
-			printf("\r\n],\r\n");
-		}else{
-			printf(",\r\n\t");
-		}
-	}
-
-	DUMP_ARRAY_NAMED_DICT_F32("thresholds",thresholds, 5);
-	printf(",");
-	DUMP_ARRAY_NAMED_DICT_F32("direction_of_arrival",direction_of_arrival, 3);
-	printf(",");
-	printf("\t\"valid\" : %d",valid);
-
-	fflush(stdout);
-	printf("}\r\n");
-}
-
-float32_t estimate_SNR(void){
-    const uint32_t SIGNAL_BIN_LOW = 14;
-    const uint32_t SIGNAL_BIN_HIGH = 17;
-    const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
-    const uint32_t NOISE_BIN_COUNT = DETECTION_FFT_SIZE/2 - 1 - SIGNAL_BIN_COUNT;
-
-    float32_t noise_power = 0.0f;
-    for (int i = 1; i < SIGNAL_BIN_LOW; i++)
-        noise_power += magnitude_output_f32[i];
-    for (int i = SIGNAL_BIN_HIGH; i < DETECTION_FFT_SIZE / 2; i++)
-        noise_power += magnitude_output_f32[i];
-
-    float32_t signal_power = magnitude_output_f32[14] + magnitude_output_f32[15] + magnitude_output_f32[16];
-
-    return (signal_power * NOISE_BIN_COUNT) / (noise_power * SIGNAL_BIN_COUNT);
-
-}
-
-void restart_buffers_and_spi(void){
-	int lengths[8] = {
-			BUFFER_LEN,
-			BUFFER_LEN,
-			BUFFER_LEN,
-			BUFFER_LEN,
-			BUFFER_LEN,
-			0,
-			0,
-			0,
-	};
-	int16_t* buffers[8] = {NULL};
-	for(int i = 0; i < 5; i++) buffers[i] = (int16_t*)&hydrophone_buffers[i][0][0];
-
-	ad7606_enter_adc_mode(&my_ADC);
-
-	ad7606_init_output_buffers_DMA(&my_ADC, buffers, lengths);
-	HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_CPLT_CB_ID,  MyMDMA_TransferCompleteCallback);
-	HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_ERROR_CB_ID, MyMDMA_ErrorCallback);
-	ad7606_dma_spi_init(&my_ADC, &hdma_spi6_rx, diagnostics_buffer, BLOCK_LEN);
-}
-
-float32_t abs_f32(float32_t x){
-	if(x >= 0){
-		return x;
-	}else{
-		return -x;
-	}
-}
-
-int32_t abs_int32(int32_t x){
-	if(x >= 0){
-		return x;
-	}else{
-		return -x;
-	}
-}
-
-bool is_along_axis(float32_t vec[3]){
-	float32_t sum = 0;
-	for(int i = 0; i < 3; i++) sum += abs_f32(vec[i]);
-	return sum <= 1;
-}
-
-bool is_too_long(float32_t vec[3]){
-	float32_t sum = 0;
-	for(int i = 0; i < 3; i++) sum += abs_f32(vec[i]);
-	return sum > 1.732050807569f;
-}
-
-bool is_valid(float32_t vec[3]){
-	if(is_along_axis(vec)) return false;
-
-	if(is_too_long(vec)) return false;
-
-	return true;
-}
-
-uint32_t threshold_binary_search(float32_t* signal, uint32_t signal_len, float32_t threshold){
-    int lo = 0, hi = signal_len - 1, result = -1;
-    while (lo <= hi) {
-        int mid = lo + (hi - lo) / 2;
-        if (signal[mid] <= threshold) {
-            result = mid;
-            lo = mid + 1;
-        } else {
-            hi = mid - 1;
-        }
-    }
-    return result;
-}
-
-uint32_t threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold, const uint32_t patience)
-{
-    uint32_t i = signal_len;
-    uint32_t remaining_patience = patience;
-
-    while (i--)
-    {
-        if (signal[i] < threshold){
-        	remaining_patience--;
-        }else{
-        	remaining_patience = patience;
-        }
-        if(remaining_patience == 0){
-        	return i + patience;
-        }
-    }
-
-    return 0;
-}
-
-float32_t min_max_threshold(float32_t* signal, uint32_t signal_len, float32_t threshold, uint32_t n_high, uint32_t n_low)
-{
-    /*
-     * Finds the average of the bottom N and top N points in the array,
-     * then returns an interpolated threshold between those two averages.
-     *
-     * threshold = 0.0 -> returns the low average
-     * threshold = 1.0 -> returns the high average
-     * threshold = 0.5 -> returns the midpoint between them
-     */
-
-    /* --- Sort a copy of the signal using an in-place insertion sort ---
-     * For large arrays consider a faster algorithm, but insertion sort
-     * has zero heap allocation and is fine for typical DSP frame sizes. */
-    float32_t sorted[signal_len];
-    arm_copy_f32(signal, sorted, signal_len);
-
-    /* Insertion sort (ascending) */
-    for (uint32_t i = 1; i < signal_len; i++)
-    {
-        float32_t key = sorted[i];
-        int32_t j = (int32_t)i - 1;
-        while (j >= 0 && sorted[j] > key)
-        {
-            sorted[j + 1] = sorted[j];
-            j--;
-        }
-        sorted[j + 1] = key;
-    }
-
-    /* --- Average the N lowest values --- */
-    float32_t low_mean = 0.0f;
-    arm_mean_f32(sorted, n_low, &low_mean);
-
-    /* --- Average the N highest values --- */
-    float32_t high_mean = 0.0f;
-    arm_mean_f32(&sorted[signal_len - n_high], n_high, &high_mean);
-
-    /* --- Interpolate between the two averages --- */
-    /* result = low + threshold * (high - low) */
-    float32_t result = 0.0f;
-    arm_add_f32(                          /* low + t*(high-low)          */
-        &low_mean,                        /* not a vector call, so we    */
-        &(float32_t){threshold *          /* use scalar arithmetic below */
-            (high_mean - low_mean)},
-        &result, 1);
-
-    /* Simpler and equally valid on Cortex-M7 with FPU: */
-    result = low_mean + threshold * (high_mean - low_mean);
-
-    return result;
-}
-
-void threshold_applier(float32_t* signal, uint32_t signal_len, float32_t threshold){
-	for(int i = 0; i < signal_len; i++){
-		signal[i] = 100*(signal[i] > threshold);
-	}
-}
-
-void spike_filter(float32_t *signal, uint32_t signal_len, float32_t threshold){
-	const uint8_t window_radius = 3; //left and right distance
-	for(int i = window_radius; i < signal_len - window_radius; i++){
-		float32_t sum = 0;
-		for(int j = -window_radius; j < window_radius + 1; j++){
-			if(j != 0){
-				sum += abs_f32(signal[i+j]);
-			}
-		}
-		sum /= window_radius*2;
-		if(abs_f32(signal[i]) > sum*threshold){
-			signal[i] = sum;
-		}
-	}
-}
-
-float32_t distance_3d(float32_t vec1[3], float32_t vec2[3])
-{
-    float32_t diff[3];
-    float32_t dot;
-    float32_t result;
-
-    arm_sub_f32(vec1, vec2, diff, 3);
-    arm_dot_prod_f32(diff, diff, 3, &dot);
-    arm_sqrt_f32(dot, &result);
-
-    return result;
 }
 /* USER CODE END 0 */
 
@@ -932,12 +180,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   SWO_Init();
-  dump_trigger = true;
-  send_magnitude = false;
-  verbose = false;
-  SNR = 1;
-  mdma_half = 0;
-  mdma_done_flag = false;
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -948,7 +191,7 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
   //utils_DWT_init();
-  DWT_Init();
+  utils_DWT_init();
 
   /* USER CODE END SysInit */
 
@@ -978,85 +221,28 @@ int main(void)
 
 	stm_temp_sensor_init(&hadc3, &htim6);
 
-	HAL_FDCAN_Start(&hfdcan1);
-	FDCAN_TxHeaderTypeDef txHeader;
-	uint8_t txData[12] = {0x4F, 0x4B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // "OK"
-
-	txHeader.Identifier          = 0x123;
-	txHeader.IdType              = FDCAN_STANDARD_ID;
-	txHeader.TxFrameType         = FDCAN_DATA_FRAME;
-	txHeader.DataLength          = FDCAN_DLC_BYTES_8;
-	txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	txHeader.BitRateSwitch       = FDCAN_BRS_OFF;
-	txHeader.FDFormat            = FDCAN_CLASSIC_CAN;
-	txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
-	txHeader.MessageMarker       = 0;
-
-	if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &txHeader, txData) != HAL_OK)
-	{
-	    Error_Handler();
-	}
-
-//	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = {
+//	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = { //this is in cm and must be converted
 //			{0.0,0.0,0.0},
 //			{0.0,0.0,0.0},
-//			{0.5,0.0,0.0},
-//			{0.25,0.25,0.354},
-//			{0.25,-0.25,0.354}
-//	};
+//			{32.3,-4.3,3.66},
+//			{-6.6,34.7,1.66},
+//			{-4.6,0.0,-34.34}
+//	}; // these are the positions on the acoustics stand
 
-	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = {
+	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = { //this is in meters
 			{0.0,0.0,0.0},
-			{0.0,0.0,0.0},
-			{32.3,-4.3,3.66},
-			{-6.6,34.7,1.66},
-			{-4.6,0.0,-34.34}
-	};
+			{0.204,0.213,0.493},
+			{-0.204,0.213,0.493},
+			{0.204,-0.113,0.493},
+			{-0.204,-0.113,0.493},
+	}; //I think they are accurate
 
-	for(int i = 0; i < N_HYDROPHONES; i++){
-		hydrophone_valid[i] = false;
-		hydrophone_positions[i][0] = hydrophone_positions_temp[i][0];
-		hydrophone_positions[i][1] = hydrophone_positions_temp[i][1];
-		hydrophone_positions[i][2] = hydrophone_positions_temp[i][2];
-	}
+	stale_data_patience = STALE_DATA_PATIENCE;
+	previous_SNR = 0.0;
 
-	float32_t biggest_distance = 0;
-	for(int i = 1; i < N_HYDROPHONES; i++){
-		float32_t dist = distance_3d(hydrophone_positions[0],hydrophone_positions[i]);
-		if(dist > biggest_distance){
-			biggest_distance = dist;
-		}
-	}
-	{
-		float32_t idx_distance = (biggest_distance/(WAVE_SPEED*100)*SAMPLING_FREQUENCY) + BLOCK_LEN/4;
-		uint16_t n = (uint16_t)ceilf(idx_distance);
-		n--;
-		n |= n >> 1;
-		n |= n >> 2;
-		n |= n >> 4;
-		n |= n >> 8;
-		n |= n >> 16;
-		n++;
-		max_idx_difference = n;
-	}
-
-
-
-	init_adc_and_buffers();
-	arm_rfft_fast_init_f32(&detection_fft_instance_f32, DETECTION_FFT_SIZE);
-	arm_rfft_init_q15(&detection_fft_instance_q15, DETECTION_FFT_SIZE, 0, 1);
-	cwt_init_f32(TARGET_FREQUENCY, SAMPLING_FREQUENCY, 0.5);
-	hilbert_init_f32();
-	direction_of_arrival[0] = 1.0;
-	direction_of_arrival[1] = 0.0;
-	direction_of_arrival[2] = 0.0;
-
-	if(!dump_trigger){
-		printf("dump = [\r\n\t");
-	}
-
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
-
+	acoustics_init();
+	hydrophone_interface_init(hydrophone_positions_temp);
+	hydrophone_interface_start_datastream();
 
   /* USER CODE END 2 */
 
@@ -1064,165 +250,83 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	utils_delay(1000000);
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
+	program_state = STATE_SEARCHING;
+
+//  STATE_INIT,
+//	STATE_SEARCHING,
+//	STATE_PROCESSING,
+//	STATE_SIGNAL_PRESENT,
+//	STATE_CAN_COMMUNICATE,
+//	STATE_ERROR,
+
+	uint8_t target_block;
+	uint8_t detection_patience = DETECTION_PATIENCE;
 
     while (1) {
-		uint8_t target_block = fast_get_detection_block_pos();
-		uint8_t processing_half = !mdma_half;
-		fast_MDMA_copy_block(hydrophone_buffers[0][target_block], detection_buffer[mdma_half], &hmdma_mdma_channel0_sw_0);
-		//process data ...
+    	switch(program_state){
+    	case(STATE_SEARCHING): //STATE_SEARCHING
+    		while(program_state == STATE_SEARCHING){
+    			target_block = hydrophone_buffers_get_detection_block_pos_fast();
+				uint8_t processing_half = !mdma_half;
+				fast_MDMA_copy_block(hydrophone_buffers[0][target_block], detection_buffer[mdma_half], &hmdma_mdma_channel0_sw_0);
 
-		diagnostics_temp = (float32_t)ad7606_voltage_to_temp(ad7606_reading_to_voltage(&my_ADC,7,diagnostics_sample));
-		stm32_temp = stm_temp_get_latest();
+				hydrophone_interface_update_temp();
 
-		__NOP();
-
-		if(unlikely(send_magnitude)){
-			dump_magnitude();
-		}
-
-    	if(unlikely(signal_present(processing_half))){ // processing_half
-			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
-			HAL_GPIO_WritePin(CS, GPIO_PIN_SET);
+				if(unlikely(acoustics_signal_present(processing_half))){
+					program_state = STATE_PROCESSING;
+					detection_patience = DETECTION_PATIENCE;
+				}
+				hydrophone_interface_wait_for_mdma();
+    		}
+		break;
+    	case(STATE_PROCESSING):
+			hydrophone_interface_stop_datastream();
 			HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
 
+			acoustics_prepare_data(target_block);
+			acoustics_process_data();
+			acoustics_clean_data();
 
-			//printf("dump = {\r\n");
-
-			magnitude_output_f32[0] = 0;
-			//DUMP_ARRAY_NAMED_DICT_F32("magnitude",magnitude_output_f32,DETECTION_FFT_SIZE/2);
-			//printf(",");
-
-			if(!dump_trigger){
-				dump_magnitude();
-			}
-
-			uint16_t workspace_idx = (target_block*BLOCK_LEN+BUFFER_LEN-(WORKSPACE_LEN-WORKSPACE_OFFSET*BLOCK_LEN))%BUFFER_LEN;
-
-			//printf("\t\"raw_mv\" : [\r\n\t");
-			for(int i = 0; i < N_HYDROPHONES; i++){
-				q15_t* buffer_flat = (q15_t*)hydrophone_buffers[i];
-				circ_unwrap_to_f32(buffer_flat ,processing_workspace[i], WORKSPACE_LEN, BUFFER_LEN, (uint32_t)workspace_idx);
-	    	    //normalize
-	    	    float32_t scalar = 0;
-	    	    arm_mean_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);   // Step 1: compute mean
-	    	    arm_offset_f32(processing_workspace[i],-scalar,processing_workspace[i],WORKSPACE_LEN); // Step 2: subtract it
-	    	    scalar = 0;
-				arm_rms_f32(processing_workspace[i], WORKSPACE_LEN, &scalar);
-				scalar = 1/scalar;
-				arm_scale_f32(processing_workspace[i],scalar,processing_workspace[i],WORKSPACE_LEN);
-				cwt_morlet_magnitude_f32(processing_workspace[i], processing_workspace[i]);
-			}
-
-			bool valid_result = false;
-			uint8_t max_calculation_retries = 3;
-
-			while(!valid_result && max_calculation_retries--){
-
-				uint8_t valid_buffers = 0;
-				uint8_t valid_buffers_array[N_HYDROPHONES] = {0};
-
-				for(int i = 0; i < N_HYDROPHONES; i++){
-					valid_buffers_array[i] = hydrophone_valid[i];
-					uint8_t n_signal_present_blocks = 0;
-					for(int j; j < WORKSPACE_LEN/BLOCK_LEN; j++){
-						n_signal_present_blocks += signal_present_f32(&processing_workspace[i][j*BLOCK_LEN]);
-					}
-					bool valid = (n_signal_present_blocks < WORKSPACE_LEN/BLOCK_LEN);
-					valid_buffers += valid;
-					valid_buffers_array[i] &= valid;
-				}
-				bool valid_data = (valid_buffers >= MINIMUM_VALID_BUFFERS);
-
-				float32_t linear_threshold = 0.01;
-				uint8_t max_retries = 6;
-				uint32_t dead_space = WORKSPACE_LEN/2;
-				idxs[0] = 0;
-				while(((idxs[0] < dead_space) || (idxs[0] > (WORKSPACE_LEN-(WORKSPACE_OFFSET-1)*BLOCK_LEN))) && max_retries--){
-					float32_t threshold = min_max_threshold(processing_workspace[0], WORKSPACE_LEN, linear_threshold, 15, dead_space);
-					idxs[0] = threshold_search(processing_workspace[0],WORKSPACE_LEN, threshold , PROCESSING_PATIENCE);
-					linear_threshold *= 2;
-				}
-				times_of_arrival[0] = (float32_t)idxs[0];
-
-				for(int i = 1; i < N_HYDROPHONES; i++){
-					float32_t linear_threshold = 0.01;
-					uint8_t max_retries = 6;
-					uint32_t dead_space = WORKSPACE_LEN/2;
-					idxs[i] = 0;
-					while(((abs_int32(idxs[0] - idxs[i])) > max_idx_difference) && max_retries--){
-						float32_t threshold = min_max_threshold(processing_workspace[i], WORKSPACE_LEN, linear_threshold, 15, dead_space);
-						idxs[i] = threshold_search(processing_workspace[i],WORKSPACE_LEN, threshold , PROCESSING_PATIENCE);
-						linear_threshold *= 2;
-					}
-					times_of_arrival[i] = (float32_t)idxs[i];
-				}
-
-				valid_buffers = 0;
-
-				for(int i = 1; i < N_HYDROPHONES; i++){
-					bool valid = (max_idx_difference > abs_int32(idxs[0] - idxs[i]));
-					valid_buffers += valid;
-					valid_buffers_array[i] &= valid;
-				}
-
-				bool valid_idxs = (valid_buffers >= (MINIMUM_VALID_BUFFERS - 1));
-
-				int32_t tdoa_status = 0;
-				if(valid_data){
-					tdoa_status = TDOA_direction_solve_f32(hydrophone_positions,
-														  times_of_arrival,
-														  valid_buffers_array,
-														  N_HYDROPHONES,
-														  direction_of_arrival);
-				}
-
-				valid_result = valid_data && is_valid(direction_of_arrival) && valid_idxs && (tdoa_status == 0);
-			}
-
-			if(unlikely(dump_trigger)){
-				dump_everything(workspace_idx, valid_result);
-				__NOP();
-			}
-
-			if(valid_result){
-				float32_t snr = estimate_SNR();
-				CAN_send_direction(&hfdcan1, 0x200, direction_of_arrival, snr);
-				UART_send_direction(&huart1, direction_of_arrival, snr);
-
-				__NOP();
-
-				utils_DWT_delay_ms(300);
-
-				printf("{");
-				dump_python_array_f32(direction_of_arrival, 3);
-				printf(",");
-				printf("%ld.%06ld", f32_whole(snr), f32_frac(snr, 6));
-				printf("},\r\n\t");
-
-				__NOP();
-			}else{
-				printf("invalid ping\r\n");
-			}
-
-			for(int i = 0; i < 5; i++){
-				clear_buffer_f32(processing_workspace[i], WORKSPACE_LEN);
-			}
-			HAL_GPIO_WritePin(CS, GPIO_PIN_RESET);
-			restart_buffers_and_spi();
-			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+			hydrophone_interface_restart_spi_and_buffers();
+			hydrophone_interface_start_datastream();
 			HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
-    	}
-		  while(mdma_done_flag == false) {
-			__NOP();
-			  // Optionally, add a timeout here to avoid infinite blocking
-		  }
-		  mdma_done_flag = false;
+		break;
 
+    	case(STATE_SIGNAL_PRESENT): //For when the signal is still going even after we finished processing its arrival
+    		while((program_state == STATE_SIGNAL_PRESENT) && detection_patience){
+    			target_block = hydrophone_buffers_get_detection_block_pos_fast();
+    			uint8_t processing_half = !mdma_half;
+    			fast_MDMA_copy_block(hydrophone_buffers[0][target_block], detection_buffer[mdma_half], &hmdma_mdma_channel0_sw_0);
+
+    			hydrophone_interface_update_temp();
+
+    			detection_patience--;
+    			if(unlikely(acoustics_signal_present(processing_half))){
+    				detection_patience = DETECTION_PATIENCE;
+    			}
+
+    			hydrophone_interface_wait_for_mdma();
+    		}
+		break;
+    	case(STATE_CAN_COMMUNICATE):
+			can_handle_requests();
+		break;
+    	case(STATE_STOPPED):
+    		can_stopped();
+    		utils_DWT_delay_ms(500);
+		break;
+    	case(STATE_ERROR):
+    			Error_Handler();
+    	break;
+    	default:
+    		program_state = STATE_ERROR;
+    	break;
+    	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
     }
-    while(1)__NOP();
+    Error_Handler();
   /* USER CODE END 3 */
 }
 
@@ -1449,31 +553,31 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Instance = FDCAN1;
   hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
-  hfdcan1.Init.AutoRetransmission = DISABLE;
+  hfdcan1.Init.AutoRetransmission = ENABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
   hfdcan1.Init.NominalPrescaler = 1;
-  hfdcan1.Init.NominalSyncJumpWidth = 1;
-  hfdcan1.Init.NominalTimeSeg1 = 131;
-  hfdcan1.Init.NominalTimeSeg2 = 28;
+  hfdcan1.Init.NominalSyncJumpWidth = 40;
+  hfdcan1.Init.NominalTimeSeg1 = 119;
+  hfdcan1.Init.NominalTimeSeg2 = 40;
   hfdcan1.Init.DataPrescaler = 1;
-  hfdcan1.Init.DataSyncJumpWidth = 1;
-  hfdcan1.Init.DataTimeSeg1 = 31;
-  hfdcan1.Init.DataTimeSeg2 = 8;
+  hfdcan1.Init.DataSyncJumpWidth = 10;
+  hfdcan1.Init.DataTimeSeg1 = 29;
+  hfdcan1.Init.DataTimeSeg2 = 10;
   hfdcan1.Init.MessageRAMOffset = 0;
-  hfdcan1.Init.StdFiltersNbr = 0;
+  hfdcan1.Init.StdFiltersNbr = 1;
   hfdcan1.Init.ExtFiltersNbr = 0;
-  hfdcan1.Init.RxFifo0ElmtsNbr = 0;
-  hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_12;
-  hfdcan1.Init.RxFifo1ElmtsNbr = 4;
+  hfdcan1.Init.RxFifo0ElmtsNbr = 8;
+  hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_16;
+  hfdcan1.Init.RxFifo1ElmtsNbr = 0;
   hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_16;
-  hfdcan1.Init.RxBuffersNbr = 4;
+  hfdcan1.Init.RxBuffersNbr = 0;
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_16;
   hfdcan1.Init.TxEventsNbr = 0;
-  hfdcan1.Init.TxBuffersNbr = 1;
-  hfdcan1.Init.TxFifoQueueElmtsNbr = 16;
+  hfdcan1.Init.TxBuffersNbr = 0;
+  hfdcan1.Init.TxFifoQueueElmtsNbr = 32;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
-  hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_16;
+  hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_64;
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
   {
     Error_Handler();
@@ -2148,167 +1252,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-static void init_adc_and_buffers()	{
-	struct ad7606_pins pins = {
-			.cs = {CS},
-			.busy = {BUSY},
-			.frstdata = {FRSTDATA},
-			.convst = {CONVST},
-	};
-
-	union ad7606_spi spi = {
-		.by_name = {
-			.douta = DOUTA,
-			.doutb = DOUTB,
-			.doutc = DOUTC,
-			.doutd = DOUTD,
-			.doute = DOUTE,
-			.doutf = NULL,
-			.doutg = NULL,
-			.douth = DOUTH,
-			.sdi   = MASTER_SPI,
-		}
-	};
-
-	struct ad7606_config config = {
-		.status_header = false,
-		.external_oversampling_clock = false,
-		.dout_format = AD7606_DOUT_8,
-		.operation_mode = AD7606_OPERATION_NORMAL,
-	};
-
-	struct ad7606_channel channels[8];
-	for(int i = 0; i < 8; i++){
-//			AD7606_MUX_CTRL_TEMP,
-//			AD7606_MUX_CTRL_2V5_REF,
-//			AD7606_MUX_CTRL_1V8_ALDO,
-//			AD7606_MUX_CTRL_1V8_DLDO,
-//			AD7606_MUX_CTRL_V_DRIVE,
-//			AD7606_MUX_CTRL_A_GND,
-//			AD7606_MUX_CTRL_AV_CC;
-		AD7606_CHANNEL_MUX_CTRL mux_ctrl = AD7606_MUX_CTRL_A_IN; // = (i != 8) ? (AD7606_MUX_CTRL_A_IN) : (AD7606_MUX_CTRL_TEMP);
-		AD7606_CHANNEL_RANGE range = AD7606_RANGE_SE_PM_12_5V;
-		switch(i){
-			case(2):
-				range = AD7606_RANGE_SE_PM_2_5V;
-			break;
-			case(5):
-				mux_ctrl = AD7606_MUX_CTRL_A_GND;
-				range = AD7606_RANGE_SE_PM_2_5V;
-			break;
-			case(6):
-				mux_ctrl = AD7606_MUX_CTRL_AV_CC;
-				range = AD7606_RANGE_SE_0_TO_5V;
-			break;
-			case(7):
-				mux_ctrl = AD7606_MUX_CTRL_TEMP;
-				range = AD7606_RANGE_SE_PM_2_5V;
-			break;
-		}
-	    struct ad7606_channel ch = {
-	        .open_detect    = false,
-	        .high_bandwidth = true,
-	        .range          = range,
-			.gain 			= 0,
-			.phase 			= 0,
-			.offset 		= 0x80,
-			.mux_ctrl 		= mux_ctrl,
-	    };
-	    channels[i] = ch;
-	}
-
-	struct ad7606_oversampling oversampling = {
-			.oversampling_ratio = 3, // 2^N oversampling
-			.oversampling_padding = 0,
-	};
-
-	struct ad7606_digital_diagnostics digital_diagnostics = {
-			.rom_CRC_err_en = true,
-			.mm_CRC_err_en = false,
-			.int_CRC_err_en = false,
-			.spi_write_err_en = false,
-			.spi_read_err_en = false,
-			.busy_stuck_high_err_en = true,
-			.clk_fs_os_en = false,
-			.interface_check_en = false,
-	};
-
-	ADC_settings.config = config;
-	ADC_settings.digital_diagnostics = digital_diagnostics;
-	ADC_settings.oversampling = oversampling;
-
-	for(int i = 0; i < 8; i++){
-		ADC_settings.channels[i] = channels[i];
-	}
-	my_ADC.cooked = true;
-	ad7606_init(&my_ADC, &ADC_regs, pins, spi, &ADC_settings, &diagnostics_sample);
-	if(verbose){
-		printf("ADC initialized. Status register:\t");
-		print_binary(ad7606_check_status(&my_ADC),8);
-		printf("\r\n");
-
-		printf("Digital diagnostics error register:\t");
-		print_binary(ad7606_check_digital_error(&my_ADC),8);
-		printf("\r\n");
-	}
-
-	uint8_t interface_check_result[8];
-	ad7606_check_interface(&my_ADC, interface_check_result);
-	if(!hydrophone_valid[0]){
-		for(int i = 0; i < N_HYDROPHONES; i++){
-			hydrophone_valid[i] = interface_check_result[i];
-		}
-	}
-	if(verbose){
-		printf("Interface check result:\r\n");
-		for(int i = 0; i < 8; i++){
-			printf("Channel V%d: ",i+1);
-		  switch(interface_check_result[i]){
-		  case 0xFF:
-			  printf("Not configured");
-			  break;
-		  case 0:
-			  printf("Fail");
-			  break;
-		  case 1:
-			  printf("Pass");
-			break;
-		  default:
-			printf("Unknown result");
-			break;
-		  }
-		  printf("\t\t\t");
-		  if(i%4 == 3) printf("\r\n");
-		}
-		printf("\r\n");
-	}
-
-	int lengths[8] = {
-			BUFFER_LEN,
-			BUFFER_LEN,
-			BUFFER_LEN,
-			BUFFER_LEN,
-			BUFFER_LEN,
-			0,
-			0,
-			0,
-	};
-	int16_t* buffers[8] = {NULL};
-	for(int i = 0; i < 5; i++) buffers[i] = (int16_t*)&hydrophone_buffers[i][0][0];
-
-	ad7606_enter_adc_mode(&my_ADC);
-
-	for(int i = 0; i < 5; i++){
-		clear_buffer_q15(hydrophone_buffers[i][0], BUFFER_LEN);
-	}
-	clear_buffer_q15(detection_buffer[0], BLOCK_LEN*2);
 
 
-	ad7606_init_output_buffers_DMA(&my_ADC, buffers, lengths);
-	HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_CPLT_CB_ID,  MyMDMA_TransferCompleteCallback);
-	HAL_MDMA_RegisterCallback(&hmdma_mdma_channel0_sw_0, HAL_MDMA_XFER_ERROR_CB_ID, MyMDMA_ErrorCallback);
-	ad7606_dma_spi_init(&my_ADC, &hdma_spi6_rx, diagnostics_buffer, BLOCK_LEN);
-}
+
 /* USER CODE END 4 */
 
  /* MPU Configuration */
@@ -2349,16 +1295,20 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state
      */
-	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
+	hydrophone_interface_stop_datastream();
     __disable_irq();
     HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
     while(1){
+    	can_errored();
+
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
     	utils_DWT_delay_ms(1000);
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_RESET);
 
     	HAL_NVIC_SystemReset();
+
+    	utils_DWT_delay_ms(1000); //just in case it for SOME reason doesn't reset, it loops and tries again
     }
   /* USER CODE END Error_Handler_Debug */
 }

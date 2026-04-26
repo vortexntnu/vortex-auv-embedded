@@ -34,16 +34,6 @@ float stm_temp_get_latest(void)
 	return stm_temp_sensor_convert(raw);
 }
 
-// Call this whenever you want a fresh conversion of the buffer value
-//float stm_temp_get_latest(void)
-//{
-//    float32_t raw  = (float32_t)g_adc3_dma_buf;  // no shift
-//    float32_t cal1 = (float32_t)(*((uint16_t*)0x1FF1E820));  // 30°C
-//    float32_t cal2 = (float32_t)(*((uint16_t*)0x1FF1E824));  // 110°C
-//
-//    return (110.0f - 30.0f) / (cal2 - cal1) * (raw - cal1) + 30.0f;
-//}
-
 
 float stm_temp_sensor_convert(uint16_t raw_adc)
 {

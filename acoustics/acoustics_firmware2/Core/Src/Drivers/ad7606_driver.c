@@ -364,8 +364,9 @@ void ad7606_start_conversion_and_wait(struct ad7606_device* device){
 //       Failure to do so will leave EOT/TXTF flags set and lock the SPI peripheral.
 // =============================================================================
 
+
+
 static uint32_t buffer_size = 1;
-static volatile uint32_t rx_head = 0; /* incremented in EOT ISR    */
 static int16_t* rx_buf;
 
 void ad7606_dma_spi_init(struct ad7606_device* device,
@@ -444,13 +445,6 @@ void ad7606_eot_callback(SPI_HandleTypeDef *hspi, int device_id)
 {
     if (hspi->Instance->SR & SPI_SR_EOT)
     {
-        /* DMA has already written the word into rx_buf[rx_head % BUF_DEPTH]
-         * because the DMA transfer completed before EOT fires.            *
-         * Just track position and clear flags.                            */
-         *(_ad7606_devices[device_id]->diagnostic_sample) = rx_buf[rx_head % buffer_size];
-
-        rx_head++;
-
         hspi->Instance->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
         /* CR2 is auto-cleared after EOT on H7 — reload happens in trigger */
     }

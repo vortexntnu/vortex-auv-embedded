@@ -19,4 +19,10 @@ void dsp_cmplx_mag_squared_q15(
           q15_t * __restrict__ pDst,
           uint32_t             numSamples);
 
+void dsp_spike_filter(float32_t *signal, uint32_t signal_len, float32_t threshold);
+uint32_t dsp_rl_under_threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold, const uint32_t patience);
+float32_t dsp_min_max_lerp(float32_t* signal, uint32_t signal_len, float32_t t, uint32_t n_high, uint32_t n_low);
+float32_t dsp_abs_f32(float32_t x);
+int32_t dsp_abs_int32(int32_t x);
+
 #endif /* INC_DSP_DSP_H_ */

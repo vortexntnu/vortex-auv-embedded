@@ -31,8 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ad7606_driver.h"
 #include "memory_placement.h"
+#include "embedded_macros.h"
 
 #include "arm_math_types.h"
 #include "arm_math.h"
@@ -44,12 +44,14 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 typedef enum {
-    DMA_SPI_IDLE,
-	DMA_SPI_RUNNING,
-	DMA_SPI_COMPLETE,
-	DMA_SPI_ERROR,
-	DMA_SPI_CIRCULAR,
-} DMA_SPI_ChannelState;
+    STATE_INIT,
+	STATE_SEARCHING,
+	STATE_PROCESSING,
+	STATE_SIGNAL_PRESENT,
+	STATE_CAN_COMMUNICATE,
+	STATE_STOPPED,
+	STATE_ERROR,
+} statemachine_state;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -63,14 +65,16 @@ typedef enum {
 #define WORKSPACE_LEN 		  ((N_BLOCKS - N_SACRIFICAL_BLOCKS -1) * BLOCK_LEN)
 #define N_HYDROPHONES 		  5
 
-#define DETECTION_FFT_SIZE BLOCK_LEN // match this to your buffer size
-#define PROCESSING_FFT_SIZE WORKSPACE_LEN  // match this to your buffer size
+#define DETECTION_FFT_SIZE BLOCK_LEN
+#define PROCESSING_FFT_SIZE WORKSPACE_LEN
+
 #define SAMPLING_FREQUENCY 125000
 #define TARGET_FREQUENCY 30000
 #define BIN_RESOLUTION ((float)SAMPLE_RATE_HZ / (float)DETECTION_FFT_SIZE)
 
 #define DETECTION_PATIENCE 10
 #define PROCESSING_PATIENCE 3
+#define STALE_DATA_PATIENCE 64
 
 #define LINEAR_THRESHOLD  10 // 10dB => 10^(10/10) = 10
 #define SIGNAL_MIN_POWER 1e-5f
@@ -79,19 +83,11 @@ typedef enum {
 
 #define WAVE_SPEED 1490
 
-extern SPI_HandleTypeDef* const dout_channel_handles[N_HYDROPHONES];
-extern volatile DMA_SPI_ChannelState dma_channel_state[N_HYDROPHONES + 1];
+#define GENERAL_TIMEOUT 10000
 
-extern q15_t hydrophone_buffers[N_HYDROPHONES][N_BLOCKS][BLOCK_LEN];
-extern volatile uint16_t diagnostics_sample;
-
-extern arm_rfft_fast_instance_f32 detection_fft_instance;
-extern q15_t detection_buffer[2][BLOCK_LEN];
-extern float32_t fft_input_f32[DETECTION_FFT_SIZE];
-extern float32_t fft_output_f32[DETECTION_FFT_SIZE * 2];
-extern float32_t magnitude_output_f32[DETECTION_FFT_SIZE / 2];
-
-extern arm_rfft_instance_q15 processing_fft_instance;
+extern volatile statemachine_state program_state;
+extern volatile uint8_t stale_data_patience;
+extern volatile float32_t previous_SNR;
 
 //extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi1;
@@ -111,6 +107,10 @@ extern DMA_HandleTypeDef hdma_spi6_tx;
 extern TIM_HandleTypeDef htim1;
 
 extern UART_HandleTypeDef huart1;
+
+extern FDCAN_HandleTypeDef hfdcan1;
+
+extern MDMA_HandleTypeDef hmdma_mdma_channel0_sw_0;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -141,8 +141,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-void MyMDMA_TransferCompleteCallback(MDMA_HandleTypeDef *hmdma);
-void dump_python_array(q15_t* arr, int len);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

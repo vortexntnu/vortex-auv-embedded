@@ -9,6 +9,8 @@
 #include "ad7606_driver.h"
 #include "stm_temp_driver.h"
 
+#include "acoustics.h"
+
 
 // SPI Interrupts start
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
@@ -16,16 +18,22 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
 }
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi == &hspi1){
+		float32_t current_SNR = acoustics_estimate_SNR();
+		if(current_SNR == previous_SNR){
+			stale_data_patience--;
+		}else{
+			stale_data_patience = STALE_DATA_PATIENCE;
+		}
 
+		if(stale_data_patience == 0){
+			Error_Handler();
+		}
+	}
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
-    for (int i = 0; i < N_HYDROPHONES; i++) {
-        if (hspi->Instance == dout_channel_handles[i]->Instance) {
-            dma_channel_state[i] = DMA_SPI_ERROR;
-            break;
-        }
-    }
+	Error_Handler();
 }
 // SPI Interrupts end
 
@@ -53,3 +61,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	stm_temp_sensor_callback(hadc);
 }
+
+
+

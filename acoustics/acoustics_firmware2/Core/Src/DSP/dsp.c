@@ -102,3 +102,132 @@ void dsp_cmplx_mag_squared_q15(
     }
 }
 
+/**
+ * @brief  Filters out huge irregular spikes on the input.
+ * 			Does so by taking the absolute average of an elements neighbors and checking if the element is larger than the average*threshold
+ *
+ * @param  signal    	Pointer to input/output array
+ * @param  signal_len   Lenght of input/output array
+ * @param  threshold   	How much larger than the neighborhood average a value needs to be in order to be filtered
+ */
+void dsp_spike_filter(float32_t *signal, uint32_t signal_len, float32_t threshold){
+	const uint8_t window_radius = 3; //left and right distance
+	for(int i = window_radius; i < signal_len - window_radius; i++){
+		float32_t sum = 0;
+		for(int j = -window_radius; j < window_radius + 1; j++){
+			if(j != 0){
+				sum += dsp_abs_f32(signal[i+j]);
+			}
+		}
+		sum /= window_radius*2;
+		if(dsp_abs_f32(signal[i]) > sum*threshold){
+			signal[i] = sum;
+		}
+	}
+}
+
+/**
+ * @brief  Searches from end to start for values under the threshold before returning the index
+ *
+ * @param  signal    	Pointer to input array
+ * @param  signal_len   Lenght of input array
+ * @param  threshold   	The threshold
+ * @param  patience   	How many elements in a row that need to be under the threshold before it returns
+ */
+uint32_t dsp_rl_under_threshold_search(float32_t* signal, uint32_t signal_len, float32_t threshold, const uint32_t patience)
+{
+    uint32_t i = signal_len;
+    uint32_t remaining_patience = patience;
+
+    while (i--)
+    {
+        if (signal[i] < threshold){
+        	remaining_patience--;
+        }else{
+        	remaining_patience = patience;
+        }
+        if(remaining_patience == 0){
+        	return i + patience;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @brief  Takes the average of the n_lowest and n_highest values of the input and returns a linear interpolation between them
+ *
+ * @param  signal    	Pointer to input array
+ * @param  signal_len   Lenght of input array
+ * @param  t   			linear interpolation value from 0 to 1 where 0 is the average of the lowest and 1 gives the average of the largest
+ * @param  n_high		how many of the largest values to take the average of
+ * @param  n_low		how many of the smallest value to take the average of
+ */
+float32_t dsp_min_max_lerp(float32_t* signal, uint32_t signal_len, float32_t t, uint32_t n_high, uint32_t n_low)
+{
+    /*
+     * Finds the average of the bottom N and top N points in the array,
+     * then returns an interpolated threshold between those two averages.
+     *
+     * threshold = 0.0 -> returns the low average
+     * threshold = 1.0 -> returns the high average
+     * threshold = 0.5 -> returns the midpoint between them
+     */
+
+    /* --- Sort a copy of the signal using an in-place insertion sort ---
+     * For large arrays consider a faster algorithm, but insertion sort
+     * has zero heap allocation and is fine for typical DSP frame sizes. */
+    float32_t sorted[signal_len];
+    arm_copy_f32(signal, sorted, signal_len);
+
+    /* Insertion sort (ascending) */
+    for (uint32_t i = 1; i < signal_len; i++)
+    {
+        float32_t key = sorted[i];
+        int32_t j = (int32_t)i - 1;
+        while (j >= 0 && sorted[j] > key)
+        {
+            sorted[j + 1] = sorted[j];
+            j--;
+        }
+        sorted[j + 1] = key;
+    }
+
+    /* --- Average the N lowest values --- */
+    float32_t low_mean = 0.0f;
+    arm_mean_f32(sorted, n_low, &low_mean);
+
+    /* --- Average the N highest values --- */
+    float32_t high_mean = 0.0f;
+    arm_mean_f32(&sorted[signal_len - n_high], n_high, &high_mean);
+
+    /* --- Interpolate between the two averages --- */
+    /* result = low + threshold * (high - low) */
+    float32_t result = 0.0f;
+    arm_add_f32(                          /* low + t*(high-low)          */
+        &low_mean,                        /* not a vector call, so we    */
+        &(float32_t){t *          		  /* use scalar arithmetic below */
+            (high_mean - low_mean)},
+        &result, 1);
+
+    /* Simpler and equally valid on Cortex-M7 with FPU: */
+    result = low_mean + t * (high_mean - low_mean);
+
+    return result;
+}
+
+float32_t dsp_abs_f32(float32_t x){
+	if(x >= 0){
+		return x;
+	}else{
+		return -x;
+	}
+}
+
+int32_t dsp_abs_int32(int32_t x){
+	if(x >= 0){
+		return x;
+	}else{
+		return -x;
+	}
+}

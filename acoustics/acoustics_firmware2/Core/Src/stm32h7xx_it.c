@@ -57,6 +57,8 @@
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc3;
+extern ADC_HandleTypeDef hadc3;
+extern FDCAN_HandleTypeDef hfdcan1;
 extern MDMA_HandleTypeDef hmdma_mdma_channel0_sw_0;
 extern DMA_HandleTypeDef hdma_spi1_rx;
 extern DMA_HandleTypeDef hdma_spi2_rx;
@@ -299,6 +301,20 @@ void DMA1_Stream5_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles FDCAN1 interrupt 0.
+  */
+void FDCAN1_IT0_IRQHandler(void)
+{
+  /* USER CODE BEGIN FDCAN1_IT0_IRQn 0 */
+
+  /* USER CODE END FDCAN1_IT0_IRQn 0 */
+  HAL_FDCAN_IRQHandler(&hfdcan1);
+  /* USER CODE BEGIN FDCAN1_IT0_IRQn 1 */
+
+  /* USER CODE END FDCAN1_IT0_IRQn 1 */
+}
+
+/**
   * @brief This function handles EXTI line[9:5] interrupts.
   */
 void EXTI9_5_IRQHandler(void)
@@ -437,6 +453,20 @@ void MDMA_IRQHandler(void)
   /* USER CODE BEGIN MDMA_IRQn 1 */
 
   /* USER CODE END MDMA_IRQn 1 */
+}
+
+/**
+  * @brief This function handles ADC3 global interrupt.
+  */
+void ADC3_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC3_IRQn 0 */
+
+  /* USER CODE END ADC3_IRQn 0 */
+  HAL_ADC_IRQHandler(&hadc3);
+  /* USER CODE BEGIN ADC3_IRQn 1 */
+
+  /* USER CODE END ADC3_IRQn 1 */
 }
 
 /**

@@ -20,4 +20,7 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
+void MyMDMA_TransferCompleteCallback(MDMA_HandleTypeDef *hmdma);
+void MyMDMA_ErrorCallback(MDMA_HandleTypeDef *hmdma);
+
 #endif /* INC_INTERRUPTS_H_ */
