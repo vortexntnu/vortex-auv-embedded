@@ -74,7 +74,7 @@ typedef enum {
 
 #define DETECTION_PATIENCE 10
 #define PROCESSING_PATIENCE 3
-#define STALE_DATA_PATIENCE 64
+#define STALE_DATA_PATIENCE 128
 
 #define LINEAR_THRESHOLD  10 // 10dB => 10^(10/10) = 10
 #define SIGNAL_MIN_POWER 1e-5f
@@ -86,8 +86,9 @@ typedef enum {
 #define GENERAL_TIMEOUT 10000
 
 extern volatile statemachine_state program_state;
-extern volatile uint8_t stale_data_patience;
-extern volatile float32_t previous_SNR;
+extern volatile statemachine_state prev_program_state;
+extern uint8_t stale_data_patience;
+extern uint8_t previous_target_block;
 
 //extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi1;

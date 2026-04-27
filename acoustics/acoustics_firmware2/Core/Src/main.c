@@ -110,8 +110,9 @@ MDMA_HandleTypeDef hmdma_mdma_channel0_sw_0;
 /* USER CODE BEGIN PV */
 
 PLACE_IN_DTCM volatile statemachine_state program_state;
-PLACE_IN_DTCM volatile uint8_t stale_data_patience;
-PLACE_IN_DTCM volatile float32_t previous_SNR;
+PLACE_IN_DTCM volatile statemachine_state prev_program_state;
+PLACE_IN_DTCM uint8_t stale_data_patience;
+PLACE_IN_DTCM uint8_t previous_target_block;
 
 PLACE_IN_D3_SRAM float32_t stm32_temp;
 
@@ -157,6 +158,19 @@ void SWO_Init(void)
     ITM->TCR |= ITM_TCR_ITMENA_Msk;
     ITM->TER |= (1UL << 0);  // Enable stimulus port 0
 }
+
+bool stale_data(uint8_t target_block){
+	if(unlikely(target_block == previous_target_block)){
+
+		if(stale_data_patience-- == 0){
+			return true;
+		}
+	}else{
+		stale_data_patience = STALE_DATA_PATIENCE;
+	}
+	previous_target_block = target_block;
+	return false;
+}
 /* USER CODE END 0 */
 
 /**
@@ -167,7 +181,11 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	/*
+	 * If hydrophone stream stops unexpectedly then:
+	 * MAKE SURE HAL_SPI_IRQHandler IS NOT CALLED!!!!
+	 * It WILL be there after every code generation
+	 */
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -215,10 +233,10 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   //MDMA_UserInit();
+	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
 	uint8_t msg[] = "USART1 OK\r\n";
 	HAL_UART_Transmit(&huart1, msg, sizeof(msg) - 1, 100);
-	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
-
+	can_init();
 	stm_temp_sensor_init(&hadc3, &htim6);
 
 //	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = { //this is in cm and must be converted
@@ -238,10 +256,11 @@ int main(void)
 	}; //I think they are accurate
 
 	stale_data_patience = STALE_DATA_PATIENCE;
-	previous_SNR = 0.0;
+	previous_target_block = 0xFF;
 
 	acoustics_init();
 	hydrophone_interface_init(hydrophone_positions_temp);
+
 	hydrophone_interface_start_datastream();
 
   /* USER CODE END 2 */
@@ -272,10 +291,16 @@ int main(void)
 
 				hydrophone_interface_update_temp();
 
+				if(unlikely(stale_data(target_block))){
+					Error_Handler();
+				}
+
 				if(unlikely(acoustics_signal_present(processing_half))){
 					program_state = STATE_PROCESSING;
 					detection_patience = DETECTION_PATIENCE;
 				}
+
+
 				hydrophone_interface_wait_for_mdma();
     		}
 		break;
@@ -287,6 +312,11 @@ int main(void)
 			acoustics_process_data();
 			acoustics_clean_data();
 
+			if(program_state == STATE_CAN_COMMUNICATE){
+				prev_program_state = STATE_SIGNAL_PRESENT;
+			}else{
+				program_state = STATE_SIGNAL_PRESENT;
+			}
 			hydrophone_interface_restart_spi_and_buffers();
 			hydrophone_interface_start_datastream();
 			HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
@@ -305,11 +335,20 @@ int main(void)
     				detection_patience = DETECTION_PATIENCE;
     			}
 
+    			if(detection_patience == 0){
+    				if(program_state == STATE_CAN_COMMUNICATE){
+    					prev_program_state = STATE_SEARCHING;
+    				}else{
+    					program_state = STATE_SEARCHING;
+    				}
+    			}
+
     			hydrophone_interface_wait_for_mdma();
     		}
 		break;
     	case(STATE_CAN_COMMUNICATE):
 			can_handle_requests();
+    		program_state = prev_program_state;
 		break;
     	case(STATE_STOPPED):
     		can_stopped();
@@ -462,11 +501,8 @@ static void MX_ADC3_Init(void)
   hadc3.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
   hadc3.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc3.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
-  hadc3.Init.OversamplingMode = ENABLE;
-  hadc3.Init.Oversampling.Ratio = 256;
-  hadc3.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_8;
-  hadc3.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
-  hadc3.Init.Oversampling.OversamplingStopReset = ADC_REGOVERSAMPLING_CONTINUED_MODE;
+  hadc3.Init.OversamplingMode = DISABLE;
+  hadc3.Init.Oversampling.Ratio = 1;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
   {
     Error_Handler();
@@ -478,7 +514,7 @@ static void MX_ADC3_Init(void)
   AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
   AnalogWDGConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
   AnalogWDGConfig.ITMode = ENABLE;
-  AnalogWDGConfig.HighThreshold = 14477;
+  AnalogWDGConfig.HighThreshold = 16067.5*4;
   AnalogWDGConfig.LowThreshold = 10900;
   if (HAL_ADC_AnalogWDGConfig(&hadc3, &AnalogWDGConfig) != HAL_OK)
   {
@@ -553,7 +589,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Instance = FDCAN1;
   hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
-  hfdcan1.Init.AutoRetransmission = ENABLE;
+  hfdcan1.Init.AutoRetransmission = DISABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
   hfdcan1.Init.NominalPrescaler = 1;
@@ -575,9 +611,9 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_16;
   hfdcan1.Init.TxEventsNbr = 0;
   hfdcan1.Init.TxBuffersNbr = 0;
-  hfdcan1.Init.TxFifoQueueElmtsNbr = 32;
+  hfdcan1.Init.TxFifoQueueElmtsNbr = 16;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
-  hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_64;
+  hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_16;
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
   {
     Error_Handler();
@@ -1243,7 +1279,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(BUSY_EXTI_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(BUSY_EXTI_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(BUSY_EXTI_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -1303,7 +1339,7 @@ void Error_Handler(void)
     	can_errored();
 
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
-    	utils_DWT_delay_ms(1000);
+    	utils_DWT_delay_ms(100);
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_RESET);
 
     	HAL_NVIC_SystemReset();

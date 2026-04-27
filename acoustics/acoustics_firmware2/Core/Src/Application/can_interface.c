@@ -55,6 +55,13 @@ void can_init(void)
                                      FDCAN_FILTER_REMOTE) != HAL_OK)
         Error_Handler();
 
+    HAL_NVIC_SetPriority(FDCAN1_IT0_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+
+    HAL_FDCAN_ConfigInterruptLines(CAN_HANDLE,
+                                   FDCAN_IT_RX_FIFO0_NEW_MESSAGE,
+                                   FDCAN_INTERRUPT_LINE0);
+
     /* Enable RX FIFO 0 new-message interrupt */
     if (HAL_FDCAN_ActivateNotification(CAN_HANDLE,
                                        FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
@@ -80,8 +87,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
                                (FDCAN_RxHeaderTypeDef *)&_rx_header,
                                (uint8_t *)_rx_data);
 
-        _rx_pending     = 1;
-        program_state   = STATE_CAN_COMMUNICATE;
+        _rx_pending     	= 1;
+        prev_program_state  = program_state;
+        program_state		= STATE_CAN_COMMUNICATE;
     }
 }
 
@@ -154,7 +162,7 @@ void can_handle_requests(void)
 void can_send_direction(float32_t vec[3], float32_t weight)
 {
     FDCAN_TxHeaderTypeDef txHeader;
-    uint8_t txData[16];  // 3 x float32 = 12 bytes
+    uint8_t txData[16];  // 4 x float32 = 16 bytes
 
     memcpy(txData, vec, 12);
     memcpy(txData + 12, &weight, 4);
@@ -164,7 +172,7 @@ void can_send_direction(float32_t vec[3], float32_t weight)
     txHeader.TxFrameType         = FDCAN_DATA_FRAME;
     txHeader.DataLength          = FDCAN_DLC_BYTES_16;
     txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-    txHeader.BitRateSwitch       = FDCAN_BRS_ON;
+    txHeader.BitRateSwitch       = FDCAN_BRS_OFF;
     txHeader.FDFormat            = FDCAN_FD_CAN;
     txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
     txHeader.MessageMarker       = 0;
@@ -173,7 +181,8 @@ void can_send_direction(float32_t vec[3], float32_t weight)
 
     while ((HAL_FDCAN_GetTxFifoFreeLevel(CAN_HANDLE) == 0) && timouter--);
 
-    HAL_FDCAN_AddMessageToTxFifoQ(CAN_HANDLE, &txHeader, txData);
+    HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(CAN_HANDLE, &txHeader, txData);
+    __NOP();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -205,19 +214,19 @@ static void _can_send_classic(uint32_t id, const uint8_t *data, uint32_t dlc)
  * ═══════════════════════════════════════════════════════════════*/
 void can_ok(void)
 {
-    uint8_t d[8] = { 'O', 'K', 0, 0, 0, 0, 0, 0 };
+    uint8_t d[8] = { 'S', 'O', 'U', 'N', 'D', ' ', 'O', 'K' };
     _can_send_classic(CAN_OK_ID, d, FDCAN_DLC_BYTES_8);
 }
 
 void can_stopped(void)
 {
-    uint8_t d[8] = { 'S', 'T', 'O', 'P', 0, 0, 0, 0 };
+    uint8_t d[8] = { 'S', 'T', 'O', 'P', 'E', 'D', 0, 0 };
     _can_send_classic(CAN_STOPPED_ID, d, FDCAN_DLC_BYTES_8);
 }
 
 void can_errored(void)
 {
-    uint8_t d[8] = { 'E', 'R', 'R', 0, 0, 0, 0, 0 };
+    uint8_t d[8] = { 'E', 'R', 'R', 'O', 'R', 0, 0 ,0 };
     _can_send_classic(CAN_ERRORED_ID, d, FDCAN_DLC_BYTES_8);
 }
 
@@ -237,14 +246,16 @@ void can_handle_restart(void)
 
 void can_handle_stop(void)
 {
-	program_state = STATE_STOPPED;
+	prev_program_state = STATE_STOPPED;
+	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
 	hydrophone_interface_stop_datastream();
     can_stopped();
 }
 
 void can_handle_start(void)
 {
-	program_state = STATE_SEARCHING;
+	prev_program_state = STATE_SEARCHING;
+	HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_SET);
 	hydrophone_interface_restart_spi_and_buffers();
 	hydrophone_interface_start_datastream();
     can_ok();

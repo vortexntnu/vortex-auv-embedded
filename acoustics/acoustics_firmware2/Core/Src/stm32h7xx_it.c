@@ -102,7 +102,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+	Error_Handler();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -418,9 +418,9 @@ void SPI5_IRQHandler(void)
 void SPI6_IRQHandler(void)
 {
   /* USER CODE BEGIN SPI6_IRQn 0 */
-	ad7606_eot_callback(&hspi6,0);
+	ad7606_eot_callback(&hspi6,0); //MAKE SURE HAL_SPI_IRQHandler IS NOT CALLED
   /* USER CODE END SPI6_IRQn 0 */
-  HAL_SPI_IRQHandler(&hspi6);
+  //HAL_SPI_IRQHandler(&hspi6);
   /* USER CODE BEGIN SPI6_IRQn 1 */
 
   /* USER CODE END SPI6_IRQn 1 */

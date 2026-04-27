@@ -43,7 +43,7 @@ PLACE_IN_DTCM uint16_t n_upper_average;
 PLACE_IN_DTCM uint16_t n_lower_average;
 
 void acoustics_init(void){
-	 SNR = 1;
+	SNR = 1;
 
 	arm_rfft_fast_init_f32(&detection_fft_instance_f32, DETECTION_FFT_SIZE);
 	arm_rfft_init_q15(&detection_fft_instance_q15, DETECTION_FFT_SIZE, 0, 1);

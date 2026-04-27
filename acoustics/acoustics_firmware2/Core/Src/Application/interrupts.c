@@ -13,24 +13,9 @@
 
 
 // SPI Interrupts start
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
-
-}
-
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-	if(hspi == &hspi1){
-		float32_t current_SNR = acoustics_estimate_SNR();
-		if(current_SNR == previous_SNR){
-			stale_data_patience--;
-		}else{
-			stale_data_patience = STALE_DATA_PATIENCE;
-		}
-
-		if(stale_data_patience == 0){
-			Error_Handler();
-		}
-	}
-}
+//void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+//
+//}
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
 	Error_Handler();
@@ -50,9 +35,12 @@ void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 {
     if (hadc->Instance == ADC3)
     {
+    	float32_t temp = stm_temp_get_latest();
         // Temperature out of range — take action
         // e.g. reduce clock, shut down peripherals, set a flag
-    	Error_Handler();
+    	if((temp > 90.0) && (temp < -40.0)){
+        	Error_Handler();
+    	}
     }
 }
 

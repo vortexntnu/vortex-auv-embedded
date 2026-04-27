@@ -375,6 +375,7 @@ void ad7606_dma_spi_init(struct ad7606_device* device,
 						 uint32_t buff_size)
 {
 	SPI_HandleTypeDef* hspi = SDI;
+	HAL_DMA_Abort(hdma_rx);  // explicit, before HAL_SPI_Abort
     HAL_SPI_Abort(hspi);
 
     buffer_size = buff_size;
@@ -426,16 +427,13 @@ void ad7606_dma_spi_init(struct ad7606_device* device,
 __attribute__((always_inline))
 inline void ad7606_trigger_burst(SPI_HandleTypeDef *hspi)
 {
-    /* Reload TSIZE for next transaction (cleared after each EOT) */
-    hspi->Instance->CR2 = 1U;
-
-    /* On master TX-only or half-duplex you'd push a dummy word;
-     * on full-duplex the TX FIFO needs something to clock out.  *
-     * Writing TXDR is sufficient — no need to clear SPE first.  */
-    *(volatile uint16_t*)&hspi->Instance->TXDR = 0xFFFF;
-
-    /* Fire */
-    hspi->Instance->CR1 |= SPI_CR1_CSTART;
+	// Correct sequence:
+//	hspi->Instance->CFG1|= SPI_CFG1_RXDMAEN;
+//	hspi->Instance->CR1 |= SPI_CR1_SPE;
+	hspi->Instance->CR1 &= ~SPI_CR1_CSTART; // ensure not running (should already be clear post-EOT)
+	hspi->Instance->CR2  = 1U;              // set TSIZE
+	*(volatile uint16_t*)&hspi->Instance->TXDR = 0xFFFF; // preload TX
+	hspi->Instance->CR1 |= SPI_CR1_CSTART;  // fire
 }
 
 /* ---------------------------------------------------------------
@@ -447,6 +445,7 @@ void ad7606_eot_callback(SPI_HandleTypeDef *hspi, int device_id)
     {
         hspi->Instance->IFCR = SPI_IFCR_EOTC | SPI_IFCR_TXTFC;
         /* CR2 is auto-cleared after EOT on H7 — reload happens in trigger */
+        //hspi->Instance->IFCR = 0x1FF; //Clear all flags just in case
     }
 }
 
