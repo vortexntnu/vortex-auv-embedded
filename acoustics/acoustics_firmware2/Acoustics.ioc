@@ -1,12 +1,12 @@
 #MicroXplorer Configuration settings - do not modify
-ADC3.AWD1HighThreshold=16067.5*4
+ADC3.AWD1HighThreshold=16067
 ADC3.AWD1ITMode=ENABLE
 ADC3.AWD1LowThreshold=10900
 ADC3.Channel-0\#ChannelRegularConversion=ADC_CHANNEL_TEMPSENSOR
 ADC3.ClockPrescaler=ADC_CLOCK_ASYNC_DIV8
 ADC3.ClockPrescalerADC3=ADC_CLOCK_ASYNC_DIV1
 ADC3.ContinuousConvMode=DISABLE
-ADC3.ConversionDataManagement=ADC_CONVERSIONDATA_DMA_CIRCULAR
+ADC3.ConversionDataManagement=ADC_CONVERSIONDATA_DR
 ADC3.EOCSelection=ADC_EOC_SINGLE_CONV
 ADC3.EnableAnalogWatchDog1=true
 ADC3.ExternalTrigConv=ADC_EXTERNALTRIG_T6_TRGO

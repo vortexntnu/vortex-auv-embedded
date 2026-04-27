@@ -208,7 +208,6 @@ int main(void)
   PeriphCommonClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  //utils_DWT_init();
   utils_DWT_init();
 
   /* USER CODE END SysInit */
@@ -262,14 +261,13 @@ int main(void)
 	hydrophone_interface_init(hydrophone_positions_temp);
 
 	hydrophone_interface_start_datastream();
+	program_state = STATE_SEARCHING;
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	utils_delay(1000000);
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
-	program_state = STATE_SEARCHING;
 
 //  STATE_INIT,
 //	STATE_SEARCHING,
@@ -292,6 +290,7 @@ int main(void)
 				hydrophone_interface_update_temp();
 
 				if(unlikely(stale_data(target_block))){
+					//HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
 					Error_Handler();
 				}
 
@@ -329,6 +328,12 @@ int main(void)
     			fast_MDMA_copy_block(hydrophone_buffers[0][target_block], detection_buffer[mdma_half], &hmdma_mdma_channel0_sw_0);
 
     			hydrophone_interface_update_temp();
+
+				if(unlikely(stale_data(target_block))){
+					HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
+					utils_DWT_delay_ms(1000);
+					Error_Handler();
+				}
 
     			detection_patience--;
     			if(unlikely(acoustics_signal_present(processing_half))){
@@ -498,7 +503,7 @@ static void MX_ADC3_Init(void)
   hadc3.Init.DiscontinuousConvMode = DISABLE;
   hadc3.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T6_TRGO;
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc3.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
+  hadc3.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
   hadc3.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc3.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadc3.Init.OversamplingMode = DISABLE;
@@ -514,7 +519,7 @@ static void MX_ADC3_Init(void)
   AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
   AnalogWDGConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
   AnalogWDGConfig.ITMode = ENABLE;
-  AnalogWDGConfig.HighThreshold = 16067.5*4;
+  AnalogWDGConfig.HighThreshold = 16067;
   AnalogWDGConfig.LowThreshold = 10900;
   if (HAL_ADC_AnalogWDGConfig(&hadc3, &AnalogWDGConfig) != HAL_OK)
   {
@@ -1344,7 +1349,7 @@ void Error_Handler(void)
 
     	HAL_NVIC_SystemReset();
 
-    	utils_DWT_delay_ms(1000); //just in case it for SOME reason doesn't reset, it loops and tries again
+    	utils_DWT_delay_ms(100); //just in case it for SOME reason doesn't reset, it loops and tries again
     }
   /* USER CODE END Error_Handler_Debug */
 }

@@ -44,11 +44,11 @@ void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
     }
 }
 
-// Optional - fires at 1Hz
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
-{
-	stm_temp_sensor_callback(hadc);
-}
+// Optional, makes the temperature readily available
+//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+//{
+//	stm_temp_sensor_callback(hadc);
+//}
 
 
 
