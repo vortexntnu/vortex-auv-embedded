@@ -236,6 +236,12 @@ void can_unrecognized(void)
     _can_send_classic(CAN_UNRECOGNIZED_REQUEST_ID, d, FDCAN_DLC_BYTES_8);
 }
 
+void can_ping(void)
+{
+    uint8_t d[8] = { 'P', 'I', 'N', 'G', 'E', 'D', 0, 0 };
+    _can_send_classic(CAN_OK_ID, d, FDCAN_DLC_BYTES_8);
+}
+
 /* ═══════════════════════════════════════════════════════════════
  * REQUEST HANDLERS  — fill in your application logic here
  * ═══════════════════════════════════════════════════════════════*/

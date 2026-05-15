@@ -247,11 +247,11 @@ int main(void)
 //	}; // these are the positions on the acoustics stand
 
 	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = { //this is in meters
-			{0.0,0.0,0.0},
-			{0.204,0.213,0.493},
-			{-0.204,0.213,0.493},
-			{0.204,-0.113,0.493},
-			{-0.204,-0.113,0.493},
+			{ 0.130, 0.235,-0.215},
+			{-0.130,-0.235, 0.215},
+			{-0.130, 0.235,-0.215},
+			{ 0.130,-0.235,-0.215},
+			{ 0.130, 0.235, 0.215},
 	}; //I think they are accurate
 
 	stale_data_patience = STALE_DATA_PATIENCE;
@@ -276,7 +276,7 @@ int main(void)
 //	STATE_CAN_COMMUNICATE,
 //	STATE_ERROR,
 
-	uint8_t target_block;
+	uint8_t target_block = 0;
 	uint8_t detection_patience = DETECTION_PATIENCE;
 
     while (1) {
@@ -306,6 +306,8 @@ int main(void)
     	case(STATE_PROCESSING):
 			hydrophone_interface_stop_datastream();
 			HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
+
+			can_ping();
 
 			acoustics_prepare_data(target_block);
 			acoustics_process_data();

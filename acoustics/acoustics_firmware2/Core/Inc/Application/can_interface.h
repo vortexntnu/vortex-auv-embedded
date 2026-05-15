@@ -31,6 +31,7 @@
 
 /* ── Nominal operation IDs ──────────────────────────────────── */
 #define CAN_DIRECTION_ID                0x350
+#define CAN_PING_ID                		0x351
 
 /* ── Dump IDs ───────────────────────────────────────────────── */
 #define CAN_MAGNITUDE_DUMP_ID           0x360
@@ -53,6 +54,7 @@ void can_ok(void);
 void can_stopped(void);
 void can_errored(void);
 void can_unrecognized(void);
+void can_ping(void);
 
 /* Nominal TX */
 void can_send_direction(float32_t vec[3], float32_t weight);

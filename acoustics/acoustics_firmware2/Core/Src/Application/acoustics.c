@@ -6,6 +6,7 @@
 #include <stm32h7xx_hal_spi.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "utils.h"
 #include "dsp.h"
@@ -41,6 +42,8 @@ PLACE_IN_DTCM float32_t lerp_threshold;
 
 PLACE_IN_DTCM uint16_t n_upper_average;
 PLACE_IN_DTCM uint16_t n_lower_average;
+PLACE_IN_DTCM uint32_t dead_space;
+PLACE_IN_DTCM uint8_t find_idx_of_arrival_max_retries;
 
 void acoustics_init(void){
 	SNR = 1;
@@ -58,6 +61,8 @@ void acoustics_init(void){
 
 	n_upper_average = 15;
 	n_lower_average = WORKSPACE_LEN/2;
+	dead_space = n_lower_average;
+	find_idx_of_arrival_max_retries = 6;
 
 	acoustics_clear_detection_buffer();
 }
@@ -143,60 +148,81 @@ void acoustics_prepare_data(uint8_t target_block){
 	}
 }
 
+bool is_signal_present_in_entire_buffer(float32_t* signal){
+	uint8_t n_signal_present_blocks = 0;
+	for(int j = 0; j < WORKSPACE_LEN/BLOCK_LEN; j++){
+
+		n_signal_present_blocks += acoustics_signal_present_in_array(&signal[j*BLOCK_LEN]);
+	}
+	return (n_signal_present_blocks == WORKSPACE_LEN/BLOCK_LEN);
+}
+
+bool are_buffers_saturated(uint8_t valid_buffers_array[N_HYDROPHONES]){
+	uint8_t valid_buffers = 0;
+
+	for(int i = 0; i < N_HYDROPHONES; i++){
+		valid_buffers_array[i] = hydrophone_valid[i];
+
+		bool valid = !is_signal_present_in_entire_buffer(&processing_workspace[i][0]);
+		valid_buffers += valid;
+		valid_buffers_array[i] &= valid;
+	}
+
+	return (valid_buffers >= MINIMUM_VALID_BUFFERS);
+}
+
+static inline bool reference_idx_out_of_bounds(uint32_t idx) {
+    return (idx < WORKSPACE_LEN/2) || (idx > (WORKSPACE_LEN - (WORKSPACE_OFFSET - 1) * BLOCK_LEN));
+}
+
+static inline bool regular_idx_out_of_bounds(uint32_t idx) {
+	return (uint32_t)utils_abs_int32((int32_t)idxs[0] - (int32_t)idx) > max_idx_difference;
+}
+
+static inline bool is_idx_out_of_bounds(uint8_t buffer_idx) {
+	return buffer_idx ? regular_idx_out_of_bounds(idxs[buffer_idx]) : reference_idx_out_of_bounds(idxs[buffer_idx]);
+}
+
+float32_t find_idx_of_arrival_in_buffer(uint8_t buffer_idx){
+	float32_t linear_threshold = lerp_threshold;
+	uint8_t max_retries = find_idx_of_arrival_max_retries;
+	idxs[buffer_idx] = 0;
+
+	while(is_idx_out_of_bounds(buffer_idx) && max_retries--){
+		float32_t threshold = dsp_min_max_lerp(processing_workspace[buffer_idx], WORKSPACE_LEN, linear_threshold, n_upper_average, dead_space);
+		idxs[buffer_idx] = dsp_rl_under_threshold_search(processing_workspace[buffer_idx],WORKSPACE_LEN, threshold , PROCESSING_PATIENCE);
+		linear_threshold *= 2;
+	}
+	return idxs[buffer_idx];
+}
+
+bool are_idxs_of_arrival_valid(uint8_t valid_buffers_array[N_HYDROPHONES]){
+	uint8_t valid_buffers = 0;
+
+	for(int i = 1; i < N_HYDROPHONES; i++){
+		bool valid = !regular_idx_out_of_bounds(idxs[i]);
+		valid_buffers += valid;
+		valid_buffers_array[i] &= valid;
+	}
+
+	return valid_buffers >= (MINIMUM_VALID_BUFFERS - 1);
+}
+
 void acoustics_process_data(void){
 	bool valid_result = false;
 	uint8_t max_calculation_retries = 3;
 
 	while(!valid_result && max_calculation_retries--){
 
-		uint8_t valid_buffers = 0;
 		uint8_t valid_buffers_array[N_HYDROPHONES] = {0};
 
+		bool valid_data = are_buffers_saturated(valid_buffers_array);
+
 		for(int i = 0; i < N_HYDROPHONES; i++){
-			valid_buffers_array[i] = hydrophone_valid[i];
-			uint8_t n_signal_present_blocks = 0;
-			for(int j = 0; j < WORKSPACE_LEN/BLOCK_LEN; j++){
-				n_signal_present_blocks += acoustics_signal_present_in_array(&processing_workspace[i][j*BLOCK_LEN]);
-			}
-			bool valid = (n_signal_present_blocks < WORKSPACE_LEN/BLOCK_LEN);
-			valid_buffers += valid;
-			valid_buffers_array[i] &= valid;
-		}
-		bool valid_data = (valid_buffers >= MINIMUM_VALID_BUFFERS);
-
-		float32_t linear_threshold = lerp_threshold;
-		uint8_t max_retries = 6;
-		uint32_t dead_space = n_lower_average;
-		idxs[0] = 0;
-		while(((idxs[0] < dead_space) || (idxs[0] > (WORKSPACE_LEN-(WORKSPACE_OFFSET-1)*BLOCK_LEN))) && max_retries--){
-			float32_t threshold = dsp_min_max_lerp(processing_workspace[0], WORKSPACE_LEN, linear_threshold, n_upper_average, dead_space);
-			idxs[0] = dsp_rl_under_threshold_search(processing_workspace[0],WORKSPACE_LEN, threshold , PROCESSING_PATIENCE);
-			linear_threshold *= 2;
-		}
-		times_of_arrival[0] = (float32_t)idxs[0];
-
-		for(int i = 1; i < N_HYDROPHONES; i++){
-			float32_t linear_threshold = lerp_threshold;
-			uint8_t max_retries = 6;
-			uint32_t dead_space = n_lower_average;
-			idxs[i] = 0;
-			while(((utils_abs_int32(idxs[0] - idxs[i])) > max_idx_difference) && max_retries--){
-				float32_t threshold = dsp_min_max_lerp(processing_workspace[i], WORKSPACE_LEN, linear_threshold, n_upper_average, dead_space);
-				idxs[i] = dsp_rl_under_threshold_search(processing_workspace[i],WORKSPACE_LEN, threshold , PROCESSING_PATIENCE);
-				linear_threshold *= 2;
-			}
-			times_of_arrival[i] = (float32_t)idxs[i];
+			times_of_arrival[i] = (float32_t)find_idx_of_arrival_in_buffer(i); //We don't actually convert to time cause direction estimation doesn't need it
 		}
 
-		valid_buffers = 0;
-
-		for(int i = 1; i < N_HYDROPHONES; i++){
-			bool valid = (max_idx_difference > utils_abs_int32(idxs[0] - idxs[i]));
-			valid_buffers += valid;
-			valid_buffers_array[i] &= valid;
-		}
-
-		bool valid_idxs = (valid_buffers >= (MINIMUM_VALID_BUFFERS - 1));
+		bool valid_idxs = are_idxs_of_arrival_valid(valid_buffers_array);
 
 		int32_t tdoa_status = 0;
 		if(valid_data){
