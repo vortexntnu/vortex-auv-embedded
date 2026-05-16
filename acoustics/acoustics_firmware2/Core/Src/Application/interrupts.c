@@ -38,7 +38,8 @@ void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
     	float32_t temp = stm_temp_get_latest();
         // Temperature out of range — take action
         // e.g. reduce clock, shut down peripherals, set a flag
-    	if((temp > 90.0) && (temp < -40.0)){
+    	// nah, we just turn it on and off again
+    	if((temp > 90.0) || (temp < -40.0)){
         	Error_Handler();
     	}
     }

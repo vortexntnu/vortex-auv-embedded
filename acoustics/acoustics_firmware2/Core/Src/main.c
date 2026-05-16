@@ -353,11 +353,11 @@ int main(void)
     			hydrophone_interface_wait_for_mdma();
     		}
 		break;
-    	case(STATE_CAN_COMMUNICATE):
+    	case(STATE_CAN_COMMUNICATE): //For when a can request is on the line
 			can_handle_requests();
     		program_state = prev_program_state;
 		break;
-    	case(STATE_STOPPED):
+    	case(STATE_STOPPED): // For when we received a stop request
     		can_stopped();
     		utils_DWT_delay_ms(500);
 		break;
@@ -1343,13 +1343,13 @@ void Error_Handler(void)
     HAL_GPIO_WritePin(GREEN_LED, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_RESET);
     while(1){
-    	can_errored();
+    	can_errored(); // Tell the can bus that we errored
 
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
     	utils_DWT_delay_ms(100);
     	HAL_GPIO_WritePin(RED_LED, GPIO_PIN_RESET);
 
-    	HAL_NVIC_SystemReset();
+    	HAL_NVIC_SystemReset(); // Turn it off and on again
 
     	utils_DWT_delay_ms(100); //just in case it for SOME reason doesn't reset, it loops and tries again
     }

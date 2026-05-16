@@ -33,7 +33,7 @@ PLACE_IN_DTCM arm_rfft_instance_q15 processing_ifft_instance;
 
 PLACE_IN_DTCM float32_t processing_workspace[N_HYDROPHONES][PROCESSING_FFT_SIZE];
 
-PLACE_IN_DTCM uint16_t idxs[N_HYDROPHONES] = {0};
+PLACE_IN_DTCM uint16_t  idxs[N_HYDROPHONES] = {0};
 PLACE_IN_DTCM float32_t times_of_arrival[N_HYDROPHONES] = {0};
 PLACE_IN_DTCM float32_t direction_of_arrival[3] = {0};
 
@@ -43,7 +43,14 @@ PLACE_IN_DTCM float32_t lerp_threshold;
 PLACE_IN_DTCM uint16_t n_upper_average;
 PLACE_IN_DTCM uint16_t n_lower_average;
 PLACE_IN_DTCM uint32_t dead_space;
-PLACE_IN_DTCM uint8_t find_idx_of_arrival_max_retries;
+PLACE_IN_DTCM uint8_t  find_idx_of_arrival_max_retries;
+
+/* ── Private function declarations ───────────────────────────────────────────── */
+
+float32_t acoustics_estimate_SNR(void);
+void acoustics_clear_detection_buffer(void);
+bool acoustics_tdoa_is_valid(float32_t vec[3]);
+float32_t acoustics_estimate_SNR(void);
 
 void acoustics_init(void){
 	SNR = 1;
@@ -68,7 +75,7 @@ void acoustics_init(void){
 }
 
 
-bool acoustics_signal_present(uint8_t half_idx) {
+bool acoustics_signal_present(const uint8_t half_idx) {
 
     arm_q15_to_float(detection_buffer[half_idx], fft_input_f32, DETECTION_FFT_SIZE);
     arm_rfft_fast_f32(&detection_fft_instance_f32, fft_input_f32, fft_output_f32, 0);
