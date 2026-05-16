@@ -160,9 +160,9 @@ void SWO_Init(void)
 }
 
 bool stale_data(uint8_t target_block){
-	if(unlikely(target_block == previous_target_block)){
+	if(target_block == previous_target_block){
 
-		if(stale_data_patience-- == 0){
+		if(unlikely(stale_data_patience-- == 0)){
 			return true;
 		}
 	}else{

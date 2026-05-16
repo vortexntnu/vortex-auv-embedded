@@ -26,7 +26,7 @@ PLACE_IN_DTCM float32_t magnitude_output_f32[DETECTION_FFT_SIZE / 2];
 PLACE_IN_DTCM q15_t fft_output_q15[DETECTION_FFT_SIZE * 2];
 PLACE_IN_DTCM q15_t magnitude_output_q15[DETECTION_FFT_SIZE / 2];
 
-PLACE_IN_DTCM float32_t SNR = 1;
+PLACE_IN_DTCM float32_t SNR = 0;
 
 PLACE_IN_DTCM arm_rfft_instance_q15 processing_fft_instance;
 PLACE_IN_DTCM arm_rfft_instance_q15 processing_ifft_instance;
@@ -47,13 +47,12 @@ PLACE_IN_DTCM uint8_t  find_idx_of_arrival_max_retries;
 
 /* ── Private function declarations ───────────────────────────────────────────── */
 
-float32_t acoustics_estimate_SNR(void);
-void acoustics_clear_detection_buffer(void);
-bool acoustics_tdoa_is_valid(float32_t vec[3]);
-float32_t acoustics_estimate_SNR(void);
+float32_t estimate_SNR(void);
+void clear_detection_buffer(void);
+bool is_tdoa_result_valid(float32_t vec[3]);
 
 void acoustics_init(void){
-	SNR = 1;
+	SNR = 0;
 
 	arm_rfft_fast_init_f32(&detection_fft_instance_f32, DETECTION_FFT_SIZE);
 	arm_rfft_init_q15(&detection_fft_instance_q15, DETECTION_FFT_SIZE, 0, 1);
@@ -71,7 +70,7 @@ void acoustics_init(void){
 	dead_space = n_lower_average;
 	find_idx_of_arrival_max_retries = 6;
 
-	acoustics_clear_detection_buffer();
+	clear_detection_buffer();
 }
 
 
@@ -240,12 +239,12 @@ void acoustics_process_data(void){
 												  direction_of_arrival);
 		}
 
-		valid_result = valid_data && acoustics_tdoa_is_valid(direction_of_arrival) && valid_idxs && (tdoa_status == 0);
+		valid_result = valid_data && is_tdoa_result_valid(direction_of_arrival) && valid_idxs && (tdoa_status == 0);
 	}
 
 	if(valid_result){
-		float32_t snr = acoustics_estimate_SNR();
-		can_send_direction(direction_of_arrival, snr);
+		SNR = estimate_SNR();
+		can_send_direction(direction_of_arrival, SNR);
 		utils_DWT_delay_ms(300);
 	}else{
 		printf("invalid ping\r\n");
@@ -259,27 +258,27 @@ void acoustics_clean_data(void){
 }
 
 
-static bool acoustics_tdoa_is_along_axis(float32_t vec[3]){
+static bool is_vector_along_axis(float32_t vec[3]){
 	float32_t sum = 0;
 	for(int i = 0; i < 3; i++) sum += utils_abs_f32(vec[i]);
 	return sum <= 1;
 }
 
-static bool acoustics_tdoa_is_too_long(float32_t vec[3]){
-	float32_t sum = 0;
+static bool is_vector_too_long(float32_t vec[3]){
+	float32_t sum = 0.0f;
 	for(int i = 0; i < 3; i++) sum += utils_abs_f32(vec[i]);
 	return sum > 1.732050807569f;
 }
 
-bool acoustics_tdoa_is_valid(float32_t vec[3]){
-	if(acoustics_tdoa_is_along_axis(vec)) return false;
+bool is_tdoa_result_valid(float32_t vec[3]){
+	if(is_vector_along_axis(vec)) return false;
 
-	if(acoustics_tdoa_is_too_long(vec)) return false;
+	if(is_vector_too_long(vec)) return false;
 
 	return true;
 }
 
-float32_t acoustics_estimate_SNR(void){
+float32_t estimate_SNR(void){
     const uint32_t SIGNAL_BIN_LOW = 14;
     const uint32_t SIGNAL_BIN_HIGH = 17;
     const uint32_t SIGNAL_BIN_COUNT = SIGNAL_BIN_HIGH-SIGNAL_BIN_LOW;
@@ -296,7 +295,7 @@ float32_t acoustics_estimate_SNR(void){
     return (signal_power * NOISE_BIN_COUNT) / (noise_power * SIGNAL_BIN_COUNT);
 }
 
-void acoustics_clear_detection_buffer(void){
+void clear_detection_buffer(void){
 	utils_clear_array_q15(detection_buffer[0], BLOCK_LEN*2);
 }
 
