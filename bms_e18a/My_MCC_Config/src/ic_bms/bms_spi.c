@@ -896,7 +896,7 @@ void bms_battery_status(void)
 }
 
 
-bool read_cells_1to6(uint16_t cell_mV[6])
+bool read_cells_1to6(int16_t cell_mV[6])
 {
     const uint8_t addr[6] = {
         CELL_1_VOLTAGE, CELL_2_VOLTAGE, CELL_3_VOLTAGE,

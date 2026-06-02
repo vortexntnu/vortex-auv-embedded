@@ -252,7 +252,7 @@ bool bms_read_sample(bms_sample_t *s)
     }
 
     memset(s, 0, sizeof(*s));
-    s->timestamp_ms = sys_get_ms();
+    // s->timestamp_ms = sys_get_ms();
 
     if (!bms_read_ts_temp(TS1_TEMP, &s->temp_dC[0])) return false;
     if (!bms_read_ts_temp(TS2_TEMP, &s->temp_dC[1])) return false;
@@ -505,5 +505,5 @@ void bms_task(void)
     float nominal_soc = soc.soc;
     float usable_soc = soc_get_usable(&soc, &sample);
 
-    bms_publish_soc(nominal_soc, usable_soc, soc.remaining_mAh);
+    // bms_publish_soc(nominal_soc, usable_soc, soc.remaining_mAh);
 }

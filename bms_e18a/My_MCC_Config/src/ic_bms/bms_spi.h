@@ -528,7 +528,7 @@ bool bq_write_subcommand(uint16_t subcmd, const uint8_t *data, uint8_t length);
 void bms_set_protection_threshold(void);
 void bms_battery_status(void);
 bool bms_battery_status_get(uint8_t *fet_reg, bms_state_t *state);
-bool read_cells_1to6(uint16_t cell_mV[6]);
+bool read_cells_1to6(int16_t cell_mV[6]);
 bool bms_read_ts_temp(uint8_t ts_cmd, int16_t *temp_dC);
 bool bms_read_current(int16_t *current_mA);
 void bothoff_init(void);
