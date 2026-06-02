@@ -1,6 +1,0 @@
-{
-    "mplab.clangd.arguments": [
-        "--compile-commands-dir=${workspaceFolder}/_build/bms/default"
-    ],
-    "mplab.clangd.path": "/opt/microchip/xc32/v4.60/bin/xc32-clangd"
-}
