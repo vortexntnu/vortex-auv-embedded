@@ -576,6 +576,8 @@ static void __attribute__((used)) SERCOM0_USART_ISR_TX_Handler(void) {
         }
     }
 }
+volatile bool int123 = false;
+
 
 void __attribute__((used)) SERCOM0_USART_InterruptHandler(void) {
     bool testCondition;
@@ -614,9 +616,11 @@ void __attribute__((used)) SERCOM0_USART_InterruptHandler(void) {
         /* Checks for receive complete empty flag */
         if (testCondition) {
             SERCOM0_USART_ISR_RX_Handler();
+            int123 = true;
         }
     }
 }
+
 
 void __attribute__((used)) SERCOM0_Handler(void) {
     SERCOM0_USART_InterruptHandler();

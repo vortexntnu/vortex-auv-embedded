@@ -8,6 +8,7 @@ uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
 
 static uint16_t adc_result_array[TRANSFER_SIZE];
+extern volatile bool int123;
 
 void TCC_PeriodEventHandler(uint32_t status, uintptr_t context) {
     /* duty cycle values */
@@ -98,10 +99,12 @@ int main(void) {
     //
     // PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
 
+    // const char msg[] = "UART test\r\n";
+    // SERCOM0_USART_Write((void *)msg, sizeof(msg) - 1);
+    //
 
-    const char msg[] = "UART test\r\n";
-    SERCOM0_USART_Write((void *)msg, sizeof(msg) - 1);
-
+    uint8_t rx_byte = 0;
+    SERCOM0_USART_Read(&rx_byte, 1);
     while (true) {
         state_machine();
         uart_gripper_task();

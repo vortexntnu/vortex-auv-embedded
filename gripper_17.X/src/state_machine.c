@@ -160,7 +160,74 @@ void uart_gripper_task(void)
         }
     }
 }
-
+//
+// #define UART_DEBUG_ECHO_ID 0x04FFu
+// #define DEBUG_CMD_STOP     0x01u
+// #define DEBUG_CMD_START    0x02u
+// #define DEBUG_CMD_SET_PWM  0x03u
+// #define DEBUG_CMD_RESET    0x04u
+// #define DEBUG_CMD_UNKNOWN  0xFFu
+//
+// static void uart_send_debug_echo(uint8_t cmd, uint16_t received_id, uint8_t received_len)
+// {
+//     uint8_t payload[4];
+//
+//     payload[0] = cmd;
+//     payload[1] = (uint8_t)(received_id & 0xFFu);
+//     payload[2] = (uint8_t)((received_id >> 8) & 0xFFu);
+//     payload[3] = received_len;
+//
+//     uart_proto_send_packet(UART_DEBUG_ECHO_ID, payload, sizeof(payload));
+// }
+//
+// void uart_gripper_task(void)
+// {
+//     uart_packet_t packet;
+//
+//     while (uart_proto_pop_packet(&packet))
+//     {
+//         can_tx_avaliable = true;  // Rename this later, but okay for now.
+//
+//         switch (packet.id)
+//         {
+//             case STOP_GRIPPER:
+//                 uart_send_debug_echo(DEBUG_CMD_STOP, packet.id, packet.len);
+//                 stop_gripper();
+//                 gripper_on = false;
+//                 break;
+//
+//             case START_GRIPPER:
+//                 uart_send_debug_echo(DEBUG_CMD_START, packet.id, packet.len);
+//                 start_gripper();
+//                 gripper_on = true;
+//                 break;
+//
+//             case SET_PWM:
+//                 uart_send_debug_echo(DEBUG_CMD_SET_PWM, packet.id, packet.len);
+//                 set_servos_pwm(packet.payload, packet.len);
+//                 break;
+//
+//             case RESET_MCU:
+//                 uart_send_debug_echo(DEBUG_CMD_RESET, packet.id, packet.len);
+//
+//                 /*
+//                  * Give UART a tiny moment to finish transmitting the debug packet
+//                  * before reset. Otherwise reset may cut off the packet.
+//                  */
+//                 while (!SERCOM0_USART_TransmitComplete())
+//                 {
+//                 }
+//
+//                 NVIC_SystemReset();
+//                 break;
+//
+//             default:
+//                 uart_send_debug_echo(DEBUG_CMD_UNKNOWN, packet.id, packet.len);
+//                 break;
+//         }
+//     }
+// }
+//
 void can_rx_callback(uintptr_t context) {
     // printf("Entering can RX callback\r\n");
     // print_can_frame(ctx.rx_frame.id, ctx.rx_frame.len,
