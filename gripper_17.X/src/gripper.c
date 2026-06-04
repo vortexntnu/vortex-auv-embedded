@@ -28,10 +28,10 @@ static const servo_map_t servo_map[] = {
 int set_servos_pwm(const uint8_t* pwm_data, uint8_t data_len) {
     uint16_t duty_cycle_us[NUM_ENCODERS];
 
-    if (data_len != sizeof(duty_cycle_us)) {
-        return -1;
-    }
-
+    // if (data_len != sizeof(duty_cycle_us)) {
+    //     return -1;
+    // }
+    //
     memcpy(duty_cycle_us, pwm_data, sizeof(duty_cycle_us));
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {

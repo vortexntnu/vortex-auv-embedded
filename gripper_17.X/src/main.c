@@ -71,7 +71,7 @@ int main(void) {
 
     // WDT_Enable();
 
-    printf("Start Gripper\r\n");
+    // printf("Start Gripper\r\n");
     // start_gripper();
     stop_gripper();
     //
@@ -93,6 +93,7 @@ int main(void) {
 
     while (true) {
         state_machine();
+        uart_gripper_task();
     }
 
     return EXIT_FAILURE;

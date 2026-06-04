@@ -20,6 +20,7 @@
       <itemPath>include/pm.h</itemPath>
       <itemPath>include/gripper.h</itemPath>
       <itemPath>include/state_machine.h</itemPath>
+      <itemPath>include/uart_protocol.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -53,6 +54,7 @@
       <itemPath>src/tc1.c</itemPath>
       <itemPath>src/gripper.c</itemPath>
       <itemPath>src/state_machine.c</itemPath>
+      <itemPath>src/uart_protocol.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

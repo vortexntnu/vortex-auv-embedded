@@ -7,6 +7,7 @@
 #include "gripper.h"
 #include "system_init.h"
 #include "usart.h"
+#include "uart_protocol.h"
 
 static uint8_t encoder_num = 0;
 static volatile bool read_failed = true;
@@ -25,83 +26,139 @@ void state_machine_init() {
     can_recieve(&ctx.rx_frame);
 }
 
-void state_machine() {
+void state_machine(void)
+{
     uint32_t ev = ctx.events;
     ctx.events &= ~ev;
 
-    if (ev & EVENT_SET_PWM) {
-        printf("EVENT_SET_PWM\r\n");
+    if (ev & EVENT_SET_PWM)
+    {
         WDT_Clear();
-        if (set_servos_pwm(ctx.rx_frame.buf, 4)) {
-            struct can_tx_frame tx;
-            tx.id = 0x46B;
-            tx.len = 1;
-            tx.buf[0] = 1;
-            can_transmit(&tx);
+
+        /*
+         * For serial, the received data should now come from the UART packet,
+         * not ctx.rx_frame.buf. Ideally this event stores the latest UART payload
+         * somewhere like ctx.rx_payload.
+         */
+        if (set_servos_pwm(ctx.rx_frame.buf, 4))
+        {
+            uint8_t ack = 1;
+            uart_proto_send_packet(SET_PWM, &ack, 1);
         }
     }
 
-    if (ev & EVENT_READ_ENCODER_START) {
-        start_encoder_read(&encoder_reg, encoder_num,
-                           encoder_rx_buf + 2 * encoder_num);  // kicks off async I2C
+    if (ev & EVENT_READ_ENCODER_START)
+    {
+        start_encoder_read(&encoder_reg,
+                           encoder_num,
+                           encoder_rx_buf + 2 * encoder_num);
     }
 
-    if (ev & EVENT_READ_ENCODER_DONE) {
-        if (read_failed) {
+    if (ev & EVENT_READ_ENCODER_DONE)
+    {
+        if (read_failed)
+        {
             raw_encoder_angles[2 * encoder_num] = 0xFF;
             raw_encoder_angles[2 * encoder_num + 1] = 0xFF;
-        } else {
+        }
+        else
+        {
             uint16_t angle =
-                ((uint16_t)encoder_rx_buf[0 + 2 * encoder_num] << 6) | (encoder_rx_buf[1 + 2 * encoder_num] & 0x3F);
+                ((uint16_t)encoder_rx_buf[0 + 2 * encoder_num] << 6) |
+                (encoder_rx_buf[1 + 2 * encoder_num] & 0x3F);
 
-            raw_encoder_angles[2 * encoder_num] = (uint8_t)(angle & 0xFF);
-            raw_encoder_angles[2 * encoder_num + 1] = (uint8_t)(angle >> 8);
+            raw_encoder_angles[2 * encoder_num] =
+                (uint8_t)(angle & 0xFF);
+
+            raw_encoder_angles[2 * encoder_num + 1] =
+                (uint8_t)((angle >> 8) & 0xFF);
         }
 
         encoder_num++;
 
-        if (encoder_num == NUM_ENCODERS) {
+        if (encoder_num == NUM_ENCODERS)
+        {
             ctx.events |= EVENT_TRANSMIT_ANGLES;
-        } else {
+        }
+        else
+        {
             ctx.events |= EVENT_READ_ENCODER_START;
         }
     }
 
-    if (ev & EVENT_TRANSMIT_ANGLES) {
-        ctx.tx_frame.id = CAN_SEND_ANGLES;
-        ctx.tx_frame.len = 2 * NUM_ENCODERS;
-
-        for (int i = 0; i < 2 * NUM_ENCODERS; i++) {
-            ctx.tx_frame.buf[i] = raw_encoder_angles[i];
+    if (ev & EVENT_TRANSMIT_ANGLES)
+    {
+        if (gripper_on)
+        {
+            uart_proto_send_packet(
+                CAN_SEND_ANGLES,
+                raw_encoder_angles,
+                2 * NUM_ENCODERS);
         }
 
-        if (can_tx_avaliable && gripper_on){
-            can_transmit(&ctx.tx_frame);
-        }
-
-
-        // ctx.events |= EVENT_READ_ENCODER_START;
         encoder_num = 0;
     }
-    
-    if (adc_ready){
-        ctx.tx_frame.buf[0] = servo;
-        ctx.tx_frame.buf[1] = servo;
-        ctx.tx_frame.buf[2] = input_voltage & 0xFF;
-        ctx.tx_frame.buf[3] = (input_voltage >> 8) & 0xFF;
 
-        ctx.tx_frame.id = CAN_SEND_VOLTAGE;
-        ctx.tx_frame.len = 4;
+    if (adc_ready)
+    {
+        uint8_t voltage_payload[4];
 
-        if (can_tx_avaliable){
-            can_transmit(&ctx.tx_frame);
-        }
+        voltage_payload[0] = servo;
+        voltage_payload[1] = servo;
+        voltage_payload[2] = (uint8_t)(input_voltage & 0xFF);
+        voltage_payload[3] = (uint8_t)((input_voltage >> 8) & 0xFF);
+
+        uart_proto_send_packet(
+            CAN_SEND_VOLTAGE,
+            voltage_payload,
+            sizeof(voltage_payload));
+
         adc_ready = false;
-
     }
 
-    can_recieve(&ctx.rx_frame);
-    // PM_IdleModeEnter();
+    /*
+     * Remove this:
+     *
+     * can_recieve(&ctx.rx_frame);
+     *
+     * UART receive is handled by uart_proto_init()
+     * and uart_proto_pop_packet().
+     */
+}
+
+
+void uart_gripper_task(void)
+{
+    uart_packet_t packet;
+
+    while (uart_proto_pop_packet(&packet))
+    {
+        can_tx_avaliable = true;  // Rename this later, but okay for now.
+
+        switch (packet.id)
+        {
+            case STOP_GRIPPER:
+                stop_gripper();
+                gripper_on = false;
+                break;
+
+            case START_GRIPPER:
+                start_gripper();
+                gripper_on = true;
+                break;
+
+            case SET_PWM:
+                set_servos_pwm(packet.payload, packet.len);
+                break;
+
+            case RESET_MCU:
+                NVIC_SystemReset();
+                break;
+
+            default:
+                break;
+        }
+    }
 }
 
 void can_rx_callback(uintptr_t context) {

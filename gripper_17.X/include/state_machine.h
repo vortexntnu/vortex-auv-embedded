@@ -49,6 +49,7 @@ extern "C" {
 
 void state_machine();
 void state_machine_init();
+void uart_gripper_task(void);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);

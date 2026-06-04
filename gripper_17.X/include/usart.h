@@ -57,6 +57,9 @@
     extern "C" {
 
 #endif
+
+#include <stdint.h>
+#include "system_init.h"
 // DOM-IGNORE-END
 
 // *****************************************************************************
