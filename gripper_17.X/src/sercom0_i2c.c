@@ -263,162 +263,162 @@ bool SERCOM0_I2C_IsBusy(void) {
         return true;
     }
 }
-
-SERCOM_I2C_ERROR SERCOM0_I2C_ErrorGet(void) {
-    return sercom0I2CObj.error;
-}
-
-void __attribute__((used)) SERCOM0_Handler(void) {
-    if (SERCOM0_REGS->I2CM.SERCOM_INTENSET != 0) {
-        /* Checks if the arbitration lost in multi-master scenario */
-        if ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
-             SERCOM_I2CM_STATUS_ARBLOST_Msk) ==
-            SERCOM_I2CM_STATUS_ARBLOST_Msk) {
-            /* Set Error status */
-            sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
-            sercom0I2CObj.error = SERCOM_I2C_ERROR_BUS;
-
-        }
-        /* Check for Bus Error during transmission */
-        else if ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
-                  SERCOM_I2CM_STATUS_BUSERR_Msk) ==
-                 SERCOM_I2CM_STATUS_BUSERR_Msk) {
-            /* Set Error status */
-            sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
-            sercom0I2CObj.error = SERCOM_I2C_ERROR_BUS;
-
-        }
-        /* Checks slave acknowledge for address or data */
-        else if ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
-                  SERCOM_I2CM_STATUS_RXNACK_Msk) ==
-                 SERCOM_I2CM_STATUS_RXNACK_Msk) {
-            sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
-            sercom0I2CObj.error = SERCOM_I2C_ERROR_NAK;
-        } else {
-            switch (sercom0I2CObj.state) {
-                case SERCOM_I2C_REINITIATE_TRANSFER:
-
-                    if (sercom0I2CObj.writeSize != 0) {
-                        /* Initiate Write transfer */
-                        SERCOM0_I2C_InitiateTransfer(sercom0I2CObj.address,
-                                                     false);
-                    } else {
-                        /* Initiate Read transfer */
-                        SERCOM0_I2C_InitiateTransfer(sercom0I2CObj.address,
-                                                     true);
-                    }
-
-                    break;
-
-                case SERCOM_I2C_STATE_IDLE:
-
-                    break;
-
-                case SERCOM_I2C_STATE_TRANSFER_WRITE:
-
-                    if (sercom0I2CObj.writeCount == (sercom0I2CObj.writeSize)) {
-                        if (sercom0I2CObj.readSize != 0) {
-                            /* Write 7bit address with direction (ADDR.ADDR[0])
-                             * equal to 1*/
-                            SERCOM0_REGS->I2CM.SERCOM_ADDR =
-                                (sercom0I2CObj.address << 1) |
-                                I2C_TRANSFER_READ;
-
-                            /* Wait for synchronization */
-                            while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
-                                ;
-
-                            sercom0I2CObj.state =
-                                SERCOM_I2C_STATE_TRANSFER_READ;
-
-                        } else {
-                            SERCOM0_REGS->I2CM.SERCOM_CTRLB |=
-                                SERCOM_I2CM_CTRLB_CMD(3);
-
-                            /* Wait for synchronization */
-                            while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
-                                ;
-
-                            sercom0I2CObj.state =
-                                SERCOM_I2C_STATE_TRANSFER_DONE;
-                        }
-                    }
-                    /* Write next byte */
-                    else {
-                        SERCOM0_REGS->I2CM.SERCOM_DATA =
-                            sercom0I2CObj
-                                .writeBuffer[sercom0I2CObj.writeCount++];
-                    }
-
-                    break;
-
-                case SERCOM_I2C_STATE_TRANSFER_READ:
-
-                    if (sercom0I2CObj.readCount ==
-                        (sercom0I2CObj.readSize - 1)) {
-                        /* Set NACK and send stop condition to the slave from
-                         * master */
-                        SERCOM0_REGS->I2CM.SERCOM_CTRLB |=
-                            SERCOM_I2CM_CTRLB_ACKACT_Msk |
-                            SERCOM_I2CM_CTRLB_CMD(3);
-
-                        /* Wait for synchronization */
-                        while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
-                            ;
-
-                        sercom0I2CObj.state = SERCOM_I2C_STATE_TRANSFER_DONE;
-                    }
-
-                    /* Read the received data */
-                    sercom0I2CObj.readBuffer[sercom0I2CObj.readCount++] =
-                        SERCOM0_REGS->I2CM.SERCOM_DATA;
-
-                    break;
-
-                default:
-
-                    break;
-            }
-        }
-
-        /* Error Status */
-        if (sercom0I2CObj.state == SERCOM_I2C_STATE_ERROR) {
-            /* Reset the PLib objects and Interrupts */
-            sercom0I2CObj.state = SERCOM_I2C_STATE_IDLE;
-
-            /* Generate STOP condition */
-            SERCOM0_REGS->I2CM.SERCOM_CTRLB |= SERCOM_I2CM_CTRLB_CMD(3);
-
-            /* Wait for synchronization */
-            while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
-                ;
-
-            SERCOM0_REGS->I2CM.SERCOM_INTFLAG = SERCOM_I2CM_INTFLAG_Msk;
-
-            if (sercom0I2CObj.callback != NULL) {
-                sercom0I2CObj.callback(sercom0I2CObj.context);
-            }
-        }
-        /* Transfer Complete */
-        else if (sercom0I2CObj.state == SERCOM_I2C_STATE_TRANSFER_DONE) {
-            /* Reset the PLib objects and interrupts */
-            sercom0I2CObj.state = SERCOM_I2C_STATE_IDLE;
-            sercom0I2CObj.error = SERCOM_I2C_ERROR_NONE;
-
-            SERCOM0_REGS->I2CM.SERCOM_INTFLAG = SERCOM_I2CM_INTFLAG_Msk;
-
-            /* Wait for the NAK and STOP bit to be transmitted out and I2C state
-             * machine to rest in IDLE state */
-            while ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
-                    SERCOM_I2CM_STATUS_BUSSTATE_Msk) !=
-                   SERCOM_I2CM_STATUS_BUSSTATE(0x01))
-                ;
-
-            if (sercom0I2CObj.callback != NULL) {
-                sercom0I2CObj.callback(sercom0I2CObj.context);
-            }
-        }
-    }
-
-    return;
-}
+//
+// SERCOM_I2C_ERROR SERCOM0_I2C_ErrorGet(void) {
+//     return sercom0I2CObj.error;
+// }
+//
+// void __attribute__((used)) SERCOM0_Handler(void) {
+//     if (SERCOM0_REGS->I2CM.SERCOM_INTENSET != 0) {
+//         /* Checks if the arbitration lost in multi-master scenario */
+//         if ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
+//              SERCOM_I2CM_STATUS_ARBLOST_Msk) ==
+//             SERCOM_I2CM_STATUS_ARBLOST_Msk) {
+//             /* Set Error status */
+//             sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
+//             sercom0I2CObj.error = SERCOM_I2C_ERROR_BUS;
+//
+//         }
+//         /* Check for Bus Error during transmission */
+//         else if ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
+//                   SERCOM_I2CM_STATUS_BUSERR_Msk) ==
+//                  SERCOM_I2CM_STATUS_BUSERR_Msk) {
+//             /* Set Error status */
+//             sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
+//             sercom0I2CObj.error = SERCOM_I2C_ERROR_BUS;
+//
+//         }
+//         /* Checks slave acknowledge for address or data */
+//         else if ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
+//                   SERCOM_I2CM_STATUS_RXNACK_Msk) ==
+//                  SERCOM_I2CM_STATUS_RXNACK_Msk) {
+//             sercom0I2CObj.state = SERCOM_I2C_STATE_ERROR;
+//             sercom0I2CObj.error = SERCOM_I2C_ERROR_NAK;
+//         } else {
+//             switch (sercom0I2CObj.state) {
+//                 case SERCOM_I2C_REINITIATE_TRANSFER:
+//
+//                     if (sercom0I2CObj.writeSize != 0) {
+//                         /* Initiate Write transfer */
+//                         SERCOM0_I2C_InitiateTransfer(sercom0I2CObj.address,
+//                                                      false);
+//                     } else {
+//                         /* Initiate Read transfer */
+//                         SERCOM0_I2C_InitiateTransfer(sercom0I2CObj.address,
+//                                                      true);
+//                     }
+//
+//                     break;
+//
+//                 case SERCOM_I2C_STATE_IDLE:
+//
+//                     break;
+//
+//                 case SERCOM_I2C_STATE_TRANSFER_WRITE:
+//
+//                     if (sercom0I2CObj.writeCount == (sercom0I2CObj.writeSize)) {
+//                         if (sercom0I2CObj.readSize != 0) {
+//                             /* Write 7bit address with direction (ADDR.ADDR[0])
+//                              * equal to 1*/
+//                             SERCOM0_REGS->I2CM.SERCOM_ADDR =
+//                                 (sercom0I2CObj.address << 1) |
+//                                 I2C_TRANSFER_READ;
+//
+//                             /* Wait for synchronization */
+//                             while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
+//                                 ;
+//
+//                             sercom0I2CObj.state =
+//                                 SERCOM_I2C_STATE_TRANSFER_READ;
+//
+//                         } else {
+//                             SERCOM0_REGS->I2CM.SERCOM_CTRLB |=
+//                                 SERCOM_I2CM_CTRLB_CMD(3);
+//
+//                             /* Wait for synchronization */
+//                             while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
+//                                 ;
+//
+//                             sercom0I2CObj.state =
+//                                 SERCOM_I2C_STATE_TRANSFER_DONE;
+//                         }
+//                     }
+//                     /* Write next byte */
+//                     else {
+//                         SERCOM0_REGS->I2CM.SERCOM_DATA =
+//                             sercom0I2CObj
+//                                 .writeBuffer[sercom0I2CObj.writeCount++];
+//                     }
+//
+//                     break;
+//
+//                 case SERCOM_I2C_STATE_TRANSFER_READ:
+//
+//                     if (sercom0I2CObj.readCount ==
+//                         (sercom0I2CObj.readSize - 1)) {
+//                         /* Set NACK and send stop condition to the slave from
+//                          * master */
+//                         SERCOM0_REGS->I2CM.SERCOM_CTRLB |=
+//                             SERCOM_I2CM_CTRLB_ACKACT_Msk |
+//                             SERCOM_I2CM_CTRLB_CMD(3);
+//
+//                         /* Wait for synchronization */
+//                         while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
+//                             ;
+//
+//                         sercom0I2CObj.state = SERCOM_I2C_STATE_TRANSFER_DONE;
+//                     }
+//
+//                     /* Read the received data */
+//                     sercom0I2CObj.readBuffer[sercom0I2CObj.readCount++] =
+//                         SERCOM0_REGS->I2CM.SERCOM_DATA;
+//
+//                     break;
+//
+//                 default:
+//
+//                     break;
+//             }
+//         }
+//
+//         /* Error Status */
+//         if (sercom0I2CObj.state == SERCOM_I2C_STATE_ERROR) {
+//             /* Reset the PLib objects and Interrupts */
+//             sercom0I2CObj.state = SERCOM_I2C_STATE_IDLE;
+//
+//             /* Generate STOP condition */
+//             SERCOM0_REGS->I2CM.SERCOM_CTRLB |= SERCOM_I2CM_CTRLB_CMD(3);
+//
+//             /* Wait for synchronization */
+//             while (SERCOM0_REGS->I2CM.SERCOM_SYNCBUSY)
+//                 ;
+//
+//             SERCOM0_REGS->I2CM.SERCOM_INTFLAG = SERCOM_I2CM_INTFLAG_Msk;
+//
+//             if (sercom0I2CObj.callback != NULL) {
+//                 sercom0I2CObj.callback(sercom0I2CObj.context);
+//             }
+//         }
+//         /* Transfer Complete */
+//         else if (sercom0I2CObj.state == SERCOM_I2C_STATE_TRANSFER_DONE) {
+//             /* Reset the PLib objects and interrupts */
+//             sercom0I2CObj.state = SERCOM_I2C_STATE_IDLE;
+//             sercom0I2CObj.error = SERCOM_I2C_ERROR_NONE;
+//
+//             SERCOM0_REGS->I2CM.SERCOM_INTFLAG = SERCOM_I2CM_INTFLAG_Msk;
+//
+//             /* Wait for the NAK and STOP bit to be transmitted out and I2C state
+//              * machine to rest in IDLE state */
+//             while ((SERCOM0_REGS->I2CM.SERCOM_STATUS &
+//                     SERCOM_I2CM_STATUS_BUSSTATE_Msk) !=
+//                    SERCOM_I2CM_STATUS_BUSSTATE(0x01))
+//                 ;
+//
+//             if (sercom0I2CObj.callback != NULL) {
+//                 sercom0I2CObj.callback(sercom0I2CObj.context);
+//             }
+//         }
+//     }
+//
+//     return;
+// }

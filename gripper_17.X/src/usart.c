@@ -55,7 +55,9 @@
 // *****************************************************************************
 // *****************************************************************************
 /* SERCOM0 USART baud value for 115200 Hz baud rate */
-#define SERCOM0_USART_INT_BAUD_VALUE (35337UL)
+// #define SERCOM0_USART_INT_BAUD_VALUE (35337UL)
+
+#define SERCOM0_USART_INT_BAUD_VALUE (63019U)
 
 static volatile SERCOM_USART_OBJECT sercom2USARTObj;
 
@@ -616,22 +618,8 @@ void __attribute__((used)) SERCOM0_USART_InterruptHandler(void) {
     }
 }
 
-void __attribute__((used)) SERCOM0_0_Handler(void) {
+void __attribute__((used)) SERCOM0_Handler(void) {
     SERCOM0_USART_InterruptHandler();
 }
 
-void __attribute__((used)) SERCOM0_1_Handler(void) {
-    SERCOM0_USART_InterruptHandler();
-}
 
-void __attribute__((used)) SERCOM0_2_Handler(void) {
-    SERCOM0_USART_InterruptHandler();
-}
-
-void __attribute__((used)) SERCOM0_3_Handler(void) {
-    SERCOM0_USART_InterruptHandler();
-}
-
-void __attribute__((used)) SERCOM0_4_Handler(void) {
-    SERCOM0_USART_InterruptHandler();
-}
