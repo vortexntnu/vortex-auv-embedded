@@ -2,6 +2,7 @@
 #include "gripper.h"
 #include "state_machine.h"
 #include "system_init.h"
+#include "uart_protocol.h"
 
 uint8_t Can0MessageRAM[CAN0_MESSAGE_RAM_CONFIG_SIZE]
     __attribute__((aligned(32)));
@@ -66,6 +67,11 @@ int main(void) {
                          sizeof(adc_result_array));
     SERCOM1_I2C_CallbackRegister(i2c1_callback, 0);
 
+    uart_proto_init();
+
+    SERCOM0_USART_ReceiverEnable();
+    SERCOM0_USART_TransmitterEnable();
+
     TC0_TimerStart();
     // TC1_TimerStart();
 
@@ -89,7 +95,12 @@ int main(void) {
     // printf("sending can frame\r\n");
     //   can_transmit(&tx);
     state_machine_init();
+    //
     // PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
+
+
+    const char msg[] = "UART test\r\n";
+    SERCOM0_USART_Write((void *)msg, sizeof(msg) - 1);
 
     while (true) {
         state_machine();
