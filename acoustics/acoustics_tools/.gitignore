@@ -1,0 +1,12 @@
+temp.*
+temp2.*
+*.npz
+__pycache__/
+*.py[cod]
+*$py.class
+!good_example_data.csv
+test_data/
+test_data_100/
+test_data_4/
+errors_analysis/
+!tests/test_data_example/*.csv

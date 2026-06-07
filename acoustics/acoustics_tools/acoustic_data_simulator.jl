@@ -1,0 +1,512 @@
+using UnderwaterAcoustics
+using Plots
+theme(:dark)
+using SignalAnalysis
+using JSON3
+using FFTW
+
+
+struct simulation_config
+    hydrophones_pos::Vector{Tuple{Float64,Float64,Float64}}
+    drone_pos::Tuple{Float64,Float64,Float64}
+    pinger_pos::Tuple{Float64,Float64,Float64}
+    sea_depth::Float64
+    noise_level::Float64
+    noise_type::String
+    function simulation_config(; hydrophones_pos, drone_pos, pinger_pos, sea_depth=6.0, noise_level=0.0, noise_type="white")
+        return new(hydrophones_pos, drone_pos, pinger_pos, sea_depth, noise_level, noise_type)
+    end
+end
+
+function config_from_json(path::AbstractString)
+    cfg = JSON3.read(read(path, String))
+
+    hydrophones_pos = [Tuple(Float64.(pos)) for pos in cfg["hydrophones_pos"]]
+    drone_pos = Tuple(Float64.(cfg["drone_pos"]))
+    pinger_pos = Tuple(Float64.(cfg["pinger_pos"]))
+
+    sea_depth = haskey(cfg, "sea_depth") ? Float64(cfg["sea_depth"]) : 6.0
+    noise_level = haskey(cfg, "noise_level") ? Float64(cfg["noise_level"]) : 0.0
+    noise_type = haskey(cfg, "noise_type") ? String(cfg["noise_type"]) : "white"
+
+    return simulation_config(
+        hydrophones_pos = hydrophones_pos,
+        drone_pos = drone_pos,
+        pinger_pos = pinger_pos,
+        sea_depth = sea_depth,
+        noise_level = noise_level,
+        noise_type = noise_type,
+    )
+end
+
+function simulate_hydrophone_data(config::simulation_config, hydrophone_data_path::Union{Nothing,AbstractString}=nothing, verbose::Bool=true)
+    vprintln(msg::AbstractString) = verbose && println(msg)
+
+# ===============================
+# Electrical model configuration
+# ===============================
+# For best fidelity: export the LTspice AC analysis of V(out) as a text/CSV file with columns:
+#   freq_hz, mag_db, phase_deg
+# Then set `use_measured_transfer = true` and point to that file.
+use_measured_transfer = true
+measured_transfer_path = "LTSpice_analog_filter_sim/analog_filter_sim_results.txt"  # user-provided export
+
+# Hydrophone sensitivity: -180 dB re 1 V/µPa.
+# IMPORTANT: ensure the acoustic simulator output is in µPa. If it is in Pa, add +120 dB.
+hydrophone_sensitivity_db_v_per_uPa = -180.0
+
+# Simple parametric fallback model (used when no measured transfer is supplied)
+fallback_amp_gain_db_at_31k = 8.57
+fallback_bp_low_hz = 18_870.0
+fallback_bp_high_hz = 52_870.0
+fallback_bp_order = 2
+
+function load_measured_transfer(path::AbstractString)
+    # Accept LTspice exports in either:
+    #  - polar:   freq <tab> (-148dB,-91°)
+    #  - cart:    freq <tab> (re,im)
+    #  - numeric: freq, mag_db, phase_deg
+    # Lines starting with '#' or ';' are ignored. Header lines are skipped.
+    rows = Tuple{Float64,Float64,Float64}[]  # (freq_hz, mag_db, phase_deg)
+
+    function _parse_first_float(s::AbstractString)
+        m = match(r"[-+]?((\d+(\.\d*)?)|(\.\d+))([eE][-+]?\d+)?", s)
+        m === nothing && error("No float in: $s")
+        return parse(Float64, m.match)
+    end
+
+    function _strip_wrappers(s::AbstractString)
+        t = strip(s)
+        if startswith(t, "(") && endswith(t, ")")
+            t = t[2:end-1]
+        end
+        return strip(t)
+    end
+
+    function _parse_ltspice_pair(field::AbstractString)
+        # Returns either (mag_db, phase_deg, :polar) or (mag_db, phase_deg, :cart)
+        t = _strip_wrappers(field)
+        parts = split(t, ",")
+        length(parts) < 2 && error("Not a complex pair: $field")
+        a = strip(parts[1])
+        b = strip(parts[2])
+
+        # Detect polar by 'dB' or degree symbol
+        if occursin("dB", a) || occursin("°", b) || occursin("deg", lowercase(b)) || occursin("dB", b)
+            mdb = _parse_first_float(a)
+            ph = _parse_first_float(b)
+            return mdb, ph, :polar
+        else
+            re = _parse_first_float(a)
+            im = _parse_first_float(b)
+            mag = sqrt(re^2 + im^2)
+            mdb = 20.0 * log10(mag + 1e-300)
+            ph = atan(im, re) * 180.0 / π
+            return mdb, ph, :cart
+        end
+    end
+
+    for line in eachline(path)
+        s = strip(line)
+        isempty(s) && continue
+        startswith(s, "#") && continue
+        startswith(s, ";") && continue
+
+        # Normalize separators; keep parentheses payload intact by not splitting on commas first.
+        parts = split(s)  # whitespace split (tabs/spaces)
+        if length(parts) >= 2
+            # LTspice 2-column export: freq + complex field
+            try
+                f = _parse_first_float(parts[1])
+                field = join(parts[2:end], "")
+                mdb, ph, _ = _parse_ltspice_pair(field)
+                push!(rows, (f, mdb, ph))
+                continue
+            catch
+                # fall through to numeric parsing
+            end
+        end
+
+        # Numeric parsing: accept CSV or whitespace separated freq, mag_db, phase_deg
+        parts_num = split(replace(s, "," => " "))
+        if length(parts_num) >= 3
+            try
+                f = _parse_first_float(parts_num[1])
+                mdb = _parse_first_float(parts_num[2])
+                ph = _parse_first_float(parts_num[3])
+                push!(rows, (f, mdb, ph))
+            catch
+                # ignore unparsable lines (e.g., headers)
+            end
+        end
+    end
+    if isempty(rows)
+        error("No usable rows found in measured transfer file: $path")
+    end
+    sort!(rows, by = r -> r[1])
+    freqs = [r[1] for r in rows]
+    mag_db = [r[2] for r in rows]
+    phase_deg = [r[3] for r in rows]
+    return freqs, mag_db, phase_deg
+end
+
+function interp1_linear(x::Vector{Float64}, y::Vector{Float64}, xq::Float64)
+    # Linear interpolation with end clamping
+    xq <= x[1] && return y[1]
+    xq >= x[end] && return y[end]
+    i = searchsortedlast(x, xq)
+    i = clamp(i, 1, length(x) - 1)
+    x1, x2 = x[i], x[i+1]
+    y1, y2 = y[i], y[i+1]
+    t = (xq - x1) / (x2 - x1)
+    return y1 + t * (y2 - y1)
+end
+
+function apply_measured_transfer_fft(x::Vector{Float64}, fs::Int64, freqs::Vector{Float64}, mag_db::Vector{Float64}, phase_deg::Vector{Float64})
+    # Applies a one-sided transfer function to a real signal using rFFT.
+    # Frequency response is interpolated linearly in frequency.
+    n = length(x)
+    X = rfft(x)
+    # rfft bins: k=0..n/2
+    for k in eachindex(X)
+        f = (k - 1) * fs / n
+        mdb = interp1_linear(freqs, mag_db, f)
+        ph = interp1_linear(freqs, phase_deg, f)
+        H = 10.0^(mdb / 20.0) * cis(ph * π / 180.0)
+        X[k] *= H
+    end
+    return irfft(X, n)
+end
+
+# Unpack configuration
+hydrophones_pos = config.hydrophones_pos
+drone_pos = config.drone_pos
+pinger_pos = config.pinger_pos
+sea_depth = config.sea_depth
+noise_level = config.noise_level
+noise_type = config.noise_type
+vprintln("Simulation configuration loaded.\n")
+
+# ==============================
+# Simulation parameters
+# ==============================
+
+env = UnderwaterEnvironment(
+  bathymetry = sea_depth, 
+  temperature = 15.0, 
+  salinity = 35.0, 
+  pH = 8.1, 
+  soundspeed = 1538.9235842, 
+  density = 1022.7198310217424, 
+  seabed = VeryCoarseSand,
+  surface = PressureReleaseBoundary, 
+)
+pm = PekerisRayTracer(env) # Pekeris based propagation model
+
+vprintln("Simulatioon Environment configured.\n")
+# ==============================
+# Hardware configuration
+# ==============================
+
+# Pinger configuration
+pinger_frequency = 30_000.0  # Pinger frequency [Hz]
+pinger_duration = 4e-3      # Pinger duration [ms]
+pinger_power = 150.0         # Pinger source level [dB re 1μPa at 1m]
+
+pinger = AcousticSource(pinger_pos, pinger_frequency,spl=pinger_power)
+
+if verbose
+    println("Pinger configured at position:\n")
+    println("  ", pinger_pos, "\n")
+end
+
+# Hydrophone configuration
+hydrophone_sample_frequency = 1_000_000  # Sampling frequency of hydrophones [Hz]
+
+hydrophones_pos = map(pos -> pos .+ drone_pos, hydrophones_pos)  # Adjust hydrophone positions relative to drone position
+
+hydrophones = [AcousticReceiver(pos) for pos ∈ hydrophones_pos]
+
+if verbose
+    println("Hydrophones configured at positions: \n")
+    for i ∈ eachindex(hydrophones_pos)
+        print("  ", hydrophones_pos[i], "\n")
+    end
+
+    println("Pinger and Hydrophones configured.\n")
+end
+
+# ==============================
+# Simulating model
+# ==============================
+
+reference_hydrophone_rays = arrivals(pm, pinger, hydrophones[1])
+
+if verbose
+    println("Ray tracing simulation completed.\n")
+    println("Reference hydrophone signal and reflection arrivals: ")
+    sorted_reference_hydrophone_rays = sort(reference_hydrophone_rays, by = r -> r.t)
+    for ray ∈ sorted_reference_hydrophone_rays
+        print("  ",ray, "\n")
+    end
+
+    println("\nHydrophones first signal arrivals: ")
+    for i ∈ eachindex(hydrophones)
+        rays = arrivals(pm, pinger, hydrophones[i])
+        print("Hydrophone ", i, " first arrival: ", rays[1], "\n")
+    end
+    println("")
+end
+
+arrival_times = [first(arrivals(pm, pinger, hydrophones[i])).t for i ∈ eachindex(hydrophones)]
+print("Arrival times at hydrophones (s): \n", arrival_times, "\n")
+
+if noise_type == "white"
+    noise = WhiteGaussianNoise(noise_level)
+elseif noise_type == "red"
+    noise = RedGaussianNoise(noise_level)
+else
+    error("Unsupported noise type: $noise_type")
+end
+
+channels = channel(pm, pinger, hydrophones, hydrophone_sample_frequency; noise=noise)
+
+x = cw(pinger_frequency, pinger_duration, hydrophone_sample_frequency; window=(tukey, 0.0000005)) |> real
+
+hydrophones_data = transmit(channels, x; abstime = true)
+hydrophones_data = [collect(row) for row in eachcol(hydrophones_data)]
+
+vprintln("Signal transmission through channels completed.\n")
+
+# ===============================
+# Electrical Hardware Simulation
+# ===============================
+sens_v_per_uPa = 10.0^(hydrophone_sensitivity_db_v_per_uPa / 20.0)
+
+measured_freqs = Float64[]
+measured_mag_db = Float64[]
+measured_phase_deg = Float64[]
+if use_measured_transfer
+    if isfile(measured_transfer_path)
+        measured_freqs, measured_mag_db, measured_phase_deg = load_measured_transfer(measured_transfer_path)
+        vprintln("Loaded measured transfer response from $(measured_transfer_path).\n")
+    else
+        error("use_measured_transfer=true but file not found: $(measured_transfer_path)")
+    end
+end
+
+fallback_filter = analogfilter(
+    Bandpass(2*π*fallback_bp_low_hz, 2*π*fallback_bp_high_hz),
+    Butterworth(fallback_bp_order),
+)
+fallback_filter = bilinear(fallback_filter, hydrophone_sample_frequency)
+fallback_gain = 10.0^(fallback_amp_gain_db_at_31k / 20.0)
+
+for i ∈ eachindex(hydrophones_data)
+    # Apply hydrophone sensitivity
+    hydrophones_data[i] .*= sens_v_per_uPa
+
+    if use_measured_transfer
+        hydrophones_data[i] = apply_measured_transfer_fft(
+            hydrophones_data[i],
+            hydrophone_sample_frequency,
+            measured_freqs,
+            measured_mag_db,
+            measured_phase_deg,
+        )
+    else
+        hydrophones_data[i] .*= fallback_gain
+        hydrophones_data[i] = filt(fallback_filter, hydrophones_data[i])
+    end
+end
+
+vprintln("Electrical hardware simulation completed.\n")
+
+# ==============================
+# Visualization
+# ==============================
+
+function plot_reference_hydrophone_rays(rays)
+    p = plot(env; aspect_ratio = 1, xlims=(-1,7), ylims=(-6.5,1.5), zlims=(-10,10), title="Acoustic Ray Paths to Reference Hydrophone", label="",dpi=300)
+    plot!(pinger, markersize=8, markercolor=:red, label="Pinger")
+    plot!()
+    #= for hydrophone ∈ hydrophones
+        plot!(hydrophone)
+    end =#
+    plot!(hydrophones[1], markersize=8, markercolor=:green, label="Reference Hydrophone")
+    plot!(rays; label="")
+    plot!(legend=:topright)
+    savefig("reference_hydrophone_rays.png") # save the most recent fig as filename_string (such as "output.png")
+    display(p)
+    gui()
+end
+
+#plot_reference_hydrophone_rays(reference_hydrophone_rays)
+
+function plot_impulse_response()
+    p = plot(impulse_response(pm, pinger, hydrophones[1], 62500.0); title="Impulse Response at Reference Hydrophone")
+    display(p)
+    gui()
+end
+
+#plot_impulse_response()
+
+function plot_signals()
+    n = length(hydrophones_data)
+    data_length = 20 # milliseconds
+
+    # Create hydrophone plots
+    hydro_plots = [plot(hydrophones_data[i]; xlims=(0,data_length), title="Hydrophone $i") for i in 1:n]
+
+    # Combine transmitted + hydrophone plots
+    p = plot(
+        plot(x; xlims=(0,data_length), title="Transmitted Signal"),
+        hydro_plots...;
+        layout = (n+1, 1),
+        heights = [0.3; fill(0.7/n, n)],  # first plot 30%, rest split evenly
+        size = (800, 200 + 150*n)
+    )
+    display(p)
+    gui()
+end
+
+# ==============================
+# CSV Output Setup
+# ==============================
+
+function save_all_to_single_csv(hydrophones_data; filename::AbstractString = "hydrophones_data.csv")
+    n_h = length(hydrophones_data)
+    n = length(hydrophones_data[1])
+    for i in 2:n_h
+        length(hydrophones_data[i]) == n || error("Hydrophone signals have different lengths; cannot write a single aligned CSV")
+    end
+
+    t = range(0, step=1/hydrophone_sample_frequency, length=n)
+
+    open(filename, "w") do f
+        header = ["time"; ["hydrophone_$(i)" for i in 1:n_h]]
+        println(f, join(header, ","))
+        for j ∈ 1:n
+            row = [t[j]; [hydrophones_data[i][j] for i in 1:n_h]]
+            println(f, join(row, ","))
+        end
+    end
+end
+
+save_all_to_single_csv(hydrophones_data; filename = hydrophone_data_path === nothing ? "hydrophones_data.csv" : hydrophone_data_path)
+vprintln("Simulation data saved to $(hydrophone_data_path === nothing ? "hydrophones_data.csv" : hydrophone_data_path).\n")
+
+return arrival_times
+end
+
+function default_simulation_config()
+    hydro_pos = [
+        (0.175, 0.175, 0.175),
+        (0.35, 0.0, 0.0),
+        (0.0, 0.35, 0.0),
+        (0.35, 0.35, 0.0),
+        (0.0, 0.0, 0.0)
+    ]
+
+    return simulation_config(
+        hydrophones_pos = hydro_pos,
+        drone_pos = (0.0, -1.0, -3.0),
+        pinger_pos = (15.0, 10.0, -5.5),
+        sea_depth = 6.0,
+        noise_level = 3.87e5,
+        noise_type = "red",
+    )
+end
+
+function main()
+
+    config_path = length(ARGS) >= 1 ? ARGS[1] : "simulation_config.json"
+    hydrophone_data_path = length(ARGS) >= 2 ? ARGS[2] : nothing
+    verbose = length(ARGS) >= 3 ? ARGS[3] == "true" : true
+
+    println("Starting Acoustic Data Simulator...\n")
+
+    cfg = config_from_json(config_path)
+    # After running the simulation and obtaining arrival_times:
+    arrival_times = simulate_hydrophone_data(cfg, hydrophone_data_path, verbose)
+
+    #print(typeof(arrival_times))
+
+    # Add arrival_times to the config JSON and save
+    cfg_json = JSON3.read(read(config_path, String))
+    cfg_dict = Dict(cfg_json)  # Convert to mutable Dict
+    cfg_dict[:arrival_times] = arrival_times
+    open(config_path, "w") do f
+        write(f, JSON3.write(cfg_dict; indent=2))
+    end
+
+    println("Acoustic Data Simulation completed.\n")
+end
+
+"""Run multiple simulations from a batch description file.
+
+The batch file is JSON with schema:
+
+{
+  "verbose": false,
+  "items": [
+    {"config_path": "path/to/config_0.json", "output_csv": "path/to/data_0.csv"},
+    {"config_path": "path/to/config_1.json", "output_csv": "path/to/data_1.csv"}
+  ]
+}
+
+Paths may be absolute or relative to the Julia working directory.
+"""
+function run_test_batch(batch_path::AbstractString)
+    batch = JSON3.read(read(batch_path, String))
+
+    verbose = haskey(batch, "verbose") ? Bool(batch["verbose"]) : false
+    items = batch["items"]
+    n = length(items)
+
+    println("Starting Acoustic Data Simulator batch run ($n items)...\n")
+
+    for (i, item) in enumerate(items)
+        config_path = String(item["config_path"])
+        output_csv = String(item["output_csv"])
+
+        if verbose
+            println("[$i/$n] Config: $config_path")
+            println("      Out:    $output_csv\n")
+        end
+
+        cfg = config_from_json(config_path)
+        arrival_times = simulate_hydrophone_data(cfg, output_csv, verbose)
+        cfg_json = JSON3.read(read(config_path, String))
+        cfg_dict = Dict(cfg_json)  # Convert to mutable Dict
+        cfg_dict[:arrival_times] = arrival_times
+        open(config_path, "w") do f
+            write(f, JSON3.write(cfg_dict; indent=2))
+        end
+        println("[$i/$n] Completed.\n")
+    end
+
+    println("Acoustic Data Simulation batch completed.\n")
+end
+
+
+"""Legacy helper: run N simulations using the same config file.
+
+This is mostly useful for quick local experiments.
+"""
+function multi_run_simulations(config_path::AbstractString, num_runs::Int64; out_dir::AbstractString = ".", verbose::Bool = true)
+    cfg = config_from_json(config_path)
+    mkpath(out_dir)
+    for run_id ∈ 1:num_runs
+        if verbose
+            println("Starting simulation run $run_id of $num_runs...\n")
+        end
+        out_csv = joinpath(out_dir, "hydrophones_data_run_$(run_id).csv")
+        simulate_hydrophone_data(cfg, out_csv, verbose)
+        if verbose
+            println("Completed simulation run $run_id of $num_runs.\n")
+        end
+    end
+end
+
+#main()
