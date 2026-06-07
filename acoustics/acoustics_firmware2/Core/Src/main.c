@@ -246,19 +246,34 @@ int main(void)
 //			{-4.6,0.0,-34.34}
 //	}; // these are the positions on the acoustics stand
 
-	float32_t hydrophone_positions_temp[N_HYDROPHONES][3] = { //this is in meters
+	/*
+	 * These are the hydrophone positions measured in meters
+	 * Axis:
+	 * 	positive x direction is forwards on the drone
+	 * 	positive y direction is to the right on the drone
+	 * 	positive z direction is downwards on the drone
+	 *
+	 * Each index corresponds to a filter:
+	 * 	index 0 -> filter 1
+	 * 	index 1 -> filter 2
+	 * 	...
+	 *
+	 * The direction measured by acoustics is the direction from the origin of the hydrophones coordinate system
+	 */
+	float32_t hydrophone_positions_actual[N_HYDROPHONES][3] = {
 			{ 0.130, 0.235,-0.215},
 			{-0.130,-0.235, 0.215},
 			{-0.130, 0.235,-0.215},
 			{ 0.130,-0.235,-0.215},
 			{ 0.130, 0.235, 0.215},
-	}; //I think they are accurate
+	};
+
 
 	stale_data_patience = STALE_DATA_PATIENCE;
 	previous_target_block = 0xFF;
 
 	acoustics_init();
-	hydrophone_interface_init(hydrophone_positions_temp);
+	hydrophone_interface_init(hydrophone_positions_actual);
 
 	hydrophone_interface_start_datastream();
 	program_state = STATE_SEARCHING;
@@ -268,13 +283,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	HAL_GPIO_WritePin(YELLOW_LED, GPIO_PIN_SET);
-
-//  STATE_INIT,
-//	STATE_SEARCHING,
-//	STATE_PROCESSING,
-//	STATE_SIGNAL_PRESENT,
-//	STATE_CAN_COMMUNICATE,
-//	STATE_ERROR,
 
 	uint8_t target_block = 0;
 	uint8_t detection_patience = DETECTION_PATIENCE;
@@ -290,7 +298,6 @@ int main(void)
 				hydrophone_interface_update_temp();
 
 				if(unlikely(stale_data(target_block))){
-					//HAL_GPIO_WritePin(RED_LED, GPIO_PIN_SET);
 					Error_Handler();
 				}
 
@@ -298,7 +305,6 @@ int main(void)
 					program_state = STATE_PROCESSING;
 					detection_patience = DETECTION_PATIENCE;
 				}
-
 
 				hydrophone_interface_wait_for_mdma();
     		}
@@ -355,7 +361,12 @@ int main(void)
 		break;
     	case(STATE_CAN_COMMUNICATE): //For when a can request is on the line
 			can_handle_requests();
-    		program_state = prev_program_state;
+    		if(prev_program_state != STATE_CAN_COMMUNICATE){
+    			program_state = prev_program_state;
+    		}else{
+    			program_state = STATE_ERROR;
+    		}
+
 		break;
     	case(STATE_STOPPED): // For when we received a stop request
     		can_stopped();
