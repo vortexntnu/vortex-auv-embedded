@@ -1,6 +1,7 @@
 ## Fullstack Acoustics Tools Guide
 
 Welcome to the Fullstack Acoustics Tools! This guide will help you understand the workflow, data structures, and how to use the simulation, capture, and visualization tools in this repository.
+Remember to check out the notes at the bottom here.
 
 ---
 
@@ -14,30 +15,28 @@ This project simulates, processes, and visualizes hydrophone array data for unde
 
 ---
 
+### 2. Prerequisites
+
+You need to have Julia and python installed. If you get errors for missing packages then download them. 
+If you don't know how to donwload them, then google it.
+
+---
+
 ### 2. Workflow
 
-**A. Simulate Data (Julia)**
 1. Edit `simulation_config.json` to set up your experiment (hydrophone positions, pinger, noise, etc).
-2. Run `acoustic_data_simulator.jl` in Julia. This will generate `hydrophones_data.csv`.
-
-**B. Run Fullstack Processing (Python)**
-1. Run `fullstack_capture.py` to capture and process the data:
+1. Run `acoustic_data_simulator.jl` in Julia. This will generate `hydrophones_data.csv`.
+3. Run `fullstack_prototype.py` to capture and process the data:
 	```sh
 	python fullstack_capture.py --config simulation_config.json --tdoa_method envelope_correlation
 	```
-	- This will process the data, estimate positions, and optionally launch the GUI.
-	- Use `--export my_capture.npz` to save the processed frames for later viewing.
-
-**C. View Results (Python GUI)**
-1. To view a saved capture, run:
-	```sh
-	python fullstack_viewer.py my_capture.npz
-	```
-	- This opens the interactive GUI for exploring all frames and signal features.
+	This will process the data, estimate positions, and launch the GUI.
 
 ---
 
 ### 3. FrameStore Data Structure
+
+This shit not important, skip it.
 
 All processed data is stored in a `FrameStore` object, which contains arrays for each frame and hydrophone. Key arrays include:
 
@@ -75,23 +74,32 @@ All processed data is stored in a `FrameStore` object, which contains arrays for
 
 ---
 
-### 5. Debugging & Development Tips
 
-- Each visualization panel should implement `plot()`, `activate()`, `deactivate()`, and `update()` methods.
-- Precompute y-axis ranges in `__init__()` for smooth plotting.
-- For bar plots, always clear the axis before redrawing in `update()`.
-- Use the correct data arrays for each panel (workspace vs buffer).
-- For 3D plots, create the axis in `update()` (not `plot()`).
+### 5. MEGA TESTING
 
----
+You can run scripts to generate a lot of simulated hydrophone data for varying configs and then test algorithms on them to test their effectiveness.
+How to:
+1. First configure the simulation_config_for_testing.json as a base
+2. Do some stuff with test_data_generator.py to change how it will randomize the simulations
+3. Run test_data_generator.py (i think)
+4. Run the tests with pytest (I don't remember how exactly but you can figure this out)
+5. Observe the results
 
-### 6. Extending the System
+If you notice most succeeding but with some few exceptions you can use run_failed_config_simple.py (or not simple you choose) to see the view the interesting test configs in the GUI
 
-- To add new features or panels, follow the structure in `fullstack_gui.py`.
-- To add new signal processing methods, edit `functions.py` and update the capture pipeline.
-- For new simulation scenarios, edit `simulation_config.json` and rerun the Julia simulator.
 
 ---
 
-For more details, see the code comments and docstrings in each file.
+### 6. Important Notes
 
+The sim is very nice for testing algorithms and general aproaches for the acoustics related tasks, however keep in mind that what is implemented in the sim is not (necessarily) implemented in the actual firmware of the acoustics hardware.
+
+At the time of writing this guide it has been a long time since i used this sim so uh good luck using it :-).
+
+If at any time you are curious about what a python file does then just try running it. The ones that don't have os.delete("C:\Windows\System32") should be safe.
+
+If you wish to change or test an algorithm then it is done in fullstack_capture.py, that's where the magic happens.
+
+---
+
+For more details, see the code comments and docstrings in each file. (these are ofcourse either non-existant or written by chat and claude)
