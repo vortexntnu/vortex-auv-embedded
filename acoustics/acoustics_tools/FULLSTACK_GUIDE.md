@@ -21,9 +21,9 @@ This project simulates, processes, and visualizes hydrophone array data for unde
 2. Run `acoustic_data_simulator.jl` in Julia. This will generate `hydrophones_data.csv`.
 
 **B. Run Fullstack Processing (Python)**
-1. Run `fullstack_prototype.py` to process the data:
+1. Run `fullstack_capture.py` to capture and process the data:
 	```sh
-	python fullstack_prototype.py --config simulation_config.json --tdoa_method envelope_correlation
+	python fullstack_capture.py --config simulation_config.json --tdoa_method envelope_correlation
 	```
 	- This will process the data, estimate positions, and optionally launch the GUI.
 	- Use `--export my_capture.npz` to save the processed frames for later viewing.
