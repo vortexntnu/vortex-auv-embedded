@@ -20,7 +20,6 @@
       <itemPath>include/pm.h</itemPath>
       <itemPath>include/gripper.h</itemPath>
       <itemPath>include/state_machine.h</itemPath>
-      <itemPath>include/uart_protocol.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

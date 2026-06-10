@@ -74,37 +74,10 @@ int main(void) {
     SERCOM0_USART_TransmitterEnable();
 
     TC0_TimerStart();
-    // TC1_TimerStart();
 
-    // WDT_Enable();
-
-    // printf("Start Gripper\r\n");
-    // start_gripper();
     stop_gripper();
-    //
-    //   struct can_tx_frame tx;
-    //   tx.id = 0x369;
-    //   tx.len = 8;
-    //   tx.buf[0] = 1;
-    //   tx.buf[1] = 2;
-    //   tx.buf[2] = 3;
-    //   tx.buf[3] = 4;
-    //   tx.buf[4] = 5;
-    //   tx.buf[5] = 6;
-    //   tx.buf[6] = 7;
-    //   tx.buf[7] = 8;
-    // printf("sending can frame\r\n");
-    //   can_transmit(&tx);
     state_machine_init();
-    //
-    // PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
 
-    // const char msg[] = "UART test\r\n";
-    // SERCOM0_USART_Write((void *)msg, sizeof(msg) - 1);
-    //
-
-    uint8_t rx_byte = 0;
-    SERCOM0_USART_Read(&rx_byte, 1);
     while (true) {
         state_machine();
         uart_gripper_task();
