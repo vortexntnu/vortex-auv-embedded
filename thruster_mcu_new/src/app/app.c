@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include "can_handler.h"
 #include "definitions.h"
 #include "pwm_outputs.h"
 
@@ -14,8 +15,6 @@ static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE]
 static volatile bool slew_tick = false;
 static volatile bool adc_dma_done = false;
 static volatile uint16_t adc_result_array[TRANSFER_SIZE];
-
-#define THRUSTER_TIMEOUT_TICKS 10U
 
 static volatile uint32_t thruster_timeout_ticks = 0U;
 static volatile bool thruster_timeout_expired = false;
@@ -132,8 +131,8 @@ void app_task(void) {
     if (thruster_timeout_expired && !thruster_timed_out) {
         thruster_timeout_expired = false;
         thruster_timed_out = true;
-
         pwm_thrusters_neutral();
+        send_thruster_timeout_event();
     }
 }
 

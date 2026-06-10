@@ -12,6 +12,7 @@ extern "C" {
 #define WRITE_ID(id) (id << 18)
 #define READ_ID(id) (id >> 18)
 
+#define THRUSTER_TIMEOUT_TICKS 10U
 #define TRANSFER_SIZE 16
 #define PWM_MAX_STEP_US  25U
 
@@ -26,6 +27,7 @@ typedef enum {
     CAN_ID_PGOOD_EVENT,
     CAN_ID_KILLSWITCH_EVENT,
     CAN_ID_CURRENT_MEASUREMENTS,
+    CAN_ID_THRUSTER_TIMEOUT_EVENT,
 } can_msg_id_t;
 
 

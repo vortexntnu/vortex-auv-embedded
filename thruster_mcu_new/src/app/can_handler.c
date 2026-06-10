@@ -78,3 +78,18 @@ void dispatch_hw_events(hw_event_flags_t* hw) {
         send_killswitch_event(0U);
     }
 }
+
+bool send_thruster_timeout_event(void) {
+    /*
+     * Payload:
+     * byte 0 = event code
+     * byte 1 = timeout duration in ticks, optional
+     */
+    uint8_t payload[2] = {
+        0x01U,
+        THRUSTER_TIMEOUT_TICKS,
+    };
+
+    return can_send_frame(CAN_ID_THRUSTER_TIMEOUT_EVENT, payload,
+                          sizeof(payload));
+}
