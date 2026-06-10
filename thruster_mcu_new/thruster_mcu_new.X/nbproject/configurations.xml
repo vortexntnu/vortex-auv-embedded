@@ -187,6 +187,7 @@
         </logicalFolder>
       </logicalFolder>
       <itemPath>../src/app/app.h</itemPath>
+      <itemPath>../src/app/pwm_outputs.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -308,6 +309,7 @@
       </logicalFolder>
       <itemPath>../src/main.c</itemPath>
       <itemPath>../src/app/app.c</itemPath>
+      <itemPath>../src/app/pwm_outputs.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -325,7 +327,7 @@
         <platformTool>AtmelIceTool</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>4.60</languageToolchainVersion>
-        <platform>4</platform>
+        <platform>2</platform>
       </toolsSet>
       <packs>
         <pack name="SAMC21_DFP" vendor="Microchip" version="3.8.119"/>
