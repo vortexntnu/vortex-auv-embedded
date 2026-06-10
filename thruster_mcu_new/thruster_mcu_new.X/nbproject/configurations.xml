@@ -543,6 +543,11 @@
         <property key="stack-smashing" value=""/>
         <property key="wpo-lto" value="false"/>
       </C32Global>
+      <Tool>
+        <property key="memories.programmemory.ranges" value="0-3ffff"/>
+        <property key="programmerToGoFilePath"
+                  value="/home/nathaniel/vortex/vortex-auv-embedded/thruster_mcu_new/thruster_mcu_new.X/debug/default/thruster_mcu_new_ptg"/>
+      </Tool>
     </conf>
   </confs>
 </configurationDescriptor>
