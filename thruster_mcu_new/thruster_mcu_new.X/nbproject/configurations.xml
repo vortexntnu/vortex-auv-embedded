@@ -188,6 +188,7 @@
       </logicalFolder>
       <itemPath>../src/app/app.h</itemPath>
       <itemPath>../src/app/pwm_outputs.h</itemPath>
+      <itemPath>../src/app/can_handler.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -310,6 +311,7 @@
       <itemPath>../src/main.c</itemPath>
       <itemPath>../src/app/app.c</itemPath>
       <itemPath>../src/app/pwm_outputs.c</itemPath>
+      <itemPath>../src/app/can_handler.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -360,6 +362,11 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
+      <AtmelIceTool>
+        <property key="memories.programmemory.ranges" value="0-3ffff"/>
+        <property key="programmerToGoFilePath"
+                  value="/home/nathaniel/vortex/vortex-auv-embedded/thruster_mcu_new/thruster_mcu_new.X/debug/default/thruster_mcu_new_ptg"/>
+      </AtmelIceTool>
       <C32>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>

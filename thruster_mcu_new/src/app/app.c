@@ -29,40 +29,20 @@ static const struct {
     {9, 8}, /* AIN9 -> Thruster 8 */
 };
 
-typedef struct {
-    volatile uint8_t flt_pending_mask;
-    volatile uint8_t pgood_pending_mask;
-    volatile uint8_t killswitch_pending_mask;
-} hw_event_flags_t;
 
 static hw_event_flags_t hw_events = {0};
 
-/**
- * @brief Handles incoming CAN messages and dispatches them to their
- * corresponding action.
- */
 static void message_handler(void);
-static bool send_flt_event(uint8_t context);
-static bool send_pgood_event(uint8_t context);
-static bool send_killswitch_event(uint8_t context);
-static bool send_current_measurements(float I_arr[8]);
-static void dispatch_hw_event(volatile uint8_t* mask,
-                              bool (*send)(uint8_t channel));
-static void dispatch_hw_events(void);
-
 static void can_receive_callback(uintptr_t context);
 static void can_transmit_callback(uintptr_t context);
-
 static void log_current(void);
-/* Callbacks */
+
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event,
                              uintptr_t MyDmacContext);
 static void eic_pin_flt_thruster(uintptr_t context);
 static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
 static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
-
-/* --- Public functions --- */
 
 void app_init(void) {
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
@@ -136,42 +116,13 @@ void app_task(void) {
         log_current();
     }
 
-    dispatch_hw_events();
+    dispatch_hw_events(&hw_events);
 
     if (can_message_ready) {
         can_message_ready = false;
         message_handler();
         CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer);
     }
-}
-
-static bool can_send_frame(uint16_t can_id,
-                           const uint8_t* payload,
-                           uint8_t length) {
-    if (length > 64U) {
-        return false;
-    }
-
-    if (CAN1_TxFifoFreeLevelGet() == 0U) {
-        return false;
-    }
-
-    CAN_TX_BUFFER tx = {0};
-
-    tx.id = can_id;
-    tx.dlc = length;
-
-    tx.xtd = 0U;
-    tx.rtr = 0U;
-
-    tx.fdf = 1U;
-    tx.brs = 0U;
-
-    if (payload != NULL && length > 0U) {
-        memcpy(tx.data, payload, length);
-    }
-
-    return CAN1_MessageTransmitFifo(1U, &tx);
 }
 
 static void message_handler(void) {
@@ -209,59 +160,6 @@ static void message_handler(void) {
     }
 }
 
-static void dispatch_hw_event(volatile uint8_t* mask,
-                              bool (*send)(uint8_t channel)) {
-    uint8_t snapshot = *mask;
-    *mask = 0;
-    for (uint8_t i = 0; i < 8; i++) {
-        if (snapshot & (1U << i)) {
-            send(i);
-        }
-    }
-}
-
-static void dispatch_hw_events(void) {
-    uint8_t snapshot;
-
-    snapshot = hw_events.flt_pending_mask;
-    hw_events.flt_pending_mask = 0U;
-
-    for (uint8_t i = 0U; i < 8U; i++) {
-        if ((snapshot & (1U << i)) != 0U) {
-            send_flt_event(i);
-        }
-    }
-
-    snapshot = hw_events.pgood_pending_mask;
-    hw_events.pgood_pending_mask = 0U;
-
-    for (uint8_t i = 0U; i < 8U; i++) {
-        if ((snapshot & (1U << i)) != 0U) {
-            send_pgood_event(i);
-        }
-    }
-
-    if (hw_events.killswitch_pending_mask != 0U) {
-        hw_events.killswitch_pending_mask = 0U;
-        send_killswitch_event(0U);
-    }
-}
-
-static bool send_flt_event(uint8_t channel) {
-    uint8_t payload[2] = {channel, 0x01U};
-    return can_send_frame(CAN_ID_FLT_EVENT, payload, 2U);
-}
-
-static bool send_pgood_event(uint8_t channel) {
-    uint8_t payload[2] = {channel, 0x02U};
-    return can_send_frame(CAN_ID_PGOOD_EVENT, payload, 2U);
-}
-
-static bool send_killswitch_event(uint8_t channel) {
-    (void)channel;
-    return can_send_frame(CAN_ID_KILLSWITCH_EVENT, NULL, 0U);
-}
-
 static void log_current(void) {
     const float ADC_VREF = 5.0f;
     const float G_IMON = 18.31e-6f;
@@ -277,16 +175,6 @@ static void log_current(void) {
     }
 
     send_current_measurements(I_array);
-}
-
-static bool send_current_measurements(float I_arr[8]) {
-    uint8_t payload[32];
-
-    for (size_t i = 0U; i < 8U; i++) {
-        memcpy(&payload[i * sizeof(float)], &I_arr[i], sizeof(float));
-    }
-
-    return can_send_frame(CAN_ID_CURRENT_MEASUREMENTS, payload, 32U);
 }
 
 static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event,

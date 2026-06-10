@@ -28,6 +28,13 @@ typedef enum {
     CAN_ID_CURRENT_MEASUREMENTS,
 } can_msg_id_t;
 
+
+typedef struct {
+    volatile uint8_t flt_pending_mask;
+    volatile uint8_t pgood_pending_mask;
+    volatile uint8_t killswitch_pending_mask;
+} hw_event_flags_t;
+
 void app_init(void);
 void app_task(void);
 
