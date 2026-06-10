@@ -1,57 +1,62 @@
-#include <string.h>
+#include "app.h"
 #include <stdbool.h>
 #include <stddef.h>
-#include "definitions.h"
-#include "app.h"
 #include <stdio.h>
-
+#include <string.h>
+#include "definitions.h"
+#include "pwm_outputs.h"
 
 static volatile bool can_message_ready = false;
 static CAN_RX_BUFFER can_rx_buffer;
-static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE] __attribute__((aligned(32)));
+static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE]
+    __attribute__((aligned(32)));
 
 static volatile bool slew_tick = false;
 static volatile bool adc_dma_done = false;
 static volatile uint16_t adc_result_array[TRANSFER_SIZE];
 
-
 static const struct {
     uint8_t ain;
     uint8_t thruster;
 } imon_map[8] = {
-    { 0, 3 },   /* AIN0 -> Thruster 3 */  
-    { 1, 4 },   /* AIN1 -> Thruster 4 */
-    { 2, 1 },   /* AIN2 -> Thruster 1 */
-    { 4, 2 },   /* AIN4 -> Thruster 2 */
-    { 5, 5 },   /* AIN5 -> Thruster 5 */
-    { 6, 6 },   /* AIN6 -> Thruster 6 */
-    { 7, 7 },   /* AIN7 -> Thruster 7 */
-    { 9, 8 },   /* AIN9 -> Thruster 8 */
+    {0, 3}, /* AIN0 -> Thruster 3 */
+    {1, 4}, /* AIN1 -> Thruster 4 */
+    {2, 1}, /* AIN2 -> Thruster 1 */
+    {4, 2}, /* AIN4 -> Thruster 2 */
+    {5, 5}, /* AIN5 -> Thruster 5 */
+    {6, 6}, /* AIN6 -> Thruster 6 */
+    {7, 7}, /* AIN7 -> Thruster 7 */
+    {9, 8}, /* AIN9 -> Thruster 8 */
 };
 
 typedef struct {
-    volatile uint8_t flt_pending_mask;   // bit 0-7 = FLT channels 0-7
-    volatile uint8_t pgood_pending_mask; // bit 0-7 = PGOOD channels 0-7
+    volatile uint8_t flt_pending_mask;
+    volatile uint8_t pgood_pending_mask;
     volatile uint8_t killswitch_pending_mask;
 } hw_event_flags_t;
 
 static hw_event_flags_t hw_events = {0};
 
-
 /**
- * @brief Handles incoming CAN messages and dispatches them to their corresponding action.
+ * @brief Handles incoming CAN messages and dispatches them to their
+ * corresponding action.
  */
 static void message_handler(void);
 static bool send_flt_event(uint8_t context);
 static bool send_pgood_event(uint8_t context);
 static bool send_killswitch_event(uint8_t context);
 static bool send_current_measurements(float I_arr[8]);
-static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel));
+static void dispatch_hw_event(volatile uint8_t* mask,
+                              bool (*send)(uint8_t channel));
+static void dispatch_hw_events(void);
 
+static void can_receive_callback(uintptr_t context);
+static void can_transmit_callback(uintptr_t context);
 
 static void log_current(void);
 /* Callbacks */
-static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext);
+static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event,
+                             uintptr_t MyDmacContext);
 static void eic_pin_flt_thruster(uintptr_t context);
 static void eic_pin_pg_thruster(uintptr_t context);
 static void eic_pin_killswitch(uintptr_t context);
@@ -59,12 +64,13 @@ static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
 
 /* --- Public functions --- */
 
-void app_init(void)
-{
+void app_init(void) {
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
 
-    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback, (uintptr_t)NULL);
-    CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
+    CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback,
+                                (uintptr_t)NULL);
+    // CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
+    CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer);
 
     EIC_NMICallbackRegister(eic_pin_killswitch, 0);
 
@@ -102,19 +108,16 @@ void app_init(void)
     SYSTICK_TimerStart();
 
     DMAC_ChannelCallbackRegister(DMAC_CHANNEL_0, adc_dma_callback, 0);
-    DMAC_ChannelTransfer(
-        DMAC_CHANNEL_0,
-        (const void *)&ADC0_REGS->ADC_RESULT,
-        (const void *)adc_result_array,
-        sizeof(adc_result_array)
-    );
+    DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+                         (const void*)adc_result_array,
+                         sizeof(adc_result_array));
 
     TCC0_PWMStart();
     TCC1_PWMStart();
     TCC2_PWMStart();
 
-    set_pwm_neutral(thrusters, 8);
-    set_pwm_neutral(lights, 1);
+    pwm_thrusters_neutral();
+    pwm_lights_off();
 
     TC0_TimerStart();
     TC3_CompareStart();
@@ -122,11 +125,10 @@ void app_init(void)
     // WDT_Enable();
 }
 
-void app_task(void)
-{
+void app_task(void) {
     if (slew_tick) {
         slew_tick = false;
-        slew_pwm_outputs();
+        pwm_slew_outputs();
     }
 
     if (adc_dma_done) {
@@ -139,11 +141,13 @@ void app_task(void)
     if (can_message_ready) {
         can_message_ready = false;
         message_handler();
+        CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer);
     }
 }
 
-static bool can_send_frame(uint16_t can_id, const uint8_t *payload, uint8_t length)
-{
+static bool can_send_frame(uint16_t can_id,
+                           const uint8_t* payload,
+                           uint8_t length) {
     if (length > 64U) {
         return false;
     }
@@ -154,11 +158,11 @@ static bool can_send_frame(uint16_t can_id, const uint8_t *payload, uint8_t leng
 
     CAN_TX_BUFFER tx = {0};
 
-    tx.id  = can_id;
+    tx.id = can_id;
     tx.dlc = length;
 
     tx.xtd = 0U;
-    tx.rtr = 0U;  
+    tx.rtr = 0U;
 
     tx.fdf = 1U;
     tx.brs = 0U;
@@ -170,20 +174,18 @@ static bool can_send_frame(uint16_t can_id, const uint8_t *payload, uint8_t leng
     return CAN1_MessageTransmitFifo(1U, &tx);
 }
 
-
-static void message_handler(void)
-{
+static void message_handler(void) {
     uint16_t can_id = (uint16_t)can_rx_buffer.id;
-    uint8_t *data = can_rx_buffer.data;
+    uint8_t* data = can_rx_buffer.data;
     uint8_t length = can_rx_buffer.dlc;
 
     switch (can_id) {
         case CAN_ID_TURN_THRUSTERS_OFF:
-            set_pwm_neutral(thrusters, 8);
+            pwm_thrusters_neutral();
             break;
 
         case CAN_ID_TURN_LIGHTS_OFF:
-            set_pwm_neutral(lights, 1);
+            pwm_lights_off();
             break;
 
         case CAN_ID_RESET:
@@ -192,13 +194,13 @@ static void message_handler(void)
 
         case CAN_ID_SET_THRUSTER_PWM:
             if (length >= 16U) {
-                set_pwm_outputs(data, thrusters, 8);
+                pwm_thrusters_set_from_payload(data);
             }
             break;
 
         case CAN_ID_SET_LIGHT_PWM:
             if (length >= 2U) {
-                set_light_output(data, lights, 1);
+                pwm_light_set_from_payload(data);
             }
             break;
 
@@ -207,7 +209,8 @@ static void message_handler(void)
     }
 }
 
-static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t channel)) {
+static void dispatch_hw_event(volatile uint8_t* mask,
+                              bool (*send)(uint8_t channel)) {
     uint8_t snapshot = *mask;
     *mask = 0;
     for (uint8_t i = 0; i < 8; i++) {
@@ -217,8 +220,7 @@ static void dispatch_hw_event(volatile uint8_t *mask, bool (*send)(uint8_t chann
     }
 }
 
-static void dispatch_hw_events(void)
-{
+static void dispatch_hw_events(void) {
     uint8_t snapshot;
 
     snapshot = hw_events.flt_pending_mask;
@@ -245,44 +247,39 @@ static void dispatch_hw_events(void)
     }
 }
 
-
-static bool send_flt_event(uint8_t channel)
-{
-    uint8_t payload[2] = { channel, 0x01U };
+static bool send_flt_event(uint8_t channel) {
+    uint8_t payload[2] = {channel, 0x01U};
     return can_send_frame(CAN_ID_FLT_EVENT, payload, 2U);
 }
 
-static bool send_pgood_event(uint8_t channel)
-{
-    uint8_t payload[2] = { channel, 0x02U };
+static bool send_pgood_event(uint8_t channel) {
+    uint8_t payload[2] = {channel, 0x02U};
     return can_send_frame(CAN_ID_PGOOD_EVENT, payload, 2U);
 }
 
-static bool send_killswitch_event(uint8_t channel)
-{
+static bool send_killswitch_event(uint8_t channel) {
     (void)channel;
     return can_send_frame(CAN_ID_KILLSWITCH_EVENT, NULL, 0U);
 }
 
 static void log_current(void) {
-    const float ADC_VREF   = 5.0f;
-    const float G_IMON     = 18.31e-6f;  
-    const float R_IMON     = 2697.0f;
-    
+    const float ADC_VREF = 5.0f;
+    const float G_IMON = 18.31e-6f;
+    const float R_IMON = 2697.0f;
+
     float I_array[8] = {0};
-    
+
     for (size_t i = 0; i < 8; i++) {
         float V_Imon = ((float)adc_result_array[i] * ADC_VREF) / 4095.0f;
-        float I_out  = V_Imon / (G_IMON * R_IMON);
-        
+        float I_out = V_Imon / (G_IMON * R_IMON);
+
         I_array[i] = I_out;
     }
-    
+
     send_current_measurements(I_array);
 }
 
-static bool send_current_measurements(float I_arr[8])
-{
+static bool send_current_measurements(float I_arr[8]) {
     uint8_t payload[32];
 
     for (size_t i = 0U; i < 8U; i++) {
@@ -292,27 +289,30 @@ static bool send_current_measurements(float I_arr[8])
     return can_send_frame(CAN_ID_CURRENT_MEASUREMENTS, payload, 32U);
 }
 
-static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event, uintptr_t MyDmacContext) {
+static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event,
+                             uintptr_t MyDmacContext) {
     if (returned_event == DMAC_TRANSFER_EVENT_COMPLETE) {
         adc_dma_done = true;
         // Re-arm DMA for next conversion
-        DMAC_ChannelTransfer(DMAC_CHANNEL_0, (const void *)&ADC0_REGS->ADC_RESULT, (const void *)adc_result_array, sizeof(adc_result_array));
-    } 
+        DMAC_ChannelTransfer(
+            DMAC_CHANNEL_0, (const void*)&ADC0_REGS->ADC_RESULT,
+            (const void*)adc_result_array, sizeof(adc_result_array));
+    }
 }
 
 static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
     (void)intCause;
     (void)context;
     slew_tick = true;
-    
+
     if (ADC0_ConversionSequenceIsFinished()) {
-           ADC0_ConversionStart();
+        ADC0_ConversionStart();
     }
 }
 
 static void eic_pin_flt_thruster(uintptr_t context) {
     uint8_t channel = (uint8_t)context;
-    hw_events.flt_pending_mask |= (1U << channel);  
+    hw_events.flt_pending_mask |= (1U << channel);
 }
 
 static void eic_pin_pg_thruster(uintptr_t context) {
@@ -324,4 +324,12 @@ static void eic_pin_killswitch(uintptr_t context) {
     hw_events.killswitch_pending_mask |= 1U;
 }
 
+static void can_receive_callback(uintptr_t context) {
+    (void)context;
 
+    can_message_ready = true;
+}
+
+static void can_transmit_callback(uintptr_t context) {
+    (void)context;
+}

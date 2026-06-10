@@ -28,30 +28,6 @@ typedef enum {
     CAN_ID_CURRENT_MEASUREMENTS,
 } can_msg_id_t;
 
-
-
-enum operating_mode {
-    PWM_TCC,
-    MPWM_TC,
-};
-
-struct pwm_output {
-    enum operating_mode mode;
-    uint8_t  instance;
-    uint8_t  channel;
-    uint32_t period_ticks;
-    uint16_t min_us;
-    uint16_t max_us;
-    uint16_t neutral_us;
-    uint32_t frame_us;
-    uint16_t current_pulse_us;
-    uint16_t target_pulse_us;
-};
-
-
-
-
-
 void app_init(void);
 void app_task(void);
 

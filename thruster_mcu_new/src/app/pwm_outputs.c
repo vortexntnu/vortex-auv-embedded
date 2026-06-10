@@ -192,7 +192,7 @@ static void set_light_output(const uint8_t* data,
     // WDT_Clear();
 }
 
-void slew_pwm_outputs(void) {
+void pwm_slew_outputs(void) {
     for (uint32_t i = 0; i < 8U; i++) {
         uint16_t target = thrusters[i].target_pulse_us;
         uint16_t current = thrusters[i].current_pulse_us;

@@ -1,5 +1,5 @@
-#ifndef APP_H
-#define APP_H
+#ifndef PWM_OUTPUTS_H
+#define PWM_OUTPUTS_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,6 +42,7 @@ void pwm_thrusters_neutral(void);
 void pwm_lights_off(void);
 void pwm_thrusters_set_from_payload(const uint8_t *data);
 void pwm_light_set_from_payload(const uint8_t *data);
+void pwm_slew_outputs(void);
 
 #ifdef __cplusplus
 }
