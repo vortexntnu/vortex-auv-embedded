@@ -15,6 +15,12 @@ static volatile bool slew_tick = false;
 static volatile bool adc_dma_done = false;
 static volatile uint16_t adc_result_array[TRANSFER_SIZE];
 
+#define THRUSTER_TIMEOUT_TICKS 10U
+
+static volatile uint32_t thruster_timeout_ticks = 0U;
+static volatile bool thruster_timeout_expired = false;
+static bool thruster_timed_out = false;
+
 static const struct {
     uint8_t ain;
     uint8_t thruster;
@@ -28,7 +34,6 @@ static const struct {
     {7, 7}, /* AIN7 -> Thruster 7 */
     {9, 8}, /* AIN9 -> Thruster 8 */
 };
-
 
 static hw_event_flags_t hw_events = {0};
 
@@ -123,6 +128,13 @@ void app_task(void) {
         message_handler();
         CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer);
     }
+
+    if (thruster_timeout_expired && !thruster_timed_out) {
+        thruster_timeout_expired = false;
+        thruster_timed_out = true;
+
+        pwm_thrusters_neutral();
+    }
 }
 
 static void message_handler(void) {
@@ -132,11 +144,15 @@ static void message_handler(void) {
 
     switch (can_id) {
         case CAN_ID_TURN_THRUSTERS_OFF:
+            thruster_timeout_ticks = 0U;
+            thruster_timeout_expired = false;
+            thruster_timed_out = false;
             pwm_thrusters_neutral();
             break;
 
         case CAN_ID_TURN_LIGHTS_OFF:
             pwm_lights_off();
+
             break;
 
         case CAN_ID_RESET:
@@ -146,6 +162,9 @@ static void message_handler(void) {
         case CAN_ID_SET_THRUSTER_PWM:
             if (length >= 16U) {
                 pwm_thrusters_set_from_payload(data);
+                thruster_timeout_ticks = 0U;
+                thruster_timeout_expired = false;
+                thruster_timed_out = false;
             }
             break;
 
@@ -191,7 +210,14 @@ static void adc_dma_callback(DMAC_TRANSFER_EVENT returned_event,
 static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context) {
     (void)intCause;
     (void)context;
+
     slew_tick = true;
+
+    if (thruster_timeout_ticks < THRUSTER_TIMEOUT_TICKS) {
+        thruster_timeout_ticks++;
+    } else {
+        thruster_timeout_expired = true;
+    }
 
     if (ADC0_ConversionSequenceIsFinished()) {
         ADC0_ConversionStart();
