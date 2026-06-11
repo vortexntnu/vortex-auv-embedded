@@ -51,6 +51,14 @@ static void OSCCTRL_Initialize(void)
     OSCCTRL_REGS->OSCCTRL_CAL48M = calibValue;
 
 
+    /* Selection of the Division Value */
+    OSCCTRL_REGS->OSCCTRL_OSC48MDIV = (uint8_t)OSCCTRL_OSC48MDIV_DIV(0UL);
+
+    while((OSCCTRL_REGS->OSCCTRL_OSC48MSYNCBUSY & OSCCTRL_OSC48MSYNCBUSY_OSC48MDIV_Msk) == OSCCTRL_OSC48MSYNCBUSY_OSC48MDIV_Msk)
+    {
+        /* Waiting for the synchronization */
+    }
+
     while((OSCCTRL_REGS->OSCCTRL_STATUS & OSCCTRL_STATUS_OSC48MRDY_Msk) != OSCCTRL_STATUS_OSC48MRDY_Msk)
     {
         /* Waiting for the OSC48M Ready state */

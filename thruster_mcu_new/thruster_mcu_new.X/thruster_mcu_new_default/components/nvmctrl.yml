@@ -24,7 +24,7 @@ data:
       - children:
         - attributes:
             id: nvmctrl
-            value: '0'
+            value: '2'
           type: Dynamic
         type: Values
       type: Integer

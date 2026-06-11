@@ -373,7 +373,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -384,7 +384,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -428,7 +428,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -439,7 +439,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -560,7 +560,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -571,7 +571,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -681,7 +681,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -692,7 +692,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -802,7 +802,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -813,7 +813,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -846,7 +846,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -868,7 +868,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -879,7 +879,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -989,7 +989,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1000,7 +1000,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1110,7 +1110,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1121,7 +1121,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1311,7 +1311,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1322,7 +1322,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1723,7 +1723,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -1734,7 +1734,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -2054,7 +2054,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -2065,7 +2065,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -3634,7 +3634,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x22'
+            value: '0x55'
           type: Dynamic
         type: Values
       type: String
@@ -3655,7 +3655,7 @@ data:
       children:
       - children:
         - attributes:
-            value: C
+            value: F
           type: User
         type: Values
       type: String
@@ -5094,7 +5094,7 @@ data:
       children:
       - children:
         - attributes:
-            value: SERCOM2_PAD0
+            value: TCC0_WO6
           type: User
         type: Values
       type: String
@@ -5114,7 +5114,7 @@ data:
       children:
       - children:
         - attributes:
-            value: SERCOM2_PAD1
+            value: TCC0_WO7
           type: User
         type: Values
       type: String
@@ -5157,7 +5157,7 @@ data:
       children:
       - children:
         - attributes:
-            value: C
+            value: F
           type: User
         type: Values
       type: String
@@ -5167,7 +5167,7 @@ data:
       children:
       - children:
         - attributes:
-            value: USART_TX
+            value: ''
           type: User
         type: Values
       type: String
@@ -5177,7 +5177,7 @@ data:
       children:
       - children:
         - attributes:
-            value: USART_RX
+            value: ''
           type: User
         type: Values
       type: String
@@ -5315,7 +5315,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5326,7 +5326,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5519,7 +5519,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0xFA0'
+            value: '0xBB80'
           type: Dynamic
         type: Values
       type: String
@@ -5541,7 +5541,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5552,7 +5552,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5685,7 +5685,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '4194.3037'
+            value: '349.5253'
           type: Float
         type: Attributes
       type: Float
@@ -5696,7 +5696,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -5706,7 +5706,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '11'
+            value: '0'
           type: User
         type: Values
       type: KeyValueSet
@@ -5790,7 +5790,7 @@ data:
       children:
       - children:
         - attributes:
-            value: OSCCTRL_XIN
+            value: SERCOM2_PAD2
           type: User
         type: Values
       type: String
@@ -5801,7 +5801,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x0'
+            value: '0x22'
           type: Dynamic
         type: Values
       type: String
@@ -5844,7 +5844,7 @@ data:
       children:
       - children:
         - attributes:
-            value: XIN
+            value: C
           type: User
         type: Values
       type: String
@@ -5864,7 +5864,7 @@ data:
       children:
       - children:
         - attributes:
-            value: OSCCTRL_XOUT
+            value: SERCOM2_PAD3
           type: User
         type: Values
       type: String
@@ -5907,7 +5907,7 @@ data:
       children:
       - children:
         - attributes:
-            value: XOUT
+            value: C
           type: User
         type: Values
       type: String

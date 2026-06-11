@@ -34,7 +34,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -44,7 +44,7 @@ data:
       children:
       - children:
         - attributes:
-            value: 'true'
+            value: 'false'
           type: User
         type: Values
       type: Boolean
@@ -160,14 +160,17 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
         - attributes:
             id: can1
-            value: '75.0'
+            value: '93.75'
           type: Dynamic
+        - attributes:
+            value: '75.0'
+          type: User
         type: Values
       type: Float
     DATA_TIME_QUANTA_PERIOD:
@@ -177,7 +180,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '250.000'
+            value: '62.500'
           type: Dynamic
         type: Values
       type: String
@@ -190,14 +193,17 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
         - attributes:
             id: can1
-            value: '0'
+            value: '2'
           type: Dynamic
+        - attributes:
+            value: '3'
+          type: User
         type: Values
       type: Integer
     DBTP_DSJW:
@@ -207,10 +213,10 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '1'
+            value: '4'
           type: Dynamic
         - attributes:
-            value: '1'
+            value: '5'
           type: User
         type: Values
       type: Integer
@@ -221,7 +227,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '2'
+            value: '11'
           type: Dynamic
         type: Values
       type: Integer
@@ -232,7 +238,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '1'
+            value: '4'
           type: Dynamic
         type: Values
       type: Integer
@@ -243,7 +249,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '4'
+            value: '16'
           type: Dynamic
         type: Values
       type: Integer
@@ -286,14 +292,17 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
         - attributes:
             id: can1
-            value: '0'
+            value: '2'
           type: Dynamic
+        - attributes:
+            value: '3'
+          type: User
         type: Values
       type: Integer
     NBTP_NSJW:
@@ -303,10 +312,10 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '1'
+            value: '6'
           type: Dynamic
         - attributes:
-            value: '2'
+            value: '5'
           type: User
         type: Values
       type: Integer
@@ -317,7 +326,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '6'
+            value: '17'
           type: Dynamic
         type: Values
       type: Integer
@@ -328,7 +337,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '1'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -339,7 +348,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '8'
+            value: '24'
           type: Dynamic
         type: Values
       type: Integer
@@ -352,14 +361,17 @@ data:
             id: readOnly
           children:
           - type: Value
-            value: 'true'
+            value: 'false'
           type: Boolean
         type: Attributes
       - children:
         - attributes:
             id: can1
-            value: '87.5'
+            value: '96.875'
           type: Dynamic
+        - attributes:
+            value: '75.0'
+          type: User
         type: Values
       type: Float
     NOMINAL_TIME_QUANTA_PERIOD:
@@ -369,7 +381,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '250.000'
+            value: '83.333'
           type: Dynamic
         type: Values
       type: String
@@ -533,7 +545,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '4000000'
+            value: '48000000'
           type: Dynamic
         type: Values
       type: Integer

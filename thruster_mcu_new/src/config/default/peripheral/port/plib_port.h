@@ -145,14 +145,6 @@
 #define FLT_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 13U)) & 0x01U)
 #define FLT_TH7_PIN                  PORT_PIN_PB13
 
-/*** Macros for USART_TX pin ***/
-#define USART_TX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 12U)) & 0x01U)
-#define USART_TX_PIN                  PORT_PIN_PA12
-
-/*** Macros for USART_RX pin ***/
-#define USART_RX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 13U)) & 0x01U)
-#define USART_RX_PIN                  PORT_PIN_PA13
-
 /*** Macros for PG_TH5 pin ***/
 #define PG_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
 #define PG_TH5_PIN                  PORT_PIN_PA16

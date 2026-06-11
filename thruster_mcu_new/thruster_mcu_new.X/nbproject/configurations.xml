@@ -197,25 +197,25 @@
                      displayName="thruster_mcu_new_default"
                      projectFiles="true">
         <logicalFolder name="components" displayName="components" projectFiles="true">
-          <itemPath>thruster_mcu_new_default/components/cmsis.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/evsys.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/pm.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/tcc0.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/can0.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/sercom1.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/dfp.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/can0.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/tc0.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/eic.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/pm.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/sercom0.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/tcc1.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/rtc.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/evsys.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/sercom2.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/can1.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/tc3.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/core.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/tcc2.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/adc0.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/core.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/can1.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/tcc1.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/tc3.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/eic.yml</itemPath>
           <itemPath>thruster_mcu_new_default/components/nvmctrl.yml</itemPath>
-          <itemPath>thruster_mcu_new_default/components/tcc0.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/cmsis.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/sercom2.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/tc0.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/sercom0.yml</itemPath>
+          <itemPath>thruster_mcu_new_default/components/rtc.yml</itemPath>
         </logicalFolder>
         <itemPath>thruster_mcu_new_default/mcc-config.mc4</itemPath>
       </logicalFolder>
@@ -328,7 +328,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>AtmelIceTool</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>4.60</languageToolchainVersion>
+        <languageToolchainVersion>4.50</languageToolchainVersion>
         <platform>2</platform>
       </toolsSet>
       <packs>
