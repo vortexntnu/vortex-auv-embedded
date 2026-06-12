@@ -48,8 +48,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/sercom/usart/plib_sercom2_usart.h"
+#include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/sercom/usart/plib_sercom1_usart.h"
 #include "peripheral/sercom/usart/plib_sercom0_usart.h"
 #include "peripheral/evsys/plib_evsys.h"
@@ -63,8 +63,8 @@
 #include "peripheral/pm/plib_pm.h"
 #include "peripheral/can/plib_can0.h"
 #include "peripheral/eic/plib_eic.h"
-#include "peripheral/rtc/plib_rtc.h"
 #include "peripheral/tc/plib_tc0.h"
+#include "peripheral/rtc/plib_rtc.h"
 #include "peripheral/tc/plib_tc3.h"
 #include "peripheral/tcc/plib_tcc1.h"
 #include "peripheral/tcc/plib_tcc2.h"

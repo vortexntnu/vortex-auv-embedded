@@ -1,7 +1,42 @@
 #include "can_handler.h"
 
+extern volatile bool can_link_active;
+
+static uint8_t can_len_to_dlc(uint8_t len) {
+    if (len <= 8U) {
+        return len;
+    }
+
+    switch (len) {
+        case 12U:
+            return 9U;
+        case 16U:
+            return 10U;
+        case 20U:
+            return 11U;
+        case 24U:
+            return 12U;
+        case 32U:
+            return 13U;
+        case 48U:
+            return 14U;
+        case 64U:
+            return 15U;
+        default:
+            return 0xFFU;
+    }
+}
+
 bool can_send_frame(uint16_t can_id, const uint8_t* payload, uint8_t length) {
+    if (can_link_active == false) {
+        return;
+    }
     if (length > 64U) {
+        return false;
+    }
+
+    uint8_t dlc = can_len_to_dlc(length);
+    if (dlc == 0xFFU) {
         return false;
     }
 
@@ -11,13 +46,13 @@ bool can_send_frame(uint16_t can_id, const uint8_t* payload, uint8_t length) {
 
     CAN_TX_BUFFER tx = {0};
 
-    tx.id = can_id;
-    tx.dlc = length;
+    tx.id = WRITE_ID(can_id);
+    tx.dlc = dlc;
 
     tx.xtd = 0U;
     tx.rtr = 0U;
 
-    tx.fdf = 1U;
+    tx.fdf = 1;
     tx.brs = 0U;
 
     if (payload != NULL && length > 0U) {

@@ -11,8 +11,6 @@ int main(void) {
 
     /* Initialize application logic */
     app_init();
-        
-    TCC1_PWM24bitDutySet(0, 0);
 
     while (true) {
         /* Run application logic */

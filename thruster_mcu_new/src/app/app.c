@@ -7,6 +7,9 @@
 #include "definitions.h"
 #include "pwm_outputs.h"
 
+
+
+volatile bool can_link_active = false;
 static volatile bool can_message_ready = false;
 static CAN_RX_BUFFER can_rx_buffer;
 static uint8_t Can1MessageRAM[CAN1_MESSAGE_RAM_CONFIG_SIZE]
@@ -50,11 +53,10 @@ static void rtc_callback(RTC_TIMER32_INT_MASK intCause, uintptr_t context);
 
 void app_init(void) {
     CAN1_MessageRAMConfigSet(Can1MessageRAM);
-
     CAN1_RxFifoCallbackRegister(CAN_RX_FIFO_0, can_receive_callback,
                                 (uintptr_t)NULL);
     // CAN1_TxFifoCallbackRegister(can_transmit_callback, (uintptr_t)NULL);
-    CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer);
+    // CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer);
 
     EIC_NMICallbackRegister(eic_pin_killswitch, 0);
 
@@ -112,6 +114,7 @@ void app_init(void) {
 void app_task(void) {
     if (slew_tick) {
         slew_tick = false;
+        // LED_2_Toggle();
         pwm_slew_outputs();
     }
 
@@ -124,8 +127,13 @@ void app_task(void) {
 
     if (can_message_ready) {
         can_message_ready = false;
+
         message_handler();
-        CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer);
+
+        LED_2_Toggle();
+        /* Debug echo */
+        can_send_frame(READ_ID(can_rx_buffer.id), can_rx_buffer.data,
+                       can_rx_buffer.dlc);
     }
 
     if (thruster_timeout_expired && !thruster_timed_out) {
@@ -151,7 +159,6 @@ static void message_handler(void) {
 
         case CAN_ID_TURN_LIGHTS_OFF:
             pwm_lights_off();
-
             break;
 
         case CAN_ID_RESET:
@@ -240,9 +247,21 @@ static void eic_pin_killswitch(uintptr_t context) {
 static void can_receive_callback(uintptr_t context) {
     (void)context;
 
-    can_message_ready = true;
+    if (!can_message_ready) {
+        if (CAN1_MessageReceiveFifo(CAN_RX_FIFO_0, 1U, &can_rx_buffer)) {
+            can_link_active = true;
+            can_message_ready = true;
+        }
+    }
 }
 
 static void can_transmit_callback(uintptr_t context) {
     (void)context;
+}
+
+void HardFault_Handler(void)
+{
+    LED_2_Set();
+    while (1) {
+    }
 }

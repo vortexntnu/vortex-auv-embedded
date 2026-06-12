@@ -55,7 +55,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '1000'
+            value: '2000'
           type: Dynamic
         type: Values
       type: Integer
@@ -127,7 +127,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '877'
+            value: '889'
           type: User
         type: Values
       type: Hex
@@ -147,7 +147,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '1000'
+            value: '2000'
           type: User
         type: Values
       type: Integer
@@ -180,7 +180,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '62.500'
+            value: '83.333'
           type: Dynamic
         type: Values
       type: String
@@ -190,19 +190,11 @@ data:
       children:
       - children:
         - attributes:
-            id: readOnly
-          children:
-          - type: Value
-            value: 'false'
-          type: Boolean
-        type: Attributes
-      - children:
-        - attributes:
             id: can1
             value: '2'
           type: Dynamic
         - attributes:
-            value: '3'
+            value: '0'
           type: User
         type: Values
       type: Integer
@@ -213,7 +205,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '4'
+            value: '2'
           type: Dynamic
         - attributes:
             value: '5'
@@ -227,7 +219,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '11'
+            value: '3'
           type: Dynamic
         type: Values
       type: Integer
@@ -238,7 +230,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '4'
+            value: '2'
           type: Dynamic
         type: Values
       type: Integer
@@ -249,7 +241,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '16'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -559,4 +551,14 @@ data:
           type: User
         type: Values
       type: Integer
+    RXF1_USE:
+      attributes:
+        id: RXF1_USE
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}
