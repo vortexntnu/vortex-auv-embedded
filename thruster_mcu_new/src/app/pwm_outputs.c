@@ -53,7 +53,7 @@ static struct pwm_output thrusters[8] = {
     {
         .mode = PWM_TCC,
         .instance = 2,
-        .channel = 0,
+        .channel = 1,
         .period_ticks = TCC2_PERIOD,
         .min_us = 1000,
         .max_us = 2000,
@@ -62,10 +62,11 @@ static struct pwm_output thrusters[8] = {
         .current_pulse_us = 1500,
         .target_pulse_us = 1500,
     },
+
     {
         .mode = PWM_TCC,
         .instance = 2,
-        .channel = 1,
+        .channel = 0,
         .period_ticks = TCC2_PERIOD,
         .min_us = 1000,
         .max_us = 2000,
