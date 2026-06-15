@@ -6,8 +6,8 @@
 #include "dma.h"
 #include "gripper.h"
 #include "system_init.h"
-#include "usart.h"
 #include "uart_protocol.h"
+#include "usart.h"
 
 static uint8_t encoder_num = 0;
 static volatile bool read_failed = true;
@@ -26,49 +26,37 @@ void state_machine_init() {
     can_recieve(&ctx.rx_frame);
 }
 
-void state_machine(void)
-{
+void state_machine(void) {
     uint32_t ev = ctx.events;
     ctx.events &= ~ev;
 
-    if (ev & EVENT_SET_PWM)
-    {
+    if (ev & EVENT_SET_PWM) {
         WDT_Clear();
 
-        /*
-         * For serial, the received data should now come from the UART packet,
-         * not ctx.rx_frame.buf. Ideally this event stores the latest UART payload
-         * somewhere like ctx.rx_payload.
-         */
-        if (set_servos_pwm(ctx.rx_frame.buf, 4))
-        {
+        if (set_servos_pwm(ctx.rx_frame.buf, 4)) {
+            servo_timeout_ticks = 0;
+            servo_timeout_expired = false;
+
             uint8_t ack = 1;
             uart_proto_send_packet(SET_PWM, &ack, 1);
         }
     }
 
-    if (ev & EVENT_READ_ENCODER_START)
-    {
-        start_encoder_read(&encoder_reg,
-                           encoder_num,
+    if (ev & EVENT_READ_ENCODER_START) {
+        start_encoder_read(&encoder_reg, encoder_num,
                            encoder_rx_buf + 2 * encoder_num);
     }
 
-    if (ev & EVENT_READ_ENCODER_DONE)
-    {
-        if (read_failed)
-        {
+    if (ev & EVENT_READ_ENCODER_DONE) {
+        if (read_failed) {
             raw_encoder_angles[2 * encoder_num] = 0xFF;
             raw_encoder_angles[2 * encoder_num + 1] = 0xFF;
-        }
-        else
-        {
+        } else {
             uint16_t angle =
                 ((uint16_t)encoder_rx_buf[0 + 2 * encoder_num] << 6) |
                 (encoder_rx_buf[1 + 2 * encoder_num] & 0x3F);
 
-            raw_encoder_angles[2 * encoder_num] =
-                (uint8_t)(angle & 0xFF);
+            raw_encoder_angles[2 * encoder_num] = (uint8_t)(angle & 0xFF);
 
             raw_encoder_angles[2 * encoder_num + 1] =
                 (uint8_t)((angle >> 8) & 0xFF);
@@ -76,31 +64,23 @@ void state_machine(void)
 
         encoder_num++;
 
-        if (encoder_num == NUM_ENCODERS)
-        {
+        if (encoder_num == NUM_ENCODERS) {
             ctx.events |= EVENT_TRANSMIT_ANGLES;
-        }
-        else
-        {
+        } else {
             ctx.events |= EVENT_READ_ENCODER_START;
         }
     }
 
-    if (ev & EVENT_TRANSMIT_ANGLES)
-    {
-        if (gripper_on)
-        {
-            uart_proto_send_packet(
-                CAN_SEND_ANGLES,
-                raw_encoder_angles,
-                2 * NUM_ENCODERS);
+    if (ev & EVENT_TRANSMIT_ANGLES) {
+        if (gripper_on) {
+            uart_proto_send_packet(CAN_SEND_ANGLES, raw_encoder_angles,
+                                   2 * NUM_ENCODERS);
         }
 
         encoder_num = 0;
     }
 
-    if (adc_ready)
-    {
+    if (adc_ready) {
         uint8_t voltage_payload[4];
 
         voltage_payload[0] = servo;
@@ -108,35 +88,38 @@ void state_machine(void)
         voltage_payload[2] = (uint8_t)(input_voltage & 0xFF);
         voltage_payload[3] = (uint8_t)((input_voltage >> 8) & 0xFF);
 
-        uart_proto_send_packet(
-            CAN_SEND_VOLTAGE,
-            voltage_payload,
-            sizeof(voltage_payload));
+        uart_proto_send_packet(CAN_SEND_VOLTAGE, voltage_payload,
+                               sizeof(voltage_payload));
 
         adc_ready = false;
     }
+    if (servo_timeout_expired) {
+        uint8_t neutral_payload[4];
 
-    /*
-     * Remove this:
-     *
-     * can_recieve(&ctx.rx_frame);
-     *
-     * UART receive is handled by uart_proto_init()
-     * and uart_proto_pop_packet().
-     */
+        uint16_t pwm0 = 1500;
+        uint16_t pwm1 = 1500;
+
+        neutral_payload[0] = (uint8_t)(pwm0 & 0xFF);
+        neutral_payload[1] = (uint8_t)((pwm0 >> 8) & 0xFF);
+        neutral_payload[2] = (uint8_t)(pwm1 & 0xFF);
+        neutral_payload[3] = (uint8_t)((pwm1 >> 8) & 0xFF);
+
+        set_servos_pwm(neutral_payload, sizeof(neutral_payload));
+
+        servo_timeout_expired = false;
+
+        uint8_t timeout_ack = 0;
+        uart_proto_send_packet(SET_PWM, &timeout_ack, 1);
+    }
 }
 
-
-void uart_gripper_task(void)
-{
+void uart_gripper_task(void) {
     uart_packet_t packet;
 
-    while (uart_proto_pop_packet(&packet))
-    {
+    while (uart_proto_pop_packet(&packet)) {
         can_tx_avaliable = true;  // Rename this later, but okay for now.
 
-        switch (packet.id)
-        {
+        switch (packet.id) {
             case STOP_GRIPPER:
                 stop_gripper();
                 gripper_on = false;
@@ -168,7 +151,8 @@ void uart_gripper_task(void)
 // #define DEBUG_CMD_RESET    0x04u
 // #define DEBUG_CMD_UNKNOWN  0xFFu
 //
-// static void uart_send_debug_echo(uint8_t cmd, uint16_t received_id, uint8_t received_len)
+// static void uart_send_debug_echo(uint8_t cmd, uint16_t received_id, uint8_t
+// received_len)
 // {
 //     uint8_t payload[4];
 //
@@ -203,15 +187,16 @@ void uart_gripper_task(void)
 //                 break;
 //
 //             case SET_PWM:
-//                 uart_send_debug_echo(DEBUG_CMD_SET_PWM, packet.id, packet.len);
-//                 set_servos_pwm(packet.payload, packet.len);
+//                 uart_send_debug_echo(DEBUG_CMD_SET_PWM, packet.id,
+//                 packet.len); set_servos_pwm(packet.payload, packet.len);
 //                 break;
 //
 //             case RESET_MCU:
 //                 uart_send_debug_echo(DEBUG_CMD_RESET, packet.id, packet.len);
 //
 //                 /*
-//                  * Give UART a tiny moment to finish transmitting the debug packet
+//                  * Give UART a tiny moment to finish transmitting the debug
+//                  packet
 //                  * before reset. Otherwise reset may cut off the packet.
 //                  */
 //                 while (!SERCOM0_USART_TransmitComplete())
@@ -222,8 +207,8 @@ void uart_gripper_task(void)
 //                 break;
 //
 //             default:
-//                 uart_send_debug_echo(DEBUG_CMD_UNKNOWN, packet.id, packet.len);
-//                 break;
+//                 uart_send_debug_echo(DEBUG_CMD_UNKNOWN, packet.id,
+//                 packet.len); break;
 //         }
 //     }
 // }
@@ -263,7 +248,22 @@ void tc0_callback(TC_TIMER_STATUS status, uintptr_t context) {
 }
 
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context) {
-    ctx.events |= EVENT_TRANSMIT_ANGLES;
+    (void)status;
+    (void)context;
+
+    if (!gripper_on) {
+        servo_timeout_ticks = 0;
+        servo_timeout_expired = false;
+        return;
+    }
+
+    if (servo_timeout_ticks < SERVO_TIMEOUT_TICKS) {
+        servo_timeout_ticks++;
+    }
+
+    if (servo_timeout_ticks >= SERVO_TIMEOUT_TICKS) {
+        servo_timeout_expired = true;
+    }
 }
 
 void i2c1_callback(uintptr_t context) {

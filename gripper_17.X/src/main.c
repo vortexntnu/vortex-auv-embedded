@@ -74,6 +74,7 @@ int main(void) {
     SERCOM0_USART_TransmitterEnable();
 
     TC0_TimerStart();
+    TC1_TimerStart();
 
     stop_gripper();
     state_machine_init();

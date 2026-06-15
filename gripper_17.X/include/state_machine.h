@@ -23,6 +23,13 @@
 #define EVENT_START_GRIPPER (1 << 4)
 #define EVENT_TRANSMIT_ANGLES (1 << 5)
 
+#define SERVO_TIMER_PERIOD_MS   10U
+#define SERVO_TIMEOUT_MS        250U
+#define SERVO_TIMEOUT_TICKS     (SERVO_TIMEOUT_MS / SERVO_TIMER_PERIOD_MS)
+
+static volatile uint32_t servo_timeout_ticks = 0;
+static volatile bool servo_timeout_expired = false;
+
 typedef enum {
     STOP_GRIPPER = 0x469,
     START_GRIPPER = 0x46A,
