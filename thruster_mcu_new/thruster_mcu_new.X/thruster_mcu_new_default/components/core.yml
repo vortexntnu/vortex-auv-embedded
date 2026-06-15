@@ -1760,26 +1760,6 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
-    PIN_1_MODE:
-      attributes:
-        id: PIN_1_MODE
-      children:
-      - children:
-        - attributes:
-            value: ''
-          type: User
-        type: Values
-      type: String
-    PIN_1_FUNCTION_TYPE:
-      attributes:
-        id: PIN_1_FUNCTION_TYPE
-      children:
-      - children:
-        - attributes:
-            value: TCC2_WO0
-          type: User
-        type: Values
-      type: String
     PORT_GROUP_0_PMUX0:
       attributes:
         id: PORT_GROUP_0_PMUX0
@@ -1787,7 +1767,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x44'
+            value: '0x0'
           type: Dynamic
         type: Values
       type: String
@@ -1809,7 +1789,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1'
+            value: '0x0'
           type: Dynamic
         type: Values
       type: String
@@ -1820,7 +1800,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1830,27 +1810,7 @@ data:
       children:
       - children:
         - attributes:
-            value: E
-          type: User
-        type: Values
-      type: String
-    PIN_2_MODE:
-      attributes:
-        id: PIN_2_MODE
-      children:
-      - children:
-        - attributes:
             value: ''
-          type: User
-        type: Values
-      type: String
-    PIN_2_FUNCTION_TYPE:
-      attributes:
-        id: PIN_2_FUNCTION_TYPE
-      children:
-      - children:
-        - attributes:
-            value: TCC2_WO1
           type: User
         type: Values
       type: String
@@ -1872,7 +1832,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x1'
+            value: '0x0'
           type: Dynamic
         type: Values
       type: String
@@ -1883,7 +1843,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: 'true'
+            value: 'false'
           type: Dynamic
         type: Values
       type: Boolean
@@ -1893,27 +1853,7 @@ data:
       children:
       - children:
         - attributes:
-            value: E
-          type: User
-        type: Values
-      type: String
-    PIN_1_FUNCTION_NAME:
-      attributes:
-        id: PIN_1_FUNCTION_NAME
-      children:
-      - children:
-        - attributes:
-            value: PWM_1
-          type: User
-        type: Values
-      type: String
-    PIN_2_FUNCTION_NAME:
-      attributes:
-        id: PIN_2_FUNCTION_NAME
-      children:
-      - children:
-        - attributes:
-            value: PWM_2
+            value: ''
           type: User
         type: Values
       type: String
@@ -3634,7 +3574,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '0x55'
+            value: '0x44'
           type: Dynamic
         type: Values
       type: String
@@ -3655,7 +3595,7 @@ data:
       children:
       - children:
         - attributes:
-            value: F
+            value: E
           type: User
         type: Values
       type: String
@@ -5094,7 +5034,7 @@ data:
       children:
       - children:
         - attributes:
-            value: TCC0_WO6
+            value: TCC2_WO0
           type: User
         type: Values
       type: String
@@ -5114,7 +5054,7 @@ data:
       children:
       - children:
         - attributes:
-            value: TCC0_WO7
+            value: TCC2_WO1
           type: User
         type: Values
       type: String
@@ -5157,7 +5097,7 @@ data:
       children:
       - children:
         - attributes:
-            value: F
+            value: E
           type: User
         type: Values
       type: String

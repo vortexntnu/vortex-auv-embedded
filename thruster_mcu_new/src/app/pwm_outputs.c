@@ -4,9 +4,9 @@
 static struct pwm_output thrusters[8] = {
     {
         .mode = PWM_TCC,
-        .instance = 2,
+        .instance = 0,
         .channel = 0,
-        .period_ticks = TCC2_PERIOD,
+        .period_ticks = TCC0_PERIOD,
         .min_us = 1000,
         .max_us = 2000,
         .neutral_us = 1500,
@@ -16,9 +16,9 @@ static struct pwm_output thrusters[8] = {
     },
     {
         .mode = PWM_TCC,
-        .instance = 2,
+        .instance = 0,
         .channel = 1,
-        .period_ticks = TCC2_PERIOD,
+        .period_ticks = TCC0_PERIOD,
         .min_us = 1000,
         .max_us = 2000,
         .neutral_us = 1500,
@@ -52,9 +52,9 @@ static struct pwm_output thrusters[8] = {
     },
     {
         .mode = PWM_TCC,
-        .instance = 0,
-        .channel = 1,
-        .period_ticks = TCC0_PERIOD,
+        .instance = 2,
+        .channel = 0,
+        .period_ticks = TCC2_PERIOD,
         .min_us = 1000,
         .max_us = 2000,
         .neutral_us = 1500,
@@ -64,9 +64,9 @@ static struct pwm_output thrusters[8] = {
     },
     {
         .mode = PWM_TCC,
-        .instance = 0,
-        .channel = 0,
-        .period_ticks = TCC0_PERIOD,
+        .instance = 2,
+        .channel = 1,
+        .period_ticks = TCC2_PERIOD,
         .min_us = 1000,
         .max_us = 2000,
         .neutral_us = 1500,
@@ -86,6 +86,7 @@ static struct pwm_output thrusters[8] = {
         .current_pulse_us = 1500,
         .target_pulse_us = 1500,
     },
+
     {
         .mode = PWM_TCC,
         .instance = 0,
@@ -98,6 +99,7 @@ static struct pwm_output thrusters[8] = {
         .current_pulse_us = 1500,
         .target_pulse_us = 1500,
     },
+
 };
 
 static struct pwm_output lights[1] = {{MPWM_TC, 3, 1, TC3_PERIOD, 1100, 1900,
@@ -159,8 +161,8 @@ static void set_pwm_neutral(struct pwm_output* outputs, uint32_t count) {
 }
 
 static void set_pwm_outputs(const uint8_t* data,
-                     struct pwm_output* outputs,
-                     uint32_t count) {
+                            struct pwm_output* outputs,
+                            uint32_t count) {
     const uint16_t* pulse_data = (const uint16_t*)data;
     for (uint32_t i = 0; i < count; i++) {
         uint16_t pulse_us = pulse_data[i];
@@ -174,8 +176,8 @@ static void set_pwm_outputs(const uint8_t* data,
 }
 
 static void set_light_output(const uint8_t* data,
-                      struct pwm_output* outputs,
-                      uint32_t count) {
+                             struct pwm_output* outputs,
+                             uint32_t count) {
     const uint16_t* pulse_data = (const uint16_t*)data;
     for (uint32_t i = 0; i < count; i++) {
         uint16_t pulse_us = pulse_data[i];
@@ -215,23 +217,18 @@ void pwm_slew_outputs(void) {
     }
 }
 
-
-void pwm_thrusters_neutral(void)
-{
+void pwm_thrusters_neutral(void) {
     set_pwm_neutral(thrusters, 8U);
 }
 
-void pwm_lights_off(void)
-{
+void pwm_lights_off(void) {
     set_pwm_neutral(lights, 1U);
 }
 
-void pwm_thrusters_set_from_payload(const uint8_t *data)
-{
+void pwm_thrusters_set_from_payload(const uint8_t* data) {
     set_pwm_outputs(data, thrusters, 8U);
 }
 
-void pwm_light_set_from_payload(const uint8_t *data)
-{
+void pwm_light_set_from_payload(const uint8_t* data) {
     set_light_output(data, lights, 1U);
 }

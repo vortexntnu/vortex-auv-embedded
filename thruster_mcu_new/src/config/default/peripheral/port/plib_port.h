@@ -65,14 +65,6 @@
 // *****************************************************************************
 // *****************************************************************************
 
-/*** Macros for PWM_1 pin ***/
-#define PWM_1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 0U)) & 0x01U)
-#define PWM_1_PIN                  PORT_PIN_PA00
-
-/*** Macros for PWM_2 pin ***/
-#define PWM_2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 1U)) & 0x01U)
-#define PWM_2_PIN                  PORT_PIN_PA01
-
 /*** Macros for IMON_TH3 pin ***/
 #define IMON_TH3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 2U)) & 0x01U)
 #define IMON_TH3_PIN                  PORT_PIN_PA02
