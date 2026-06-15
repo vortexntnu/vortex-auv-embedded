@@ -56,7 +56,7 @@ int start_encoder_read(uint8_t* reg, uint8_t enc_num, uint8_t* out) {
 
 void stop_gripper(void) {
     WDT_Disable();
-    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
+    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
     TCC0_PWMStop();
     TCC1_PWMStop();
     ADC0_Disable();
@@ -68,5 +68,5 @@ void start_gripper(void) {
     ADC0_Enable();
     RTC_Timer32Start();
     RTC_Timer32CompareSet(RTC_COMPARE_VAL);
-    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
+    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
 }
