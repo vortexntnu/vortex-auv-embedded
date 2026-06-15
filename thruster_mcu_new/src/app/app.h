@@ -12,7 +12,7 @@ extern "C" {
 #define WRITE_ID(id) (id << 18)
 #define READ_ID(id) (id >> 18)
 
-#define THRUSTER_TIMEOUT_TICKS 10U
+#define THRUSTER_TIMEOUT_TICKS 50
 #define TRANSFER_SIZE 16
 #define PWM_MAX_STEP_US  25U
 

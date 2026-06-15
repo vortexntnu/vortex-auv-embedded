@@ -180,7 +180,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '83.333'
+            value: '20.833'
           type: Dynamic
         type: Values
       type: String
@@ -205,7 +205,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '2'
+            value: '6'
           type: Dynamic
         - attributes:
             value: '5'
@@ -219,7 +219,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '3'
+            value: '17'
           type: Dynamic
         type: Values
       type: Integer
@@ -230,7 +230,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '2'
+            value: '6'
           type: Dynamic
         type: Values
       type: Integer
@@ -241,7 +241,7 @@ data:
       - children:
         - attributes:
             id: can1
-            value: '6'
+            value: '24'
           type: Dynamic
         type: Values
       type: Integer

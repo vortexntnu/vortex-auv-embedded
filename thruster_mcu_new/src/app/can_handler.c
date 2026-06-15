@@ -2,7 +2,7 @@
 
 extern volatile bool can_link_active;
 
-static uint8_t can_len_to_dlc(uint8_t len) {
+uint8_t can_len_to_dlc(uint8_t len) {
     if (len <= 8U) {
         return len;
     }
@@ -29,7 +29,7 @@ static uint8_t can_len_to_dlc(uint8_t len) {
 
 bool can_send_frame(uint16_t can_id, const uint8_t* payload, uint8_t length) {
     if (can_link_active == false) {
-        return;
+        return false;
     }
     if (length > 64U) {
         return false;

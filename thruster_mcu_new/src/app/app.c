@@ -23,6 +23,29 @@ static volatile uint32_t thruster_timeout_ticks = 0U;
 static volatile bool thruster_timeout_expired = false;
 static bool thruster_timed_out = false;
 
+static uint8_t can_dlc_to_len(uint8_t dlc)
+{
+    switch (dlc & 0x0FU) {
+        case 0U:  return 0U;
+        case 1U:  return 1U;
+        case 2U:  return 2U;
+        case 3U:  return 3U;
+        case 4U:  return 4U;
+        case 5U:  return 5U;
+        case 6U:  return 6U;
+        case 7U:  return 7U;
+        case 8U:  return 8U;
+        case 9U:  return 12U;
+        case 10U: return 16U;
+        case 11U: return 20U;
+        case 12U: return 24U;
+        case 13U: return 32U;
+        case 14U: return 48U;
+        case 15U: return 64U;
+        default:  return 0U;
+    }
+}
+
 static const struct {
     uint8_t ain;
     uint8_t thruster;
@@ -86,7 +109,7 @@ void app_init(void) {
 
     ADC0_Enable();
 
-    RTC_Timer32CompareSet(51);
+    RTC_Timer32CompareSet(62);
     RTC_Timer32CallbackRegister(rtc_callback, 0);
     RTC_Timer32InterruptEnable(RTC_TIMER32_INT_MASK_CMP0);
     RTC_Timer32Start();
@@ -114,7 +137,7 @@ void app_init(void) {
 void app_task(void) {
     if (slew_tick) {
         slew_tick = false;
-        // LED_2_Toggle();
+        LED_2_Toggle();
         pwm_slew_outputs();
     }
 
@@ -130,10 +153,10 @@ void app_task(void) {
 
         message_handler();
 
-        LED_2_Toggle();
+        // LED_2_Toggle();
         /* Debug echo */
-        can_send_frame(READ_ID(can_rx_buffer.id), can_rx_buffer.data,
-                       can_rx_buffer.dlc);
+        // can_send_frame(READ_ID(can_rx_buffer.id), can_rx_buffer.data,
+        //                can_dlc_to_len(can_rx_buffer.dlc));
     }
 
     if (thruster_timeout_expired && !thruster_timed_out) {
@@ -145,9 +168,9 @@ void app_task(void) {
 }
 
 static void message_handler(void) {
-    uint16_t can_id = (uint16_t)can_rx_buffer.id;
+    uint16_t can_id = (uint16_t)READ_ID(can_rx_buffer.id);
     uint8_t* data = can_rx_buffer.data;
-    uint8_t length = can_rx_buffer.dlc;
+    uint8_t length = can_dlc_to_len(can_rx_buffer.dlc);
 
     switch (can_id) {
         case CAN_ID_TURN_THRUSTERS_OFF:
@@ -171,6 +194,7 @@ static void message_handler(void) {
                 thruster_timeout_ticks = 0U;
                 thruster_timeout_expired = false;
                 thruster_timed_out = false;
+                LED_2_Toggle();
             }
             break;
 
