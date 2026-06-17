@@ -1,0 +1,150 @@
+configVersion: 1.0.0
+componentName: tc3
+coreVersion: 5.8.2
+device: ATSAMC21J18A
+library: []
+dependency:
+- dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
+  name: tc3
+  type: module
+  version: ''
+- dependencyPackage: ''
+  name: csp
+  type: package
+  version: v3.23.0
+customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
+data:
+  attachments: {}
+  elementPosition:
+    attributes:
+      id: __ROOTVIEW
+    children:
+    - children:
+      - attributes:
+          id: tc3
+          x: '476'
+          y: '236'
+        type: ElementPosition
+      type: ElementPositions
+    type: ComponentGraph
+  symbols:
+    TC_TIMER_PERIOD:
+      attributes:
+        id: TC_TIMER_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: max
+          children:
+          - type: Value
+            value: '65535'
+          type: Long
+        type: Attributes
+      - children:
+        - attributes:
+            id: tc3
+            value: '47999'
+          type: Dynamic
+        type: Values
+      type: Long
+    TC_FREQUENCY:
+      attributes:
+        id: TC_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: tc3
+            value: '48000000'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TC_TIMER_HEADER:
+      attributes:
+        id: TC_TIMER_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_TIMER_SOURCE:
+      attributes:
+        id: TC_TIMER_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'true'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_COMPARE_HEADER:
+      attributes:
+        id: TC_COMPARE_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_COMPARE_SOURCE:
+      attributes:
+        id: TC_COMPARE_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_CAPTURE_HEADER:
+      attributes:
+        id: TC_CAPTURE_HEADER
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_CAPTURE_SOURCE:
+      attributes:
+        id: TC_CAPTURE_SOURCE
+      children:
+      - children:
+        - attributes:
+            id: enabled
+          children:
+          - type: Value
+            value: 'false'
+          type: Boolean
+        type: Attributes
+      type: File
+    TC_SLAVE_MODE:
+      attributes:
+        id: TC_SLAVE_MODE
+      children:
+      - children:
+        - attributes:
+            id: tc3
+            value: 'false'
+          type: Dynamic
+        type: Values
+      type: Boolean
+  userData: {}

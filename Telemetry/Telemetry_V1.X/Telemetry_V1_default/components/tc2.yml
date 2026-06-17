@@ -1,0 +1,89 @@
+configVersion: 1.0.0
+componentName: tc2
+coreVersion: 5.8.3
+device: ATSAMC21J18A
+library: []
+dependency:
+- dependencyPackage: class com.microchip.mcc.harmony.HarmonyModule
+  name: tc2
+  type: module
+  version: ''
+- dependencyPackage: ''
+  name: csp
+  type: package
+  version: v3.23.0
+customDataClassName: com.microchip.utils_mh3.utils.persistence.CustomModuleData
+data:
+  attachments: {}
+  elementPosition:
+    attributes:
+      id: __ROOTVIEW
+    children:
+    - children:
+      - attributes:
+          id: tc2
+          x: '477'
+          y: '308'
+        type: ElementPosition
+      type: ElementPositions
+    type: ComponentGraph
+  symbols:
+    TC_TIMER_PERIOD:
+      attributes:
+        id: TC_TIMER_PERIOD
+      children:
+      - children:
+        - attributes:
+            id: max
+          children:
+          - type: Value
+            value: '65535'
+          type: Long
+        type: Attributes
+      - children:
+        - attributes:
+            id: tc2
+            value: '37499'
+          type: Dynamic
+        type: Values
+      type: Long
+    TC_FREQUENCY:
+      attributes:
+        id: TC_FREQUENCY
+      children:
+      - children:
+        - attributes:
+            id: tc2
+            value: '187500'
+          type: Dynamic
+        type: Values
+      type: Integer
+    TC_TIMER_TIME_MS:
+      attributes:
+        id: TC_TIMER_TIME_MS
+      children:
+      - children:
+        - attributes:
+            id: max
+          children:
+          - type: Value
+            value: '349.52533'
+          type: Float
+        type: Attributes
+      - children:
+        - attributes:
+            value: '200.0'
+          type: User
+        type: Values
+      type: Float
+    TC_CTRLA_PRESCALER:
+      attributes:
+        id: TC_CTRLA_PRESCALER
+      children:
+      - children:
+        - attributes:
+            value: '6'
+          type: User
+        type: Values
+      type: KeyValueSet
+  userData: {}
