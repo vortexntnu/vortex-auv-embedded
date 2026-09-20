@@ -22,8 +22,8 @@ data:
     - children:
       - attributes:
           id: tc3
-          x: '181'
-          y: '584'
+          x: '14'
+          y: '574'
         type: ElementPosition
       type: ElementPositions
     type: ComponentGraph
