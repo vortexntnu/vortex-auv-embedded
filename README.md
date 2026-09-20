@@ -1,12 +1,16 @@
+# Vortex Nautilus Firmware Repository
 
-# Vortex AUV Firmware Repository
+This repository contains the embedded firmware for the microcontroller-based subsystems used in **Nautilus**, Vortex NTNU's Autonomous Underwater Vehicle (AUV).
 
-This repository contains the embedded firmware for various microcontroller units (MCUs) used in the **Vortex Autonomous Underwater Vehicle (AUV)** project. It includes the code for the following subsystems:
+The repository includes firmware for the following subsystems:
 
--  **Gripper Controller**
--  **Thruster Controller**
--  **Telemetry Unit**
+* **Gripper Controller**
+* **Thruster / Motor Controller**
+* **Telemetry Unit**
+* **Battery Management System (BMS)**
+* **Acoustics System**
+
+Each subsystem contains the firmware required to interface with sensors, actuators, communication buses, and the higher-level vehicle control system.
 
 ---
-
 
