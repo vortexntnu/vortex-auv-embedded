@@ -53,6 +53,7 @@
       <itemPath>src/tc1.c</itemPath>
       <itemPath>src/gripper.c</itemPath>
       <itemPath>src/state_machine.c</itemPath>
+      <itemPath>src/uart_protocol.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

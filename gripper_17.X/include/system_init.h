@@ -20,10 +20,7 @@
 #include "tcc0.h"
 #include "tcc_common.h"
 #include "wdt.h"
-
-#ifdef DEBUG
 #include "usart.h"
-#endif
 
 
 

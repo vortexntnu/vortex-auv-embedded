@@ -9,23 +9,32 @@
 #include "tc1.h"
 
 
-#define CAN_SEND_ANGLES 0x469
+#define CAN_SEND_ANGLES 0x46D
+#define CAN_SEND_VOLTAGE 0x46E
 
 #define TRANSFER_SIZE 16
 #define ADC_VREF 5.0f
 #define CURRENT_TRESHOLD 2.7f  // 1 A
 #define VOLTAGE_THRESHOLD 2048
 
+#define EVENT_READ_ENCODER_START (1 << 1)
+#define EVENT_READ_ENCODER_DONE (1 << 2)
 #define EVENT_SET_PWM (1 << 3)
-#define EVENT_READ_ENCODER (1 << 4)
-#define EVENT_START_GRIPPER (1 << 5)
-#define EVENT_TRANSMIT_ANGLES (1 << 3)
+#define EVENT_START_GRIPPER (1 << 4)
+#define EVENT_TRANSMIT_ANGLES (1 << 5)
+
+#define SERVO_TIMER_PERIOD_MS   10U
+#define SERVO_TIMEOUT_MS        250U
+#define SERVO_TIMEOUT_TICKS     (SERVO_TIMEOUT_MS / SERVO_TIMER_PERIOD_MS)
+
+static volatile uint32_t servo_timeout_ticks = 0;
+static volatile bool servo_timeout_expired = false;
 
 typedef enum {
     STOP_GRIPPER = 0x469,
-    START_GRIPPER,
-    SET_PWM,
-    RESET_MCU,
+    START_GRIPPER = 0x46A,
+    SET_PWM = 0x46B,
+    RESET_MCU = 0x46C,
 } CAN_RX_ID;
 
 typedef enum {
@@ -34,16 +43,26 @@ typedef enum {
     SERVO_3,
 } SERVO_ADC_PINS;
 
+
+struct state_context {
+  volatile uint32_t events;
+  struct can_tx_frame tx_frame;
+  struct can_rx_frame rx_frame;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void state_machine(volatile uint32_t* events, struct can_tx_frame* tx_frame, struct can_rx_frame* rx_frame);
+void state_machine();
+void state_machine_init();
+void uart_gripper_task(void);
 void can_rx_callback(uintptr_t context);
 void dmac_channel0_callback(DMAC_TRANSFER_EVENT returned_evnt,
                             uintptr_t MyDmacContext);
 void tc0_callback(TC_TIMER_STATUS status, uintptr_t context);
 void tc1_callback(TC_TIMER_STATUS status, uintptr_t context);
+void i2c1_callback(uintptr_t context);
 
 
 

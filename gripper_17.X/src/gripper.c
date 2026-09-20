@@ -1,57 +1,72 @@
 #include "gripper.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
+#if NUM_ENCODERS == 3
+static const uint8_t encoder_addresses[NUM_ENCODERS] = {SHOULDER_ADDR,
+                                                        WRIST_ADDR, GRIP_ADDR};
+#elif NUM_ENCODERS == 2
+static const uint8_t encoder_addresses[NUM_ENCODERS] = {WRIST_ADDR, GRIP_ADDR};
+#else
+#error "Unsupported NUM_ENCODERS"
+#endif
 
+typedef void (*tcc_set_fn_t)(uint8_t channel, uint32_t duty);
 
-int read_encoders(uint8_t reg, uint8_t* data) {
-    static const uint8_t encoder_addresses[NUM_ENCODERS] = {
-        SHOULDER_ADDR, WRIST_ADDR, GRIP_ADDR};
-    uint32_t timeout;
+typedef struct {
+    tcc_set_fn_t set_duty;
+    uint8_t channel;
+} servo_map_t;
+
+static const servo_map_t servo_map[] = {
+    {TCC1_PWM24bitDutySet, 1},  // servo 2
+    {TCC1_PWM24bitDutySet, 0},  // servo 1
+    {TCC0_PWM24bitDutySet, 3},  // servo 0
+};
+
+int set_servos_pwm(const uint8_t* pwm_data, uint8_t data_len) {
+    uint16_t duty_cycle_us[NUM_ENCODERS];
+
+    // if (data_len != sizeof(duty_cycle_us)) {
+    //     return -1;
+    // }
+    //
+    memcpy(duty_cycle_us, pwm_data, sizeof(duty_cycle_us));
 
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
-        uint8_t buf[2] = {0xFF, 0xFF};
-
-        if (!SERCOM1_I2C_WriteRead(encoder_addresses[i], &reg, 1, buf, 2)) {
-            return -1;
-        }
-
-        timeout = I2C_TIMEOUT;
-
-        while (SERCOM1_I2C_IsBusy()) {
-            if (--timeout == 0) {
-                break;
-            }
-        }
-
-        if (timeout == 0 || (buf[0] == 0xFF && buf[1] == 0xFF)) {
-            data[2 * i] = 0xFF;
-            data[2 * i + 1] = 0xFF;
-            continue;
-        }
-
-        uint16_t raw_angle = (buf[0] << 6) | (buf[1] & 0x3F);
-        data[2 * i] = raw_angle >> 8;
-        data[2 * i + 1] = raw_angle & 0xFF;
+        // printf("duty cycle: %d", duty_cycle_us[i]);
+        uint32_t tcc_val = ((uint32_t)duty_cycle_us[i] * (TCC_PERIOD + 1u)) /
+                           PWM_PERIOD_MICROSECONDS;
+        servo_map[i].set_duty(servo_map[i].channel, tcc_val);
     }
     return 0;
 }
 
+int start_encoder_read(uint8_t* reg, uint8_t enc_num, uint8_t* out) {
+    uint8_t encoder_addr = encoder_addresses[enc_num];
+    uint8_t* buf = out;
 
+    if (!SERCOM1_I2C_WriteRead(encoder_addr, reg, 1, buf, 2)) {
+        return -1;
+    }
 
-void set_servos_pwm(const uint8_t* pwm_data) {
-    uint16_t shoulder_duty = (pwm_data[0] << 8) | pwm_data[1];
-    uint16_t wrist_duty = (pwm_data[2] << 8) | pwm_data[3];
-    uint16_t grip_duty = (pwm_data[4] << 8) | pwm_data[5];
-
-    uint32_t tcc_val =
-        (shoulder_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    TCC0_PWM24bitDutySet(3, tcc_val);
-
-    tcc_val = (wrist_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    TCC1_PWM24bitDutySet(0, tcc_val);
-
-    tcc_val = (grip_duty * (TCC_PERIOD + 1)) / PWM_PERIOD_MICROSECONDS;
-    TCC1_PWM24bitDutySet(1, tcc_val);
+    return 0;
 }
 
+void stop_gripper(void) {
+    WDT_Disable();
+    PORT_REGS->GROUP[0].PORT_OUTSET = (1 << 0) | (1 << 27) | (1 << 28);
+    TCC0_PWMStop();
+    TCC1_PWMStop();
+    ADC0_Disable();
+}
 
-
+void start_gripper(void) {
+    TCC0_PWMStart();
+    TCC1_PWMStart();
+    ADC0_Enable();
+    RTC_Timer32Start();
+    RTC_Timer32CompareSet(RTC_COMPARE_VAL);
+    PORT_REGS->GROUP[0].PORT_OUTCLR = (1 << 0) | (1 << 27) | (1 << 28);
+}
