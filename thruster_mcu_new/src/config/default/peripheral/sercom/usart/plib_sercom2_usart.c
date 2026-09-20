@@ -55,7 +55,7 @@
 // *****************************************************************************
 // *****************************************************************************
 /* SERCOM2 USART baud value for 115200 Hz baud rate */
-#define SERCOM2_USART_INT_BAUD_VALUE            (35337UL)
+#define SERCOM2_USART_INT_BAUD_VALUE            (63019UL)
 
 static volatile SERCOM_USART_OBJECT sercom2USARTObj;
 
@@ -150,7 +150,7 @@ void SERCOM2_USART_Initialize( void )
 
 uint32_t SERCOM2_USART_FrequencyGet( void )
 {
-    return 4000000UL;
+    return 48000000UL;
 }
 
 bool SERCOM2_USART_SerialSetup( USART_SERIAL_SETUP * serialSetup, uint32_t clkFrequency )

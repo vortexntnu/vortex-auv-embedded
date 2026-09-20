@@ -65,14 +65,6 @@
 // *****************************************************************************
 // *****************************************************************************
 
-/*** Macros for PWM_1 pin ***/
-#define PWM_1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 0U)) & 0x01U)
-#define PWM_1_PIN                  PORT_PIN_PA00
-
-/*** Macros for PWM_2 pin ***/
-#define PWM_2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 1U)) & 0x01U)
-#define PWM_2_PIN                  PORT_PIN_PA01
-
 /*** Macros for IMON_TH3 pin ***/
 #define IMON_TH3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 2U)) & 0x01U)
 #define IMON_TH3_PIN                  PORT_PIN_PA02
@@ -144,14 +136,6 @@
 /*** Macros for FLT_TH7 pin ***/
 #define FLT_TH7_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 13U)) & 0x01U)
 #define FLT_TH7_PIN                  PORT_PIN_PB13
-
-/*** Macros for USART_TX pin ***/
-#define USART_TX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 12U)) & 0x01U)
-#define USART_TX_PIN                  PORT_PIN_PA12
-
-/*** Macros for USART_RX pin ***/
-#define USART_RX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 13U)) & 0x01U)
-#define USART_RX_PIN                  PORT_PIN_PA13
 
 /*** Macros for PG_TH5 pin ***/
 #define PG_TH5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)

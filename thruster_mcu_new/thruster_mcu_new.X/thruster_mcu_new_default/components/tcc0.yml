@@ -177,7 +177,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '1'
+            value: '4'
           type: User
         type: Values
       type: KeyValueSet
@@ -188,7 +188,7 @@ data:
       - children:
         - attributes:
             id: tcc0
-            value: '2000000'
+            value: '3000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -198,7 +198,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '38275'
+            value: '60000'
           type: User
         type: Values
       type: Integer
@@ -231,7 +231,7 @@ data:
       - children:
         - attributes:
             id: tcc0
-            value: '38275'
+            value: '60000'
           type: Dynamic
         type: Values
       type: Integer
@@ -242,7 +242,7 @@ data:
       - children:
         - attributes:
             id: tcc0
-            value: '1999'
+            value: '2999'
           type: Dynamic
         type: Values
       type: Long
@@ -255,7 +255,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '8388.608'
+            value: '5592.406'
           type: Float
         type: Attributes
       type: Float
@@ -369,4 +369,34 @@ data:
           type: User
         type: Values
       type: Integer
+    TCC_1_WEXCTRL_DTIEN:
+      attributes:
+        id: TCC_1_WEXCTRL_DTIEN
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_2_WEXCTRL_DTIEN:
+      attributes:
+        id: TCC_2_WEXCTRL_DTIEN
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    TCC_3_WEXCTRL_DTIEN:
+      attributes:
+        id: TCC_3_WEXCTRL_DTIEN
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
   userData: {}

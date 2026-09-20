@@ -50,14 +50,20 @@
 #include <stdbool.h>
 #include "peripheral/sercom/usart/plib_sercom2_usart.h"
 #include "peripheral/nvmctrl/plib_nvmctrl.h"
+#include "peripheral/sercom/usart/plib_sercom1_usart.h"
+#include "peripheral/sercom/usart/plib_sercom0_usart.h"
 #include "peripheral/evsys/plib_evsys.h"
+#include "peripheral/can/plib_can1.h"
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
+#include "peripheral/systick/plib_systick.h"
 #include "peripheral/dmac/plib_dmac.h"
 #include "peripheral/wdt/plib_wdt.h"
 #include "peripheral/pm/plib_pm.h"
+#include "peripheral/can/plib_can0.h"
 #include "peripheral/eic/plib_eic.h"
+#include "peripheral/tc/plib_tc0.h"
 #include "peripheral/rtc/plib_rtc.h"
 #include "peripheral/tc/plib_tc3.h"
 #include "peripheral/tcc/plib_tcc1.h"
@@ -80,7 +86,7 @@ extern "C" {
 #define DEVICE_SERIES        "SAMC21"
 
 /* CPU clock frequency */
-#define CPU_CLOCK_FREQUENCY 4000000U
+#define CPU_CLOCK_FREQUENCY 48000000U
 
 // *****************************************************************************
 // *****************************************************************************

@@ -34,7 +34,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '1'
+            value: '4'
           type: User
         type: Values
       type: KeyValueSet
@@ -45,7 +45,7 @@ data:
       - children:
         - attributes:
             id: tc3
-            value: '2000000'
+            value: '3000000'
           type: Dynamic
         type: Values
       type: Integer
@@ -84,7 +84,7 @@ data:
       - children:
         - attributes:
             id: tc3
-            value: '65535'
+            value: '65534'
           type: Dynamic
         type: Values
       type: Long
@@ -97,7 +97,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '32.768'
+            value: '21.845333'
           type: Float
         type: Attributes
       - children:
@@ -208,7 +208,7 @@ data:
         type: Attributes
       - children:
         - attributes:
-            value: '38250'
+            value: '60000'
           type: User
         type: Values
       type: Long
@@ -231,7 +231,7 @@ data:
             id: max
           children:
           - type: Value
-            value: '38250'
+            value: '60000'
           type: Long
         - attributes:
             id: visible
