@@ -1,0 +1,173 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.h
+  * @brief          : Header for main.c file.
+  *                   This file contains the common defines of the application.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __MAIN_H
+#define __MAIN_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Includes ------------------------------------------------------------------*/
+#include "stm32h7xx_hal.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "memory_placement.h"
+#include "embedded_macros.h"
+
+#include "arm_math_types.h"
+#include "arm_math.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+/* USER CODE END Includes */
+
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
+typedef enum {
+    STATE_INIT,
+	STATE_SEARCHING,
+	STATE_PROCESSING,
+	STATE_SIGNAL_PRESENT,
+	STATE_CAN_COMMUNICATE,
+	STATE_STOPPED,
+	STATE_ERROR,
+} statemachine_state;
+/* USER CODE END ET */
+
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
+#define BLOCK_LEN 			64
+#define N_BLOCKS 			12
+
+#define BUFFER_LEN 			(N_BLOCKS * BLOCK_LEN)
+#define N_SACRIFICAL_BLOCKS   3
+#define WORKSPACE_OFFSET      3
+#define WORKSPACE_LEN 		  ((N_BLOCKS - N_SACRIFICAL_BLOCKS -1) * BLOCK_LEN)
+#define N_HYDROPHONES 		  5
+
+#define DETECTION_FFT_SIZE BLOCK_LEN
+#define PROCESSING_FFT_SIZE WORKSPACE_LEN
+
+#define SAMPLING_FREQUENCY 125000
+#define TARGET_FREQUENCY 30000
+#define BIN_RESOLUTION ((float)SAMPLE_RATE_HZ / (float)DETECTION_FFT_SIZE)
+
+#define DETECTION_PATIENCE 10
+#define PROCESSING_PATIENCE 3
+#define STALE_DATA_PATIENCE 128
+
+#define LINEAR_THRESHOLD  10 // 10dB => 10^(10/10) = 10
+#define SIGNAL_MIN_POWER 1e-5f
+
+#define MINIMUM_VALID_BUFFERS 4
+
+#define WAVE_SPEED 1490
+
+#define GENERAL_TIMEOUT 10000
+
+extern volatile statemachine_state program_state;
+extern volatile statemachine_state prev_program_state;
+extern uint8_t stale_data_patience;
+extern uint8_t previous_target_block;
+
+//extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
+extern SPI_HandleTypeDef hspi3;
+extern SPI_HandleTypeDef hspi4;
+extern SPI_HandleTypeDef hspi5;
+extern SPI_HandleTypeDef hspi6;
+extern DMA_HandleTypeDef hdma_spi1_rx;
+extern DMA_HandleTypeDef hdma_spi2_rx;
+extern DMA_HandleTypeDef hdma_spi3_rx;
+extern DMA_HandleTypeDef hdma_spi4_rx;
+extern DMA_HandleTypeDef hdma_spi5_rx;
+extern DMA_HandleTypeDef hdma_spi6_rx;
+extern DMA_HandleTypeDef hdma_spi6_tx;
+
+extern TIM_HandleTypeDef htim1;
+
+extern UART_HandleTypeDef huart1;
+
+extern FDCAN_HandleTypeDef hfdcan1;
+
+extern MDMA_HandleTypeDef hmdma_mdma_channel0_sw_0;
+/* USER CODE END EC */
+
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
+#define MASTER_SPI &hspi6
+#define DOUTH &hspi6
+#define DOUTA &hspi2
+#define DOUTB &hspi5
+#define DOUTC &hspi4
+#define DOUTD &hspi1
+#define DOUTE &hspi3
+
+#define FRSTDATA GPIOE, GPIO_PIN_7
+#define BUSY GPIOE, GPIO_PIN_8
+#define BUSY_INT GPIO_PIN_8
+#define CS GPIOE, GPIO_PIN_9
+#define CONVST GPIOE, GPIO_PIN_14
+
+
+#define GREEN_LED GPIOD, GPIO_PIN_11
+#define YELLOW_LED GPIOD, GPIO_PIN_12
+#define RED_LED GPIOD, GPIO_PIN_13
+/* USER CODE END EM */
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
+/* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
+
+/* USER CODE BEGIN EFP */
+
+/* USER CODE END EFP */
+
+/* Private defines -----------------------------------------------------------*/
+#define FRSTDATA_Pin GPIO_PIN_7
+#define FRSTDATA_GPIO_Port GPIOE
+#define BUSY_Pin GPIO_PIN_8
+#define BUSY_GPIO_Port GPIOE
+#define BUSY_EXTI_IRQn EXTI9_5_IRQn
+#define CS_Pin GPIO_PIN_9
+#define CS_GPIO_Port GPIOE
+#define CONVST_Pin GPIO_PIN_14
+#define CONVST_GPIO_Port GPIOE
+#define LEDG_Pin GPIO_PIN_11
+#define LEDG_GPIO_Port GPIOD
+#define LEDY_Pin GPIO_PIN_12
+#define LEDY_GPIO_Port GPIOD
+#define LEDR_Pin GPIO_PIN_13
+#define LEDR_GPIO_Port GPIOD
+
+/* USER CODE BEGIN Private defines */
+
+/* USER CODE END Private defines */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __MAIN_H */
